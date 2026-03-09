@@ -1,65 +1,156 @@
-import Image from "next/image";
+import { BenefitCard } from "@/components/landing/BenefitCard";
+import { BetaForm } from "@/components/landing/BetaForm";
+import { FAQAccordion } from "@/components/landing/FAQAccordion";
+import { FeatureCard } from "@/components/landing/FeatureCard";
+import { Footer } from "@/components/landing/Footer";
+import { Hero } from "@/components/landing/Hero";
+import { Navbar } from "@/components/landing/Navbar";
+import { SectionHeader } from "@/components/landing/SectionHeader";
+
+const features = [
+  {
+    title: "Materials",
+    description:
+      "Keep headshots, resumes, reels, and links organized so your key assets are always ready to share.",
+  },
+  {
+    title: "Availability",
+    description:
+      "Stay ready for fast-moving opportunities with up-to-date availability that reflects your schedule in real time.",
+  },
+  {
+    title: "Professional profile",
+    description:
+      "Present yourself with a polished, current profile that makes it easier to be considered and booked.",
+  },
+  {
+    title: "Industry workflow",
+    description:
+      "Help teams and reps get what they need faster by keeping your information current and accessible in one place.",
+  },
+];
+
+const benefits = [
+  {
+    title: "Get early access",
+    description:
+      "Be among the first to use Motiion while we continue refining the platform.",
+  },
+  {
+    title: "Help shape the product",
+    description:
+      "Your feedback will directly influence the workflows and features we prioritize next.",
+  },
+  {
+    title: "Set up your profile early",
+    description:
+      "Build your professional presence now so you are ready as the platform expands.",
+  },
+  {
+    title: "Join the founding community",
+    description:
+      "Connect with early adopters helping define a new standard for dance career organization.",
+  },
+];
+
+const faqs = [
+  {
+    question: "What is Motiion?",
+    answer:
+      "Motiion is a professional platform for dancers to manage headshots, resumes, reels, availability, and professional updates in one place.",
+  },
+  {
+    question: "Who is the beta for?",
+    answer:
+      "The beta is built for dancers first, while also supporting choreographers, creative directors, casting teams, agencies, and managers who collaborate with talent.",
+  },
+  {
+    question: "Is Motiion free during beta?",
+    answer:
+      "Yes. Early beta access is free while we work with users to improve the product and validate core workflows.",
+  },
+  {
+    question: "When will full access launch?",
+    answer:
+      "We are rolling out access in phases during beta. A broader launch timeline will be shared as we incorporate feedback from early users.",
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div id="top" className="bg-[var(--paper)]">
+      <Navbar />
+
+      <main>
+        <Hero />
+
+        <section id="problem" className="section-wrap border-t border-[var(--line)]">
+          <SectionHeader
+            title="The dance industry still runs on scattered tools"
+            description="Professional dancers are expected to stay ready at all times - but their materials, availability, and communication often live across folders, notes, screenshots, texts, and last-minute updates."
+          />
+          <p className="mt-6 max-w-3xl text-base leading-relaxed text-[var(--ink-soft)] md:text-lg">
+            Motiion brings that workflow into one place so talent can stay
+            organized, current, and easier to book.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+        </section>
+
+        <section id="product" className="section-wrap border-t border-[var(--line)]">
+          <SectionHeader
+            eyebrow="Product"
+            title="Everything you need, structured for real industry pace"
+            description="A focused system for keeping your professional profile clear, current, and ready for every opportunity."
+          />
+          <div className="mt-10 grid gap-4 md:grid-cols-2">
+            {features.map((feature) => (
+              <FeatureCard key={feature.title} {...feature} />
+            ))}
+          </div>
+        </section>
+
+        <section id="beta" className="section-wrap border-t border-[var(--line)]">
+          <SectionHeader
+            eyebrow="Private Beta"
+            title="Built with the industry, not just for it"
+            description="We’re opening Motiion in beta to work closely with dancers and industry professionals as we shape the product. Early users will help test workflows, share feedback, and influence what comes next."
+          />
+        </section>
+
+        <section className="section-wrap border-t border-[var(--line)]">
+          <SectionHeader
+            title="Why join the beta"
+            description="Early participants get direct access and a voice in how Motiion evolves."
+          />
+          <div className="mt-10 grid gap-4 md:grid-cols-2">
+            {benefits.map((benefit) => (
+              <BenefitCard key={benefit.title} {...benefit} />
+            ))}
+          </div>
+        </section>
+
+        <section id="signup" className="section-wrap border-t border-[var(--line)]">
+          <SectionHeader
+            eyebrow="Join Beta"
+            title="Request beta access"
+            description="We’re currently inviting a limited number of early users."
+          />
+          <div className="mt-10">
+            <BetaForm />
+          </div>
+        </section>
+
+        <section id="faq" className="section-wrap border-t border-[var(--line)]">
+          <SectionHeader
+            title="Frequently asked questions"
+            description="Everything you need to know before requesting access."
+          />
+          <div className="mt-10">
+            <FAQAccordion items={faqs} />
+          </div>
+        </section>
       </main>
+
+      <Footer />
     </div>
   );
 }

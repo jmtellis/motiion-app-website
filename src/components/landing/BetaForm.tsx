@@ -6,8 +6,6 @@ type FormState = {
   fullName: string;
   email: string;
   role: string;
-  portfolioLink: string;
-  intent: string;
   notes: string;
 };
 
@@ -15,8 +13,6 @@ const INITIAL_STATE: FormState = {
   fullName: "",
   email: "",
   role: "",
-  portfolioLink: "",
-  intent: "",
   notes: "",
 };
 
@@ -24,17 +20,38 @@ export function BetaForm() {
   const [formState, setFormState] = useState<FormState>(INITIAL_STATE);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
+    setSubmitError(null);
 
-    // TODO: Replace this with your real API endpoint or backend action.
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const response = await fetch("/api/beta-signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formState),
+      });
 
-    setIsSubmitting(false);
-    setIsSuccess(true);
-    setFormState(INITIAL_STATE);
+      if (!response.ok) {
+        const result = (await response.json()) as { message?: string };
+        throw new Error(result.message ?? "Unable to submit your request.");
+      }
+
+      setIsSuccess(true);
+      setFormState(INITIAL_STATE);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.";
+      setSubmitError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -52,6 +69,15 @@ export function BetaForm() {
             Thanks for requesting access to the Motiion beta. We’ll reach out as
             spots open.
           </p>
+        </div>
+      ) : null}
+      {submitError ? (
+        <div
+          className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4"
+          role="alert"
+          aria-live="polite"
+        >
+          <p className="text-sm font-medium text-red-700">{submitError}</p>
         </div>
       ) : null}
 
@@ -109,37 +135,6 @@ export function BetaForm() {
             <option value="agency-or-manager">Agency / Manager</option>
             <option value="other">Other</option>
           </select>
-        </label>
-
-        <label className="field">
-          <span>Instagram or portfolio link</span>
-          <input
-            required
-            value={formState.portfolioLink}
-            onChange={(event) =>
-              setFormState((prev) => ({
-                ...prev,
-                portfolioLink: event.target.value,
-              }))
-            }
-            type="url"
-            name="portfolioLink"
-            placeholder="https://instagram.com/yourhandle"
-          />
-        </label>
-
-        <label className="field">
-          <span>What do you want to use Motiion for?</span>
-          <textarea
-            required
-            value={formState.intent}
-            onChange={(event) =>
-              setFormState((prev) => ({ ...prev, intent: event.target.value }))
-            }
-            name="intent"
-            rows={3}
-            placeholder="Tell us how you want to use Motiion."
-          />
         </label>
 
         <label className="field">

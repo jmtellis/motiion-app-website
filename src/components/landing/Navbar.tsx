@@ -12,20 +12,20 @@ export function Navbar() {
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4 lg:px-10">
         <a
           href="#top"
-          className="inline-flex items-center gap-2.5 text-lg font-semibold tracking-tight text-[var(--ink)] transition-opacity hover:opacity-80"
+          className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight text-[var(--ink)] transition-opacity hover:opacity-80"
           aria-label="Motiion home"
         >
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--ink)] p-1.5">
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full p-0">
             <Image
-              src="/motiion-icon.svg"
+              src="/LogoMotiion.svg"
               alt=""
-              width={16}
-              height={16}
+              width={28}
+              height={28}
               className="h-full w-full"
               aria-hidden
             />
           </span>
-          <span className="font-[var(--font-brand)] font-semibold tracking-[-0.02em]">
+          <span className="font-[var(--font-brand)] font-semibold leading-none tracking-[-0.02em]">
             motiion
           </span>
         </a>

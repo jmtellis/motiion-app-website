@@ -42,11 +42,11 @@ export function FAQAccordion({ items }: FAQAccordionProps) {
               </button>
             </h3>
             <div
-              className={`grid transition-all duration-300 ${
-                isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+              className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${
+                isOpen ? "max-h-48" : "max-h-0"
               }`}
             >
-              <p className="overflow-hidden px-5 pb-5 text-sm leading-relaxed text-[var(--ink-soft)]">
+              <p className="px-5 pb-5 text-sm leading-relaxed text-[var(--ink-soft)]">
                 {item.answer}
               </p>
             </div>

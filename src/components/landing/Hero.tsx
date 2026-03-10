@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export function Hero() {
   return (
-    <section className="mx-auto grid w-full max-w-6xl gap-12 px-6 pt-16 pb-20 lg:grid-cols-2 lg:items-center lg:px-10 lg:pt-24">
+    <section className="mx-auto grid w-full max-w-6xl gap-12 px-6 pt-16 pb-20 lg:min-h-[calc(100svh-5.5rem)] lg:grid-cols-2 lg:items-center lg:px-10 lg:py-12">
       <div className="animate-enter">
         <div className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-white px-3 py-1">
           <span className="inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" aria-hidden />
@@ -12,12 +12,10 @@ export function Hero() {
         </div>
 
         <h1 className="mt-7 text-balance text-4xl leading-[1.05] font-semibold tracking-tight text-[var(--ink)] sm:text-5xl lg:text-6xl">
-          Your dance career, organized in one place
+          The modern professional platform for dancers
         </h1>
         <p className="mt-6 max-w-xl text-pretty text-base leading-relaxed text-[var(--ink-soft)] sm:text-lg">
-          Motiion helps dancers manage headshots, resumes, reels, availability,
-          and professional updates in one modern platform - built for the way
-          the industry actually works.
+          Manage your materials, schedule, and career workflow in one place.
         </p>
 
         <div className="mt-10 flex flex-wrap items-center gap-3">
@@ -32,7 +30,7 @@ export function Hero() {
 
       <div className="animate-enter-delay flex flex-col items-center">
         <span className="rounded-full border border-[var(--line)] bg-white px-3 py-1 text-xs font-semibold text-[var(--ink-soft)]">
-          Private Beta Preview
+          App Preview
         </span>
         <Image
           src="/hero-private-beta-preview-v2.png"
@@ -40,7 +38,7 @@ export function Hero() {
           width={1740}
           height={1964}
           priority
-          className="mt-6 h-auto w-full max-w-[34rem]"
+          className="mt-6 h-auto w-full max-w-[28rem] drop-shadow-[0_12px_28px_rgba(0,0,0,0.14)] lg:mt-4 lg:max-h-[68svh] lg:w-auto"
           sizes="(min-width: 1024px) 40vw, (min-width: 640px) 70vw, 90vw"
         />
       </div>

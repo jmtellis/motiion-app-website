@@ -14,6 +14,7 @@
   --color-background: var(--paper);
   --color-foreground: var(--ink);
   --font-sans: var(--font-manrope);
+  --font-brand: var(--font-montserrat);
 }
 
 html {

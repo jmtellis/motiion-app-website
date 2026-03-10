@@ -6,8 +6,8 @@
   --line: #e7e6e2;
   --ink: #151515;
   --ink-soft: #5f5f5a;
-  --accent: #4f46e5;
-  --accent-dark: #4338ca;
+  --accent: #00ccb7;
+  --accent-dark: #00a899;
 }
 
 @theme inline {
@@ -60,7 +60,7 @@ h3 {
   color: white;
   transition: transform 180ms ease, background-color 180ms ease,
     box-shadow 180ms ease;
-  box-shadow: 0 10px 30px rgb(79 70 229 / 0.25);
+  box-shadow: 0 10px 30px rgb(0 204 183 / 0.28);
 }
 
 .btn-primary:hover {

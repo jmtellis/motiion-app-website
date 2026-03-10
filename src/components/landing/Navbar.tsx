@@ -15,7 +15,7 @@ export function Navbar() {
           className="inline-flex items-center gap-2.5 text-lg font-semibold tracking-tight text-[var(--ink)] transition-opacity hover:opacity-80"
           aria-label="Motiion home"
         >
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-[var(--ink)] p-1.5">
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--ink)] p-1.5">
             <Image
               src="/motiion-icon.svg"
               alt=""

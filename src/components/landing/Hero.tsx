@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export function Hero() {
   return (
     <section className="mx-auto grid w-full max-w-6xl gap-12 px-6 pt-16 pb-20 lg:grid-cols-2 lg:items-center lg:px-10 lg:pt-24">
@@ -28,45 +30,19 @@ export function Hero() {
         </div>
       </div>
 
-      <div className="animate-enter-delay">
-        <div className="relative overflow-hidden rounded-3xl border border-[var(--line)] bg-gradient-to-b from-white to-[var(--tone)] p-5 shadow-[0_20px_70px_rgba(0,0,0,0.08)] sm:p-8">
-          <div className="mb-6 flex items-center justify-between">
-            <span className="rounded-full border border-[var(--line)] bg-white px-3 py-1 text-xs font-semibold text-[var(--ink-soft)]">
-              Private Beta Preview
-            </span>
-            <div className="flex items-center gap-1.5" aria-hidden>
-              <span className="h-2.5 w-2.5 rounded-full bg-zinc-200" />
-              <span className="h-2.5 w-2.5 rounded-full bg-zinc-200" />
-              <span className="h-2.5 w-2.5 rounded-full bg-zinc-200" />
-            </div>
-          </div>
-
-          {/* Replace this preview card with product screenshots or renders. */}
-          <div className="grid gap-4 rounded-2xl border border-[var(--line)] bg-white/95 p-4 sm:grid-cols-[1.2fr_1fr] sm:p-5">
-            <div className="rounded-xl border border-[var(--line)] bg-[var(--tone)] p-4">
-              <p className="text-xs font-medium text-[var(--ink-soft)]">
-                Profile Completeness
-              </p>
-              <p className="mt-2 text-3xl font-semibold tracking-tight text-[var(--ink)]">
-                92%
-              </p>
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-zinc-200">
-                <div className="h-full w-[92%] rounded-full bg-[var(--accent)]" />
-              </div>
-            </div>
-            <div className="rounded-xl border border-[var(--line)] p-4">
-              <p className="text-xs font-medium text-[var(--ink-soft)]">
-                Availability
-              </p>
-              <p className="mt-2 text-sm font-medium text-[var(--ink)]">
-                Open next 2 weeks
-              </p>
-              <p className="mt-4 text-xs text-[var(--ink-soft)]">
-                Updated 1h ago
-              </p>
-            </div>
-          </div>
-        </div>
+      <div className="animate-enter-delay flex flex-col items-center">
+        <span className="rounded-full border border-[var(--line)] bg-white px-3 py-1 text-xs font-semibold text-[var(--ink-soft)]">
+          Private Beta Preview
+        </span>
+        <Image
+          src="/hero-private-beta-preview-v2.png"
+          alt="Three app screens previewing the private beta experience."
+          width={1740}
+          height={1964}
+          priority
+          className="mt-6 h-auto w-full max-w-[34rem]"
+          sizes="(min-width: 1024px) 40vw, (min-width: 640px) 70vw, 90vw"
+        />
       </div>
     </section>
   );

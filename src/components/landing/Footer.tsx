@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function Footer() {
   return (
     <footer className="border-t border-white/10 bg-[#111111] text-white">
@@ -15,12 +17,18 @@ export function Footer() {
           <a href="#" className="text-sm text-white/75 transition-colors hover:text-white">
             Instagram
           </a>
-          <a href="#" className="text-sm text-white/75 transition-colors hover:text-white">
+          <Link
+            href="/privacy"
+            className="text-sm text-white/75 transition-colors hover:text-white"
+          >
             Privacy Policy
-          </a>
-          <a href="#" className="text-sm text-white/75 transition-colors hover:text-white">
+          </Link>
+          <Link
+            href="/terms"
+            className="text-sm text-white/75 transition-colors hover:text-white"
+          >
             Terms
-          </a>
+          </Link>
           <a
             href="mailto:hello@motiion.com"
             className="text-sm text-white/75 transition-colors hover:text-white"

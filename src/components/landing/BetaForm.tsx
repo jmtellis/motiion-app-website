@@ -6,6 +6,8 @@ type FormState = {
   fullName: string;
   email: string;
   role: string;
+  instagram: string;
+  references: string[];
   notes: string;
 };
 
@@ -13,8 +15,17 @@ const INITIAL_STATE: FormState = {
   fullName: "",
   email: "",
   role: "",
+  instagram: "",
+  references: [],
   notes: "",
 };
+
+const REFERENCE_OPTIONS = [
+  { value: "website", label: "Website" },
+  { value: "instagram", label: "Instagram" },
+  { value: "friend-family", label: "Friend / Family" },
+  { value: "motiion-founders", label: "Motiion founders" },
+] as const;
 
 export function BetaForm() {
   const [formState, setFormState] = useState<FormState>(INITIAL_STATE);
@@ -136,6 +147,58 @@ export function BetaForm() {
             <option value="other">Other</option>
           </select>
         </label>
+
+        <label className="field">
+          <span>Instagram handle</span>
+          <input
+            value={formState.instagram}
+            onChange={(event) =>
+              setFormState((prev) => ({ ...prev, instagram: event.target.value }))
+            }
+            type="text"
+            name="instagram"
+            autoComplete="off"
+            placeholder="@yourhandle"
+          />
+        </label>
+
+        <fieldset className="field">
+          <legend>
+            How did you hear about us?{" "}
+            <span className="font-normal text-[var(--ink-soft)]">
+              (select all that apply)
+            </span>
+          </legend>
+          <div className="grid gap-2 rounded-xl border border-[var(--line)] bg-white p-3">
+            {REFERENCE_OPTIONS.map((option) => {
+              const checked = formState.references.includes(option.value);
+              return (
+                <label
+                  key={option.value}
+                  className="inline-flex cursor-pointer items-center gap-2.5 text-sm text-[var(--ink)]"
+                >
+                  <input
+                    type="checkbox"
+                    name="references"
+                    value={option.value}
+                    checked={checked}
+                    onChange={(event) => {
+                      const { checked: isChecked } = event.target;
+                      setFormState((prev) => ({
+                        ...prev,
+                        references: isChecked
+                          ? [...prev.references, option.value]
+                          : prev.references.filter((item) => item !== option.value),
+                      }));
+                    }}
+                    className="h-4 w-4 accent-[var(--accent)]"
+                  />
+                  <span>{option.label}</span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
 
         <label className="field">
           <span>Optional notes</span>

@@ -1,5 +1,6 @@
 import { Client } from "@notionhq/client";
 import { isNotionClientError } from "@notionhq/client";
+import type { CreatePageParameters } from "@notionhq/client";
 import { NextResponse } from "next/server";
 
 type BetaSignupPayload = {
@@ -85,7 +86,7 @@ export async function POST(request: Request) {
       database_id: notionDatabaseId,
     });
 
-    const properties: Record<string, unknown> = {
+    const properties: NonNullable<CreatePageParameters["properties"]> = {
       "Full Name": {
         title: [{ text: { content: fullName } }],
       },

@@ -1,5 +1,16 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Motiion app surfaces
+
+This deployment powers **`www.motiion.app`** (marketing) plus shareable routes used by the iOS app:
+
+- **`/profile/[slug]`** — Universal Link landing + Open Graph (Supabase `profile-og` + `talent` metadata).
+- **`/activity/[id]`** — Activity deep-link fallback page.
+- **`/shortlist/[token]`** — Client shortlist review UI (Supabase edge function `shortlist-share-public`).
+- **`/.well-known/apple-app-site-association`** — Served as JSON via `vercel.json`.
+
+Copy `.env.example` to `.env.local` for local development. On Vercel, set the same **`NEXT_PUBLIC_*`** variables (see `.env.example`) alongside **`NOTION_*`** for beta signup.
+
 ## Getting Started
 
 First, run the development server:

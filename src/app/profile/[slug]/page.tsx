@@ -12,7 +12,12 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const ogImage = profileOgImageUrl(slug);
+  let ogImage: string | undefined;
+  try {
+    ogImage = profileOgImageUrl(slug);
+  } catch {
+    // Missing NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_PROFILE_OG_BASE_URL — still emit title/description.
+  }
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.motiion.app").replace(/\/$/, "");
   const pageUrl = `${siteUrl}/profile/${encodeURIComponent(slug)}`;
 
@@ -21,6 +26,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const description = displayName
     ? `Open ${displayName}'s profile in the Motiion app.`
     : "Open this profile in the Motiion app.";
+
+  const ogImages =
+    ogImage !== undefined
+      ? [
+          {
+            url: ogImage,
+            width: 1200,
+            height: 630,
+            alt: displayName ? `${displayName} on Motiion` : "Motiion profile",
+          },
+        ]
+      : undefined;
 
   return {
     title,
@@ -32,20 +49,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       url: pageUrl,
       siteName: "Motiion",
       type: "profile",
-      images: [
-        {
-          url: ogImage,
-          width: 1200,
-          height: 630,
-          alt: displayName ? `${displayName} on Motiion` : "Motiion profile",
-        },
-      ],
+      ...(ogImages ? { images: ogImages } : {}),
     },
     twitter: {
-      card: "summary_large_image",
+      card: ogImage ? "summary_large_image" : "summary",
       title,
       description,
-      images: [ogImage],
+      ...(ogImage ? { images: [ogImage] } : {}),
     },
   };
 }

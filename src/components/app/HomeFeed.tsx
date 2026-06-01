@@ -1,0 +1,169 @@
+import Image from "next/image";
+import Link from "next/link";
+
+import { formatActivitySchedule } from "@/lib/app/home";
+import type { HomeFeedData } from "@/types/app";
+
+function requestKindLabel(kind: string) {
+  return kind.replace(/_/g, " ");
+}
+
+export function HomeFeed({
+  greeting,
+  feed,
+}: {
+  greeting: string;
+  feed: HomeFeedData;
+}) {
+  return (
+    <div className="space-y-10">
+      <header className="space-y-2">
+        <p className="text-xs font-semibold tracking-[0.2em] text-[var(--accent)] uppercase">Home</p>
+        <h1 className="text-3xl font-semibold tracking-tight text-[var(--ink)] md:text-4xl">{greeting}</h1>
+        <p className="max-w-2xl text-base leading-relaxed text-[var(--ink-soft)]">
+          Your invites, upcoming schedule, and quick paths into Discover and Portfolio.
+        </p>
+      </header>
+
+      <section className="space-y-4">
+        <SectionTitle
+          title="Pending requests"
+          count={feed.pendingRequests.length}
+          empty="You’re caught up — no invites or actions waiting."
+        />
+        {feed.pendingRequests.length ? (
+          <ul className="grid gap-3">
+            {feed.pendingRequests.map((item) => (
+              <li
+                key={`${item.request_kind}-${item.id}`}
+                className="flex gap-4 rounded-2xl border border-[var(--line)] bg-white p-4 shadow-[0_8px_24px_rgba(17,17,17,0.04)]"
+              >
+                <RequestCover url={item.cover_url} title={item.title} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold tracking-[0.14em] text-[var(--accent)] uppercase">
+                    {requestKindLabel(item.request_kind)}
+                  </p>
+                  <h2 className="mt-1 text-lg font-semibold text-[var(--ink)]">{item.title}</h2>
+                  <p className="mt-1 text-sm text-[var(--ink-soft)]">{item.header_text}</p>
+                  {item.detail_text ? (
+                    <p className="mt-1 text-sm text-[var(--ink-soft)]">{item.detail_text}</p>
+                  ) : null}
+                  <p className="mt-2 text-xs text-[var(--ink-soft)]">From {item.inviter_name}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </section>
+
+      <section className="space-y-4">
+        <SectionTitle
+          title="Upcoming"
+          count={feed.upcomingActivities.length}
+          empty="No upcoming classes, sessions, or events on your calendar yet."
+        />
+        {feed.upcomingActivities.length ? (
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {feed.upcomingActivities.map((item) => (
+              <li
+                key={`${item.role}-${item.id}`}
+                className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white shadow-[0_8px_24px_rgba(17,17,17,0.04)]"
+              >
+                {item.cover_image_url ? (
+                  <div className="relative h-32 w-full bg-[var(--tone)]">
+                    <Image
+                      src={item.cover_image_url}
+                      alt=""
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                ) : null}
+                <div className="p-4">
+                  <p className="text-xs font-semibold tracking-[0.14em] text-[var(--accent)] uppercase">
+                    {item.role === "hosting" ? "Hosting" : "Attending"}
+                    {item.type ? ` · ${item.type}` : ""}
+                  </p>
+                  <h2 className="mt-1 text-base font-semibold text-[var(--ink)]">{item.title}</h2>
+                  <p className="mt-1 text-sm text-[var(--ink-soft)]">
+                    {formatActivitySchedule(item)}
+                  </p>
+                  <Link
+                    href={`/activity/${item.id}`}
+                    className="mt-3 inline-flex text-sm font-medium text-[var(--accent-dark)] underline underline-offset-4"
+                  >
+                    View activity
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-3">
+        <QuickLink href="/discover" title="Discover" description="Search talent, classes, and castings." />
+        <QuickLink href="/inbox" title="Inbox" description="Messages and conversation threads." />
+        <QuickLink href="/portfolio" title="Portfolio" description="Your public profile and credits." />
+      </section>
+    </div>
+  );
+}
+
+function SectionTitle({
+  title,
+  count,
+  empty,
+}: {
+  title: string;
+  count: number;
+  empty: string;
+}) {
+  return (
+    <div className="flex items-end justify-between gap-4">
+      <h2 className="text-xl font-semibold text-[var(--ink)]">{title}</h2>
+      {count ? (
+        <span className="text-sm text-[var(--ink-soft)]">{count}</span>
+      ) : (
+        <p className="text-sm text-[var(--ink-soft)]">{empty}</p>
+      )}
+    </div>
+  );
+}
+
+function RequestCover({ url, title }: { url: string | null; title: string }) {
+  if (!url) {
+    return (
+      <div className="flex size-16 shrink-0 items-center justify-center rounded-xl bg-[var(--tone)] text-xs font-semibold text-[var(--ink-soft)]">
+        {title.slice(0, 2).toUpperCase()}
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-[var(--tone)]">
+      <Image src={url} alt="" fill className="object-cover" unoptimized />
+    </div>
+  );
+}
+
+function QuickLink({
+  href,
+  title,
+  description,
+}: {
+  href: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="rounded-2xl border border-[var(--line)] bg-white p-5 transition hover:border-[#d6d4ce] hover:shadow-[0_8px_24px_rgba(17,17,17,0.06)]"
+    >
+      <h3 className="text-base font-semibold text-[var(--ink)]">{title}</h3>
+      <p className="mt-2 text-sm leading-relaxed text-[var(--ink-soft)]">{description}</p>
+    </Link>
+  );
+}

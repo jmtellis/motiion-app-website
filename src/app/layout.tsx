@@ -1,26 +1,19 @@
 import type { Metadata } from "next";
-import { Manrope, Montserrat, Playfair_Display } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import "./globals.css";
 
-const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin"],
-});
-
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-});
-
+/** Matches iOS `MotiionTypography` / Figma — Montserrat regular, medium, semibold. */
 const montserrat = Montserrat({
   variable: "--font-montserrat",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Motiion - Private Beta",
+  title: "Motiion — Search professional dance talent",
   description:
-    "Motiion is a professional platform for dancers to manage materials, availability, and updates in one place.",
+    "Search verified dance talent profiles, discover creatives and clients, and join the Motiion beta for modern casting workflows.",
   icons: {
     icon: "/motiion-icon.svg",
     shortcut: "/motiion-icon.svg",
@@ -35,11 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${manrope.variable} ${playfair.variable} ${montserrat.variable} antialiased`}
-      >
-        {children}
-      </body>
+      <body className={`${montserrat.variable} font-sans antialiased`}>{children}</body>
     </html>
   );
 }

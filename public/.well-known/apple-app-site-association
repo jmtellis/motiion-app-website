@@ -7,8 +7,26 @@
         "paths": [
           "/profile/*",
           "/activity/*",
+          "/class/*",
+          "/session/*",
+          "/event/*",
+          "/casting/*",
+          "/shortlist/*",
           "/t/*",
           "/u/*"
+        ]
+      }
+    ]
+  },
+  "appclips": {
+    "apps": [
+      "9NF3WG298D.com.jaymtellis.Motiion.Clip"
+    ],
+    "details": [
+      {
+        "appID": "9NF3WG298D.com.jaymtellis.Motiion.Clip",
+        "paths": [
+          "/shortlist/*"
         ]
       }
     ]

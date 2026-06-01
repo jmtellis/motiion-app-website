@@ -3,6 +3,8 @@ type SectionHeaderProps = {
   title: string;
   description?: string;
   align?: "left" | "center";
+  titleAs?: "h1" | "h2";
+  dark?: boolean;
 };
 
 export function SectionHeader({
@@ -10,8 +12,11 @@ export function SectionHeader({
   title,
   description,
   align = "left",
+  titleAs = "h2",
+  dark = false,
 }: SectionHeaderProps) {
   const alignmentClass = align === "center" ? "text-center mx-auto" : "text-left";
+  const TitleTag = titleAs;
 
   return (
     <header className={`max-w-2xl ${alignmentClass}`}>
@@ -20,11 +25,15 @@ export function SectionHeader({
           {eyebrow}
         </p>
       ) : null}
-      <h2 className="text-balance text-3xl leading-tight font-semibold tracking-tight text-[var(--ink)] md:text-4xl">
+      <TitleTag
+        className={`text-balance text-3xl leading-tight font-semibold tracking-tight md:text-4xl lg:text-[2.75rem] ${dark ? "text-white" : "text-[var(--ink)]"}`}
+      >
         {title}
-      </h2>
+      </TitleTag>
       {description ? (
-        <p className="mt-5 text-pretty text-base leading-relaxed text-[var(--ink-soft)] md:text-lg">
+        <p
+          className={`mt-5 text-pretty text-base leading-relaxed md:text-lg ${dark ? "text-white/65" : "text-[var(--ink-soft)]"}`}
+        >
           {description}
         </p>
       ) : null}

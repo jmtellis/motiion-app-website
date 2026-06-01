@@ -1,4 +1,8 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+
+import ActivityPageClient from "@/app/activity/[id]/activity-page-client";
+import { activityKindLabel, fetchPublicActivity } from "@/lib/publicActivity";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -6,10 +10,14 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
+  const activity = await fetchPublicActivity(id);
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.motiion.app").replace(/\/$/, "");
   const activityUrl = `${siteUrl}/activity/${encodeURIComponent(id)}`;
-  const title = "Open activity on Motiion";
-  const description = "Open this activity in the Motiion app.";
+
+  const title = activity ? `${activity.title} · Motiion` : "Activity on Motiion";
+  const description = activity
+    ? `${activityKindLabel(activity.kind)} on Motiion — view details and book in the app.`
+    : "View this activity on Motiion.";
 
   return {
     title,
@@ -21,49 +29,33 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       url: activityUrl,
       siteName: "Motiion",
       type: "website",
+      ...(activity?.coverImageURL
+        ? {
+            images: [
+              {
+                url: activity.coverImageURL,
+                alt: activity.title,
+              },
+            ],
+          }
+        : {}),
     },
     twitter: {
-      card: "summary",
+      card: activity?.coverImageURL ? "summary_large_image" : "summary",
       title,
       description,
+      ...(activity?.coverImageURL ? { images: [activity.coverImageURL] } : {}),
     },
   };
 }
 
-export default async function ActivityLandingPage({ params }: PageProps) {
+export default async function ActivityPage({ params }: PageProps) {
   const { id } = await params;
-  const decoded = decodeURIComponent(id).trim();
+  const activity = await fetchPublicActivity(id);
 
-  return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "2rem",
-        textAlign: "center",
-        gap: "1rem",
-      }}
-    >
-      <h1 style={{ fontSize: "1.5rem", fontWeight: 600, margin: 0 }}>Motiion</h1>
-      <p style={{ margin: 0, opacity: 0.85, maxWidth: 420, lineHeight: 1.5 }}>
-        This activity link opens in the Motiion app when it’s installed. If you already have the
-        app, tap Open from the share sheet or return to Messages and tap the link again.
-      </p>
-      <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.6 }}>{decoded}</p>
-      <a
-        href="https://www.motiion.app"
-        style={{
-          marginTop: "0.5rem",
-          color: "#93c5fd",
-          textDecoration: "none",
-          fontWeight: 500,
-        }}
-      >
-        www.motiion.app
-      </a>
-    </main>
-  );
+  if (!activity) {
+    notFound();
+  }
+
+  return <ActivityPageClient activity={activity} />;
 }

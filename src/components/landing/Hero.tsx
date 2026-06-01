@@ -22,7 +22,7 @@ export function Hero() {
           <a href="#signup" className="btn-primary">
             Join the Beta
           </a>
-          <a href="#problem" className="btn-secondary">
+          <a href="#problem" className="btn-outline">
             Learn More
           </a>
         </div>

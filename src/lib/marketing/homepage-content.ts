@@ -13,6 +13,16 @@ export type NarrativePillar = {
   description: string;
 };
 
+export type EditorialPart =
+  | string
+  | { text: string; emphasis?: boolean; accent?: boolean };
+
+export type StudioTransitionBeat = {
+  eyebrow: string;
+  headlineParts: EditorialPart[];
+  image: { src: string; alt: string };
+};
+
 export type AudienceKey = "dancers" | "choreographers" | "talentAgents" | "castingReps";
 
 export type AudienceProfile = {
@@ -30,57 +40,177 @@ export type AudienceProfile = {
   faq: FaqItem[];
 };
 
-export const homeHero = {
-  eyebrow: "The solution",
-  headline: {
-    lead: "We simplified the chaos and put it into ",
-    brand: "Motiion",
+/** Brand statement band after the solution pillars. */
+export const homeBrandStatementSection = {
+  headlineParts: [
+    "For the artists who perform, and the people who hire them.",
+  ] as EditorialPart[],
+};
+
+export const iosHeroCta = {
+  label: "Download for iOS",
+  modal: {
+    title: "iOS app coming soon",
+    description:
+      "The Motiion mobile app is on the way. Join our beta to get early access, test new features, and help shape the experience before launch.",
+    betaCta: { label: "Join Beta", href: "#signup" },
+    dismissLabel: "Not now",
   },
+} as const;
+
+export const learnMoreHeroCta = {
+  label: "Learn More",
+  modal: {
+    title: "What brings you to Motiion?",
+    description: "Choose the path that fits you and we'll take you to the right overview.",
+    paths: [
+      {
+        id: "talent",
+        label: "For Dancers",
+        description: "Build your profile, get discovered, and respond to real opportunities.",
+        href: "/for-talent",
+      },
+      {
+        id: "casting",
+        label: "For Choreographers & Casting",
+        description:
+          "Search verified talent, run castings, and move from shortlist to confirmation—for casting directors and choreographers.",
+        href: "/for-casting",
+      },
+    ],
+  },
+} as const;
+
+export const homeHero = {
+  headline: {
+    parts: [
+      "The platform designed to keep the industry in ",
+      { text: "Motiion", emphasis: true, accent: true },
+      ".",
+    ] as EditorialPart[],
+  },
+  subtext: "Connecting the dance community, managing performers, and organizing bookings.",
   pillars: [
     {
-      number: 1,
       title: "Discover smarter",
-      description: "Connecting the right talent to the right opportunities.",
+      titleParts: [
+        { text: "Discover", emphasis: true },
+        " smarter",
+      ] as EditorialPart[],
+      description:
+        "The right dancer and the right job often miss each other entirely. Motiion brings auditions, castings, classes, and gigs into one stream where talent and teams find each other without the group chats, scattered posts, or stale lists.",
+      image: {
+        src: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1400&q=80",
+        alt: "Dancers rehearsing in a studio",
+      },
     },
     {
-      number: 2,
       title: "Verify instantly",
-      description: "One digital identity that evolves with every job.",
+      titleParts: [
+        { text: "Verify", emphasis: true },
+        " instantly",
+      ] as EditorialPart[],
+      description:
+        "A casting question goes out on Monday. The answer arrives Friday, three threads later. Motiion keeps headshots, sizing, availability, and credits in one profile that stays current, so teams get what they need without the chase.",
+      image: {
+        src: "/videos/verify.mp4",
+        kind: "video" as const,
+        alt: "Motiion verify profile flow",
+      },
     },
     {
-      number: 3,
       title: "Decide faster",
-      description: "Everything needed to instantly move from casting to confirmation.",
+      titleParts: [
+        { text: "Decide", emphasis: true },
+        " faster",
+      ] as EditorialPart[],
+      description:
+        "The shortlist is ready. The debate happens across five chats. Motiion gives teams tools to collaborate on the final call, then notifies dancers the moment casting is locked so they can plan what comes next.",
+      image: {
+        src: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1400&q=80",
+        alt: "Live performance with stage lighting",
+      },
     },
   ],
-  blueprint:
-    "Starting with dance, we've created the blueprint for how the entire creative world hires talent—and the infrastructure to support their careers.",
   audienceLinks: [
     {
       id: "talent",
-      label: "For Talent",
+      label: "For Dancers",
       href: "/for-talent",
-      description: "Build your profile, get discovered, and book what's next.",
     },
     {
-      id: "clients",
-      label: "For Clients",
-      href: "/for-clients",
-      description: "Search verified talent and move from casting to confirmation faster.",
-    },
-    {
-      id: "agents",
-      label: "For Agents",
-      href: "/for-agents",
-      description:
-        "Run your roster like a CMS—one database for your artists, with direct communication so you represent more talent on what matters.",
+      id: "casting",
+      label: "For Choreographers & Casting",
+      href: "/for-casting",
     },
   ],
-  demoCta: {
-    label: "Join Beta",
-    href: "#signup",
-    hint: "Request early access and help shape Motiion before public launch.",
+};
+
+/** Outline scroll marquees — below hero and below brand statement. */
+export const landingMarquees = {
+  belowHero: {
+    segments: ["Discover", "Motiion", "Talent", "Database"],
+    direction: "right" as const,
   },
+  belowBrandStatement: {
+    segments: ["Creatives", "Management", "Labels", "Agents", "Casting", "Production"],
+    direction: "left" as const,
+  },
+} as const;
+
+export const studioTransitionSection = {
+  beats: [
+    {
+      eyebrow: "Behind the scenes",
+      headlineParts: [
+        { text: "Behind the scenes", emphasis: true },
+        " on dance floors ",
+        { text: "worldwide", emphasis: true, accent: true },
+      ],
+      image: {
+        src: "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?auto=format&fit=crop&w=1600&q=80",
+        alt: "Dancers rehearsing behind the scenes in a studio",
+      },
+    },
+    {
+      eyebrow: "Trusted worldwide",
+      headlineParts: [
+        "We've built for ",
+        { text: "choreographers", emphasis: true },
+        ", ",
+        { text: "casting teams", emphasis: true },
+        ", and ",
+        { text: "agents", emphasis: true, accent: true },
+        " worldwide",
+      ],
+      image: {
+        src: "https://images.unsplash.com/photo-1547153524-96ad3811a5f0?auto=format&fit=crop&w=1600&q=80",
+        alt: "International dance performance on stage",
+      },
+    },
+  ] satisfies StudioTransitionBeat[],
+};
+
+export const productProofStrip = {
+  eyebrow: "Inside Motiion",
+  title: "Search, profile, and confirm — in one flow.",
+  screens: [
+    {
+      src: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=900&q=80",
+      alt: "Discover talent placeholder",
+      label: "Search talent",
+    },
+    {
+      src: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80",
+      alt: "Verified profile placeholder",
+      label: "Verified profile",
+    },
+    {
+      src: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=900&q=80",
+      alt: "Booking flow placeholder",
+      label: "Book & confirm",
+    },
+  ],
 };
 
 export const homepageIntro = {
@@ -110,9 +240,9 @@ export const betaSignupSection = {
 
 export const solutionSection = {
   title: "The solution",
-  headline: `${homeHero.headline.lead}${homeHero.headline.brand}`,
+  headline: "We simplified the chaos and put it into Motiion",
   pillars: homeHero.pillars.map(({ title, description }) => ({ title, description })) as NarrativePillar[],
-  summary: homeHero.blueprint,
+  summary: homeHero.subtext,
 };
 
 export const visionSection = {
@@ -127,20 +257,14 @@ export const visionSection = {
 
 export const homeAudienceLinks = [
   {
-    label: "For Talent",
+    label: "For Dancers",
     description: "Build a living profile, get discovered, and respond to real opportunities.",
     href: "/for-talent",
   },
   {
-    label: "For Clients",
+    label: "For Choreographers & Casting",
     description: "Search verified talent, run casting, and move from shortlist to confirmation faster.",
-    href: "/for-clients",
-  },
-  {
-    label: "For Agents",
-    description:
-      "Your roster CMS—one database for your artists, with direct communication so you focus on representation.",
-    href: "/for-agents",
+    href: "/for-casting",
   },
   {
     label: "Request a Demo",

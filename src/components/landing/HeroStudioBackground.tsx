@@ -10,7 +10,7 @@ export function HeroStudioBackground({
   alt?: string;
 }) {
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden bg-[#0a1214]" aria-hidden>
+    <div className="pointer-events-none absolute inset-0 overflow-hidden bg-black" aria-hidden>
       <Image
         src={src}
         alt={alt}
@@ -20,7 +20,7 @@ export function HeroStudioBackground({
         className="object-cover object-center"
       />
       {/* Vignette only — headshot layer handles bottom fade when stacked */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_50%,transparent_35%,rgba(10,18,20,0.45)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_50%,transparent_35%,rgba(0,0,0,0.45)_100%)]" />
     </div>
   );
 }

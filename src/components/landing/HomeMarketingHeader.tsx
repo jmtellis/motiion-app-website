@@ -15,7 +15,7 @@ function toAccountPillUser(profile: DashboardProfile): AccountPillUser {
   };
 }
 
-/** Root landing: hero = centered logo; past hero = tabs + sign up only. */
+/** Root landing: audience tabs left, logo center, join beta right. */
 export async function HomeMarketingHeader({ darkTheme = false }: { darkTheme?: boolean }) {
   const profile = await getCurrentUserProfile();
   const showAccountPill = profile && isOnboardingComplete(profile);

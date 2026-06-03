@@ -3,7 +3,11 @@ import Image from "next/image";
 /** App `HeaderLogo` — `header-logo-wordmark.png` (white template, transparent background). */
 const HEADER_LOGO_WIDTH = 504;
 const HEADER_LOGO_HEIGHT = 300;
-const HEADER_LOGO_SRC = "/header-logo-wordmark.png";
+export const MOTIION_WORDMARK_SRC = "/header-logo-wordmark.png";
+const HEADER_LOGO_SRC = MOTIION_WORDMARK_SRC;
+
+/** Wordmark aspect ratio (width / height) */
+export const MOTIION_WORDMARK_ASPECT = HEADER_LOGO_WIDTH / HEADER_LOGO_HEIGHT;
 
 /** Matches iOS `headerLogoDisplayHeight` (20pt), slightly larger for web raster clarity. */
 export const MOTIION_HEADER_LOGO_HEIGHT = 24;

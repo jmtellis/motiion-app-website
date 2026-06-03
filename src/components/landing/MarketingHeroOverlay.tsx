@@ -2,32 +2,65 @@ import Link from "next/link";
 
 import type { AudiencePageContent } from "@/lib/marketing/marketing-pages";
 
-export function MarketingHeroOverlay({ content }: { content: AudiencePageContent }) {
+function cn(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
+export function MarketingHeroOverlay({
+  content,
+  dark = false,
+}: {
+  content: AudiencePageContent;
+  dark?: boolean;
+}) {
   return (
     <div className="animate-enter flex w-full max-w-3xl flex-col items-center gap-8 px-6 text-center">
-      <div className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-white/90 px-3 py-1 backdrop-blur-sm">
+      <div
+        className={cn(
+          "inline-flex items-center gap-2 rounded-full border px-3 py-1 backdrop-blur-sm",
+          dark ? "border-white/15 bg-white/10" : "border-[var(--line)] bg-white/90",
+        )}
+      >
         <span className="inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" aria-hidden />
-        <p className="text-xs font-semibold tracking-[0.18em] text-[var(--accent)] uppercase">{content.eyebrow}</p>
+        <p className="type-eyebrow text-[var(--accent)]">{content.eyebrow}</p>
       </div>
 
       <div className="space-y-4">
-        <h1 className="text-balance text-4xl leading-[1.05] font-semibold tracking-tight text-[var(--ink)] sm:text-5xl lg:text-[2.75rem]">
+        <h1
+          className={cn("type-display text-balance", dark ? "text-on-dark-primary" : "text-[var(--ink)]")}
+        >
           {content.headline}
         </h1>
-        <p className="mx-auto max-w-xl text-base leading-relaxed text-[var(--ink-soft)] sm:text-lg">
+        <p
+          className={cn(
+            "type-lead mx-auto max-w-xl text-pretty",
+            dark ? "text-on-dark-secondary" : "text-[var(--ink-soft)]",
+          )}
+        >
           {content.summary}
         </p>
       </div>
 
       <div className="flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
-        <Link href={content.heroCtas.primary.href} className="btn-primary w-full text-center sm:w-auto sm:min-w-[10rem]">
+        <Link
+          href={content.heroCtas.primary.href}
+          className={cn(
+            "btn-primary w-full text-center sm:w-auto sm:min-w-[10rem]",
+            dark && "btn-on-dark",
+          )}
+        >
           {content.heroCtas.primary.label}
         </Link>
-        <Link href={content.heroCtas.secondary.href} className="btn-secondary w-full text-center sm:w-auto sm:min-w-[10rem]">
+        <Link
+          href={content.heroCtas.secondary.href}
+          className={cn(
+            "btn-outline w-full text-center sm:w-auto sm:min-w-[10rem]",
+            dark && "btn-outline-on-dark",
+          )}
+        >
           {content.heroCtas.secondary.label}
         </Link>
       </div>
     </div>
   );
 }
-

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
+
+import { CssStudioDev } from "@/components/dev/CssStudioDev";
 import "./globals.css";
 
 /** Matches iOS `MotiionTypography` / Figma — Montserrat regular, medium, semibold. */
@@ -13,7 +15,7 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: "Motiion — Search professional dance talent",
   description:
-    "Search verified dance talent profiles, discover creatives and clients, and join the Motiion beta for modern casting workflows.",
+    "Search verified dance talent profiles, discover creatives and casting teams, and join the Motiion beta for modern casting workflows.",
   icons: {
     icon: "/motiion-icon.svg",
     shortcut: "/motiion-icon.svg",
@@ -28,7 +30,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${montserrat.variable} font-sans antialiased`}>{children}</body>
+      <body className={`${montserrat.variable} font-sans antialiased`}>
+        {children}
+        {process.env.NODE_ENV === "development" ? <CssStudioDev /> : null}
+      </body>
     </html>
   );
 }

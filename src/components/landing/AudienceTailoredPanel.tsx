@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import {
   audienceOrder,
@@ -28,7 +28,7 @@ export function AudienceTailoredPanel() {
   return (
     <section id="audiences" className="space-y-8">
       <div className="space-y-4">
-        <p className="text-xs font-semibold tracking-[0.2em] text-[var(--accent)] uppercase">Choose your role</p>
+        <p className="type-eyebrow text-[var(--accent)]">Choose your role</p>
         <div
           role="tablist"
           aria-label="Audience types"
@@ -71,11 +71,11 @@ export function AudienceTailoredPanel() {
             <p className="text-xs font-semibold tracking-[0.2em] text-[var(--ink-soft)] uppercase">
               For {selectedProfile.label}
             </p>
-            <h3 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-[var(--ink)] md:text-4xl">
+            <h3 className="type-heading-1 mt-3 text-balance text-[var(--ink)]">
               {selectedProfile.headline}
             </h3>
-            <p className="mt-4 max-w-3xl text-base leading-relaxed text-[var(--ink-soft)]">{selectedProfile.summary}</p>
-            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-[var(--ink-soft)]">
+            <p className="type-lead mt-4 max-w-3xl text-pretty text-[var(--ink-soft)]">{selectedProfile.summary}</p>
+            <p className="type-body mt-3 max-w-3xl text-pretty text-[var(--ink-soft)]">
               {selectedProfile.valueStatement}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">

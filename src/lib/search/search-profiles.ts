@@ -7,6 +7,7 @@ import type { SearchFilters, SearchProfileRecord, SearchResult } from "@/types/s
 const PAGE_SIZE = 12;
 /** Profiles to load — one primary (and optional secondary) headshot each. */
 const HERO_PROFILE_LIMIT = 48;
+const PILLAR_STACK_HEADSHOT_LIMIT = 10;
 
 function emptySearchResult(filters: SearchFilters): SearchResult {
   return {
@@ -112,12 +113,22 @@ export const searchTalentProfiles = cache(async (filters: SearchFilters): Promis
 type HeroHeadshotRow = {
   headshot_url?: string | null;
   headshot_urls?: string[] | null;
+  headshot_original_urls?: string[] | null;
 };
 
-function profileHeadshotSlots(row: HeroHeadshotRow): { first: string | null; second: string | null } {
-  const urls = (Array.isArray(row.headshot_urls) ? row.headshot_urls : []).filter(
+function heroHeadshotUrls(row: HeroHeadshotRow): string[] {
+  const displayUrls = (Array.isArray(row.headshot_urls) ? row.headshot_urls : []).filter((value): value is string =>
+    Boolean(value?.trim()),
+  );
+  if (displayUrls.length) return displayUrls;
+
+  return (Array.isArray(row.headshot_original_urls) ? row.headshot_original_urls : []).filter(
     (value): value is string => Boolean(value?.trim()),
   );
+}
+
+function profileHeadshotSlots(row: HeroHeadshotRow): { first: string | null; second: string | null } {
+  const urls = heroHeadshotUrls(row);
   const first = (urls[0] ?? row.headshot_url)?.trim() || null;
   const secondCandidate = urls[1]?.trim() || null;
   const second = secondCandidate && secondCandidate !== first ? secondCandidate : null;
@@ -149,6 +160,17 @@ export function buildHeroHeadshotSequence(rows: HeroHeadshotRow[]): string[] {
   return [...primary, ...secondary];
 }
 
+async function queryHeroHeadshotsFromProfiles(): Promise<string[] | null> {
+  const rows = await supabaseRestGet<HeroHeadshotRow[]>(
+    `profiles?select=headshot_urls,headshot_original_urls&onboarding_completed_at=not.is.null&headshot_urls=not.is.null&limit=${HERO_PROFILE_LIMIT}`,
+    { revalidate: 600 },
+  );
+  if (!rows?.length) return null;
+
+  const images = buildHeroHeadshotSequence(rows);
+  return images.length ? images : null;
+}
+
 async function queryHeroHeadshots(viewName: "public_search_profiles" | "talent"): Promise<string[] | null> {
   const rows = await supabaseRestGet<HeroHeadshotRow[]>(
     `${viewName}?select=headshot_url,headshot_urls&limit=${HERO_PROFILE_LIMIT}`,
@@ -161,6 +183,9 @@ async function queryHeroHeadshots(viewName: "public_search_profiles" | "talent")
 }
 
 export const getHeroHeadshotImages = cache(async () => {
+  const profileImages = await queryHeroHeadshotsFromProfiles();
+  if (profileImages?.length) return profileImages;
+
   const publicSearchImages = await queryHeroHeadshots("public_search_profiles");
   if (publicSearchImages?.length) return publicSearchImages;
 
@@ -171,4 +196,10 @@ export const getHeroHeadshotImages = cache(async () => {
   if (mockSequence.length >= 8) return mockSequence;
 
   return portraitWallImages;
+});
+
+/** Swipeable pillar stack on the home page (max 10 unique headshots). */
+export const getPillarHeadshotImages = cache(async () => {
+  const images = await getHeroHeadshotImages();
+  return images.slice(0, PILLAR_STACK_HEADSHOT_LIMIT);
 });

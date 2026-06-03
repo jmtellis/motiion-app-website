@@ -21,18 +21,16 @@ export function SectionHeader({
   return (
     <header className={`max-w-2xl ${alignmentClass}`}>
       {eyebrow ? (
-        <p className="mb-3 text-xs font-semibold tracking-[0.2em] text-[var(--accent)] uppercase">
-          {eyebrow}
-        </p>
+        <p className="type-eyebrow mb-3 text-[var(--accent)]">{eyebrow}</p>
       ) : null}
       <TitleTag
-        className={`text-balance text-3xl leading-tight font-semibold tracking-tight md:text-4xl lg:text-[2.75rem] ${dark ? "text-white" : "text-[var(--ink)]"}`}
+        className={`type-heading-1 text-balance ${dark ? "text-on-dark-primary" : "text-[var(--ink)]"}`}
       >
         {title}
       </TitleTag>
       {description ? (
         <p
-          className={`mt-5 text-pretty text-base leading-relaxed md:text-lg ${dark ? "text-white/65" : "text-[var(--ink-soft)]"}`}
+          className={`type-lead mt-5 max-w-prose text-pretty ${dark ? "text-on-dark-secondary" : "text-[var(--ink-soft)]"}`}
         >
           {description}
         </p>

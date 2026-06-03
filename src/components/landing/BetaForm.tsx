@@ -35,7 +35,16 @@ function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-export function BetaForm({ compact = false, dark = false }: { compact?: boolean; dark?: boolean }) {
+export function BetaForm({
+  compact = false,
+  dark = false,
+  embedded = false,
+}: {
+  compact?: boolean;
+  dark?: boolean;
+  /** Render without outer card chrome (e.g. inside a modal). */
+  embedded?: boolean;
+}) {
   const [formState, setFormState] = useState<FormState>(INITIAL_STATE);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -73,14 +82,16 @@ export function BetaForm({ compact = false, dark = false }: { compact?: boolean;
     }
   };
 
-  const shellClass = cn(
-    compact
-      ? "rounded-2xl border p-4 sm:p-5"
-      : "rounded-3xl border p-6 md:p-8",
-    dark
-      ? "border-white/12 bg-[#141c1e] shadow-[0_12px_40px_rgba(0,0,0,0.4)] [&_.field>span]:text-white/85 [&_.field>legend]:text-white/85 [&_.field>input]:border-white/15 [&_.field>input]:bg-[#0a1214] [&_.field>input]:text-white [&_.field>input]::placeholder:text-white/35 [&_.field>textarea]:border-white/15 [&_.field>textarea]:bg-[#0a1214] [&_.field>textarea]:text-white [&_.field>select]:border-white/15 [&_.field>select]:bg-[#0a1214] [&_.field>select]:text-white [&_label]:text-white/80"
-      : "border-[var(--line)] bg-white shadow-[0_12px_32px_rgba(0,0,0,0.06)] sm:shadow-[0_16px_45px_rgba(0,0,0,0.06)]",
-  );
+  const shellClass = embedded
+    ? ""
+    : cn(
+        compact
+          ? "rounded-2xl border p-4 sm:p-5"
+          : "rounded-3xl border p-6 md:p-8",
+        dark
+          ? "border-white/12 bg-black shadow-[0_12px_40px_rgba(0,0,0,0.4)] [&_.field>span]:text-white/85 [&_.field>legend]:text-white/85 [&_.field>input]:border-white/15 [&_.field>input]:bg-black [&_.field>input]:text-white [&_.field>input]::placeholder:text-white/35 [&_.field>textarea]:border-white/15 [&_.field>textarea]:bg-black [&_.field>textarea]:text-white [&_.field>select]:border-white/15 [&_.field>select]:bg-black [&_.field>select]:text-white [&_label]:text-white/80"
+          : "border-[var(--line)] bg-white shadow-[0_12px_32px_rgba(0,0,0,0.06)] sm:shadow-[0_16px_45px_rgba(0,0,0,0.06)]",
+      );
 
   const formSpaceClass = compact ? "space-y-2.5" : "space-y-4";
   const statusClass = compact ? "rounded-xl p-3.5 text-xs" : "rounded-2xl p-5 text-sm";

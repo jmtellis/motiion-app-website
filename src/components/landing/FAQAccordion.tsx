@@ -9,9 +9,14 @@ type FAQItem = {
 
 type FAQAccordionProps = {
   items: FAQItem[];
+  dark?: boolean;
 };
 
-export function FAQAccordion({ items }: FAQAccordionProps) {
+function cn(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
+export function FAQAccordion({ items, dark = false }: FAQAccordionProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
@@ -21,7 +26,10 @@ export function FAQAccordion({ items }: FAQAccordionProps) {
         return (
           <article
             key={item.question}
-            className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white"
+            className={cn(
+              "overflow-hidden rounded-2xl border",
+              dark ? "border-white/12 bg-white/5" : "border-[var(--line)] bg-white",
+            )}
           >
             <h3>
               <button
@@ -30,11 +38,19 @@ export function FAQAccordion({ items }: FAQAccordionProps) {
                 aria-expanded={isOpen}
                 onClick={() => setOpenIndex(isOpen ? null : index)}
               >
-                <span className="text-base font-semibold tracking-tight text-[var(--ink)]">
+                <span
+                  className={cn(
+                    "text-base font-semibold tracking-tight",
+                    dark ? "text-on-dark-primary" : "text-[var(--ink)]",
+                  )}
+                >
                   {item.question}
                 </span>
                 <span
-                  className="text-xl leading-none text-[var(--ink-soft)]"
+                  className={cn(
+                    "text-xl leading-none",
+                    dark ? "text-on-dark-secondary" : "text-[var(--ink-soft)]",
+                  )}
                   aria-hidden
                 >
                   {isOpen ? "-" : "+"}
@@ -46,7 +62,12 @@ export function FAQAccordion({ items }: FAQAccordionProps) {
                 isOpen ? "max-h-48" : "max-h-0"
               }`}
             >
-              <p className="px-5 pb-5 text-sm leading-relaxed text-[var(--ink-soft)]">
+              <p
+                className={cn(
+                  "px-5 pb-5 text-sm leading-relaxed",
+                  dark ? "text-on-dark-secondary" : "text-[var(--ink-soft)]",
+                )}
+              >
                 {item.answer}
               </p>
             </div>

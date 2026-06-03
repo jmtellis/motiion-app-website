@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "motion/react";
 
 import { MARKETING_DARK } from "@/lib/marketing/dark-theme";
 import { portraitWallImages } from "@/lib/mock-data";
@@ -12,12 +12,51 @@ const HERO_TINT_LIGHT = {
   paper: "rgba(252, 252, 251, 0.65)",
 } as const;
 
-const HERO_TINT_OVERLAY = {
-  cyan: "rgba(0, 168, 200, 0.08)",
-  brand: "rgba(0, 204, 183, 0.05)",
-} as const;
-
 const TILES_PER_COLUMN = 4;
+
+/**
+ * Assign images per column so the same URL does not appear in horizontally adjacent
+ * columns at the same tile row (when the pool allows).
+ */
+function assignHeadshotColumns(
+  sourceImages: string[],
+  columnCount: number,
+  tilesPerColumn: number,
+): string[][] {
+  const pool = [...new Set(sourceImages.filter(Boolean))];
+  if (pool.length === 0) {
+    return Array.from({ length: columnCount }, () => []);
+  }
+
+  const columns: string[][] = Array.from({ length: columnCount }, () => []);
+
+  for (let tile = 0; tile < tilesPerColumn; tile++) {
+    for (let col = 0; col < columnCount; col++) {
+      const leftNeighbor = col > 0 ? columns[col - 1][tile] : undefined;
+      const usedInColumn = new Set(columns[col]);
+
+      let chosen: string | undefined;
+      for (let attempt = 0; attempt < pool.length; attempt++) {
+        const candidate = pool[(col * 5 + tile * 11 + attempt) % pool.length];
+        if (candidate !== leftNeighbor && !usedInColumn.has(candidate)) {
+          chosen = candidate;
+          break;
+        }
+      }
+
+      if (!chosen) {
+        chosen =
+          pool.find((url) => url !== leftNeighbor && !usedInColumn.has(url)) ??
+          pool.find((url) => url !== leftNeighbor) ??
+          pool[(col + tile) % pool.length];
+      }
+
+      columns[col].push(chosen);
+    }
+  }
+
+  return columns;
+}
 
 type ColumnConfig = {
   offset: number;
@@ -42,8 +81,8 @@ const desktopColumns: ColumnConfig[] = [
   { offset: 7, direction: "up", duration: 37 },
 ];
 
-/** Matches `lg:grid-cols-6` + `gap-4` + `px-12` so tiles stay the same size when we add side columns. */
-const DESKTOP_COLUMN_WIDTH = "w-[calc((100vw-6rem-5*1rem)/6)] shrink-0";
+/** Matches `lg:grid-cols-6` + `gap-2` + `px-12` so tiles stay the same size when we add side columns. */
+const DESKTOP_COLUMN_WIDTH = "w-[calc((100vw-6rem-5*0.5rem)/6)] shrink-0";
 
 function HeadshotColumn({
   images,
@@ -61,7 +100,7 @@ function HeadshotColumn({
 
   if (reduceMotion) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
         {images.slice(0, TILES_PER_COLUMN).map((src, index) => (
           <HeadshotTile key={`${src}-${index}`} src={src} overlay={overlay} />
         ))}
@@ -71,7 +110,7 @@ function HeadshotColumn({
 
   return (
     <motion.div
-      className="flex flex-col gap-4"
+      className="flex flex-col gap-2"
       initial={{ y: translate[0] }}
       animate={{ y: translate[1] }}
       transition={{ duration, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
@@ -85,40 +124,36 @@ function HeadshotColumn({
 
 function HeadshotTile({ src, overlay }: { src: string; overlay: boolean }) {
   return (
-    <div
-      className={`relative aspect-[3/4] w-full overflow-hidden rounded-[18px] shadow-[0_12px_36px_rgba(0,0,0,0.35)] ${
-        overlay ? "border border-white/20 bg-black/20" : "border border-white/45 bg-white shadow-[0_8px_28px_rgba(17,17,17,0.07)]"
-      }`}
-    >
+    <div className="relative aspect-[3/4] w-full overflow-hidden" style={{ borderRadius: 0 }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt=""
-        className={`h-full w-full object-cover ${overlay ? "scale-[1.03] opacity-88 blur-[2px]" : "scale-[1.03] opacity-92 blur-[2px] saturate-[0.98]"}`}
+        className={`h-full w-full object-cover object-center ${overlay ? "scale-[1.12] opacity-88" : "scale-[1.12] opacity-92 saturate-[0.98]"}`}
+        style={{ borderRadius: 0 }}
       />
-      <div
-        className={`absolute inset-0 ${
-          overlay
-            ? "bg-[linear-gradient(145deg,rgba(255,255,255,0.08)_0%,transparent_50%,rgba(0,0,0,0.25)_100%)]"
-            : "bg-[linear-gradient(145deg,rgba(255,255,255,0.2)_0%,transparent_48%)]"
-        }`}
-      />
+      {overlay ? (
+        <div
+          className="absolute inset-0 bg-[linear-gradient(145deg,rgba(0,0,0,0.12)_0%,transparent_50%,rgba(0,0,0,0.2)_100%)]"
+          style={{ borderRadius: 0 }}
+        />
+      ) : (
+        <div
+          className="absolute inset-0 bg-[linear-gradient(145deg,rgba(255,255,255,0.12)_0%,transparent_48%)]"
+          style={{ borderRadius: 0 }}
+        />
+      )}
     </div>
   );
 }
 
 function renderColumn(
   column: ColumnConfig,
+  columnImages: string[],
   index: number,
-  sourceImages: string[],
   overlay: boolean,
   widthClass?: string,
 ) {
-  const columnImages = Array.from({ length: TILES_PER_COLUMN }, (_, imageIndex) => {
-    const sourceIndex = (column.offset + imageIndex + index) % sourceImages.length;
-    return sourceImages[sourceIndex];
-  });
-
   return (
     <div key={`${column.offset}-${index}`} className={widthClass}>
       <HeadshotColumn
@@ -141,7 +176,10 @@ export function HeadshotColumnsBackground({
   /** `overlay` = scrolling wall on top of studio plate; fades into dark. */
   variant?: "light" | "overlay";
 }) {
-  const sourceImages = images.length >= 8 ? images : portraitWallImages;
+  const pool = [...new Set((images.length >= 8 ? images : portraitWallImages).filter(Boolean))];
+  const sourceImages = pool.length ? pool : portraitWallImages;
+  const coreColumnImages = assignHeadshotColumns(sourceImages, coreColumns.length, TILES_PER_COLUMN);
+  const desktopColumnImages = assignHeadshotColumns(sourceImages, desktopColumns.length, TILES_PER_COLUMN);
   const overlay = variant === "overlay";
   const opacity = overlay ? "opacity-82" : "opacity-90";
 
@@ -152,18 +190,20 @@ export function HeadshotColumnsBackground({
     >
       {/* Mobile / tablet: original 6-column grid density */}
       <div
-        className={`absolute inset-0 grid grid-cols-2 gap-4 px-4 sm:grid-cols-3 lg:hidden lg:px-12 ${opacity}`}
+        className={`absolute inset-0 grid grid-cols-2 gap-x-2 gap-y-2 px-4 sm:grid-cols-3 lg:hidden lg:px-12 ${opacity}`}
       >
-        {coreColumns.map((column, index) => renderColumn(column, index, sourceImages, overlay))}
+        {coreColumns.map((column, index) =>
+          renderColumn(column, coreColumnImages[index] ?? [], index, overlay),
+        )}
       </div>
 
       {/* Desktop: same tile size as 6-across, plus one clipped column on each side */}
       <div
         className={`absolute inset-0 hidden items-start justify-center lg:flex ${opacity}`}
       >
-        <div className="flex gap-4 px-12">
+        <div className="flex gap-2 px-12">
           {desktopColumns.map((column, index) =>
-            renderColumn(column, index, sourceImages, overlay, DESKTOP_COLUMN_WIDTH),
+            renderColumn(column, desktopColumnImages[index] ?? [], index, overlay, DESKTOP_COLUMN_WIDTH),
           )}
         </div>
       </div>
@@ -173,13 +213,13 @@ export function HeadshotColumnsBackground({
           <div
             className="absolute inset-0"
             style={{
-              background: `radial-gradient(ellipse 115% 72% at 50% 44%, ${HERO_TINT_OVERLAY.cyan} 0%, transparent 55%), radial-gradient(ellipse 110% 78% at 50% 46%, rgba(10, 18, 20, 0.88) 0%, rgba(10, 18, 20, 0.45) 42%, transparent 78%)`,
+              background: `radial-gradient(ellipse 110% 78% at 50% 46%, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.45) 42%, transparent 78%)`,
             }}
           />
           <div
             className="absolute inset-0"
             style={{
-              background: `linear-gradient(180deg, rgba(10, 18, 20, 0.35) 0%, rgba(10, 18, 20, 0.55) 28%, rgba(10, 18, 20, 0.82) 58%, ${MARKETING_DARK.bg} 100%)`,
+              background: `linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.55) 28%, rgba(0, 0, 0, 0.82) 58%, ${MARKETING_DARK.bg} 100%)`,
             }}
           />
         </>

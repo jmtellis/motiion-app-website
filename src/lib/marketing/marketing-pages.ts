@@ -1,6 +1,6 @@
 import type { FaqItem } from "@/lib/marketing/homepage-content";
 
-export type MarketingTab = "talent" | "clients" | "agents" | "demo";
+export type MarketingTab = "talent" | "casting" | "demo";
 
 export const JOIN_BETA_CTA = { label: "Join Beta", href: "#signup" } as const;
 
@@ -27,8 +27,8 @@ export type AudiencePageContent = {
 };
 
 export const talentPageContent: AudiencePageContent = {
-  eyebrow: "For talent",
-  headline: "One profile. Better opportunities. Less admin.",
+  eyebrow: "For Dancers",
+  headline: "One profile. Better opportunities. Less friction.",
   summary:
     "Motiion helps dancers and choreographers build a living professional identity, get discovered by the right teams, and respond to invites without rebuilding materials every time.",
   heroCtas: {
@@ -38,32 +38,32 @@ export const talentPageContent: AudiencePageContent = {
   benefitsTitle: "Why talent joins Motiion",
   benefits: [
     {
-      title: "A portfolio that stays current",
+      title: "Living portfolio",
       description:
         "Keep headshots, reels, credits, training, and sizing in one place that updates as your career moves.",
     },
     {
-      title: "Get found by the right people",
+      title: "Right discovery",
       description:
         "Show up in search with style, skills, and experience filters casting teams actually use.",
     },
     {
-      title: "Respond faster to real invites",
+      title: "Faster invites",
       description:
         "Class, session, event, and casting invites land in one inbox so you can accept or decline with context.",
     },
     {
-      title: "Stop rebuilding the same packet",
+      title: "One profile",
       description:
         "Share one verified Motiion profile instead of chasing links, PDFs, and outdated folders for every submission.",
     },
     {
-      title: "Built for represented and independent artists",
+      title: "Any representation",
       description:
         "Whether you book on your own or through an agency, your materials stay presentation-ready.",
     },
     {
-      title: "Grow with the community",
+      title: "Community growth",
       description:
         "Discover classes, sessions, and collaborators on the same network hiring teams use every day.",
     },
@@ -110,8 +110,8 @@ export const talentPageContent: AudiencePageContent = {
   },
 };
 
-export const clientsPageContent: AudiencePageContent = {
-  eyebrow: "For clients",
+export const castingPageContent: AudiencePageContent = {
+  eyebrow: "For Choreographers & Casting",
   headline: "Discover talent faster. Decide with confidence.",
   summary:
     "Motiion gives casting directors, creative teams, producers, and agencies a trusted layer for search, shortlists, and outreach—built on profiles that stay current.",
@@ -119,15 +119,15 @@ export const clientsPageContent: AudiencePageContent = {
     primary: JOIN_BETA_CTA,
     secondary: { label: "Request a demo", href: "/request-demo" },
   },
-  benefitsTitle: "Why teams use Motiion",
+  benefitsTitle: "Why casting teams use Motiion",
   benefits: [
     {
-      title: "Search built for dance casting",
+      title: "Dance search",
       description:
         "Filter by style, experience, location, and talent type instead of scrolling social feeds and email threads.",
     },
     {
-      title: "Profiles you can trust",
+      title: "Trusted profiles",
       description:
         "Review verified headshots, reels, credits, and highlights without chasing outdated links.",
     },
@@ -137,24 +137,24 @@ export const clientsPageContent: AudiencePageContent = {
         "Save, compare, and share candidates with collaborators so review cycles stay focused on creative fit.",
     },
     {
-      title: "Less admin between brief and booking",
+      title: "Less admin",
       description:
         "Centralize discovery, outreach, and context instead of rebuilding spreadsheets for every project.",
     },
     {
-      title: "Works for agencies and in-house teams",
+      title: "Any team",
       description:
         "Whether you manage rosters or run project-based casting, Motiion scales to your workflow.",
     },
     {
-      title: "Clearer communication",
+      title: "Clear communication",
       description:
         "Keep conversations tied to roles, classes, and sessions so nothing gets lost across tools.",
     },
   ],
-  workflowTitle: "How it works for clients",
+  workflowTitle: "How casting works on Motiion",
   workflowSteps: [
-    "Create your hiring account and tell us how your team casts.",
+    "Create your casting account and tell us how your team hires.",
     "Search Motiion talent with practical filters and saved views.",
     "Build shortlists and share them with stakeholders.",
     "Reach out and move from discovery to confirmation with full context.",
@@ -167,9 +167,9 @@ export const clientsPageContent: AudiencePageContent = {
   ],
   faq: [
     {
-      question: "Who counts as a client on Motiion?",
+      question: "Who is the casting experience for?",
       answer:
-        "Casting teams, creative directors, producers, managers, agencies, recruiters, and any team hiring dance talent.",
+        "Casting directors, creative directors, producers, managers, agencies, recruiters, and any team hiring dance talent.",
     },
     {
       question: "Is Motiion a talent agency?",
@@ -191,92 +191,7 @@ export const clientsPageContent: AudiencePageContent = {
     eyebrow: "Join Beta",
     title: "Request beta access",
     description:
-      "Tell us how your team hires and casts. We'll follow up with early access details for client accounts.",
-  },
-};
-
-export const agentsPageContent: AudiencePageContent = {
-  eyebrow: "For agents",
-  headline: "Your roster CMS—not another inbox to babysit.",
-  summary:
-    "Motiion is the content system for your represented talent: one living database for every artist on your roster, with direct communication built in so you are not relaying messages between casting and your clients.",
-  heroCtas: {
-    primary: JOIN_BETA_CTA,
-    secondary: { label: "Request a demo", href: "/request-demo" },
-  },
-  benefitsTitle: "Why agents and managers use Motiion",
-  benefits: [
-    {
-      title: "A CMS built for rosters",
-      description:
-        "Organize headshots, reels, credits, availability, and highlights per artist—the way a modern CMS organizes content, not the way a spreadsheet pretends to.",
-    },
-    {
-      title: "One talent database that stays current",
-      description:
-        "Your roster updates in one place so every submission, shortlist, and invite pulls from materials you trust.",
-    },
-    {
-      title: "Talk to talent where the work lives",
-      description:
-        "Bookings, classes, and casting context stay tied to the right profile—without you forwarding threads across email, text, and social DMs.",
-    },
-    {
-      title: "Less relay, more representation",
-      description:
-        "When communication is direct on Motiion, you spend time on advocacy, strategy, and deals—not retyping messages between parties.",
-    },
-    {
-      title: "Represent more artists on what matters",
-      description:
-        "Scale your roster without scaling chaos. Spend your hours on the conversations and decisions only an agent can own.",
-    },
-    {
-      title: "Built for dance-first representation",
-      description:
-        "Starting with dance, Motiion speaks the language of credits, reels, and casting workflows your roster already runs on.",
-    },
-  ],
-  workflowTitle: "How it works for agents",
-  workflowSteps: [
-    "Create your account and set up your agency or management profile.",
-    "Add artists to your roster with profiles that stay current as their careers move.",
-    "Discover opportunities, submit, and coordinate without juggling disconnected tools.",
-    "Keep direct lines open on Motiion so you represent more talent on the work that matters.",
-  ],
-  trustTitle: "Infrastructure for modern representation",
-  trustPoints: [
-    "Motiion is roster and casting infrastructure—not a CRM for sales pipelines.",
-    "Keeps your team aligned on who is submitted, booked, and in conversation.",
-    "Designed so agents stay in the loop without becoming the bottleneck.",
-  ],
-  faq: [
-    {
-      question: "Is Motiion a CRM?",
-      answer:
-        "No. Motiion is closer to a CMS for your roster—a structured talent database with discovery, booking, and messaging built for representation, not generic customer records.",
-    },
-    {
-      question: "Who is the agents experience for?",
-      answer:
-        "Talent agents, managers, and representation teams who maintain rosters and coordinate bookings across multiple artists.",
-    },
-    {
-      question: "How does messaging work?",
-      answer:
-        "Casting, talent, and your team communicate in context on Motiion—so you are not the default relay between every party on every project.",
-    },
-    {
-      question: "Can we request a team walkthrough?",
-      answer:
-        "Yes. Use Request a Demo and we will show you how Motiion fits your roster workflow.",
-    },
-  ],
-  betaSignup: {
-    eyebrow: "Join Beta",
-    title: "Request beta access",
-    description:
-      "Tell us you represent talent on Motiion. We'll reach out with early access for agents and management teams.",
+      "Tell us how your team hires and casts. We'll follow up with early access details for casting accounts.",
   },
 };
 

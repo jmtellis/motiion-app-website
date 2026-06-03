@@ -1,0 +1,42 @@
+diff --git a/node_modules/cssstudio/dist/cssstudio.js b/node_modules/cssstudio/dist/cssstudio.js
+index 7d48b04..bc14304 100644
+--- a/node_modules/cssstudio/dist/cssstudio.js
++++ b/node_modules/cssstudio/dist/cssstudio.js
+@@ -50227,7 +50227,7 @@ var CSSStudio = (() => {
+       }))
+     );
+     const filter2 = useFilter();
+-    if (TREE_HIDDEN_TAGS.has(node.localName)) return null;
++    const isHiddenTag = TREE_HIDDEN_TAGS.has(node.localName);
+     const isSelected = selectedNodeIds.includes(node.id);
+     const isPrimary = selectedNodeId === node.id;
+     const matches = nodeMatchesFilter(node, filter2);
+@@ -50321,6 +50321,7 @@ var CSSStudio = (() => {
+       },
+       [canDrag, node.id, onDragStart]
+     );
++    if (isHiddenTag) return null;
+     return /* @__PURE__ */ (0, import_jsx_runtime56.jsxs)(import_jsx_runtime56.Fragment, { children: [
+       /* @__PURE__ */ (0, import_jsx_runtime56.jsxs)(
+         "div",
+diff --git a/node_modules/cssstudio/dist/cssstudio.mjs b/node_modules/cssstudio/dist/cssstudio.mjs
+index cf16d48..991c601 100644
+--- a/node_modules/cssstudio/dist/cssstudio.mjs
++++ b/node_modules/cssstudio/dist/cssstudio.mjs
+@@ -28502,7 +28502,7 @@ function TreeNode({ node, depth, onSelect, onToggleSelect, onHover, onContextMen
+     }))
+   );
+   const filter2 = useFilter();
+-  if (TREE_HIDDEN_TAGS.has(node.localName)) return null;
++  const isHiddenTag = TREE_HIDDEN_TAGS.has(node.localName);
+   const isSelected = selectedNodeIds.includes(node.id);
+   const isPrimary = selectedNodeId === node.id;
+   const matches = nodeMatchesFilter(node, filter2);
+@@ -28596,6 +28596,7 @@ function TreeNode({ node, depth, onSelect, onToggleSelect, onHover, onContextMen
+     },
+     [canDrag, node.id, onDragStart]
+   );
++  if (isHiddenTag) return null;
+   return /* @__PURE__ */ jsxs45(Fragment25, { children: [
+     /* @__PURE__ */ jsxs45(
+       "div",

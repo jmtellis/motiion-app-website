@@ -116,7 +116,7 @@ function SizingFieldChip({
           "flex w-full items-center justify-between gap-3 rounded-[var(--radius-field)] border px-4 py-3 text-left text-sm transition",
           filled
             ? "border-[var(--ink)]/20 bg-[var(--tone)] text-[var(--ink)]"
-            : "border-[var(--line)] bg-white text-[var(--ink-soft)] hover:border-[var(--ink-soft)] hover:text-[var(--ink)]",
+            : "border-[var(--line)] bg-[var(--surface-card)] text-[var(--ink-soft)] hover:border-[var(--ink-soft)] hover:text-[var(--ink)]",
         )}
       >
         <span className="truncate">{displayValue}</span>
@@ -207,7 +207,7 @@ export function SizingEditor({
               "rounded-[var(--radius-chip)] border px-4 py-2 text-sm font-medium transition",
               tab === item.id
                 ? "border-[var(--ink)] bg-[var(--ink)] text-white"
-                : "border-[var(--line)] bg-white text-[var(--ink-soft)] hover:text-[var(--ink)]",
+                : "border-[var(--line)] bg-[var(--surface-card)] text-[var(--ink-soft)] hover:text-[var(--ink)]",
             )}
           >
             {item.label}

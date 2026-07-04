@@ -38,7 +38,7 @@ export function InboxList({
           >
             Inbox
           </p>
-          <h1 className={`text-3xl font-semibold tracking-tight ${isDashboard ? "text-white/92" : "text-[var(--ink)]"}`}>
+          <h1 className={`text-2xl font-semibold tracking-[-0.02em] ${isDashboard ? "text-white/92" : "text-[var(--ink)]"}`}>
             Messages
           </h1>
           <p className={`text-base ${isDashboard ? "text-white/58" : "text-[var(--ink-soft)]"}`}>

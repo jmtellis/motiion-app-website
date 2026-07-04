@@ -27,8 +27,8 @@ export function DiscoverView({
   return (
     <div className="space-y-8">
       <header className="space-y-2">
-        <p className="text-xs font-semibold tracking-[0.2em] text-[var(--accent)] uppercase">Discover</p>
-        <h1 className="text-3xl font-semibold tracking-tight text-[var(--ink)]">Find talent & opportunities</h1>
+        <p className="type-eyebrow text-[#8a8a8a]">Discover</p>
+        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)]">Find talent & opportunities</h1>
         <p className="max-w-2xl text-base text-[var(--ink-soft)]">
           Search dancers and choreographers, then open public profiles on Motiion.
         </p>

@@ -167,6 +167,8 @@
   --ink-soft: rgb(255 255 255 / 0.55);
   --line: rgb(255 255 255 / 0.12);
   --tone: rgb(255 255 255 / 0.06);
+  --surface-card: #151515;
+  --surface-muted: #1e1e1e;
 }
 
 @media (min-width: 768px) {

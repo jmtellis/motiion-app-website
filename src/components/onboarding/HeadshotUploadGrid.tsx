@@ -164,7 +164,7 @@ export function HeadshotUploadGrid({
             type="button"
             onClick={openPicker}
             disabled={isPending}
-            className="flex aspect-[3/4] flex-col items-center justify-center gap-2 rounded-[var(--radius-card)] border border-dashed border-[var(--line)] bg-white text-sm text-[var(--ink-soft)] transition hover:border-[var(--ink-soft)] hover:bg-[var(--tone)] disabled:opacity-50"
+            className="flex aspect-[3/4] flex-col items-center justify-center gap-2 rounded-[var(--radius-card)] border border-dashed border-[var(--line)] bg-[var(--surface-card)] text-sm text-[var(--ink-soft)] transition hover:border-[var(--ink-soft)] hover:bg-[var(--tone)] disabled:opacity-50"
           >
             {isPending ? (
               <Loader2 className="size-6 animate-spin" aria-hidden />

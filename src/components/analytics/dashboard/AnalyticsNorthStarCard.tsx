@@ -48,7 +48,7 @@ export function AnalyticsNorthStarCard({ northStar }: Props) {
             { label: "Messages", value: breakdown.messages },
             { label: "Tracked events", value: breakdown.analyticsEvents },
           ].map((item) => (
-            <div key={item.label} className="rounded-[var(--radius-chip)] border border-[var(--line)] bg-white/70 px-3 py-2">
+            <div key={item.label} className="rounded-[var(--radius-chip)] border border-[var(--line)] bg-[#151515] px-3 py-2">
               <dt className="text-xs text-[var(--ink-soft)]">{item.label}</dt>
               <dd className="text-lg font-semibold text-[var(--ink)]">
                 {formatKpiValue(item.value, "number")}

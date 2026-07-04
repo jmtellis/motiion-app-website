@@ -15,7 +15,7 @@ export async function AppShell({
   const inboxUnread = conversations.reduce((sum, row) => sum + Number(row.unread_count ?? 0), 0);
 
   return (
-    <div className="min-h-screen bg-[var(--ds-background)] text-[var(--ds-on-background)] motion-safe:transition-colors">
+    <div className="theme-dark min-h-screen bg-[var(--ds-background)] text-[var(--ds-on-background)] motion-safe:transition-colors">
       <AppAnalytics />
       <AppHeader profile={profile} homeHref="/home" />
       <AppTabNav inboxUnread={inboxUnread} />

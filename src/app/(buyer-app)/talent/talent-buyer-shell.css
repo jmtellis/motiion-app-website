@@ -1,7 +1,7 @@
 main:has(.talent-buyer-shell) {
   overflow: hidden;
   overscroll-behavior: none;
-  background: #050505;
+  background: #0a0a0a;
 }
 
 main:has(.buyer-talent-profile-route) {
@@ -18,7 +18,7 @@ main:has(.buyer-talent-profile-route) {
   margin: -1.25rem;
   width: calc(100% + 2.5rem);
   min-height: calc(100% + 2.5rem);
-  background: #050505;
+  background: #0a0a0a;
   overflow: hidden;
 }
 

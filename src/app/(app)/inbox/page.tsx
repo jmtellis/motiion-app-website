@@ -10,7 +10,7 @@ export default async function InboxPage() {
     <div className="space-y-6">
       <header className="space-y-2">
         <p className="text-xs font-semibold tracking-[0.2em] text-[var(--accent)] uppercase">Inbox</p>
-        <h1 className="text-3xl font-semibold tracking-tight text-[var(--ink)]">Messages</h1>
+        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)]">Messages</h1>
         <p className="text-base text-[var(--ink-soft)]">
           Conversations from jobs, classes, sessions, and direct messages.
         </p>

@@ -53,7 +53,7 @@ function AgencySelector({
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="flex w-full items-center gap-3 rounded-[var(--radius-field)] border border-[var(--line)] bg-white px-4 py-3 text-left"
+        className="flex w-full items-center gap-3 rounded-[var(--radius-field)] border border-[var(--line)] bg-[var(--surface-card)] px-4 py-3 text-left"
       >
         <Building2 className="size-4 shrink-0 text-[var(--ink-soft)]" aria-hidden />
         <span className={`min-w-0 flex-1 truncate text-sm ${value ? "text-[var(--ink)]" : "text-[var(--ink-soft)]"}`}>

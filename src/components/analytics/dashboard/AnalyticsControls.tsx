@@ -28,7 +28,7 @@ export function AnalyticsRangeControls({
             className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
               active
                 ? "bg-[var(--ink)] text-white"
-                : "border border-[var(--line)] bg-white text-[var(--ink-soft)] hover:text-[var(--ink)]"
+                : "border border-[var(--line)] bg-[var(--surface-card)] text-[var(--ink-soft)] hover:text-[var(--ink)]"
             }`}
           >
             {range}
@@ -59,7 +59,7 @@ export function AnalyticsSearchForm({
           name="query"
           defaultValue={query ?? ""}
           placeholder="Name, email, username, or user ID"
-          className="rounded-xl border border-[var(--line)] bg-white px-4 py-2.5 text-[var(--ink)]"
+          className="rounded-xl border border-[var(--line)] bg-[var(--surface-card)] px-4 py-2.5 text-[var(--ink)]"
         />
       </label>
       <button type="submit" className="btn-primary text-sm">

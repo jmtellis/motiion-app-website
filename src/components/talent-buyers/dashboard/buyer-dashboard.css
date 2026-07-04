@@ -1,12 +1,12 @@
 .buyer-dashboard {
-  --bd-bg: #050505;
-  --bd-border: rgb(255 255 255 / 0.06);
-  --bd-border-strong: rgb(255 255 255 / 0.1);
-  --bd-text: rgb(255 255 255 / 0.92);
-  --bd-text-soft: rgb(255 255 255 / 0.58);
-  --bd-text-muted: rgb(255 255 255 / 0.42);
-  --bd-surface-hover: rgb(255 255 255 / 0.04);
-  --bd-surface-active: rgb(255 255 255 / 0.07);
+  --bd-bg: #0a0a0a;
+  --bd-border: #262626;
+  --bd-border-strong: #3a3a3a;
+  --bd-text: #fafafa;
+  --bd-text-soft: #a3a3a3;
+  --bd-text-muted: #8a8a8a;
+  --bd-surface-hover: #151515;
+  --bd-surface-active: #1e1e1e;
   color: var(--bd-text);
 }
 

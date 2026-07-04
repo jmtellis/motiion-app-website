@@ -209,7 +209,7 @@ function TextArea({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
-      className="min-h-28 w-full rounded-[var(--radius-field)] border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[var(--ink-soft)] focus:border-white/20"
+      className="min-h-28 w-full rounded-[var(--radius-field)] border border-[var(--line)] bg-[var(--surface-card)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[var(--ink-soft)] focus:border-white/20"
     />
   );
 }
@@ -232,13 +232,13 @@ function SelectField({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-[var(--radius-field)] border border-[var(--line)] bg-white px-4 text-sm text-[var(--ink)] outline-none transition focus:border-white/20"
+        className="h-11 w-full rounded-[var(--radius-field)] border border-[var(--line)] bg-[var(--surface-card)] px-4 text-sm text-[var(--ink)] outline-none transition focus:border-white/20"
       >
-        <option value="" className="bg-white">
+        <option value="" className="bg-[var(--surface-card)]">
           {placeholder}
         </option>
         {options.map((option) => (
-          <option key={option.value} value={option.value} className="bg-white">
+          <option key={option.value} value={option.value} className="bg-[var(--surface-card)]">
             {option.label}
           </option>
         ))}
@@ -274,7 +274,7 @@ function TogglePills({
             className={`rounded-[var(--radius-chip)] border px-4 py-2 text-sm transition ${
               isSelected
                 ? "border-[var(--accent)] bg-[var(--accent)]/12 text-[var(--ink)]"
-                : "border-[var(--line)] bg-white text-[var(--ink-soft)] hover:bg-[var(--tone)]"
+                : "border-[var(--line)] bg-[var(--surface-card)] text-[var(--ink-soft)] hover:bg-[var(--tone)]"
             }`}
           >
             {option}
@@ -531,7 +531,7 @@ export function OnboardingFlow({
                 className={`rounded-[24px] border p-5 text-left transition ${
                   draft.role === role
                     ? "border-[var(--accent)] bg-[var(--accent)]/12"
-                    : "border-[var(--line)] bg-white hover:bg-[var(--tone)]"
+                    : "border-[var(--line)] bg-[var(--surface-card)] hover:bg-[var(--tone)]"
                 }`}
               >
                 <span className="block text-lg font-semibold text-[var(--ink)]">{title}</span>

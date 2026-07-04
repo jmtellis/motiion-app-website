@@ -25,14 +25,14 @@ function HeaderLogo({ homeHref }: { homeHref: string }) {
   if (homeHref.startsWith("#")) {
     return (
       <a href={homeHref} className={className} aria-label="Motiion home">
-        <MotiionBrandMark />
+        <MotiionBrandMark inverted />
       </a>
     );
   }
 
   return (
     <Link href={homeHref} className={className} aria-label="Motiion home">
-      <MotiionBrandMark />
+      <MotiionBrandMark inverted />
     </Link>
   );
 }
@@ -56,7 +56,7 @@ export function AppHeader({
 
   if (centeredLogo) {
     return (
-      <header className="sticky top-0 z-50 border-b border-[var(--line)]/80 bg-[var(--paper)]/95">
+      <header className="sticky top-0 z-50 border-b border-[#262626] bg-[#0a0a0a]/95 backdrop-blur-md">
         <div className="relative mx-auto flex min-h-[4.25rem] w-full max-w-6xl items-center px-6 py-3 lg:px-10">
           <div className="flex-1" aria-hidden />
           <div className="absolute top-1/2 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
@@ -71,8 +71,8 @@ export function AppHeader({
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--line)]/80 bg-[var(--paper)]/95">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4 lg:px-10">
+    <header className="sticky top-0 z-50 border-b border-[#262626] bg-[#0a0a0a]/95 backdrop-blur-md">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-3 lg:px-10">
         <HeaderLogo homeHref={homeHref} />
 
         {navLinks?.length ? (
@@ -82,7 +82,7 @@ export function AppHeader({
                 <a
                   key={link.href}
                   href={link.href}
-                  className="text-sm font-medium text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                  className="text-sm font-medium text-[#8a8a8a] transition-colors hover:text-[#eaeaea] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                 >
                   {link.label}
                 </a>
@@ -90,7 +90,7 @@ export function AppHeader({
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-sm font-medium text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                  className="text-sm font-medium text-[#8a8a8a] transition-colors hover:text-[#eaeaea] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                 >
                   {link.label}
                 </Link>
@@ -106,7 +106,7 @@ export function AppHeader({
               <AccountPill user={accountUser} />
             </>
           ) : (
-            <Link href="/#signup" className="btn-primary text-sm">
+            <Link href="/#signup" className="btn-primary btn-on-dark text-sm">
               Join Beta
             </Link>
           )}

@@ -63,7 +63,7 @@ export function AuthTextArea({
 }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
-      className={`min-h-28 w-full rounded-[var(--radius-field)] border border-[var(--line)] bg-white px-3 py-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[#8b8a86] focus:border-[color-mix(in_oklab,var(--accent),white_35%)] focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--accent),white_84%)] ${className}`}
+      className={`min-h-28 w-full rounded-[var(--radius-field)] border border-[var(--line)] bg-[var(--surface-card)] px-3 py-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[#5a5a5a] focus:border-[rgb(45_212_191_/_0.55)] focus:shadow-[0_0_0_3px_rgb(45_212_191_/_0.15)] ${className}`}
       {...props}
     />
   );
@@ -93,7 +93,7 @@ export function AuthButton({
 
 export function AuthError({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-[var(--radius-field)] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+    <div className="rounded-[var(--radius-field)] border border-[rgb(240_68_56_/_0.4)] bg-[rgb(240_68_56_/_0.1)] px-4 py-3 text-sm text-[#f97066]">
       {children}
     </div>
   );
@@ -105,12 +105,12 @@ export function AuthMuted({ children, className = "" }: { children: ReactNode; c
 
 export function authChoiceCard(selected: boolean) {
   return selected
-    ? "rounded-[var(--radius-card)] border border-[var(--accent-dark)] bg-[color-mix(in_oklab,var(--accent),white_88%)] p-4 text-left transition"
-    : "rounded-[var(--radius-card)] border border-[var(--line)] bg-white p-4 text-left transition hover:border-[#d6d4ce] hover:bg-[#fefefe]";
+    ? "rounded-[var(--radius-card)] border border-[rgb(45_212_191_/_0.45)] bg-[#0c2a26] p-4 text-left transition"
+    : "rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--surface-card)] p-4 text-left transition hover:border-[#3a3a3a] hover:bg-[#1e1e1e]";
 }
 
 export function authPill(selected: boolean) {
   return selected
-    ? "rounded-[var(--radius-chip)] border border-[var(--accent-dark)] bg-[color-mix(in_oklab,var(--accent),white_84%)] px-4 py-2 text-sm font-medium text-[var(--ink)]"
-    : "rounded-[var(--radius-chip)] border border-[var(--line)] bg-white px-4 py-2 text-sm text-[var(--ink-soft)] transition hover:border-[#d6d4ce]";
+    ? "rounded-full border border-[rgb(45_212_191_/_0.45)] bg-[#0c2a26] px-4 py-2 text-sm font-medium text-[#2dd4bf]"
+    : "rounded-full border border-[var(--line)] bg-[var(--surface-card)] px-4 py-2 text-sm text-[var(--ink-soft)] transition hover:border-[#3a3a3a]";
 }

@@ -100,33 +100,33 @@ export function NotificationBell({ userId }: { userId: string }) {
         onClick={toggleOpen}
         aria-label={unreadCount ? `Notifications (${unreadCount} unread)` : "Notifications"}
         aria-expanded={open}
-        className="relative inline-flex size-9 items-center justify-center rounded-full text-[var(--ink-soft)] transition-colors hover:bg-[var(--tone)] hover:text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+        className="relative inline-flex size-9 items-center justify-center rounded-full text-[#8a8a8a] transition-colors hover:bg-[#1e1e1e] hover:text-[#eaeaea] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
       >
         <Bell className="size-[18px]" aria-hidden />
         {unreadCount > 0 ? (
-          <span className="absolute -top-0.5 -right-0.5 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-[var(--accent)] px-1 py-0.5 text-[10px] font-bold text-[#0a0a0a]">
+          <span className="absolute -top-0.5 -right-0.5 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-[var(--accent)] px-1 py-0.5 text-[10px] font-bold text-[#04231e]">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         ) : null}
       </button>
 
       {open ? (
-        <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-xl">
-          <div className="border-b border-[var(--line)] px-4 py-3">
-            <p className="text-sm font-semibold text-[var(--ink)]">Notifications</p>
+        <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-[14px] border border-[#262626] bg-[#151515]">
+          <div className="border-b border-[#262626] px-4 py-3">
+            <p className="text-sm font-semibold text-[#fafafa]">Notifications</p>
           </div>
           {notifications.length ? (
             <ul className="max-h-96 overflow-y-auto">
               {notifications.map((row) => (
-                <li key={row.id} className="border-b border-[var(--line)]/60 px-4 py-3 last:border-b-0">
-                  <p className="text-sm font-medium text-[var(--ink)]">{row.title ?? row.type.replace(/_/g, " ")}</p>
-                  {row.body ? <p className="mt-0.5 line-clamp-2 text-xs text-[var(--ink-soft)]">{row.body}</p> : null}
-                  <p className="mt-1 text-[11px] text-[var(--ink-soft)]">{formatWhen(row.created_at)}</p>
+                <li key={row.id} className="border-b border-[#262626]/60 px-4 py-3 last:border-b-0">
+                  <p className="text-sm font-medium text-[#eaeaea]">{row.title ?? row.type.replace(/_/g, " ")}</p>
+                  {row.body ? <p className="mt-0.5 line-clamp-2 text-xs text-[#8a8a8a]">{row.body}</p> : null}
+                  <p className="mt-1 font-mono text-[11px] text-[#5a5a5a]">{formatWhen(row.created_at)}</p>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="px-4 py-6 text-center text-sm text-[var(--ink-soft)]">You&apos;re all caught up.</p>
+            <p className="px-4 py-6 text-center text-sm text-[#8a8a8a]">You&apos;re all caught up.</p>
           )}
         </div>
       ) : null}

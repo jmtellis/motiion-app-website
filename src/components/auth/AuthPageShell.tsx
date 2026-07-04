@@ -32,7 +32,7 @@ export async function AuthPageShell({
   return (
     <div
       id="top"
-      className={`flex flex-col bg-[var(--paper)] ${shouldHideFooter ? "h-svh" : "min-h-svh"}`}
+      className={`theme-dark flex flex-col bg-[#0a0a0a] ${shouldHideFooter ? "h-svh" : "min-h-svh"}`}
     >
       <AppHeader
         profile={profile}
@@ -54,7 +54,7 @@ export async function AuthPageShell({
       >
         {title ? (
           <div className="mb-8 max-w-2xl">
-            <h1 className="text-3xl font-semibold tracking-tight text-[var(--ink)] md:text-4xl">{title}</h1>
+            <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)] md:text-3xl">{title}</h1>
             {subtitle ? (
               <p className="mt-3 text-base leading-relaxed text-[var(--ink-soft)]">{subtitle}</p>
             ) : null}

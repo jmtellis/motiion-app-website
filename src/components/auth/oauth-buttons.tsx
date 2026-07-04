@@ -106,7 +106,7 @@ export function AuthDivider({ label = "or" }: { label?: string }) {
         <div className="w-full border-t border-[var(--line)]" />
       </div>
       <div className="relative flex justify-center">
-        <span className="bg-white px-3 text-xs font-medium uppercase tracking-[0.14em] text-[var(--ink-soft)]">
+        <span className="bg-[var(--surface-card)] px-3 text-xs font-medium uppercase tracking-[0.14em] text-[var(--ink-soft)]">
           {label}
         </span>
       </div>

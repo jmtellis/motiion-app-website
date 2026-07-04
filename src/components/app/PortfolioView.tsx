@@ -35,8 +35,8 @@ export function PortfolioView({ profile }: { profile: PublicTalentProfile }) {
         <div className="flex gap-4">
           <Headshot url={headshot} name={displayName} />
           <div>
-            <p className="text-xs font-semibold tracking-[0.2em] text-[var(--accent)] uppercase">Portfolio</p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-[var(--ink)]">{displayName}</h1>
+            <p className="type-eyebrow text-[#8a8a8a]">Portfolio</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)]">{displayName}</h1>
             {profile.username ? (
               <p className="mt-1 text-sm text-[var(--ink-soft)]">@{profile.username}</p>
             ) : null}
@@ -64,7 +64,7 @@ export function PortfolioView({ profile }: { profile: PublicTalentProfile }) {
             className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
               tab === item.id
                 ? "bg-[var(--ink)] text-white"
-                : "border border-[var(--line)] bg-white text-[var(--ink-soft)] hover:text-[var(--ink)]"
+                : "border border-[var(--line)] bg-[var(--surface-card)] text-[var(--ink-soft)] hover:text-[var(--ink)]"
             }`}
           >
             {item.label}
@@ -74,14 +74,14 @@ export function PortfolioView({ profile }: { profile: PublicTalentProfile }) {
 
       {highlights.length > 0 ? (
         <section>
-          <h2 className="mb-3 text-xs font-semibold tracking-[0.2em] text-[var(--accent)] uppercase">
+          <h2 className="mb-3 type-eyebrow text-[#8a8a8a]">
             Highlights
           </h2>
           <div className="flex gap-3 overflow-x-auto pb-2">
             {highlights.map((item) => (
               <article
                 key={item.id}
-                className="min-w-[12rem] shrink-0 rounded-2xl border border-[var(--line)] bg-white p-4 shadow-[0_8px_24px_rgba(17,17,17,0.04)]"
+                className="min-w-[12rem] shrink-0 rounded-2xl border border-[var(--line)] bg-[var(--surface-card)] p-4 shadow-[0_8px_24px_rgba(17,17,17,0.04)]"
               >
                 <p className="font-semibold text-[var(--ink)]">{item.title}</p>
                 {item.subtitle ? <p className="mt-1 text-sm text-[var(--ink-soft)]">{item.subtitle}</p> : null}
@@ -128,7 +128,7 @@ function AboutPanel({
   styleTags: string[];
 }) {
   return (
-    <section className="grid gap-6 rounded-2xl border border-[var(--line)] bg-white p-6 md:grid-cols-2">
+    <section className="grid gap-6 rounded-2xl border border-[var(--line)] bg-[var(--surface-card)] p-6 md:grid-cols-2">
       <div>
         <h2 className="text-lg font-semibold text-[var(--ink)]">About</h2>
         <dl className="mt-4 space-y-3 text-sm">
@@ -210,7 +210,7 @@ function ResumePanel({
           Open resume PDF
         </a>
       ) : null}
-      <div className="rounded-2xl border border-[var(--line)] bg-white p-6">
+      <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-card)] p-6">
         <h2 className="text-lg font-semibold text-[var(--ink)]">Experience</h2>
         {experiences.length ? (
           <ul className="mt-4 space-y-4">
@@ -226,7 +226,7 @@ function ResumePanel({
           <p className="mt-3 text-sm text-[var(--ink-soft)]">No credits added yet.</p>
         )}
       </div>
-      <div className="rounded-2xl border border-[var(--line)] bg-white p-6">
+      <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-card)] p-6">
         <h2 className="text-lg font-semibold text-[var(--ink)]">Training</h2>
         {training?.length ? (
           <ul className="mt-4 space-y-3">
@@ -260,7 +260,7 @@ function VisualsPanel({ visuals }: { visuals: ProfileVisual[] }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {visuals.map((visual) => (
-        <article key={visual.id} className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
+        <article key={visual.id} className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface-card)]">
           {visual.url ? (
             <div className="relative aspect-[4/5] bg-[var(--tone)]">
               <Image

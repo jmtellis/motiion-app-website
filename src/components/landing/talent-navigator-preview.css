@@ -21,7 +21,7 @@
   overflow: hidden;
   border-radius: 14px;
   border: 1px solid rgb(255 255 255 / 0.1);
-  background: #050505;
+  background: #0a0a0a;
   box-shadow:
     0 0 0 1px rgb(255 255 255 / 0.03) inset,
     0 14px 32px rgb(0 0 0 / 0.38);
@@ -96,7 +96,7 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  background: #050505;
+  background: #0a0a0a;
 }
 
 .talent-navigator-preview__stage .talent-navigator__grid-shell {
@@ -250,7 +250,7 @@
 
 .talent-navigator-preview .talent-navigator__grid-vignette {
   background:
-    radial-gradient(ellipse 88% 82% at 50% 50%, transparent 28%, rgb(5 5 5 / 0.18) 82%, rgb(5 5 5 / 0.42) 100%);
+    radial-gradient(ellipse 88% 82% at 50% 50%, transparent 28%, rgb(10 10 10 / 0.18) 82%, rgb(10 10 10 / 0.42) 100%);
 }
 
 .talent-navigator-preview .talent-navigator__grid-edge-fade--left,

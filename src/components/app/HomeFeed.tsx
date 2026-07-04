@@ -21,8 +21,8 @@ export function HomeFeed({
   return (
     <div className="space-y-8">
       <header className="space-y-2">
-        <p className="text-xs font-semibold tracking-[0.2em] text-[var(--accent)] uppercase">Home</p>
-        <h1 className="text-3xl font-semibold tracking-tight text-[var(--ink)] md:text-4xl">{greeting}</h1>
+        <p className="type-eyebrow text-[#8a8a8a]">Home</p>
+        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)]">{greeting}</h1>
         <p className="max-w-2xl text-base leading-relaxed text-[var(--ink-soft)]">
           Your invites, upcoming schedule, and quick paths into Discover and Portfolio.
         </p>
@@ -38,7 +38,7 @@ export function HomeFeed({
           <ul className="grid gap-3 sm:grid-cols-2">
             {feed.matchedOpportunities.map((item) => (
               <li key={`${item.kind}-${item.id}`} className="ui-card-interactive p-4">
-                <p className="text-xs font-semibold tracking-[0.14em] text-[var(--ds-accent)] uppercase">
+                <p className="type-eyebrow text-[#8a8a8a]">
                   {item.kind} · match {item.score}
                 </p>
                 <h2 className="mt-1 text-base font-semibold text-[var(--ink)]">{item.title}</h2>
@@ -73,7 +73,7 @@ export function HomeFeed({
               >
                 <RequestCover url={item.cover_url} title={item.title} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold tracking-[0.14em] text-[var(--accent)] uppercase">
+                  <p className="type-eyebrow text-[#8a8a8a]">
                     {requestKindLabel(item.request_kind)}
                   </p>
                   <h2 className="mt-1 text-lg font-semibold text-[var(--ink)]">{item.title}</h2>
@@ -114,7 +114,7 @@ export function HomeFeed({
                   </div>
                 ) : null}
                 <div className="p-4">
-                  <p className="text-xs font-semibold tracking-[0.14em] text-[var(--accent)] uppercase">
+                  <p className="type-eyebrow text-[#8a8a8a]">
                     {item.role === "hosting" ? "Hosting" : "Attending"}
                     {item.type ? ` · ${item.type}` : ""}
                   </p>

@@ -6,8 +6,8 @@ import "@/app/public-review.css";
 
 export function PublicReviewShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-svh bg-black text-white">
-      <BrowserThemeColor color="#000000" />
+    <div className="min-h-svh bg-[#0a0a0a] text-[#fafafa]">
+      <BrowserThemeColor color="#0a0a0a" />
       <CastingPublicHeader />
       <main className="public-review-main">{children}</main>
       <Footer />

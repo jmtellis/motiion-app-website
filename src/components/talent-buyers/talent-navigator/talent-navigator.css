@@ -7,7 +7,7 @@
 }
 
 .talent-navigator {
-  --tn-bg: #050505;
+  --tn-bg: #0a0a0a;
   --tn-bg-elevated: #0c0c0c;
   --tn-bg-panel: #0a0a0a;
   --tn-border: rgb(255 255 255 / 0.06);
@@ -87,7 +87,7 @@
   align-items: center;
   gap: 1rem;
   padding: 0.625rem 1rem;
-  background: rgb(5 5 5 / 0.96);
+  background: rgb(10 10 10 / 0.96);
   pointer-events: auto;
 }
 
@@ -199,7 +199,7 @@
   gap: 1rem;
   padding: 0.625rem 1rem;
   border-bottom: 1px solid var(--tn-border);
-  background: rgb(5 5 5 / 0.96);
+  background: rgb(10 10 10 / 0.96);
 }
 
 .talent-navigator__topbar-brand {
@@ -229,7 +229,7 @@
   overflow: hidden;
   border: 1px solid var(--tn-border-strong);
   border-radius: 12px;
-  background: rgb(5 5 5 / 0.88);
+  background: rgb(10 10 10 / 0.88);
   box-shadow: var(--shadow-raised);
 }
 
@@ -290,7 +290,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.875rem 1rem 0.5rem;
-  background: linear-gradient(180deg, rgb(5 5 5 / 0.88) 0%, rgb(5 5 5 / 0.55) 70%, transparent 100%);
+  background: linear-gradient(180deg, rgb(10 10 10 / 0.88) 0%, rgb(10 10 10 / 0.55) 70%, transparent 100%);
 }
 
 @media (width >= 1024px) {
@@ -460,7 +460,7 @@
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 70% 65% at 50% 50%, transparent 8%, rgb(5 5 5 / 0.35) 72%, rgb(5 5 5 / 0.65) 100%);
+    radial-gradient(ellipse 70% 65% at 50% 50%, transparent 8%, rgb(10 10 10 / 0.35) 72%, rgb(10 10 10 / 0.65) 100%);
   z-index: 25;
 }
 
@@ -473,25 +473,25 @@
 .talent-navigator__grid-edge-fade--left {
   inset: 0 auto 0 0;
   width: 10%;
-  background: linear-gradient(90deg, rgb(5 5 5 / 0.95) 0%, transparent 100%);
+  background: linear-gradient(90deg, rgb(10 10 10 / 0.95) 0%, transparent 100%);
 }
 
 .talent-navigator__grid-edge-fade--right {
   inset: 0 0 0 auto;
   width: 10%;
-  background: linear-gradient(270deg, rgb(5 5 5 / 0.95) 0%, transparent 100%);
+  background: linear-gradient(270deg, rgb(10 10 10 / 0.95) 0%, transparent 100%);
 }
 
 .talent-navigator__grid-edge-fade--top {
   inset: 0 0 auto;
   height: 22%;
-  background: linear-gradient(180deg, rgb(5 5 5 / 0.85) 0%, transparent 100%);
+  background: linear-gradient(180deg, rgb(10 10 10 / 0.85) 0%, transparent 100%);
 }
 
 .talent-navigator__grid-edge-fade--bottom {
   inset: auto 0 0;
   height: 18%;
-  background: linear-gradient(0deg, rgb(5 5 5 / 0.9) 0%, transparent 100%);
+  background: linear-gradient(0deg, rgb(10 10 10 / 0.9) 0%, transparent 100%);
 }
 
 .talent-navigator__grid-ambient {
@@ -1055,7 +1055,7 @@ button.talent-navigator__chip {
   inset: 0;
   background:
     radial-gradient(ellipse 80% 60% at 50% 45%, color-mix(in oklab, var(--accent) 4%, transparent) 0%, transparent 55%),
-    linear-gradient(180deg, #050505 0%, #030303 100%);
+    linear-gradient(180deg, #0a0a0a 0%, #030303 100%);
 }
 
 .talent-navigator-grid-bg__lines {

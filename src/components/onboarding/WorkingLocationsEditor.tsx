@@ -95,7 +95,7 @@ function LocationSelector({
         <p className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)]">{label}</p>
       ) : null}
       <div className="relative">
-        <div className="flex items-center gap-3 rounded-[var(--radius-field)] border border-[var(--line)] bg-white px-4 py-3">
+        <div className="flex items-center gap-3 rounded-[var(--radius-field)] border border-[var(--line)] bg-[var(--surface-card)] px-4 py-3">
           <MapPin className="size-4 shrink-0 text-[var(--ink-soft)]" aria-hidden />
           <input
             value={query}

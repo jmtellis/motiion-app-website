@@ -24,11 +24,11 @@ export function AnalyticsBarChart({
     <div className="h-72 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={chartData} layout="vertical" margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.08)" />
-          <XAxis type="number" tick={{ fontSize: 12 }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+          <XAxis type="number" tick={{ fontSize: 12, fill: "#8a8a8a" }} />
           <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
           <Tooltip />
-          <Bar dataKey="value" fill="#111111" radius={[0, 4, 4, 0]} />
+          <Bar dataKey="value" fill="#2dd4bf" radius={[0, 4, 4, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

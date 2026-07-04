@@ -1,5 +1,6 @@
 import { cache } from "react";
 
+import { fetchMatchedOpportunities } from "@/lib/app/opportunities";
 import { supabaseRpc } from "@/lib/supabase/rpc";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { HomeFeedData, HomePendingRequest, UpcomingActivity } from "@/types/app";
@@ -94,14 +95,16 @@ async function fetchUpcomingActivities(userId: string): Promise<UpcomingActivity
 }
 
 export const fetchHomeFeed = cache(async (userId: string): Promise<HomeFeedData> => {
-  const [{ data: pendingRequests, error }, upcomingActivities] = await Promise.all([
+  const [{ data: pendingRequests, error }, upcomingActivities, matchedOpportunities] = await Promise.all([
     supabaseRpc<HomePendingRequest[]>("list_pending_requests", { p_limit: 12 }),
     fetchUpcomingActivities(userId),
+    fetchMatchedOpportunities(userId),
   ]);
 
   return {
     pendingRequests: error ? [] : (pendingRequests ?? []),
     upcomingActivities,
+    matchedOpportunities,
   };
 });
 

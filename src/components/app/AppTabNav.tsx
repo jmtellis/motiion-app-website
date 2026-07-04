@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { trackClientEvent } from "@/lib/analytics/track-client";
+
 const tabs = [
   { href: "/home", label: "Home" },
   { href: "/discover", label: "Discover" },
@@ -27,6 +29,9 @@ export function AppTabNav({ inboxUnread = 0 }: { inboxUnread?: number }) {
             <Link
               key={tab.href}
               href={tab.href}
+              onClick={() => {
+                trackClientEvent("app_tab_viewed", { tab: tab.label.toLowerCase() }, tab.href);
+              }}
               className={`relative shrink-0 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
                 active
                   ? "border-[var(--accent-dark)] text-[var(--ink)]"

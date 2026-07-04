@@ -10,12 +10,18 @@ import { useBetaSignupModal } from "@/components/landing/BetaSignupModalProvider
 import { JOIN_BETA_CTA } from "@/lib/marketing/marketing-pages";
 
 const homeTabs = [
-  { label: "Dancers", href: "/for-talent" },
-  { label: "Choreographers & Casting", href: "/for-casting" },
+  { label: "Talent", href: "/for-talent" },
+  { label: "Industry Professionals", href: "/for-casting" },
 ] as const;
 
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
+}
+
+const HERO_REVEAL_SCROLL_RATIO = 1 / 3;
+
+function getHeroRevealThreshold() {
+  return window.innerHeight * HERO_REVEAL_SCROLL_RATIO;
 }
 
 function sideRevealClass(visible: boolean, side: "left" | "right") {
@@ -39,16 +45,18 @@ export function HomeMarketingHeaderClient({
   const { openBetaSignup } = useBetaSignupModal();
 
   useEffect(() => {
-    const sentinel = document.getElementById("home-hero-end");
-    if (!sentinel) return;
+    function updatePastHero() {
+      setPastHero(window.scrollY >= getHeroRevealThreshold());
+    }
 
-    const observer = new IntersectionObserver(
-      ([entry]) => setPastHero(!entry.isIntersecting),
-      { threshold: 0 },
-    );
+    updatePastHero();
+    window.addEventListener("scroll", updatePastHero, { passive: true });
+    window.addEventListener("resize", updatePastHero);
 
-    observer.observe(sentinel);
-    return () => observer.disconnect();
+    return () => {
+      window.removeEventListener("scroll", updatePastHero);
+      window.removeEventListener("resize", updatePastHero);
+    };
   }, []);
 
   const showSideContent = pastHero || !!reduceMotion;
@@ -87,9 +95,9 @@ export function HomeMarketingHeaderClient({
         "sticky top-0 z-50 border-b max-md:border-b-0 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-500 ease-out motion-reduce:transition-none",
         pastHero
           ? darkTheme
-            ? "border-transparent bg-transparent shadow-none backdrop-blur-none md:border-white/10 md:bg-black/92 md:shadow-[0_8px_30px_rgba(0,0,0,0.35)] md:backdrop-blur-xl"
-            : "border-transparent bg-transparent shadow-none backdrop-blur-none md:border-[var(--line)]/80 md:bg-[var(--paper)]/95 md:shadow-[0_8px_30px_rgba(17,17,17,0.06)] md:backdrop-blur-xl"
-          : "border-transparent bg-transparent shadow-none backdrop-blur-none",
+            ? "border-transparent bg-transparent shadow-none md:border-white/10 md:bg-[var(--stage-black)]/95"
+            : "border-transparent bg-transparent shadow-none md:border-[var(--line)]/80 md:bg-[var(--paper)]/95"
+          : "border-transparent bg-transparent shadow-none",
       )}
     >
       <div className="mx-auto flex w-full max-w-6xl flex-col md:hidden">

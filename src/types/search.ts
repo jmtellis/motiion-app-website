@@ -19,14 +19,31 @@ export type SearchProfileRecord = {
   profile_highlights?: ProfileHighlight[] | null;
   bio?: string | null;
   representation?: string | null;
+  gender?: string | null;
+  ethnicity?: string | null;
+  height?: string | null;
+  union_status?: string | null;
+  eye_color?: string | null;
+  hair_color?: string | null;
+  date_of_birth?: string | null;
+  agency_logo_url?: string | null;
+  is_verified?: boolean;
 };
 
 export type SearchFilters = {
   keyword?: string;
   location?: string;
-  subtype?: TalentSubtype | "";
+  subtype?: TalentSubtype | "" | string;
   style?: string;
+  gender?: string;
+  ethnicity?: string;
+  height?: string;
+  representation?: string;
+  agency?: string;
+  unionStatus?: string;
   page?: number;
+  /** When true, fetch a larger result set for the talent navigator grid. */
+  navigator?: boolean;
 };
 
 export type SearchResult = {

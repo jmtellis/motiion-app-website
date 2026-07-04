@@ -88,11 +88,13 @@ function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) 
   );
 }
 
-export function Footer() {
+export function Footer({ className }: { className?: string }) {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative overflow-hidden border-t border-white/10 text-white">
+    <footer
+      className={`relative overflow-hidden border-t border-white/10 text-white${className ? ` ${className}` : ""}`}
+    >
       <div
         className="pointer-events-none absolute inset-0 bg-[#0a1214] bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: "url(/footer-background.png)" }}

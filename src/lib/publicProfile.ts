@@ -1,3 +1,10 @@
+import { resolveBrandfetchLogoURL } from "@/lib/profile/brandfetch-logo";
+import { buildProfileCredits } from "@/lib/profile/profile-credits";
+import {
+  normalizeProfileExperiences,
+  normalizeProfileHighlights,
+} from "@/lib/profile/profile-normalize";
+import { resolveHighlightImageUrl } from "@/lib/profile/resume-experience";
 import { PROFILE_SLUG_UUID_RE, normalizeUsernameSlug } from "@/lib/profileOg";
 import { supabaseRestGet } from "@/lib/supabaseRest";
 import type { PublicTalentProfile } from "@/types/public";
@@ -12,8 +19,13 @@ const TALENT_SELECT = [
   "representation",
   "agency_logo_url",
   "gender",
+  "ethnicity",
+  "date_of_birth",
   "height",
   "union_status",
+  "eye_color",
+  "hair_color",
+  "sizing",
   "skills",
   "styles",
   "talent_types",
@@ -36,6 +48,12 @@ function parseStringArray(raw: unknown): string[] {
 }
 
 function normalizeTalentRow(row: TalentRow): PublicTalentProfile {
+  const experiences = normalizeProfileExperiences(row.experiences);
+  const profileHighlights = normalizeProfileHighlights(row.profile_highlights).map((highlight) => ({
+    ...highlight,
+    image_url: resolveHighlightImageUrl(highlight, experiences),
+  }));
+
   return {
     ...row,
     full_name: row.full_name?.trim() || null,
@@ -47,8 +65,9 @@ function normalizeTalentRow(row: TalentRow): PublicTalentProfile {
     skills: parseStringArray(row.skills),
     styles: parseStringArray(row.styles),
     talent_types: parseStringArray(row.talent_types),
-    profile_highlights: Array.isArray(row.profile_highlights) ? row.profile_highlights : [],
-    experiences: Array.isArray(row.experiences) ? row.experiences : [],
+    experiences,
+    profile_highlights: profileHighlights,
+    credits: buildProfileCredits(experiences),
     training: Array.isArray(row.training) ? row.training : [],
     profile_visuals: Array.isArray(row.profile_visuals) ? row.profile_visuals : [],
   };

@@ -17,7 +17,11 @@ export function createActivityRouteMetadata(pathPrefix: string) {
 
     const title = activity ? `${activity.title} · Motiion` : "Activity on Motiion";
     const description = activity
-      ? `${activityKindLabel(activity.kind)} on Motiion — view details and book in the app.`
+      ? activity.kind === "class"
+        ? `${activityKindLabel(activity.kind)} on Motiion — view details and book online.`
+        : activity.kind === "session"
+          ? `${activityKindLabel(activity.kind)} on Motiion — view details and request to join in the app.`
+          : `${activityKindLabel(activity.kind)} on Motiion — view details and book in the app.`
       : "View this activity on Motiion.";
 
     return {
@@ -44,6 +48,22 @@ export function createActivityRouteMetadata(pathPrefix: string) {
   };
 }
 
+export function createActivityRoutePage(pathPrefix: string) {
+  return async function ActivityRoutePage({ params }: PageProps) {
+    const { id } = await params;
+    const activity = await fetchPublicActivity(id);
+
+    if (!activity) {
+      notFound();
+    }
+
+    const sharePath = `${pathPrefix}/${encodeURIComponent(id)}`;
+
+    return <ActivityPageClient activity={activity} sharePath={sharePath} />;
+  };
+}
+
+/** @deprecated Use createActivityRoutePage(pathPrefix) so share links preserve semantic paths. */
 export async function ActivityRoutePage({ params }: PageProps) {
   const { id } = await params;
   const activity = await fetchPublicActivity(id);
@@ -52,5 +72,5 @@ export async function ActivityRoutePage({ params }: PageProps) {
     notFound();
   }
 
-  return <ActivityPageClient activity={activity} />;
+  return <ActivityPageClient activity={activity} sharePath={`/activity/${encodeURIComponent(id)}`} />;
 }

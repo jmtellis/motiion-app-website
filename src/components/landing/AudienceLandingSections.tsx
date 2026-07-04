@@ -9,17 +9,11 @@ function cn(...classes: Array<string | false | null | undefined>) {
 }
 
 function audienceSectionClass(altBackground: boolean, dark: boolean) {
+  const base = "ui-section-narrative border-t";
   if (dark) {
-    return cn(
-      "flex min-h-svh w-full items-center justify-center border-t px-6 py-12 sm:px-10",
-      altBackground ? "border-white/10 bg-black" : "border-white/10 bg-black",
-    );
+    return cn(base, altBackground ? "border-white/10 bg-[var(--graphite)]" : "border-white/10 bg-[var(--stage-black)]");
   }
-
-  return cn(
-    "flex min-h-svh w-full items-center justify-center border-t border-[var(--line)] px-6 py-12 sm:px-10",
-    altBackground ? "bg-[var(--tone)]" : "bg-[var(--paper)]",
-  );
+  return cn(base, altBackground ? "border-[var(--line)] bg-[var(--tone)]" : "border-[var(--line)] bg-[var(--paper)]");
 }
 
 export function AudienceLandingSections({
@@ -41,17 +35,10 @@ export function AudienceLandingSections({
           >
             {content.benefitsTitle}
           </h2>
-          <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 divide-y divide-[var(--line)] dark:divide-white/10">
             {content.benefits.map((item, index) => (
               <Reveal key={item.title} delay={index * 0.04} amount={0.12} distance={16}>
-                <article
-                  className={cn(
-                    "h-full rounded-2xl border p-6",
-                    dark
-                      ? "border-white/12 bg-white/5 shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
-                      : "border-[var(--line)] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)]",
-                  )}
-                >
+                <article className="ui-reveal-row">
                   <h3
                     className={cn(
                       "type-label font-semibold",
@@ -62,7 +49,7 @@ export function AudienceLandingSections({
                   </h3>
                   <p
                     className={cn(
-                      "type-body mt-3",
+                      "type-body mt-2 max-w-2xl",
                       dark ? "text-on-dark-secondary" : "text-[var(--ink-soft)]",
                     )}
                   >
@@ -77,7 +64,7 @@ export function AudienceLandingSections({
 
       <section id="workflow" className={audienceSectionClass(true, dark)}>
         <Reveal amount={0.16} distance={22} className="w-full max-w-6xl">
-          <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+          <div className="ui-split-scroll ui-split-scroll--sticky-left">
             <div>
               <h2
                 className={cn(
@@ -92,7 +79,7 @@ export function AudienceLandingSections({
                   <li key={step} className="flex gap-4">
                     <span
                       className={cn(
-                        "inline-flex size-8 shrink-0 items-center justify-center rounded-full border text-sm font-semibold",
+                        "inline-flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-chip)] border text-sm font-semibold",
                         dark
                           ? "border-white/15 bg-white/10 text-on-dark-primary"
                           : "border-[var(--line)] bg-white text-[var(--ink)]",
@@ -114,10 +101,8 @@ export function AudienceLandingSections({
             </div>
             <div
               className={cn(
-                "rounded-2xl border p-6",
-                dark
-                  ? "border-white/12 bg-white/5 shadow-[0_12px_40px_rgba(0,0,0,0.4)]"
-                  : "border-[var(--line)] bg-white shadow-[0_12px_40px_rgba(17,17,17,0.06)]",
+                "ui-panel p-5",
+                dark && "ui-panel-dark border-white/12",
               )}
             >
               <h3

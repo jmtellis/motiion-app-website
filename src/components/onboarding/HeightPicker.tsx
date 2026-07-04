@@ -27,7 +27,7 @@ export function HeightPicker({
   }
 
   return (
-    <div className="rounded-2xl border border-[var(--line)] bg-[var(--tone)] p-6">
+    <div className="rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--tone)] p-5">
       <p className="text-center text-3xl font-semibold tracking-tight text-[var(--ink)]">
         {formatHeight(feet, inches)}
       </p>

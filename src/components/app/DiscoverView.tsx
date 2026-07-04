@@ -35,12 +35,14 @@ export function DiscoverView({
       </header>
 
       {result.usingFallbackData ? (
-        <p className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+        <p className="rounded-[var(--radius-chip)] border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
           Showing sample profiles until live Supabase search is connected.
         </p>
       ) : null}
 
-      <HeroSearchBar filters={filters} action="/discover" />
+      <div className="ui-command-panel">
+        <HeroSearchBar filters={filters} action="/discover" embedded />
+      </div>
 
       <section className="space-y-8">
         <p className="text-sm text-[var(--ink-soft)]">
@@ -54,7 +56,7 @@ export function DiscoverView({
             ))}
           </div>
         ) : (
-          <div className="rounded-3xl border border-dashed border-[var(--line)] bg-white px-8 py-16 text-center">
+          <div className="ui-muted-panel px-6 py-10 text-center">
             <h2 className="text-2xl font-semibold text-[var(--ink)]">No matches for this search</h2>
             <p className="mx-auto mt-3 max-w-xl text-[var(--ink-soft)]">
               Try broadening location or removing a filter.

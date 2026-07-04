@@ -1,152 +1,395 @@
 "use client";
 
+import { useMemo, useState, useTransition } from "react";
+
+import { CastingPublicShell } from "@/components/casting/CastingPublicShell";
+import { ClassGuestBookingForm } from "@/components/product/ClassGuestBookingForm";
+import { OpenInAppBar } from "@/components/product/OpenInAppBar";
+import { SessionSignUpRequiredModal } from "@/components/product/SessionSignUpRequiredModal";
+import { PublicPageAnalytics } from "@/components/analytics/PublicPageAnalytics";
+import { requestSessionJoin } from "@/lib/app/activities";
 import {
-  activityAccentColor,
   activityKindLabel,
+  effectiveActivityKind,
   formatActivityDateTime,
+  formatActivityWhenLine,
   formatMoney,
 } from "@/lib/publicActivity";
-import { OpenInAppBar } from "@/components/product/OpenInAppBar";
-import { ProductShell } from "@/components/product/ProductShell";
 import type { PublicActivity } from "@/types/public";
 
-export default function ActivityPageClient({ activity }: { activity: PublicActivity }) {
-  const accent = activityAccentColor(activity.kind);
+type DetailRow = { label: string; value: string };
+
+export default function ActivityPageClient({
+  activity,
+  sharePath,
+}: {
+  activity: PublicActivity;
+  sharePath: string;
+}) {
+  const kind = effectiveActivityKind(activity, sharePath);
   const dateLine = formatActivityDateTime(activity);
+  const whenLine = formatActivityWhenLine(activity);
   const priceLine = activity.requirePayment
     ? formatMoney(activity.priceAmountCents, activity.priceCurrency ?? "usd")
-    : null;
+    : "Free to attend";
+  const soldOut = activity.spotsRemaining != null && activity.spotsRemaining <= 0;
+
+  const [enrolledTitle, setEnrolledTitle] = useState<string | null>(null);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [showSessionSignUpGate, setShowSessionSignUpGate] = useState(false);
+  const [sessionJoinState, setSessionJoinState] = useState<
+    { kind: "idle" } | { kind: "sent"; status: string } | { kind: "error"; message: string }
+  >({ kind: "idle" });
+  const [isJoinPending, startJoinTransition] = useTransition();
+
+  function handleSessionJoin() {
+    setSessionJoinState({ kind: "idle" });
+    startJoinTransition(async () => {
+      const result = await requestSessionJoin(activity.id);
+      if (result.ok) {
+        setSessionJoinState({ kind: "sent", status: result.status });
+        return;
+      }
+      if (result.reason === "unauthenticated") {
+        setShowSessionSignUpGate(true);
+        return;
+      }
+      setSessionJoinState({ kind: "error", message: result.error });
+    });
+  }
+
+  const isClass = kind === "class";
+  const isSession = kind === "session";
+  const canBookClass = isClass && activity.isEligibleForBooking && !enrolledTitle && !soldOut;
+  const showClassActionBar = isClass && activity.isEligibleForBooking && !enrolledTitle;
+  const showSessionActionBar = isSession && activity.isEligibleForBooking;
+
+  const analyticsPath = sharePath.startsWith("/") ? sharePath : `/${sharePath}`;
+  const experiencePills = useMemo(() => buildExperiencePills(activity, kind), [activity, kind]);
+  const dayOfRows = useMemo(() => buildDayOfRows(activity, kind), [activity, kind]);
+  const learningOutcomes = activity.classWhatYouWillLearn?.filter((item) => item.trim()) ?? [];
+  const sessionTags = activity.sessionTags?.filter((tag) => tag.trim()) ?? [];
+
+  const bookButtonLabel = enrolledTitle
+    ? "Registered"
+    : soldOut
+      ? "Sold out"
+      : !activity.isEligibleForBooking
+        ? "Booking closed"
+        : activity.requirePayment
+          ? "Book"
+          : "Reserve spot";
 
   return (
-    <ProductShell>
-      <article style={{ display: "grid", gap: 20 }}>
-        <header style={{ display: "grid", gap: 12 }}>
-          <span
-            className="product-pill"
-            style={{ width: "fit-content", borderColor: accent, color: accent }}
-          >
-            {activityKindLabel(activity.kind)}
-          </span>
-          <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, letterSpacing: -0.6, lineHeight: 1.1 }}>
-            {activity.title}
-          </h1>
+    <CastingPublicShell>
+      <PublicPageAnalytics
+        eventName="activity_viewed"
+        properties={{ activity_id: activity.id, kind, activity_type: kind }}
+        path={analyticsPath}
+      />
+      <PublicPageAnalytics
+        eventName="opportunity_viewed"
+        properties={{
+          opportunity_id: activity.id,
+          activity_type: kind,
+        }}
+        path={analyticsPath}
+      />
+      <article
+        className="casting-page"
+        style={{ paddingBottom: showClassActionBar || showSessionActionBar ? 88 : 24 }}
+      >
+        <header className="casting-page-header">
+          <p className="casting-section-title">{activityKindLabel(kind)}</p>
+          <h1 className="casting-page-title">{activity.title}</h1>
         </header>
 
-        <div className="product-activity-hero">
+        <div className="casting-page-hero">
           {activity.coverImageURL ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={activity.coverImageURL} alt="" />
           ) : null}
-          <div className="product-activity-hero-overlay" />
-          <div style={{ position: "absolute", left: 16, right: 16, bottom: 16 }}>
-            <p style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>{dateLine}</p>
-            {activity.location ? (
-              <p style={{ margin: "6px 0 0", fontSize: 14, color: "var(--text-low)" }}>{activity.location}</p>
-            ) : null}
+          <div className="casting-page-hero-overlay" />
+          <div className="casting-page-hero-meta">
+            <p className="casting-page-deadline">{dateLine}</p>
+            {activity.location ? <p className="casting-page-location">{activity.location}</p> : null}
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 16, alignItems: "start" }}>
-          <div style={{ display: "grid", gap: 8 }}>
-            {priceLine ? (
-              <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "var(--primary-500)" }}>{priceLine}</p>
-            ) : (
-              <p style={{ margin: 0, fontSize: 14, color: "var(--text-low)" }}>Free to attend</p>
-            )}
+        {activity.organizerDisplayName?.trim() ? (
+          <OrganizerRow
+            name={activity.organizerDisplayName.trim()}
+            headshotURL={activity.organizerHeadshotURL ?? null}
+          />
+        ) : null}
+
+        <section className="casting-glass-card">
+          <dl className="casting-breakdown">
+            <BreakdownRow label="Admission" value={priceLine} />
+            {whenLine ? <BreakdownRow label="When" value={whenLine} /> : null}
+            {activity.location?.trim() ? <BreakdownRow label="Where" value={activity.location.trim()} /> : null}
+            {activity.maxAttendees != null ? (
+              <BreakdownRow label="Capacity" value={`${activity.maxAttendees} attendees`} />
+            ) : null}
             {activity.spotsRemaining != null ? (
-              <p style={{ margin: 0, fontSize: 13, color: "var(--text-low)" }}>
-                {activity.spotsRemaining > 0
-                  ? `${activity.spotsRemaining} spots remaining`
-                  : "Sold out"}
-              </p>
+              <BreakdownRow
+                label="Availability"
+                value={soldOut ? "Sold out" : `${activity.spotsRemaining} spots remaining`}
+              />
             ) : null}
-          </div>
-          <ActivityDateStack activityDate={activity.activityDate} />
-        </div>
+          </dl>
+        </section>
 
-        {activity.pricingTiers && activity.pricingTiers.length > 1 ? (
-          <section className="product-glass-card" style={{ padding: 16 }}>
-            <h2 style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 700 }}>Tickets</h2>
-            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 10 }}>
+        {experiencePills.length > 0 ? (
+          <section className="casting-glass-card">
+            <h2 className="casting-section-title">Experience</h2>
+            <div className="casting-skill-tags">
+              {experiencePills.map((pill) => (
+                <span key={pill} className="casting-skill-tag">
+                  {pill}
+                </span>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {activity.pricingTiers && activity.pricingTiers.length > 0 ? (
+          <section className="casting-glass-card">
+            <h2 className="casting-section-title">Tickets</h2>
+            <dl className="casting-breakdown">
               {activity.pricingTiers.map((tier) => (
-                <li
+                <BreakdownRow
                   key={tier.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: 12,
-                    fontSize: 14,
-                  }}
-                >
-                  <span>{tier.label}</span>
-                  <span style={{ fontWeight: 700 }}>{formatMoney(tier.amountCents, activity.priceCurrency ?? "usd")}</span>
-                </li>
+                  label={tier.label}
+                  value={formatMoney(tier.amountCents, activity.priceCurrency ?? "usd")}
+                />
+              ))}
+            </dl>
+          </section>
+        ) : null}
+
+        {activity.description?.trim() ? (
+          <section className="casting-glass-card">
+            <h2 className="casting-section-title">About</h2>
+            <p className="casting-body-copy">{activity.description.trim()}</p>
+          </section>
+        ) : null}
+
+        {learningOutcomes.length > 0 ? (
+          <section className="casting-glass-card">
+            <h2 className="casting-section-title">What you&apos;ll learn</h2>
+            <ul className="casting-body-copy" style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 8 }}>
+              {learningOutcomes.map((item) => (
+                <li key={item}>{item}</li>
               ))}
             </ul>
           </section>
         ) : null}
 
-        {activity.organizerDisplayName ? (
-          <section className="product-glass-card" style={{ padding: 14, display: "flex", gap: 12, alignItems: "center" }}>
-            {activity.organizerHeadshotURL ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={activity.organizerHeadshotURL}
-                alt=""
-                style={{ width: 48, height: 48, borderRadius: 14, objectFit: "cover" }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 14,
-                  background: "var(--surface-accent)",
-                }}
-              />
-            )}
-            <div>
-              <p style={{ margin: 0, fontSize: 12, color: "var(--text-low)" }}>Organizer</p>
-              <p style={{ margin: "2px 0 0", fontSize: 16, fontWeight: 700 }}>{activity.organizerDisplayName}</p>
+        {dayOfRows.length > 0 ? (
+          <section className="casting-glass-card">
+            <h2 className="casting-section-title">
+              {isClass ? "On the day of the class" : "On the day of the session"}
+            </h2>
+            <dl className="casting-breakdown">
+              {dayOfRows.map((row) => (
+                <BreakdownRow key={`${row.label}-${row.value}`} label={row.label} value={row.value} />
+              ))}
+            </dl>
+          </section>
+        ) : null}
+
+        {sessionTags.length > 0 ? (
+          <section className="casting-glass-card">
+            <h2 className="casting-section-title">Tags</h2>
+            <div className="casting-skill-tags">
+              {sessionTags.map((tag) => (
+                <span key={tag} className="casting-skill-tag">
+                  {tag}
+                </span>
+              ))}
             </div>
           </section>
         ) : null}
 
-        {activity.description?.trim() ? (
-          <section>
-            <h2 style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 700 }}>About</h2>
-            <p style={{ margin: 0, color: "var(--text-low)", lineHeight: 1.55, whiteSpace: "pre-wrap" }}>
-              {activity.description.trim()}
+        {enrolledTitle ? (
+          <section className="casting-glass-card">
+            <h2 className="casting-section-title">You&apos;re registered</h2>
+            <p className="casting-body-copy">
+              You&apos;re booked for <strong>{enrolledTitle}</strong>. Download the Motiion app to view your
+              schedule and get updates.
             </p>
           </section>
         ) : null}
 
         {!activity.isEligibleForBooking ? (
-          <p style={{ margin: 0, fontSize: 14, color: "var(--text-low)" }}>
-            This activity is no longer open for booking on the web. Open Motiion for the latest status.
-          </p>
+          <section className="casting-glass-card">
+            <p className="casting-body-copy">
+              This activity is no longer open for booking on the web. Open Motiion for the latest status.
+            </p>
+          </section>
         ) : null}
-
-        <OpenInAppBar
-          label={
-            activity.isEligibleForBooking ? "Book in the Motiion app" : "Open in the Motiion app"
-          }
-        />
       </article>
-    </ProductShell>
+
+      <OpenInAppBar href={sharePath} label="Open in the Motiion app" />
+
+      {showClassActionBar ? (
+        <div className="casting-submit-bar">
+          <button
+            type="button"
+            className="casting-submit-button"
+            disabled={!canBookClass}
+            onClick={() => {
+              if (canBookClass) setShowBookingModal(true);
+            }}
+          >
+            {bookButtonLabel}
+          </button>
+        </div>
+      ) : null}
+
+      {showSessionActionBar ? (
+        <div className="casting-submit-bar">
+          {sessionJoinState.kind === "error" ? (
+            <p className="casting-body-copy" role="alert" style={{ marginBottom: 8 }}>
+              {sessionJoinState.message}
+            </p>
+          ) : null}
+          <button
+            type="button"
+            className="casting-submit-button"
+            disabled={soldOut || isJoinPending || sessionJoinState.kind === "sent"}
+            onClick={() => {
+              if (!soldOut && sessionJoinState.kind !== "sent") handleSessionJoin();
+            }}
+          >
+            {soldOut
+              ? "Session full"
+              : sessionJoinState.kind === "sent"
+                ? sessionJoinState.status === "joined"
+                  ? "You're in"
+                  : "Request sent"
+                : isJoinPending
+                  ? "Sending…"
+                  : "Request to join"}
+          </button>
+        </div>
+      ) : null}
+
+      {showBookingModal ? (
+        <BookingModal
+          activity={activity}
+          onClose={() => setShowBookingModal(false)}
+          onEnrolled={(title) => {
+            setEnrolledTitle(title);
+            setShowBookingModal(false);
+          }}
+        />
+      ) : null}
+
+      {showSessionSignUpGate ? (
+        <SessionSignUpRequiredModal
+          sharePath={sharePath}
+          onClose={() => setShowSessionSignUpGate(false)}
+        />
+      ) : null}
+    </CastingPublicShell>
   );
 }
 
-function ActivityDateStack({ activityDate }: { activityDate: string | null }) {
-  if (!activityDate) return null;
-
-  const d = new Date(`${activityDate}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return null;
+function OrganizerRow({ name, headshotURL }: { name: string; headshotURL: string | null }) {
+  const initials = name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
 
   return (
-    <div className="product-date-stack" aria-hidden>
-      <div className="month">{d.toLocaleDateString(undefined, { month: "short" })}</div>
-      <div className="day">{d.getDate()}</div>
+    <p className="casting-page-organizer">
+      {headshotURL ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={headshotURL} alt="" className="casting-page-organizer-avatar" />
+      ) : (
+        <span className="casting-page-organizer-avatar casting-page-organizer-avatar-fallback" aria-hidden>
+          {initials || "?"}
+        </span>
+      )}
+      <span>Posted by {name}</span>
+    </p>
+  );
+}
+
+function BreakdownRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="casting-breakdown-row">
+      <dt>{label}</dt>
+      <dd>{value}</dd>
     </div>
   );
+}
+
+function BookingModal({
+  activity,
+  onClose,
+  onEnrolled,
+}: {
+  activity: PublicActivity;
+  onClose: () => void;
+  onEnrolled: (title: string) => void;
+}) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="class-booking-title"
+      className="casting-modal-backdrop"
+      onClick={onClose}
+    >
+      <div className="casting-modal-card" onClick={(event) => event.stopPropagation()}>
+        <h2 id="class-booking-title" className="casting-modal-title">
+          Book this class
+        </h2>
+        <ClassGuestBookingForm activity={activity} onEnrolled={onEnrolled} variant="modal" />
+        <button type="button" onClick={onClose} className="casting-modal-dismiss">
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function buildExperiencePills(activity: PublicActivity, kind: PublicActivity["kind"]): string[] {
+  if (kind === "class") {
+    return [activity.classSkillLevel, activity.classFocus, activity.classIntensity].filter(
+      (value): value is string => Boolean(value?.trim()),
+    );
+  }
+  if (kind === "session") {
+    return [activity.sessionLevel, activity.sessionVibe].filter((value): value is string =>
+      Boolean(value?.trim()),
+    );
+  }
+  return [];
+}
+
+function buildDayOfRows(activity: PublicActivity, kind: PublicActivity["kind"]): DetailRow[] {
+  if (kind === "class") {
+    return [
+      { label: "Prerequisites", value: activity.classPrerequisites?.trim() ?? "" },
+      { label: "Dress code", value: activity.classDressCode?.trim() ?? "" },
+      { label: "What to bring", value: activity.classEquipment?.trim() ?? "" },
+      { label: "Cancellation policy", value: activity.classCancellationPolicy?.trim() ?? "" },
+    ].filter((row) => row.value.length > 0);
+  }
+  if (kind === "session") {
+    return [
+      { label: "Rules", value: activity.sessionRules?.trim() ?? "" },
+      { label: "Good to know", value: activity.sessionGoodToKnow?.trim() ?? "" },
+      { label: "Dress code", value: activity.sessionDressCode?.trim() ?? "" },
+      { label: "What to bring", value: activity.sessionEquipment?.trim() ?? "" },
+      { label: "Prep material", value: activity.sessionPrepMaterial?.trim() ?? "" },
+      { label: "Cancellation policy", value: activity.sessionCancellationPolicy?.trim() ?? "" },
+    ].filter((row) => row.value.length > 0);
+  }
+  return [];
 }

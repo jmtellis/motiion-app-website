@@ -53,7 +53,7 @@ function AgencySelector({
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="flex w-full items-center gap-3 rounded-full border border-[var(--line)] bg-white px-4 py-3 text-left"
+        className="flex w-full items-center gap-3 rounded-[var(--radius-field)] border border-[var(--line)] bg-white px-4 py-3 text-left"
       >
         <Building2 className="size-4 shrink-0 text-[var(--ink-soft)]" aria-hidden />
         <span className={`min-w-0 flex-1 truncate text-sm ${value ? "text-[var(--ink)]" : "text-[var(--ink-soft)]"}`}>
@@ -63,13 +63,13 @@ function AgencySelector({
       </button>
 
       {open ? (
-        <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white shadow-[0_16px_40px_rgba(17,17,17,0.12)]">
+        <div className="overflow-hidden ui-card shadow-[var(--shadow-raised)]">
           <div className="border-b border-[var(--line)] p-3">
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search agencies"
-              className="w-full rounded-full border border-[var(--line)] bg-[var(--tone)] px-4 py-2 text-sm text-[var(--ink)] outline-none"
+              className="w-full rounded-[var(--radius-field)] border border-[var(--line)] bg-[var(--tone)] px-4 py-2 text-sm text-[var(--ink)] outline-none"
             />
           </div>
           <div className="max-h-64 overflow-y-auto">

@@ -20,17 +20,11 @@ export function FAQAccordion({ items, dark = false }: FAQAccordionProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <div className="space-y-3">
+    <div className={cn("divide-y", dark ? "divide-white/10 border-white/10" : "divide-[var(--line)] border-[var(--line)]", "border-y")}>
       {items.map((item, index) => {
         const isOpen = openIndex === index;
         return (
-          <article
-            key={item.question}
-            className={cn(
-              "overflow-hidden rounded-2xl border",
-              dark ? "border-white/12 bg-white/5" : "border-[var(--line)] bg-white",
-            )}
-          >
+          <article key={item.question} className="overflow-hidden">
             <h3>
               <button
                 type="button"

@@ -13,13 +13,14 @@ export type AccountPillUser = {
   initials: string;
   avatarUrl: string | null;
   profileHref: string;
+  settingsHref?: string;
 };
 
 function getMenuLinks(user: AccountPillUser) {
   return [
     { label: "Profile", href: user.profileHref },
     { label: "Calendar", href: "/calendar" },
-    { label: "Settings", href: "/settings" },
+    { label: "Settings", href: user.settingsHref ?? "/settings" },
   ];
 }
 
@@ -66,7 +67,7 @@ export function AccountPill({ user }: { user: AccountPillUser }) {
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        className="inline-flex h-11 items-center gap-2.5 rounded-full bg-[#2a2a2a] py-1 pl-3 pr-1.5 text-white shadow-[0_4px_16px_rgba(0,0,0,0.18)] transition hover:bg-[#333333] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+        className="inline-flex h-11 items-center gap-2.5 rounded-[var(--radius-button)] bg-[#2a2a2a] py-1 pl-3 pr-1.5 text-white transition hover:bg-[#333333] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
         aria-expanded={open}
         aria-haspopup="menu"
         aria-controls={menuId}
@@ -96,7 +97,7 @@ export function AccountPill({ user }: { user: AccountPillUser }) {
         <div
           id={menuId}
           role="menu"
-          className="absolute right-0 z-50 mt-2 min-w-[11rem] overflow-hidden rounded-xl border border-[var(--line)] bg-white py-1 shadow-[0_16px_40px_rgba(17,17,17,0.12)]"
+          className="absolute right-0 z-50 mt-2 min-w-[11rem] overflow-hidden rounded-[var(--radius-card)] border border-[var(--line)] bg-white py-1 shadow-[var(--shadow-raised)]"
         >
           {getMenuLinks(user).map((item) => (
               <Link

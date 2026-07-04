@@ -9,15 +9,6 @@ import {
   type AudienceKey,
 } from "@/lib/marketing/homepage-content";
 
-function getNextAudience(current: AudienceKey, direction: "next" | "prev") {
-  const currentIndex = audienceOrder.indexOf(current);
-  if (currentIndex < 0) return audienceOrder[0];
-  if (direction === "next") {
-    return audienceOrder[(currentIndex + 1) % audienceOrder.length];
-  }
-  return audienceOrder[(currentIndex - 1 + audienceOrder.length) % audienceOrder.length];
-}
-
 export function AudienceTailoredPanel() {
   const [selectedAudience, setSelectedAudience] = useState<AudienceKey>("dancers");
   const reduceMotion = useReducedMotion();
@@ -44,9 +35,9 @@ export function AudienceTailoredPanel() {
                 role="tab"
                 aria-selected={isSelected}
                 onClick={() => setSelectedAudience(audienceKey)}
-                className={`relative overflow-hidden rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${
+                className={`relative overflow-hidden rounded-[var(--radius-chip)] border px-4 py-3 text-left text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${
                   isSelected
-                    ? "border-[var(--ink)] bg-white text-[var(--ink)] shadow-[0_8px_24px_rgba(17,17,17,0.08)]"
+                    ? "border-[var(--ink)] bg-white text-[var(--ink)]"
                     : "border-[var(--line)] bg-white/70 text-[var(--ink-soft)] hover:border-[#d6d4ce] hover:bg-white"
                 }`}
               >
@@ -67,7 +58,7 @@ export function AudienceTailoredPanel() {
           transition={panelTransition}
           className="space-y-6"
         >
-          <div className="rounded-2xl border border-[var(--line)] bg-white p-8 shadow-[0_12px_40px_rgba(17,17,17,0.06)]">
+          <div className="ui-panel p-6 md:p-7">
             <p className="text-xs font-semibold tracking-[0.2em] text-[var(--ink-soft)] uppercase">
               For {selectedProfile.label}
             </p>
@@ -100,7 +91,7 @@ export function AudienceTailoredPanel() {
             </p>
             <div className="grid gap-4 md:grid-cols-2">
               {selectedProfile.faq.map((item) => (
-                <div key={item.question} className="rounded-2xl border border-[var(--line)] bg-white p-6">
+                <div key={item.question} className="border-t border-[var(--line)] pt-4">
                   <h4 className="text-lg font-semibold text-[var(--ink)]">{item.question}</h4>
                   <p className="mt-3 text-sm leading-relaxed text-[var(--ink-soft)]">{item.answer}</p>
                 </div>
@@ -127,12 +118,12 @@ function InfoCard({
   boxed?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-[var(--line)] bg-white p-6 shadow-[0_8px_24px_rgba(17,17,17,0.04)]">
+    <div className="ui-card p-5">
       <h4 className="text-lg font-semibold text-[var(--ink)]">{title}</h4>
       {items ? (
         <ul className="mt-4 space-y-3 text-sm leading-relaxed text-[var(--ink-soft)]">
           {items.map((item) => (
-            <li key={item} className={`flex gap-2 ${boxed ? "rounded-xl border border-[var(--line)] bg-[var(--tone)] px-3 py-2" : ""}`}>
+            <li key={item} className={`flex gap-2 ${boxed ? "rounded-[var(--radius-chip)] border border-[var(--line)] bg-[var(--tone)] px-3 py-2" : ""}`}>
               {!boxed ? (
                 <span aria-hidden className="mt-2 inline-block size-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
               ) : null}
@@ -146,7 +137,7 @@ function InfoCard({
           {steps.map((step, index) => (
             <li key={step} className="flex gap-3">
               {ordered ? (
-                <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-[var(--line)] text-xs font-semibold">
+                <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-[var(--radius-chip)] border border-[var(--line)] text-xs font-semibold">
                   {index + 1}
                 </span>
               ) : null}

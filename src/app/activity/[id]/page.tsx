@@ -57,5 +57,10 @@ export default async function ActivityPage({ params }: PageProps) {
     notFound();
   }
 
-  return <ActivityPageClient activity={activity} />;
+  return (
+    <ActivityPageClient
+      activity={activity}
+      sharePath={`/activity/${encodeURIComponent(id)}`}
+    />
+  );
 }

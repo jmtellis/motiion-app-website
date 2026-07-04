@@ -25,14 +25,11 @@ export function HomeHeroCtas({ dark = false }: { dark?: boolean }) {
 
   return (
     <>
-      <div className="flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
+      <div className="flex w-full max-w-lg flex-col gap-3 sm:flex-row sm:justify-center">
         <button
           type="button"
           onClick={() => setModal("ios")}
-          className={cn(
-            "btn-primary btn-hero inline-flex w-full items-center justify-center gap-2 text-sm sm:w-auto sm:min-w-[10rem]",
-            dark && "btn-on-dark",
-          )}
+          className="btn-hero-pill btn-hero-pill-accent w-full sm:w-auto sm:min-w-[11rem]"
         >
           <AppleLogo className="h-[1.125rem] w-[1.125rem] shrink-0" />
           {iosHeroCta.label}
@@ -42,8 +39,8 @@ export function HomeHeroCtas({ dark = false }: { dark?: boolean }) {
           type="button"
           onClick={() => setModal("learn")}
           className={cn(
-            "btn-outline btn-hero w-full text-sm sm:w-auto sm:min-w-[10rem]",
-            dark && "btn-outline-on-dark",
+            "btn-hero-pill w-full sm:w-auto sm:min-w-[11rem]",
+            dark ? "btn-hero-pill-ghost" : "btn-outline",
           )}
         >
           {learnMoreHeroCta.label}
@@ -90,7 +87,7 @@ export function HomeHeroCtas({ dark = false }: { dark?: boolean }) {
                 <Link
                   href={path.href}
                   onClick={close}
-                  className="group flex w-full flex-col rounded-xl border border-[var(--line)] bg-white px-4 py-3.5 text-left transition hover:border-[var(--ink)] hover:shadow-[0_8px_24px_rgba(17,17,17,0.08)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                  className="ui-card-interactive group flex w-full flex-col px-4 py-3.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                 >
                   <span className="text-sm font-semibold text-[var(--ink)]">{path.label}</span>
                   <span className="mt-1 text-sm leading-snug text-[var(--ink-soft)]">

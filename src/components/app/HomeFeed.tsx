@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { formatActivitySchedule } from "@/lib/app/home";
 import type { HomeFeedData } from "@/types/app";
@@ -11,12 +12,14 @@ function requestKindLabel(kind: string) {
 export function HomeFeed({
   greeting,
   feed,
+  invitationsSlot,
 }: {
   greeting: string;
   feed: HomeFeedData;
+  invitationsSlot?: ReactNode;
 }) {
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <header className="space-y-2">
         <p className="text-xs font-semibold tracking-[0.2em] text-[var(--accent)] uppercase">Home</p>
         <h1 className="text-3xl font-semibold tracking-tight text-[var(--ink)] md:text-4xl">{greeting}</h1>
@@ -24,6 +27,36 @@ export function HomeFeed({
           Your invites, upcoming schedule, and quick paths into Discover and Portfolio.
         </p>
       </header>
+
+      <section className="space-y-4">
+        <SectionTitle
+          title="Matched for you"
+          count={feed.matchedOpportunities.length}
+          empty="No opportunities yet. Finish your profile and we'll start matching."
+        />
+        {feed.matchedOpportunities.length ? (
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {feed.matchedOpportunities.map((item) => (
+              <li key={`${item.kind}-${item.id}`} className="ui-card-interactive p-4">
+                <p className="text-xs font-semibold tracking-[0.14em] text-[var(--ds-accent)] uppercase">
+                  {item.kind} · match {item.score}
+                </p>
+                <h2 className="mt-1 text-base font-semibold text-[var(--ink)]">{item.title}</h2>
+                {item.subtitle ? <p className="mt-1 text-sm text-[var(--ink-soft)]">{item.subtitle}</p> : null}
+                {item.location ? <p className="mt-1 text-xs text-[var(--ink-soft)]">{item.location}</p> : null}
+                <Link
+                  href={item.href}
+                  className="mt-3 inline-flex text-sm font-medium text-[var(--accent-dark)] underline underline-offset-4"
+                >
+                  View opportunity
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </section>
+
+      {invitationsSlot}
 
       <section className="space-y-4">
         <SectionTitle
@@ -36,7 +69,7 @@ export function HomeFeed({
             {feed.pendingRequests.map((item) => (
               <li
                 key={`${item.request_kind}-${item.id}`}
-                className="flex gap-4 rounded-2xl border border-[var(--line)] bg-white p-4 shadow-[0_8px_24px_rgba(17,17,17,0.04)]"
+                className="ui-card flex gap-4 p-4"
               >
                 <RequestCover url={item.cover_url} title={item.title} />
                 <div className="min-w-0 flex-1">
@@ -67,7 +100,7 @@ export function HomeFeed({
             {feed.upcomingActivities.map((item) => (
               <li
                 key={`${item.role}-${item.id}`}
-                className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white shadow-[0_8px_24px_rgba(17,17,17,0.04)]"
+                className="ui-card-interactive overflow-hidden"
               >
                 {item.cover_image_url ? (
                   <div className="relative h-32 w-full bg-[var(--tone)]">
@@ -160,7 +193,7 @@ function QuickLink({
   return (
     <Link
       href={href}
-      className="rounded-2xl border border-[var(--line)] bg-white p-5 transition hover:border-[#d6d4ce] hover:shadow-[0_8px_24px_rgba(17,17,17,0.06)]"
+      className="ui-card-interactive p-4"
     >
       <h3 className="text-base font-semibold text-[var(--ink)]">{title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-[var(--ink-soft)]">{description}</p>

@@ -65,7 +65,7 @@ export default async function SearchPage({
         />
 
         {result.usingFallbackData ? (
-          <p className="mt-4 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+          <p className="mt-4 rounded-[var(--radius-chip)] border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
             Showing sample profiles until live Supabase search is connected in production.
           </p>
         ) : null}
@@ -82,7 +82,7 @@ export default async function SearchPage({
               ))}
             </div>
           ) : (
-            <div className="rounded-3xl border border-dashed border-[var(--line)] bg-white px-8 py-16 text-center">
+            <div className="ui-muted-panel px-6 py-10 text-center">
               <h2 className="text-2xl font-semibold text-[var(--ink)]">No matches for this combination yet</h2>
               <p className="mx-auto mt-3 max-w-xl text-[var(--ink-soft)]">
                 Try broadening the location, removing one of the filters, or searching by specialty instead of a full

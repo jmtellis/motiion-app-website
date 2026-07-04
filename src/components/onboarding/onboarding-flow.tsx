@@ -8,15 +8,16 @@ import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   checkUsernameAvailability,
   completeOnboarding,
+  syncOnboardingProfessionalDraft,
 } from "@/app/onboarding/actions";
 import {
   AuthButton,
-  AuthCard,
-  AuthCardContent,
   AuthField,
   AuthInput,
   AuthTextArea,
 } from "@/components/auth/ui";
+import { SetupFlowFormPanel } from "@/components/auth/SetupFlowFormPanel";
+import { SignupSplitShell } from "@/components/auth/SignupSplitShell";
 import { HeadshotUploadGrid } from "@/components/onboarding/HeadshotUploadGrid";
 import { HeightPicker } from "@/components/onboarding/HeightPicker";
 import { RepresentationEditor } from "@/components/onboarding/RepresentationEditor";
@@ -37,6 +38,7 @@ import {
   isChoreographer,
   isHiring,
 } from "@/lib/onboarding/flow";
+import { getSetupFlowShellProps } from "@/lib/setup-flow/config";
 import { nonTalentSubtypeOptions, styleOptions } from "@/lib/mock-data";
 import type { DashboardProfile, NonTalentSubtype } from "@/types/database";
 import type {
@@ -157,11 +159,41 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 function SectionBlock({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="space-y-4 border-t border-[var(--line)] pt-6 first:border-t-0 first:pt-0">
-      <h2 className="text-sm font-semibold tracking-tight text-[var(--ink)]">{title}</h2>
+      <h2 className="setup-flow-section-title">{title}</h2>
       {children}
     </section>
   );
 }
+
+const talentStepCopy: Record<
+  OnboardingStep,
+  { title: string; subtitle?: string }
+> = {
+  account: {
+    title: "Account details",
+    subtitle: "Confirm your info and choose how you use Motiion.",
+  },
+  profile: {
+    title: "Your profile",
+    subtitle: "Add photos and the basics casting teams need.",
+  },
+  attributes: {
+    title: "Attributes",
+    subtitle: "Optional details that help teams filter and find you.",
+  },
+  workDetails: {
+    title: "Work details",
+    subtitle: "Where you work, representation, and availability.",
+  },
+  experience: {
+    title: "Experience",
+    subtitle: "Styles, skills, training, and credits.",
+  },
+  review: {
+    title: "Review your profile",
+    subtitle: "Make sure everything looks right before you finish.",
+  },
+};
 
 function TextArea({
   value,
@@ -177,7 +209,7 @@ function TextArea({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
-      className="min-h-28 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[var(--ink-soft)] focus:border-white/20"
+      className="min-h-28 w-full rounded-[var(--radius-field)] border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[var(--ink-soft)] focus:border-white/20"
     />
   );
 }
@@ -200,7 +232,7 @@ function SelectField({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-2xl border border-[var(--line)] bg-white px-4 text-sm text-[var(--ink)] outline-none transition focus:border-white/20"
+        className="h-11 w-full rounded-[var(--radius-field)] border border-[var(--line)] bg-white px-4 text-sm text-[var(--ink)] outline-none transition focus:border-white/20"
       >
         <option value="" className="bg-white">
           {placeholder}
@@ -239,7 +271,7 @@ function TogglePills({
                   : [...values, option],
               )
             }
-            className={`rounded-full border px-4 py-2 text-sm transition ${
+            className={`rounded-[var(--radius-chip)] border px-4 py-2 text-sm transition ${
               isSelected
                 ? "border-[var(--accent)] bg-[var(--accent)]/12 text-[var(--ink)]"
                 : "border-[var(--line)] bg-white text-[var(--ink-soft)] hover:bg-[var(--tone)]"
@@ -294,7 +326,24 @@ export function OnboardingFlow({
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => saveOnboardingDraft(draft), 300);
+    const timeout = window.setTimeout(() => {
+      saveOnboardingDraft(draft);
+      if (draft.role !== "hiring") {
+        void syncOnboardingProfessionalDraft({
+          styles: draft.styles,
+          skills: draft.skills,
+          gender: draft.gender || null,
+          ethnicity: draft.ethnicity || null,
+          height: draft.height || null,
+          unionStatus: draft.unionStatus || null,
+          workingLocations: draft.workingLocations,
+          instagramUrl: draft.instagramUrl || null,
+          tiktokUrl: draft.tiktokUrl || null,
+          username: draft.username || null,
+          availability: "available",
+        });
+      }
+    }, 300);
     return () => window.clearTimeout(timeout);
   }, [draft]);
 
@@ -723,79 +772,69 @@ export function OnboardingFlow({
 
   const isFirstStep = stepIndex === 0;
   const isReviewStep = draft.currentStep === "review";
-
-  const navIconButtonClass =
-    "inline-flex size-11 shrink-0 items-center justify-center rounded-full text-[var(--ink)] transition-colors hover:bg-[var(--tone)] disabled:pointer-events-none disabled:opacity-35";
+  const shellProps = getSetupFlowShellProps({
+    audience: "talent",
+    surface: "onboarding",
+    microStep: draft.currentStep,
+  });
+  const currentCopy = talentStepCopy[draft.currentStep];
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-5">
-      <div className="space-y-4 px-1">
-        <p className="text-center text-xs font-medium tracking-wide text-[var(--ink-soft)]">
-          {flowProgress.sectionTitle}
-        </p>
+    <SignupSplitShell {...shellProps}>
+      <SetupFlowFormPanel
+        title={currentCopy.title}
+        subtitle={currentCopy.subtitle}
+        error={error}
+        progressLabel={flowProgress.sectionTitle}
+        progressPercent={flowProgress.percent}
+        progressCurrent={flowProgress.currentStep}
+        progressTotal={flowProgress.totalSteps}
+        footer={
+          <>
+            {!isFirstStep ? (
+              <button
+                type="button"
+                className="signup-split-nav-btn signup-split-nav-btn--ghost"
+                onClick={goBack}
+                disabled={isPending}
+                aria-label="Previous step"
+              >
+                <ChevronLeft className="size-4" />
+                Back
+              </button>
+            ) : (
+              <span />
+            )}
 
-        <div className="flex items-center justify-center gap-3 sm:gap-4">
-          <button
-            type="button"
-            onClick={goBack}
-            disabled={isFirstStep || isPending}
-            aria-label="Previous step"
-            className={navIconButtonClass}
-          >
-            <ChevronLeft className="size-5" strokeWidth={2} aria-hidden />
-          </button>
-
-          <div
-            className="w-full min-w-0 max-w-md"
-            role="progressbar"
-            aria-valuenow={flowProgress.currentStep}
-            aria-valuemin={1}
-            aria-valuemax={flowProgress.totalSteps}
-            aria-label={`Step ${flowProgress.currentStep} of ${flowProgress.totalSteps}: ${flowProgress.sectionTitle}`}
-          >
-            <div className="h-1 overflow-hidden rounded-full bg-[var(--line)]">
-              <div
-                className="h-full rounded-full bg-[var(--ink)]/35 transition-[width] duration-300 ease-out"
-                style={{ width: `${flowProgress.percent}%` }}
-              />
-            </div>
-          </div>
-
-          {isReviewStep ? (
-            <button
-              type="button"
-              onClick={submit}
-              disabled={isPending}
-              aria-label={isPending ? "Finishing setup" : "Finish setup"}
-              className={navIconButtonClass}
-            >
-              <Check className="size-5" strokeWidth={2} aria-hidden />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={goNext}
-              disabled={isPending}
-              aria-label="Next step"
-              className={navIconButtonClass}
-            >
-              <ChevronRight className="size-5" strokeWidth={2} aria-hidden />
-            </button>
-          )}
-        </div>
-      </div>
-
-      <AuthCard>
-        <AuthCardContent className="space-y-6">
-          {renderStep()}
-          {error ? (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-              {error}
-            </div>
-          ) : null}
-        </AuthCardContent>
-      </AuthCard>
-    </div>
+            {isReviewStep ? (
+              <button
+                type="button"
+                className="signup-split-submit ml-auto !w-auto px-5"
+                onClick={submit}
+                disabled={isPending}
+              >
+                {isPending ? "Finishing…" : "Finish setup"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="signup-split-submit ml-auto !w-auto px-5"
+                onClick={goNext}
+                disabled={isPending}
+              >
+                Continue
+                <ChevronRight className="ml-1 inline size-4" />
+              </button>
+            )}
+          </>
+        }
+      >
+        {renderStep()}
+        {usernameMessage ? (
+          <p className="text-sm text-[var(--ink-soft)]">{usernameMessage}</p>
+        ) : null}
+      </SetupFlowFormPanel>
+    </SignupSplitShell>
   );
 }
 
@@ -880,7 +919,7 @@ function ReviewPanel({ draft }: { draft: OnboardingDraft }) {
   return (
     <div className="grid gap-3 md:grid-cols-2">
       {rows.map(([label, value]) => (
-        <div key={label} className="rounded-2xl border border-[var(--line)] bg-[var(--tone)] px-4 py-3">
+        <div key={label} className="rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--tone)] px-4 py-3">
           <p className="text-xs uppercase tracking-[0.16em] text-[var(--ink-soft)]">{label}</p>
           <p className="mt-1 text-sm text-[var(--ink)]">{value}</p>
         </div>

@@ -9,16 +9,19 @@ function cn(...classes: Array<string | false | null | undefined>) {
 export function MarketingHeroOverlay({
   content,
   dark = false,
+  children,
 }: {
   content: AudiencePageContent;
   dark?: boolean;
+  /** Custom hero CTAs — pass client components as children, not props. */
+  children?: React.ReactNode;
 }) {
   return (
-    <div className="animate-enter flex w-full max-w-3xl flex-col items-center gap-8 px-6 text-center">
+    <div className="animate-enter flex w-full max-w-3xl flex-col items-center gap-7 px-6 text-center">
       <div
         className={cn(
-          "inline-flex items-center gap-2 rounded-full border px-3 py-1 backdrop-blur-sm",
-          dark ? "border-white/15 bg-white/10" : "border-[var(--line)] bg-white/90",
+          "ui-chip gap-2 px-3 py-1",
+          dark && "ui-chip-dark",
         )}
       >
         <span className="inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" aria-hidden />
@@ -41,26 +44,30 @@ export function MarketingHeroOverlay({
         </p>
       </div>
 
-      <div className="flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
-        <Link
-          href={content.heroCtas.primary.href}
-          className={cn(
-            "btn-primary w-full text-center sm:w-auto sm:min-w-[10rem]",
-            dark && "btn-on-dark",
-          )}
-        >
-          {content.heroCtas.primary.label}
-        </Link>
-        <Link
-          href={content.heroCtas.secondary.href}
-          className={cn(
-            "btn-outline w-full text-center sm:w-auto sm:min-w-[10rem]",
-            dark && "btn-outline-on-dark",
-          )}
-        >
-          {content.heroCtas.secondary.label}
-        </Link>
-      </div>
+      {children ?? (
+        <div className="flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
+          <Link
+            href={content.heroCtas.primary.href}
+            className={cn(
+              "btn-primary w-full text-center sm:w-auto sm:min-w-[10rem]",
+              dark && "btn-on-dark",
+            )}
+          >
+            {content.heroCtas.primary.label}
+          </Link>
+          {content.heroCtas.secondary ? (
+            <Link
+              href={content.heroCtas.secondary.href}
+              className={cn(
+                "btn-outline w-full text-center sm:w-auto sm:min-w-[10rem]",
+                dark && "btn-outline-on-dark",
+              )}
+            >
+              {content.heroCtas.secondary.label}
+            </Link>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

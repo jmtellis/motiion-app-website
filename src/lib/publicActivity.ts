@@ -4,7 +4,7 @@ import type { PublicActivity } from "@/types/public";
 type ActivityResponse = { activity: PublicActivity };
 
 export async function fetchPublicActivity(id: string): Promise<PublicActivity | null> {
-  const trimmed = decodeURIComponent(id).trim();
+  const trimmed = decodeURIComponent(id).trim().toLowerCase();
   if (!trimmed) return null;
 
   try {
@@ -55,6 +55,41 @@ export function formatActivityDateTime(activity: PublicActivity): string {
     parts.push(activity.startTime.slice(0, 5));
   }
   return parts.join(" · ") || "Date coming soon";
+}
+
+export function formatActivityWhenLine(activity: PublicActivity): string | null {
+  const date = activity.activityDate?.trim();
+  if (!date) return null;
+
+  let line = date;
+  const start = activity.startTime?.trim();
+  if (start) line += ` · ${start.slice(0, 5)}`;
+
+  const endDate = activity.endDate?.trim();
+  if (endDate && endDate !== date) {
+    line += ` – ${endDate}`;
+    const endTime = activity.endTime?.trim();
+    if (endTime) line += ` · ${endTime.slice(0, 5)}`;
+  } else {
+    const endTime = activity.endTime?.trim();
+    if (endTime) line += ` – ${endTime.slice(0, 5)}`;
+  }
+
+  return line;
+}
+
+export function activityRouteKind(sharePath: string): PublicActivity["kind"] | null {
+  if (sharePath.startsWith("/class")) return "class";
+  if (sharePath.startsWith("/session")) return "session";
+  if (sharePath.startsWith("/event")) return "event";
+  return null;
+}
+
+export function effectiveActivityKind(
+  activity: PublicActivity,
+  sharePath: string,
+): PublicActivity["kind"] {
+  return activityRouteKind(sharePath) ?? activity.kind;
 }
 
 export function formatMoney(cents: number | null | undefined, currency = "usd"): string {

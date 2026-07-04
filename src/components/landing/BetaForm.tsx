@@ -86,15 +86,15 @@ export function BetaForm({
     ? ""
     : cn(
         compact
-          ? "rounded-2xl border p-4 sm:p-5"
-          : "rounded-3xl border p-6 md:p-8",
+          ? "rounded-[var(--radius-card)] border p-4 sm:p-5"
+          : "rounded-[var(--radius-panel)] border p-5 md:p-6",
         dark
-          ? "border-white/12 bg-black shadow-[0_12px_40px_rgba(0,0,0,0.4)] [&_.field>span]:text-white/85 [&_.field>legend]:text-white/85 [&_.field>input]:border-white/15 [&_.field>input]:bg-black [&_.field>input]:text-white [&_.field>input]::placeholder:text-white/35 [&_.field>textarea]:border-white/15 [&_.field>textarea]:bg-black [&_.field>textarea]:text-white [&_.field>select]:border-white/15 [&_.field>select]:bg-black [&_.field>select]:text-white [&_label]:text-white/80"
-          : "border-[var(--line)] bg-white shadow-[0_12px_32px_rgba(0,0,0,0.06)] sm:shadow-[0_16px_45px_rgba(0,0,0,0.06)]",
+          ? "border-white/12 bg-black [&_.field>span]:text-white/85 [&_.field>legend]:text-white/85 [&_.field>input]:border-white/15 [&_.field>input]:bg-black [&_.field>input]:text-white [&_.field>input]::placeholder:text-white/35 [&_.field>textarea]:border-white/15 [&_.field>textarea]:bg-black [&_.field>textarea]:text-white [&_.field>select]:border-white/15 [&_.field>select]:bg-black [&_.field>select]:text-white [&_label]:text-white/80"
+          : "border-[var(--line)] bg-white",
       );
 
   const formSpaceClass = compact ? "space-y-2.5" : "space-y-4";
-  const statusClass = compact ? "rounded-xl p-3.5 text-xs" : "rounded-2xl p-5 text-sm";
+  const statusClass = compact ? "rounded-[var(--radius-field)] p-3.5 text-xs" : "rounded-[var(--radius-card)] p-4 text-sm";
 
   return (
     <div className={shellClass}>

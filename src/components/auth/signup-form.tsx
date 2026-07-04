@@ -2,35 +2,19 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
 
-import {
-  AuthButton,
-  AuthCard,
-  AuthCardContent,
-  AuthCardHeader,
-  AuthCardTitle,
-  AuthError,
-  AuthField,
-  AuthInput,
-  AuthMuted,
-  authChoiceCard,
-} from "@/components/auth/ui";
-import { nonTalentSubtypeOptions, talentSubtypeOptions } from "@/lib/mock-data";
+import { SignupSplitFormHeader } from "@/components/auth/SignupSplitShell";
+import { SignupSplitDivider, SignupSplitOAuth } from "@/components/auth/SignupSplitOAuth";
+import { trackClientEvent } from "@/lib/analytics/track-client";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
-
-type SignupPath = "talent" | "hiring";
 
 export function SignupForm() {
   const router = useRouter();
-  const [path, setPath] = useState<SignupPath>("talent");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const accountType = useMemo(
-    () => (path === "talent" ? "talent" : "lookingForTalent"),
-    [path],
-  );
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(formData: FormData) {
     const supabase = createClientSupabaseClient();
@@ -40,19 +24,20 @@ export function SignupForm() {
       return;
     }
 
-    const fullName = String(formData.get("full_name") ?? "");
-    const email = String(formData.get("email") ?? "");
+    const firstName = String(formData.get("first_name") ?? "").trim();
+    const lastName = String(formData.get("last_name") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim();
     const password = String(formData.get("password") ?? "");
-    const companyName = String(formData.get("company_name") ?? "");
-    const talentSubtype = String(formData.get("talent_subtype") ?? "");
-    const nonTalentType = String(formData.get("non_talent_type") ?? "");
+
+    if (!firstName || !lastName) {
+      setError("First and last name are required.");
+      return;
+    }
+
+    const fullName = `${firstName} ${lastName}`.trim();
 
     setLoading(true);
     setError(null);
-
-    const nameParts = fullName.trim().split(/\s+/).filter(Boolean);
-    const firstName = nameParts[0] ?? "";
-    const lastName = nameParts.slice(1).join(" ");
 
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
@@ -90,8 +75,8 @@ export function SignupForm() {
       first_name: firstName,
       last_name: lastName,
       display_name: fullName,
-      account_type: accountType,
-      talent_types: path === "talent" && talentSubtype ? [talentSubtype] : [],
+      account_type: "talent",
+      talent_types: ["dancer"],
       working_locations: [],
       skills: [],
       experiences: [],
@@ -105,121 +90,88 @@ export function SignupForm() {
       return;
     }
 
-    if (path === "hiring") {
-      const { error: nonTalentError } = await supabase.from("non_talent_profiles").upsert({
-        id: data.user.id,
-        company_name: companyName || null,
-        non_talent_type: nonTalentType || null,
-        work_email: email,
-      });
-
-      if (nonTalentError) {
-        setError(nonTalentError.message);
-        setLoading(false);
-        return;
-      }
-    }
+    trackClientEvent("user_signed_up", {
+      account_type: "talent",
+      role_type: "dancer",
+    });
 
     router.push("/onboarding");
     router.refresh();
   }
 
   return (
-    <AuthCard className="w-full max-w-2xl">
-      <AuthCardHeader>
-        <AuthCardTitle>Sign up</AuthCardTitle>
-        <AuthMuted>
-          Create your account, then finish your profile in our guided onboarding.
-        </AuthMuted>
-      </AuthCardHeader>
-      <AuthCardContent>
-        <div className="grid gap-3 md:grid-cols-2">
-          {[
-            {
-              key: "talent" as const,
-              title: "I'm talent",
-              description: "Dancers and choreographers building a Motiion profile.",
-            },
-            {
-              key: "hiring" as const,
-              title: "I'm hiring",
-              description: "Casting, creative, production, agency, and recruiting teams.",
-            },
-          ].map((option) => (
-            <button
-              key={option.key}
-              type="button"
-              onClick={() => setPath(option.key)}
-              className={authChoiceCard(path === option.key)}
-            >
-              <p className="text-lg font-semibold text-[var(--ink)]">{option.title}</p>
-              <p className="mt-1 text-sm text-[var(--ink-soft)]">{option.description}</p>
-            </button>
-          ))}
-        </div>
+    <div className="signup-split-form">
+      <SignupSplitFormHeader
+        title="Sign up as Talent"
+        subtitle="Create your account to build a profile and get discovered."
+      />
 
-        <form action={handleSubmit} className="grid gap-4 md:grid-cols-2">
-          <div className="md:col-span-2">
-            <AuthField label="Full name">
-              <AuthInput id="full_name" name="full_name" placeholder="Jordan Lee" required />
-            </AuthField>
-          </div>
-          <AuthField label={path === "hiring" ? "Work email" : "Email"}>
-            <AuthInput id="email" name="email" type="email" placeholder="name@company.com" required />
-          </AuthField>
-          <AuthField label="Password">
-            <AuthInput id="password" name="password" type="password" placeholder="Create a password" required />
-          </AuthField>
+      <div className="signup-split-form__body">
+        <SignupSplitOAuth flow="signup" signupPath="talent" disabled={loading} />
+        <SignupSplitDivider />
 
-          {path === "talent" ? (
-            <label className="field md:col-span-2">
-              <span>Talent subtype</span>
-              <select id="talent_subtype" name="talent_subtype" defaultValue="dancer">
-                {talentSubtypeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+        <form action={handleSubmit} className="flex flex-col gap-4">
+          <div className="signup-split-field-row">
+            <label className="signup-split-field">
+              <span>First Name</span>
+              <input id="first_name" name="first_name" placeholder="eg. John" required autoComplete="given-name" />
             </label>
-          ) : (
-            <>
-              <AuthField label="Company / organization">
-                <AuthInput id="company_name" name="company_name" placeholder="Studio, agency, or brand" />
-              </AuthField>
-              <label className="field">
-                <span>User type</span>
-                <select id="non_talent_type" name="non_talent_type" defaultValue="casting_director">
-                  {nonTalentSubtypeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </>
-          )}
-
-          {error ? (
-            <div className="md:col-span-2">
-              <AuthError>{error}</AuthError>
-            </div>
-          ) : null}
-
-          <div className="md:col-span-2">
-            <AuthButton type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating account…" : "Continue to onboarding"}
-            </AuthButton>
+            <label className="signup-split-field">
+              <span>Last Name</span>
+              <input id="last_name" name="last_name" placeholder="eg. Francisco" required autoComplete="family-name" />
+            </label>
           </div>
+
+          <label className="signup-split-field">
+            <span>Email</span>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="eg. johnfrans@gmail.com"
+              required
+              autoComplete="email"
+            />
+          </label>
+
+          <label className="signup-split-field">
+            <span>Password</span>
+            <div className="signup-split-password-wrap">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                required
+                minLength={8}
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                className="signup-split-password-toggle"
+                onClick={() => setShowPassword((value) => !value)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
+            <span className="signup-split-hint">Must be at least 8 characters.</span>
+          </label>
+
+          {error ? <div className="signup-split-error">{error}</div> : null}
+
+          <button type="submit" className="signup-split-submit" disabled={loading}>
+            {loading ? "Creating account…" : "Sign Up"}
+          </button>
         </form>
 
-        <AuthMuted>
-          Already have an account?{" "}
-          <Link href="/login" className="font-medium text-[var(--accent-dark)] underline underline-offset-4">
-            Log in
-          </Link>
-        </AuthMuted>
-      </AuthCardContent>
-    </AuthCard>
+        <p className="signup-split-footer">
+          Already have an account? <Link href="/login">Log in</Link>
+        </p>
+        <p className="signup-split-footer">
+          Industry professional? <Link href="/talent-buyers/signup">Sign up here</Link>
+        </p>
+      </div>
+    </div>
   );
 }

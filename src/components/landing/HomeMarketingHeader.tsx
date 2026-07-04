@@ -1,4 +1,4 @@
-import { getAccountProfileHref, getProfileInitials } from "@/lib/auth/avatar";
+import { getAccountProfileHref, getAccountSettingsHref, getProfileInitials } from "@/lib/auth/avatar";
 import { isOnboardingComplete } from "@/lib/auth/profile";
 import { getCurrentUserProfile } from "@/lib/auth/session";
 import type { DashboardProfile } from "@/types/database";
@@ -12,6 +12,7 @@ function toAccountPillUser(profile: DashboardProfile): AccountPillUser {
     initials: getProfileInitials(profile.fullName),
     avatarUrl: profile.avatarUrl ?? null,
     profileHref: getAccountProfileHref(profile),
+    settingsHref: getAccountSettingsHref(profile),
   };
 }
 

@@ -36,13 +36,13 @@ function SizingValuePicker({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
       <button type="button" className="absolute inset-0" aria-label="Close sizing picker" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-[var(--line)] bg-white shadow-[0_24px_60px_rgba(17,17,17,0.18)]">
+      <div className="relative z-10 w-full max-w-md overflow-hidden ui-card shadow-[var(--shadow-raised)]">
         <div className="flex items-center justify-between border-b border-[var(--line)] px-5 py-4">
           <h3 className="text-base font-semibold text-[var(--ink)]">{title}</h3>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex size-8 items-center justify-center rounded-full text-[var(--ink-soft)] hover:bg-[var(--tone)]"
+            className="inline-flex size-8 items-center justify-center rounded-[var(--radius-button)] text-[var(--ink-soft)] hover:bg-[var(--tone)]"
             aria-label="Close"
           >
             <X className="size-4" aria-hidden />
@@ -113,7 +113,7 @@ function SizingFieldChip({
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          "flex w-full items-center justify-between gap-3 rounded-full border px-5 py-3 text-left text-sm transition",
+          "flex w-full items-center justify-between gap-3 rounded-[var(--radius-field)] border px-4 py-3 text-left text-sm transition",
           filled
             ? "border-[var(--ink)]/20 bg-[var(--tone)] text-[var(--ink)]"
             : "border-[var(--line)] bg-white text-[var(--ink-soft)] hover:border-[var(--ink-soft)] hover:text-[var(--ink)]",
@@ -204,7 +204,7 @@ export function SizingEditor({
             type="button"
             onClick={() => setTab(item.id)}
             className={cn(
-              "rounded-full border px-4 py-2 text-sm font-medium transition",
+              "rounded-[var(--radius-chip)] border px-4 py-2 text-sm font-medium transition",
               tab === item.id
                 ? "border-[var(--ink)] bg-[var(--ink)] text-white"
                 : "border-[var(--line)] bg-white text-[var(--ink-soft)] hover:text-[var(--ink)]",

@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 
 import {
+  getOnboardingPath,
+  getProfileDestination,
   isHiringAccount,
   isOnboardingComplete,
   isTalentAccount,
@@ -9,12 +12,7 @@ import {
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { DashboardProfile, NonTalentProfileRecord, ProfileRecord } from "@/types/database";
 
-export function getProfileDestination(profile: DashboardProfile | null) {
-  if (!profile) return "/login";
-  if (!isOnboardingComplete(profile)) return "/onboarding";
-  if (isTalentAccount(profile.accountType) || isHiringAccount(profile.accountType)) return "/home";
-  return "/onboarding";
-}
+export { getOnboardingPath, getProfileDestination } from "@/lib/auth/profile";
 
 export async function getCurrentUserProfile(): Promise<DashboardProfile | null> {
   const supabase = await createServerSupabaseClient();
@@ -46,7 +44,9 @@ export async function getCurrentUserProfile(): Promise<DashboardProfile | null> 
 
   const { data: nonTalentProfile } = await supabase
     .from("non_talent_profiles")
-    .select("id, company_name, non_talent_type, work_email")
+    .select(
+      "id, company_name, non_talent_type, work_email, user_type, primary_goal, role, organization_name, organization_website, company_size, talent_types, style_focus, markets, verification_links, notification_preferences, onboarding_completed",
+    )
     .eq("id", user.id)
     .maybeSingle<NonTalentProfileRecord>();
 
@@ -55,13 +55,20 @@ export async function getCurrentUserProfile(): Promise<DashboardProfile | null> 
 
 export async function requireAuth() {
   const profile = await getCurrentUserProfile();
-  if (!profile) redirect("/login");
+  if (!profile) {
+    const headerList = await headers();
+    const pathname = headerList.get("x-pathname") ?? "";
+    if (pathname && pathname.startsWith("/") && !pathname.startsWith("/login")) {
+      redirect(`/login?next=${encodeURIComponent(pathname)}`);
+    }
+    redirect("/login");
+  }
   return profile;
 }
 
 export async function requireCompleteProfile() {
   const profile = await requireAuth();
-  if (!isOnboardingComplete(profile)) redirect("/onboarding");
+  if (!isOnboardingComplete(profile)) redirect(getOnboardingPath(profile));
   return profile;
 }
 
@@ -74,5 +81,30 @@ export async function requireTalentAccount() {
 export async function requireHiringAccount() {
   const profile = await requireCompleteProfile();
   if (!isHiringAccount(profile.accountType)) redirect(getProfileDestination(profile));
+  return profile;
+}
+
+export async function isPlatformAdmin(): Promise<boolean> {
+  const supabase = await createServerSupabaseClient();
+  if (!supabase) return false;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { data, error } = await supabase.rpc("auth_is_platform_admin");
+  if (error) {
+    console.debug("auth_is_platform_admin failed:", error.message);
+    return false;
+  }
+
+  return Boolean(data);
+}
+
+export async function requirePlatformAdmin() {
+  const profile = await requireAuth();
+  const isAdmin = await isPlatformAdmin();
+  if (!isAdmin) redirect("/home");
   return profile;
 }

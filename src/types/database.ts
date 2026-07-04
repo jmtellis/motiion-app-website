@@ -1,3 +1,12 @@
+import type {
+  TalentBuyerNotificationPreferences,
+  TalentBuyerPrimaryGoal,
+  TalentBuyerRole,
+  TalentBuyerStyleFocus,
+  TalentBuyerTalentType,
+  TalentBuyerVerificationLinks,
+} from "@/types/talent-buyers";
+
 export type AccountType = "talent" | "lookingForTalent" | "looking_for_talent";
 
 export type TalentSubtype = "dancer" | "choreographer";
@@ -29,6 +38,18 @@ export type NonTalentProfileRecord = {
   company_name: string | null;
   non_talent_type: NonTalentSubtype | null;
   work_email: string | null;
+  user_type?: string | null;
+  primary_goal?: TalentBuyerPrimaryGoal | null;
+  role?: TalentBuyerRole | null;
+  organization_name?: string | null;
+  organization_website?: string | null;
+  company_size?: string | null;
+  talent_types?: TalentBuyerTalentType[] | null;
+  style_focus?: TalentBuyerStyleFocus[] | null;
+  markets?: string[] | null;
+  verification_links?: TalentBuyerVerificationLinks | null;
+  notification_preferences?: TalentBuyerNotificationPreferences | null;
+  onboarding_completed?: boolean | null;
 };
 
 export type DashboardProfile = {
@@ -42,4 +63,16 @@ export type DashboardProfile = {
   nonTalentType?: NonTalentSubtype | null;
   username?: string | null;
   avatarUrl?: string | null;
+  userType?: string | null;
+  primaryGoal?: TalentBuyerPrimaryGoal | null;
+  buyerRole?: TalentBuyerRole | null;
+  organizationName?: string | null;
+  organizationWebsite?: string | null;
+  companySize?: string | null;
+  buyerTalentTypes?: TalentBuyerTalentType[] | null;
+  styleFocus?: TalentBuyerStyleFocus[] | null;
+  markets?: string[] | null;
+  verificationLinks?: TalentBuyerVerificationLinks | null;
+  notificationPreferences?: TalentBuyerNotificationPreferences | null;
+  buyerOnboardingCompleted?: boolean | null;
 };

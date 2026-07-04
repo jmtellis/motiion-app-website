@@ -1,8 +1,9 @@
 import type { FaqItem } from "@/lib/marketing/homepage-content";
 
-export type MarketingTab = "talent" | "casting" | "demo";
+export type MarketingTab = "talent" | "casting";
 
 export const JOIN_BETA_CTA = { label: "Join Beta", href: "#signup" } as const;
+export const INDUSTRY_PRO_SIGNUP_CTA = { label: "Sign up", href: "/talent-buyers/signup" } as const;
 
 /** Root landing and other pages where no audience tab is selected. */
 export type MarketingHeaderTab = MarketingTab | null;
@@ -11,7 +12,7 @@ export type AudiencePageContent = {
   eyebrow: string;
   headline: string;
   summary: string;
-  heroCtas: { primary: { label: string; href: string }; secondary: { label: string; href: string } };
+  heroCtas: { primary: { label: string; href: string }; secondary?: { label: string; href: string } };
   benefitsTitle: string;
   benefits: { title: string; description: string }[];
   workflowTitle: string;
@@ -27,15 +28,14 @@ export type AudiencePageContent = {
 };
 
 export const talentPageContent: AudiencePageContent = {
-  eyebrow: "For Dancers",
+  eyebrow: "Talent",
   headline: "One profile. Better opportunities. Less friction.",
   summary:
     "Motiion helps dancers and choreographers build a living professional identity, get discovered by the right teams, and respond to invites without rebuilding materials every time.",
   heroCtas: {
     primary: JOIN_BETA_CTA,
-    secondary: { label: "Request a demo", href: "/request-demo" },
   },
-  benefitsTitle: "Why talent joins Motiion",
+  benefitsTitle: "Why dancers and choreographers join Motiion",
   benefits: [
     {
       title: "Living portfolio",
@@ -45,7 +45,7 @@ export const talentPageContent: AudiencePageContent = {
     {
       title: "Right discovery",
       description:
-        "Show up in search with style, skills, and experience filters casting teams actually use.",
+        "Show up in search with style, skills, and experience filters industry teams actually use.",
     },
     {
       title: "Faster invites",
@@ -78,14 +78,14 @@ export const talentPageContent: AudiencePageContent = {
   trustTitle: "Designed for working artists",
   trustPoints: [
     "Search-safe profiles that protect personal details while staying discoverable.",
-    "Mobile-first workflow aligned with how talent actually books work.",
-    "One source of truth for everything casting sees about you.",
+    "Mobile-first workflow aligned with how dancers and choreographers actually book work.",
+    "One source of truth for everything industry teams see about you.",
   ],
   faq: [
     {
       question: "Who is the talent experience for?",
       answer:
-        "Dancers, choreographers, and other performing artists who need a professional presence and a clearer path to opportunities.",
+        "Dancers and choreographers who need a professional presence and a clearer path to opportunities—whether you perform, create, or both.",
     },
     {
       question: "Do I need representation to sign up?",
@@ -111,93 +111,80 @@ export const talentPageContent: AudiencePageContent = {
 };
 
 export const castingPageContent: AudiencePageContent = {
-  eyebrow: "For Choreographers & Casting",
-  headline: "Discover talent faster. Decide with confidence.",
+  eyebrow: "Industry Professionals",
+  headline: "Discover talent. Build rosters. Run projects.",
   summary:
-    "Motiion gives casting directors, creative teams, producers, and agencies a trusted layer for search, shortlists, and outreach—built on profiles that stay current.",
+    "Motiion gives casting directors, creative teams, producers, agencies, and choreographers one workspace to search the talent database, manage rosters, create castings, and keep projects moving from discovery to confirmation.",
   heroCtas: {
-    primary: JOIN_BETA_CTA,
-    secondary: { label: "Request a demo", href: "/request-demo" },
+    primary: INDUSTRY_PRO_SIGNUP_CTA,
   },
-  benefitsTitle: "Why casting teams use Motiion",
+  benefitsTitle: "Why industry professionals use Motiion",
   benefits: [
     {
-      title: "Dance search",
+      title: "Talent database",
       description:
-        "Filter by style, experience, location, and talent type instead of scrolling social feeds and email threads.",
+        "Search verified dancers and choreographers by style, experience, location, and talent type instead of scrolling social feeds and email threads.",
     },
     {
-      title: "Trusted profiles",
+      title: "Project workspace",
       description:
-        "Review verified headshots, reels, credits, and highlights without chasing outdated links.",
+        "Create projects, publish castings with roles and submission rules, and track progress from draft to live.",
+    },
+    {
+      title: "Roster management",
+      description:
+        "Save talent, organize rosters, and keep your go-to people accessible for the next brief or production.",
     },
     {
       title: "Faster shortlists",
       description:
-        "Save, compare, and share candidates with collaborators so review cycles stay focused on creative fit.",
+        "Compare candidates, share selections with collaborators, and move review cycles from debate to decision.",
     },
     {
       title: "Less admin",
       description:
-        "Centralize discovery, outreach, and context instead of rebuilding spreadsheets for every project.",
-    },
-    {
-      title: "Any team",
-      description:
-        "Whether you manage rosters or run project-based casting, Motiion scales to your workflow.",
+        "Centralize discovery, outreach, and project context instead of rebuilding spreadsheets for every job.",
     },
     {
       title: "Clear communication",
       description:
-        "Keep conversations tied to roles, classes, and sessions so nothing gets lost across tools.",
+        "Keep conversations tied to roles, castings, and sessions so nothing gets lost across tools.",
     },
   ],
-  workflowTitle: "How casting works on Motiion",
+  workflowTitle: "How it works for industry professionals",
   workflowSteps: [
-    "Create your casting account and tell us how your team hires.",
-    "Search Motiion talent with practical filters and saved views.",
-    "Build shortlists and share them with stakeholders.",
-    "Reach out and move from discovery to confirmation with full context.",
+    "Create your account and tell us how your team hires and manages talent.",
+    "Search the Motiion talent database and save people to your roster.",
+    "Create projects and publish castings with roles, requirements, and submission details.",
+    "Build shortlists, collaborate with stakeholders, and move from discovery to confirmation.",
   ],
   trustTitle: "Built for production timelines",
   trustPoints: [
     "Reduces time-to-shortlist on fast-moving projects.",
-    "Improves consistency across reviewers and collaborators.",
-    "Keeps talent data current so decisions are made on facts, not stale PDFs.",
+    "Keeps rosters, castings, and project context in one connected workflow.",
+    "Uses current talent profiles so decisions are made on facts, not stale PDFs.",
   ],
   faq: [
     {
-      question: "Who is the casting experience for?",
+      question: "Who is the industry professional experience for?",
       answer:
-        "Casting directors, creative directors, producers, managers, agencies, recruiters, and any team hiring dance talent.",
+        "Casting directors, creative directors, producers, managers, agencies, recruiters, choreographers hiring for projects, and any team that discovers, organizes, and books dance talent.",
     },
     {
       question: "Is Motiion a talent agency?",
       answer:
-        "No. Motiion is infrastructure for discovery and casting workflow—we do not represent talent.",
+        "No. Motiion is infrastructure for discovery, roster management, and project workflow—we do not represent talent.",
     },
     {
       question: "Can we search before signing up?",
       answer:
-        "Yes. You can browse public talent profiles, then create an account when you are ready to hire and collaborate.",
-    },
-    {
-      question: "Can we request a walkthrough for our team?",
-      answer:
-        "Absolutely. Use the Request a Demo form and we will schedule time with your team.",
+        "Yes. You can browse public talent profiles, then create an account when you are ready to build rosters, create projects, and collaborate.",
     },
   ],
   betaSignup: {
     eyebrow: "Join Beta",
     title: "Request beta access",
     description:
-      "Tell us how your team hires and casts. We'll follow up with early access details for casting accounts.",
+      "Tell us how your team discovers talent and manages projects. We'll follow up with early access details for industry professional accounts.",
   },
-};
-
-export const demoPageContent = {
-  eyebrow: "Request a demo",
-  headline: "Talk with the Motiion team",
-  summary:
-    "Tell us whether you are talent or a client, share your contact details, and we will follow up to show you how Motiion fits your workflow.",
 };

@@ -95,7 +95,7 @@ export function ResumeUploadField({
         type="button"
         onClick={openPicker}
         disabled={isPending}
-        className="flex w-full items-center justify-between gap-4 rounded-2xl border border-[var(--line)] bg-white px-5 py-4 text-left transition hover:bg-[var(--tone)] disabled:opacity-60"
+            className="flex w-full items-center justify-between gap-4 ui-card-interactive px-5 py-4 text-left disabled:opacity-60"
       >
         <div className="min-w-0">
           <p className="font-semibold text-[var(--ink)]">

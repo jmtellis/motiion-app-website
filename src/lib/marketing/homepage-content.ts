@@ -66,15 +66,14 @@ export const learnMoreHeroCta = {
     paths: [
       {
         id: "talent",
-        label: "For Dancers",
-        description: "Build your profile, get discovered, and respond to real opportunities.",
+        label: "Talent",
+        description: "Create a profile. Get discovered. Book work.",
         href: "/for-talent",
       },
       {
         id: "casting",
-        label: "For Choreographers & Casting",
-        description:
-          "Search verified talent, run castings, and move from shortlist to confirmation—for casting directors and choreographers.",
+        label: "Industry Professional",
+        description: "Discover talent. Build rosters. Create castings. Manage projects.",
         href: "/for-casting",
       },
     ],
@@ -135,12 +134,12 @@ export const homeHero = {
   audienceLinks: [
     {
       id: "talent",
-      label: "For Dancers",
+      label: "Talent",
       href: "/for-talent",
     },
     {
       id: "casting",
-      label: "For Choreographers & Casting",
+      label: "Industry Professional",
       href: "/for-casting",
     },
   ],
@@ -257,19 +256,14 @@ export const visionSection = {
 
 export const homeAudienceLinks = [
   {
-    label: "For Dancers",
-    description: "Build a living profile, get discovered, and respond to real opportunities.",
+    label: "Talent",
+    description: "Create a profile. Get discovered. Book work.",
     href: "/for-talent",
   },
   {
-    label: "For Choreographers & Casting",
-    description: "Search verified talent, run casting, and move from shortlist to confirmation faster.",
+    label: "Industry Professional",
+    description: "Discover talent. Build rosters. Create castings. Manage projects.",
     href: "/for-casting",
-  },
-  {
-    label: "Request a Demo",
-    description: "See how Motiion fits your team before you roll it out.",
-    href: "/request-demo",
   },
 ] as const;
 

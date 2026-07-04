@@ -42,4 +42,15 @@ export type UpcomingActivity = {
 export type HomeFeedData = {
   pendingRequests: HomePendingRequest[];
   upcomingActivities: UpcomingActivity[];
+  matchedOpportunities: MatchedOpportunity[];
+};
+
+export type MatchedOpportunity = {
+  id: string;
+  kind: string;
+  title: string;
+  subtitle: string;
+  location: string | null;
+  score: number;
+  href: string;
 };

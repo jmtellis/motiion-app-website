@@ -34,14 +34,21 @@ function SelectField({
 export function HeroSearchBar({
   filters,
   action = "/search",
+  embedded = false,
 }: {
   filters?: SearchFilters;
   action?: string;
+  /** Render without outer panel chrome when nested in ui-command-panel. */
+  embedded?: boolean;
 }) {
   return (
     <form
       action={action}
-      className="w-full max-w-5xl rounded-[28px] border border-[var(--line)] bg-white/92 p-4 shadow-[0_20px_60px_rgba(17,17,17,0.08)] backdrop-blur-md lg:flex lg:items-end lg:gap-3"
+      className={
+        embedded
+          ? "w-full lg:flex lg:items-end lg:gap-3"
+          : "ui-panel w-full max-w-5xl p-3.5 lg:flex lg:items-end lg:gap-3"
+      }
     >
       <input type="hidden" name="page" value="1" />
 

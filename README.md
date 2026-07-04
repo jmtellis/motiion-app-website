@@ -1,47 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Motiion Web
 
-## Motiion app surfaces
+Next.js 16 (App Router) web surface for [Motiion](https://www.motiion.app) — marketing, talent app, and industry (talent buyer) dashboard. Shares one Supabase backend with the iOS app.
 
-This deployment powers **`www.motiion.app`** (marketing) plus shareable routes used by the iOS app:
+## Stack
 
-- **`/profile/[slug]`** — Universal Link landing + Open Graph (Supabase `profile-og` + `talent` metadata).
-- **`/activity/[id]`** — Activity deep-link fallback page.
-- **`/shortlist/[token]`** — Client shortlist review UI (Supabase edge function `shortlist-share-public`).
-- **`/.well-known/apple-app-site-association`** — Served as JSON via `vercel.json`.
+| Layer | Choice |
+|-------|--------|
+| Framework | Next.js 16, React 19, TypeScript |
+| Styling | Tailwind CSS 4, design tokens in `docs/design.md` |
+| Backend | Supabase (Postgres, Auth, Storage, Realtime) |
+| Payments | Stripe Billing (web), RevenueCat (iOS IAP sync) |
+| Analytics | PostHog + `analytics_events` table |
+| Email | Resend |
+| Errors | Sentry |
 
-Copy `.env.example` to `.env.local` for local development. On Vercel, set the same **`NEXT_PUBLIC_*`** variables (see `.env.example`) alongside **`NOTION_*`** for beta signup.
+## App surfaces
 
-## Getting Started
+- **`/`** — Marketing / landing
+- **`/(app)/*`** — Talent app (`/home`, `/portfolio`, inbox, discover)
+- **`/(buyer-app)/*`** — Industry dashboard (`/dashboard`, `/talent`, `/projects`, `/library`)
+- **`/profile/[slug]`** — Public talent profiles (Universal Links + OG)
+- **`/casting/[id]`** — Public casting pages
+- **`/shortlist/[token]`** — Client shortlist review
+- **`/admin/*`** — Platform admin (analytics, verification)
 
-First, run the development server:
+Product spec: `docs/prd.md` · Roadmap: `docs/product-roadmap.md` · Design tokens: `docs/design.md`
+
+## Environment variables
+
+Copy `.env.example` to `.env.local`. Required keys depend on what you're testing:
+
+| Variable | Required for | Notes |
+|----------|--------------|-------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Auth, data, storage | Same project as iOS |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client + SSR | Public anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Admin analytics, webhooks | **Server only** — never `NEXT_PUBLIC_*` |
+| `NEXT_PUBLIC_SITE_URL` | OG metadata, share links | e.g. `https://www.motiion.app` |
+| `STRIPE_SECRET_KEY` | Checkout, portal | Test mode for local dev |
+| `STRIPE_WEBHOOK_SECRET` | Subscription sync | Point Stripe CLI or dashboard to `/api/webhooks/stripe` |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Checkout redirect | |
+| `REVENUECAT_WEBHOOK_SECRET` | iOS entitlement sync | `/api/webhooks/revenuecat` |
+| `RESEND_API_KEY` | Invitation / message email | Graceful fail if unset |
+| `NEXT_PUBLIC_POSTHOG_KEY` | Product analytics | |
+| `NEXT_PUBLIC_POSTHOG_HOST` | PostHog region | Default `https://us.i.posthog.com` |
+| `NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_DSN` | Error tracking | Same DSN or split client/server |
+| `SENTRY_AUTH_TOKEN` | Source map upload (CI) | Optional locally |
+| `NOTION_*` | Beta signup form | Marketing only |
+| `OPENAI_API_KEY` | Resume PDF parsing | Onboarding |
+| `BRANDFETCH_*` | Company logos | Experience highlights |
+
+See `.env.example` for the full list with comments.
+
+## Getting started
 
 ```bash
+npm install
+cp .env.example .env.local
+# Fill in Supabase keys at minimum
+
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Database migrations
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Schema lives in `supabase/migrations/`. Apply with the Supabase CLI against your project or local stack:
 
-## Learn More
+```bash
+supabase db push
+# or for local: supabase start && supabase db reset
+```
 
-To learn more about Next.js, take a look at the following resources:
+Migrations are the source of truth for web + iOS shared schema.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Development server |
+| `npm run build` | Production build |
+| `npm run start` | Production server |
+| `npm run lint` | ESLint |
 
-## Deploy on Vercel
+## Deploy
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deploy to **Vercel**. Set all production env vars in Vercel project settings. Stripe and RevenueCat webhooks should target your production `/api/webhooks/*` routes.

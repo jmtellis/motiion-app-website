@@ -2,7 +2,8 @@ import Link from "next/link";
 
 import { AccountPill, type AccountPillUser } from "@/components/auth/AccountPill";
 import { MotiionBrandMark } from "@/components/brand/MotiionBrandMark";
-import { getAccountProfileHref, getProfileInitials } from "@/lib/auth/avatar";
+import { NotificationBell } from "@/components/layout/NotificationBell";
+import { getAccountProfileHref, getAccountSettingsHref, getProfileInitials } from "@/lib/auth/avatar";
 import type { DashboardProfile } from "@/types/database";
 
 type NavLink = { label: string; href: string };
@@ -13,6 +14,7 @@ function toAccountPillUser(profile: DashboardProfile): AccountPillUser {
     initials: getProfileInitials(profile.fullName),
     avatarUrl: profile.avatarUrl ?? null,
     profileHref: getAccountProfileHref(profile),
+    settingsHref: getAccountSettingsHref(profile),
   };
 }
 
@@ -40,18 +42,21 @@ export function AppHeader({
   navLinks,
   homeHref = "/",
   centeredLogo = false,
+  hideAccountMenu = false,
 }: {
   profile: DashboardProfile | null;
   navLinks?: NavLink[];
   homeHref?: string;
   /** Login / sign-up — logo centered like the home marketing header. */
   centeredLogo?: boolean;
+  /** Hide account menu during sign-up or onboarding. */
+  hideAccountMenu?: boolean;
 }) {
-  const accountUser = profile ? toAccountPillUser(profile) : null;
+  const accountUser = profile && !hideAccountMenu ? toAccountPillUser(profile) : null;
 
   if (centeredLogo) {
     return (
-      <header className="sticky top-0 z-50 border-b border-[var(--line)]/80 bg-[var(--paper)]/90 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-[var(--line)]/80 bg-[var(--paper)]/95">
         <div className="relative mx-auto flex min-h-[4.25rem] w-full max-w-6xl items-center px-6 py-3 lg:px-10">
           <div className="flex-1" aria-hidden />
           <div className="absolute top-1/2 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
@@ -66,7 +71,7 @@ export function AppHeader({
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--line)]/80 bg-[var(--paper)]/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-[var(--line)]/80 bg-[var(--paper)]/95">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4 lg:px-10">
         <HeaderLogo homeHref={homeHref} />
 
@@ -95,8 +100,11 @@ export function AppHeader({
         ) : null}
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {accountUser ? (
-            <AccountPill user={accountUser} />
+          {accountUser && profile ? (
+            <>
+              <NotificationBell userId={profile.id} />
+              <AccountPill user={accountUser} />
+            </>
           ) : (
             <Link href="/#signup" className="btn-primary text-sm">
               Join Beta

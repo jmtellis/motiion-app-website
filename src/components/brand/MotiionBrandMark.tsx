@@ -1,21 +1,21 @@
 import Image from "next/image";
 
-/** App `HeaderLogo` — `header-logo-wordmark.png` (white template, transparent background). */
-const HEADER_LOGO_WIDTH = 504;
-const HEADER_LOGO_HEIGHT = 300;
-export const MOTIION_WORDMARK_SRC = "/header-logo-wordmark.png";
+/** Motiion emblem — white template on transparent background. */
+const EMBLEM_WIDTH = 1016;
+const EMBLEM_HEIGHT = 655;
+export const MOTIION_WORDMARK_SRC = "/motiion-emblem.png";
 const HEADER_LOGO_SRC = MOTIION_WORDMARK_SRC;
 
-/** Wordmark aspect ratio (width / height) */
-export const MOTIION_WORDMARK_ASPECT = HEADER_LOGO_WIDTH / HEADER_LOGO_HEIGHT;
+/** Emblem aspect ratio (width / height) */
+export const MOTIION_WORDMARK_ASPECT = EMBLEM_WIDTH / EMBLEM_HEIGHT;
 
-/** Matches iOS `headerLogoDisplayHeight` (20pt), slightly larger for web raster clarity. */
-export const MOTIION_HEADER_LOGO_HEIGHT = 24;
+/** Matches iOS `headerLogoDisplayHeight` (20pt). */
+export const MOTIION_HEADER_LOGO_HEIGHT = 20;
 
 /**
- * Full app header lockup from `HeaderLogo.imageset` (emblem + “motiion” wordmark).
- * The PNG is a white template; `brightness(0)` tints it dark on the light header
- * (same effect as SwiftUI `.renderingMode(.template)` + dark `foregroundStyle`).
+ * Motiion emblem lockup (stylized M + circle).
+ * The PNG is a white template; `brightness(0)` tints it dark on light headers
+ * and `brightness(0) invert` renders it white on dark backgrounds.
  */
 export function MotiionBrandMark({
   height = MOTIION_HEADER_LOGO_HEIGHT,
@@ -26,10 +26,10 @@ export function MotiionBrandMark({
   height?: number;
   className?: string;
   priority?: boolean;
-  /** White wordmark for dark backgrounds (hero, etc.). */
+  /** White emblem for dark backgrounds (hero, etc.). */
   inverted?: boolean;
 }) {
-  const width = Math.round((height * HEADER_LOGO_WIDTH) / HEADER_LOGO_HEIGHT);
+  const width = Math.round((height * EMBLEM_WIDTH) / EMBLEM_HEIGHT);
 
   return (
     <Image

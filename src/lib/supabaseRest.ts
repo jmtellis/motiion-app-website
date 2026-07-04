@@ -40,23 +40,30 @@ export async function callSupabaseFunction<T>(
     throw new Error("Supabase is not configured.");
   }
 
-  const response = await fetch(`${config.supabaseUrl}/functions/v1/${slug}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: config.anon,
-      Authorization: `Bearer ${config.anon}`,
-    },
-    body: JSON.stringify(body),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${config.supabaseUrl}/functions/v1/${slug}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: config.anon,
+        Authorization: `Bearer ${config.anon}`,
+      },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new Error("Could not reach the booking server. Please try again in a moment.");
+  }
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
+    const record = typeof data === "object" && data ? (data as Record<string, unknown>) : null;
     const message =
-      typeof data === "object" && data && "error" in data && typeof data.error === "string"
-        ? data.error
-        : "Request failed.";
-    throw new Error(message);
+      record && typeof record.error === "string" ? record.error : "Request failed.";
+    const errorCode = record && typeof record.errorCode === "string" ? record.errorCode : null;
+    const err = new Error(message) as Error & { errorCode?: string };
+    if (errorCode) err.errorCode = errorCode;
+    throw err;
   }
   return data as T;
 }

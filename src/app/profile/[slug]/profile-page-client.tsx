@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { OpenInAppBar } from "@/components/product/OpenInAppBar";
+import { PublicPageAnalytics } from "@/components/analytics/PublicPageAnalytics";
 import { ProductShell } from "@/components/product/ProductShell";
 import type {
   ProfileExperience,
@@ -32,6 +33,11 @@ export default function ProfilePageClient({ profile }: { profile: PublicTalentPr
 
   return (
     <ProductShell>
+      <PublicPageAnalytics
+        eventName="profile_viewed"
+        properties={{ slug: profile.username ?? profile.id }}
+        path={`/profile/${profile.username ?? profile.id}`}
+      />
       <main style={{ display: "grid", gap: 20 }}>
         <header className="product-profile-header" style={{ display: "grid", gap: 16 }}>
           <div style={{ display: "flex", gap: 14, alignItems: "center", minWidth: 0 }}>

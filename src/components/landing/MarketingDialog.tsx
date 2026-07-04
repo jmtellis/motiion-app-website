@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useRef, type ReactNode } from "react";
 
 type MarketingDialogProps = {
   onClose: () => void;
@@ -22,24 +21,17 @@ export function MarketingDialog({
   descriptionId,
   panelClassName,
 }: MarketingDialogProps) {
-  const [mounted, setMounted] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     const dialog = dialogRef.current;
-    if (!dialog || !mounted) return;
+    if (!dialog) return;
 
     if (!dialog.open) dialog.showModal();
 
     const handleCancel = (event: Event) => {
       event.preventDefault();
-      onCloseRef.current();
+      onClose();
     };
 
     dialog.addEventListener("cancel", handleCancel);
@@ -47,11 +39,9 @@ export function MarketingDialog({
       dialog.removeEventListener("cancel", handleCancel);
       if (dialog.open) dialog.close();
     };
-  }, [mounted]);
+  }, [onClose]);
 
-  if (!mounted) return null;
-
-  return createPortal(
+  return (
     <dialog
       ref={dialogRef}
       aria-labelledby={titleId}
@@ -63,13 +53,13 @@ export function MarketingDialog({
       }}
     >
       <div
-        className={`relative z-10 w-full max-w-md rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.18)] sm:p-8 ${panelClassName ?? ""}`}
+        className={`relative z-10 w-full max-w-md rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--paper)] p-5 shadow-[var(--shadow-raised)] sm:p-6 ${panelClassName ?? ""}`}
         onClick={(event) => event.stopPropagation()}
       >
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--ink-soft)] transition hover:bg-[var(--tone)] hover:text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+          className="absolute top-4 right-4 inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-button)] text-[var(--ink-soft)] transition hover:bg-[var(--tone)] hover:text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
           aria-label="Close"
         >
           <span aria-hidden className="text-xl leading-none">
@@ -88,7 +78,6 @@ export function MarketingDialog({
 
         <div className={description ? "mt-6" : "mt-4"}>{children}</div>
       </div>
-    </dialog>,
-    document.body,
+    </dialog>
   );
 }

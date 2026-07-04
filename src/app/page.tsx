@@ -1,12 +1,11 @@
 import { redirect } from "next/navigation";
 import type { Viewport } from "next";
 
-import { HomeLandingHero } from "@/components/landing/HomeLandingHero";
-import { HomeLandingSections } from "@/components/landing/HomeLandingSections";
+import { HomeLandingHero, HomeLandingSections } from "@/components/landing/HomeLandingSections";
 import { MarketingPageLayout } from "@/components/landing/MarketingPageLayout";
-import { isOnboardingComplete } from "@/lib/auth/profile";
+import { getProfileDestination, isOnboardingComplete } from "@/lib/auth/profile";
 import { getCurrentUserProfile } from "@/lib/auth/session";
-import { getHeroHeadshotImages, getPillarHeadshotImages } from "@/lib/search/search-profiles";
+import { getHeroHeadshotImages } from "@/lib/search/search-profiles";
 import { MARKETING_DARK } from "@/lib/marketing/dark-theme";
 
 export const viewport: Viewport = {
@@ -17,13 +16,10 @@ export const viewport: Viewport = {
 export default async function Home() {
   const profile = await getCurrentUserProfile();
   if (profile && isOnboardingComplete(profile)) {
-    redirect("/home");
+    redirect(getProfileDestination(profile));
   }
 
-  const [headshotImages, pillarHeadshots] = await Promise.all([
-    getHeroHeadshotImages(),
-    getPillarHeadshotImages(),
-  ]);
+  const headshotImages = await getHeroHeadshotImages();
 
   return (
     <MarketingPageLayout
@@ -34,7 +30,7 @@ export default async function Home() {
       activeTab={null}
       hero={<HomeLandingHero dark />}
     >
-      <HomeLandingSections dark pillarHeadshots={pillarHeadshots} />
+      <HomeLandingSections dark />
     </MarketingPageLayout>
   );
 }

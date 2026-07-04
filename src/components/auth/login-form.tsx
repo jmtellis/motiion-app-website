@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 
+import { resolveLoginDestination } from "@/app/login/actions";
 import {
   AuthButton,
   AuthCard,
@@ -15,12 +16,20 @@ import {
   AuthInput,
   AuthMuted,
 } from "@/components/auth/ui";
+import { AuthDivider, OAuthButtons } from "@/components/auth/oauth-buttons";
+import { oauthErrorMessage } from "@/lib/auth/oauth-shared";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const callbackError = useMemo(
+    () => oauthErrorMessage(searchParams.get("error")),
+    [searchParams],
+  );
 
   async function handleSubmit(formData: FormData) {
     const email = String(formData.get("email") ?? "");
@@ -46,7 +55,9 @@ export function LoginForm() {
       return;
     }
 
-    router.push("/dashboard");
+    const nextParam = searchParams.get("next");
+    const destination = nextParam?.startsWith("/") ? nextParam : await resolveLoginDestination();
+    router.push(destination);
     router.refresh();
   }
 
@@ -57,6 +68,9 @@ export function LoginForm() {
         <AuthMuted>Sign in with the email and password for your account.</AuthMuted>
       </AuthCardHeader>
       <AuthCardContent>
+        <OAuthButtons flow="login" disabled={loading} />
+        <AuthDivider label="or continue with email" />
+
         <form action={handleSubmit} className="space-y-4">
           <AuthField label="Email">
             <AuthInput id="email" name="email" type="email" placeholder="name@company.com" required />
@@ -71,6 +85,7 @@ export function LoginForm() {
             />
           </AuthField>
           {error ? <AuthError>{error}</AuthError> : null}
+          {callbackError ? <AuthError>{callbackError}</AuthError> : null}
           <AuthButton type="submit" className="w-full" disabled={loading}>
             {loading ? "Signing in…" : "Log in"}
           </AuthButton>

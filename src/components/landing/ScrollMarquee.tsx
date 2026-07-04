@@ -318,7 +318,7 @@ export function ScrollMarqueeDivider({
       ref={ref}
       className={cn(
         edgeClass,
-        dark ? "border-white/10 bg-black/40" : "border-[var(--line)] bg-[var(--tone)]/50",
+        dark ? "border-white/10 bg-black" : "border-[var(--line)] bg-[var(--tone)]/50",
         className,
       )}
       style={fade && !reduceMotion ? { opacity } : undefined}

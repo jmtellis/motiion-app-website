@@ -10,27 +10,46 @@ export async function AuthPageShell({
   profile: profileProp,
   /** When there is no page title, align the form from the top instead of vertically centering. */
   alignFromTop = false,
+  /** Sign-up / setup flows: full viewport, no footer, centered content. */
+  setupFlow = false,
+  /** Hide the account menu during sign-up or onboarding. */
+  hideAccountMenu = false,
 }: {
   children: React.ReactNode;
   title?: string;
   subtitle?: string;
   profile?: DashboardProfile | null;
   alignFromTop?: boolean;
+  setupFlow?: boolean;
+  hideAccountMenu?: boolean;
 }) {
   const profile = profileProp ?? (await getCurrentUserProfile());
   const centered = !title;
+  const useSetupLayout = setupFlow && centered;
+  const shouldHideFooter = setupFlow;
+  const shouldHideAccountMenu = hideAccountMenu || setupFlow;
 
   return (
-    <div id="top" className="flex min-h-svh flex-col bg-[var(--paper)]">
-      <AppHeader profile={profile} homeHref="/" centeredLogo={centered} />
+    <div
+      id="top"
+      className={`flex flex-col bg-[var(--paper)] ${shouldHideFooter ? "h-svh" : "min-h-svh"}`}
+    >
+      <AppHeader
+        profile={profile}
+        homeHref="/"
+        centeredLogo={centered}
+        hideAccountMenu={shouldHideAccountMenu}
+      />
 
       <main
         className={
-          centered
-            ? alignFromTop
-              ? "mx-auto flex w-full max-w-6xl flex-1 flex-col items-center px-6 py-10 lg:px-10 lg:py-12"
-              : "flex w-full flex-1 flex-col items-center justify-center px-6 py-10 lg:px-10"
-            : "mx-auto w-full max-w-6xl flex-1 px-6 py-12 lg:px-10 lg:py-16"
+          useSetupLayout
+            ? "flex w-full flex-1 flex-col items-center justify-center overflow-y-auto px-6 py-8 lg:px-10"
+            : centered
+              ? alignFromTop
+                ? "mx-auto flex w-full max-w-6xl flex-1 flex-col items-center px-6 py-10 lg:px-10 lg:py-12"
+                : "flex w-full flex-1 flex-col items-center justify-center px-6 py-10 lg:px-10"
+              : "mx-auto w-full max-w-6xl flex-1 px-6 py-12 lg:px-10 lg:py-16"
         }
       >
         {title ? (
@@ -44,7 +63,7 @@ export async function AuthPageShell({
         {children}
       </main>
 
-      <Footer />
+      {shouldHideFooter ? null : <Footer />}
     </div>
   );
 }

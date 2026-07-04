@@ -4,7 +4,8 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getSupabaseEnv, hasSupabaseEnv } from "@/lib/supabase/env";
 
 export async function updateSession(request: NextRequest) {
-  const response = NextResponse.next({ request });
+  let response = NextResponse.next({ request });
+  response.headers.set("x-pathname", request.nextUrl.pathname);
 
   if (!hasSupabaseEnv()) {
     return response;

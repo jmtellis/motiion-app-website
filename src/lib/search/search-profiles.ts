@@ -2,12 +2,37 @@ import { cache } from "react";
 
 import { mockTalentProfiles, portraitWallImages } from "@/lib/mock-data";
 import { getSupabaseConfig, supabaseRestGet } from "@/lib/supabaseRest";
+import {
+  filterSearchProfiles,
+  normalizeSearchProfile,
+} from "@/lib/search/talent-filter-logic";
 import type { SearchFilters, SearchProfileRecord, SearchResult } from "@/types/search";
 
 const PAGE_SIZE = 12;
-/** Profiles to load — one primary (and optional secondary) headshot each. */
-const HERO_PROFILE_LIMIT = 48;
-const PILLAR_STACK_HEADSHOT_LIMIT = 10;
+const DISCOVER_FETCH_LIMIT = 120;
+const NAVIGATOR_FETCH_LIMIT = 240;
+
+const TALENT_SELECT = [
+  "id",
+  "username",
+  "full_name",
+  "headshot_url",
+  "headshot_urls",
+  "gender",
+  "ethnicity",
+  "height",
+  "talent_types",
+  "styles",
+  "skills",
+  "representation",
+  "location",
+  "union_status",
+  "eye_color",
+  "hair_color",
+  "profile_highlights",
+  "bio",
+  "agency_logo_url",
+].join(",");
 
 function emptySearchResult(filters: SearchFilters): SearchResult {
   return {
@@ -15,46 +40,6 @@ function emptySearchResult(filters: SearchFilters): SearchResult {
     usingFallbackData: false,
     source: "unavailable",
   };
-}
-
-function normalizeText(value?: string) {
-  return value?.trim().toLowerCase() ?? "";
-}
-
-function filterProfiles(profiles: SearchProfileRecord[], filters: SearchFilters): SearchProfileRecord[] {
-  const keyword = normalizeText(filters.keyword);
-  const location = normalizeText(filters.location);
-  const style = normalizeText(filters.style);
-  const subtype = normalizeText(filters.subtype);
-
-  return profiles.filter((profile) => {
-    const haystack = [
-      profile.full_name,
-      profile.display_name,
-      profile.location,
-      profile.bio,
-      ...(profile.talent_types ?? []),
-      ...(profile.styles ?? []),
-      ...(profile.skills ?? []),
-      ...(profile.profile_highlights ?? []).flatMap((item) => [item.title, item.subtitle]),
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-
-    const matchesKeyword = keyword ? haystack.includes(keyword) : true;
-    const matchesLocation = location
-      ? (profile.location ?? "").toLowerCase().includes(location)
-      : true;
-    const matchesStyle = style
-      ? (profile.styles ?? []).some((item) => item.toLowerCase() === style)
-      : true;
-    const matchesSubtype = subtype
-      ? (profile.talent_types ?? []).some((item) => item.toLowerCase() === subtype)
-      : true;
-
-    return matchesKeyword && matchesLocation && matchesStyle && matchesSubtype;
-  });
 }
 
 function paginate(profiles: SearchProfileRecord[], page: number) {
@@ -68,46 +53,262 @@ function paginate(profiles: SearchProfileRecord[], page: number) {
   };
 }
 
+function encodeIlike(value: string) {
+  return encodeURIComponent(`%${value.trim()}%`);
+}
+
+function genderVariants(gender: string) {
+  const trimmed = gender.trim();
+  return [...new Set([trimmed, trimmed.toLowerCase(), trimmed.toUpperCase(), capitalize(trimmed)])];
+}
+
+function capitalize(value: string) {
+  if (!value) return value;
+  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+}
+
+const KEYSET_BATCH_SIZE = 100;
+
+function buildTalentQueryPath(filters: SearchFilters, cursor: string | null): string {
+  // Keyset pagination: stable order on id, cursor past the last-seen id.
+  const params = [`select=${TALENT_SELECT}`, "order=id.asc", `limit=${KEYSET_BATCH_SIZE}`];
+
+  if (cursor) {
+    params.push(`id=gt.${encodeURIComponent(cursor)}`);
+  }
+
+  const keyword = filters.keyword?.trim();
+  if (keyword) {
+    const pattern = encodeIlike(keyword);
+    params.push(`or=(full_name.ilike.${pattern},representation.ilike.${pattern},location.ilike.${pattern})`);
+  }
+
+  if (filters.gender?.trim()) {
+    const variants = genderVariants(filters.gender).map((value) => `"${value.replace(/"/g, '\\"')}"`);
+    params.push(`gender=in.(${variants.join(",")})`);
+  }
+
+  if (filters.unionStatus?.trim()) {
+    params.push(`union_status=eq.${encodeURIComponent(filters.unionStatus.trim())}`);
+  }
+
+  if (filters.agency?.trim()) {
+    params.push(`representation=ilike.${encodeIlike(filters.agency)}`);
+  }
+
+  if (filters.representation === "Represented") {
+    params.push("representation=not.is.null");
+  }
+
+  return `talent?${params.join("&")}`;
+}
+
+function sortByName(profiles: SearchProfileRecord[]): SearchProfileRecord[] {
+  return [...profiles].sort((a, b) =>
+    (a.full_name ?? a.display_name ?? "").localeCompare(b.full_name ?? b.display_name ?? ""),
+  );
+}
+
+/**
+ * Fetch talent in keyset-paginated batches (cursored on id), applying in-memory
+ * refinement filters between batches, until we have enough rows or run out.
+ */
+async function queryTalent(filters: SearchFilters): Promise<SearchProfileRecord[] | null> {
+  if (!getSupabaseConfig()) return null;
+
+  const fetchLimit = filters.navigator ? NAVIGATOR_FETCH_LIMIT : DISCOVER_FETCH_LIMIT;
+  const neededFiltered = filters.navigator
+    ? NAVIGATOR_FETCH_LIMIT
+    : Math.max(filters.page ?? 1, 1) * PAGE_SIZE + 1;
+
+  const collected: SearchProfileRecord[] = [];
+  let filteredCount = 0;
+  let cursor: string | null = null;
+  let batchWasNull = true;
+
+  while (collected.length < fetchLimit && filteredCount < neededFiltered) {
+    const rows: SearchProfileRecord[] | null = await supabaseRestGet<SearchProfileRecord[]>(
+      buildTalentQueryPath(filters, cursor),
+      { revalidate: filters.navigator ? 0 : 120 },
+    );
+    if (!rows) break;
+    batchWasNull = false;
+    if (!rows.length) break;
+
+    const normalized = rows.map(normalizeSearchProfile);
+    collected.push(...normalized);
+    filteredCount = filterSearchProfiles(collected, filters).length;
+
+    cursor = rows[rows.length - 1]?.id ?? null;
+    if (rows.length < KEYSET_BATCH_SIZE || !cursor) break;
+  }
+
+  if (batchWasNull && !collected.length) return null;
+  return sortByName(collected);
+}
+
 async function querySupabaseView(
   viewName: "public_search_profiles" | "talent",
   filters: SearchFilters,
 ): Promise<SearchResult | null> {
   if (!getSupabaseConfig()) return null;
 
-  const rows = await supabaseRestGet<SearchProfileRecord[]>(`${viewName}?select=*&limit=60`, {
+  if (viewName === "talent") {
+    const rows = await queryTalent(filters);
+    if (!rows) return null;
+
+    const filtered = filterSearchProfiles(rows, filters);
+    if (filters.navigator) {
+      return {
+        items: filtered,
+        total: filtered.length,
+        page: 1,
+        pageSize: filtered.length,
+        usingFallbackData: false,
+        source: "talent",
+      };
+    }
+
+    return {
+      ...paginate(filtered, filters.page ?? 1),
+      usingFallbackData: false,
+      source: "talent",
+    };
+  }
+
+  const rows = await supabaseRestGet<SearchProfileRecord[]>(`${viewName}?select=*&limit=${DISCOVER_FETCH_LIMIT}`, {
     revalidate: 120,
   });
   if (!rows) return null;
 
-  const normalized = rows.map((item) => ({
-    ...item,
-    display_name: item.display_name ?? item.full_name ?? null,
-  }));
+  const normalized = rows.map(normalizeSearchProfile);
+  const filtered = filterSearchProfiles(normalized, filters);
 
-  const filtered = filterProfiles(normalized, filters);
-  const paginated = paginate(filtered, filters.page ?? 1);
+  if (filters.navigator) {
+    return {
+      items: filtered,
+      total: filtered.length,
+      page: 1,
+      pageSize: filtered.length,
+      usingFallbackData: false,
+      source: viewName,
+    };
+  }
 
   return {
-    ...paginated,
+    ...paginate(filtered, filters.page ?? 1),
     usingFallbackData: false,
     source: viewName,
   };
 }
 
+async function queryProfessionalProfiles(filters: SearchFilters): Promise<SearchProfileRecord[] | null> {
+  if (!getSupabaseConfig() || !filters.navigator) return null;
+
+  const params = [
+    "select=id,user_id,slug,styles,skills,gender,ethnicity,union_status,location_city,is_verified",
+    "is_verified=eq.true",
+    "order=location_city.asc",
+    `limit=${NAVIGATOR_FETCH_LIMIT}`,
+  ];
+
+  const rows = await supabaseRestGet<
+    Array<{
+      id: string;
+      user_id: string;
+      slug: string;
+      styles: string[] | null;
+      skills: string[] | null;
+      gender: string | null;
+      ethnicity: string[] | null;
+      union_status: string | null;
+      location_city: string | null;
+      is_verified: boolean;
+    }>
+  >(`professional_profiles?${params.join("&")}`, { revalidate: 0 });
+
+  if (!rows?.length) return null;
+
+  const mapped: SearchProfileRecord[] = rows.map((row) =>
+    normalizeSearchProfile({
+      id: row.user_id,
+      username: row.slug,
+      full_name: row.slug.replace(/-/g, " "),
+      display_name: row.slug,
+      location: row.location_city,
+      styles: row.styles ?? [],
+      skills: row.skills ?? [],
+      gender: row.gender,
+      ethnicity: row.ethnicity?.join(", ") ?? null,
+      union_status: row.union_status,
+      is_verified: row.is_verified,
+    }),
+  );
+
+  return filterSearchProfiles(mapped, filters);
+}
+
+/** Verified professional profiles rank first; general talent pool fills in after (deduped). */
+function mergeVerifiedFirst(
+  verified: SearchProfileRecord[],
+  general: SearchResult,
+): SearchResult {
+  if (!verified.length) return general;
+
+  const seen = new Set(verified.map((profile) => profile.id));
+  const rest = general.items.filter((profile) => !seen.has(profile.id));
+  const items = [...verified, ...rest];
+
+  return {
+    ...general,
+    items,
+    total: items.length,
+    pageSize: items.length,
+  };
+}
+
 export const searchTalentProfiles = cache(async (filters: SearchFilters): Promise<SearchResult> => {
-  const publicProfiles = await querySupabaseView("public_search_profiles", filters);
-  if (publicProfiles) return publicProfiles;
+  const verifiedProfiles = (await queryProfessionalProfiles(filters)) ?? [];
 
   const talentProfiles = await querySupabaseView("talent", filters);
-  if (talentProfiles) return talentProfiles;
+  if (talentProfiles) return mergeVerifiedFirst(verifiedProfiles, talentProfiles);
+
+  if (verifiedProfiles.length) {
+    return {
+      items: verifiedProfiles,
+      total: verifiedProfiles.length,
+      page: 1,
+      pageSize: verifiedProfiles.length,
+      usingFallbackData: false,
+      source: "talent",
+    };
+  }
+
+  const publicProfiles = await querySupabaseView("public_search_profiles", filters);
+  if (publicProfiles) return publicProfiles;
 
   if (!getSupabaseConfig()) {
     return emptySearchResult(filters);
   }
 
-  const filtered = filterProfiles(mockTalentProfiles, filters);
-  const paginated = paginate(filtered, filters.page ?? 1);
-  return { ...paginated, usingFallbackData: true, source: "mock" };
+  const filtered = filterSearchProfiles(mockTalentProfiles.map(normalizeSearchProfile), filters);
+
+  if (filters.navigator) {
+    return {
+      items: filtered,
+      total: filtered.length,
+      page: 1,
+      pageSize: filtered.length,
+      usingFallbackData: true,
+      source: "mock",
+    };
+  }
+
+  return {
+    ...paginate(filtered, filters.page ?? 1),
+    usingFallbackData: true,
+    source: "mock",
+  };
 });
 
 type HeroHeadshotRow = {
@@ -162,7 +363,7 @@ export function buildHeroHeadshotSequence(rows: HeroHeadshotRow[]): string[] {
 
 async function queryHeroHeadshotsFromProfiles(): Promise<string[] | null> {
   const rows = await supabaseRestGet<HeroHeadshotRow[]>(
-    `profiles?select=headshot_urls,headshot_original_urls&onboarding_completed_at=not.is.null&headshot_urls=not.is.null&limit=${HERO_PROFILE_LIMIT}`,
+    `profiles?select=headshot_urls,headshot_original_urls&onboarding_completed_at=not.is.null&headshot_urls=not.is.null&limit=48`,
     { revalidate: 600 },
   );
   if (!rows?.length) return null;
@@ -173,7 +374,7 @@ async function queryHeroHeadshotsFromProfiles(): Promise<string[] | null> {
 
 async function queryHeroHeadshots(viewName: "public_search_profiles" | "talent"): Promise<string[] | null> {
   const rows = await supabaseRestGet<HeroHeadshotRow[]>(
-    `${viewName}?select=headshot_url,headshot_urls&limit=${HERO_PROFILE_LIMIT}`,
+    `${viewName}?select=headshot_url,headshot_urls&limit=48`,
     { revalidate: 600 },
   );
   if (!rows?.length) return null;
@@ -199,6 +400,8 @@ export const getHeroHeadshotImages = cache(async () => {
 });
 
 /** Swipeable pillar stack on the home page (max 10 unique headshots). */
+export const PILLAR_STACK_HEADSHOT_LIMIT = 10;
+
 export const getPillarHeadshotImages = cache(async () => {
   const images = await getHeroHeadshotImages();
   return images.slice(0, PILLAR_STACK_HEADSHOT_LIMIT);

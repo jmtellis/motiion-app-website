@@ -1,3 +1,4 @@
+import { AppAnalytics } from "@/components/analytics/AppAnalytics";
 import { AppTabNav } from "@/components/app/AppTabNav";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { fetchInboxConversations } from "@/lib/app/inbox";
@@ -14,10 +15,17 @@ export async function AppShell({
   const inboxUnread = conversations.reduce((sum, row) => sum + Number(row.unread_count ?? 0), 0);
 
   return (
-    <div className="min-h-screen bg-[var(--paper)]">
+    <div className="min-h-screen bg-[var(--ds-background)] text-[var(--ds-on-background)] motion-safe:transition-colors">
+      <AppAnalytics />
       <AppHeader profile={profile} homeHref="/home" />
       <AppTabNav inboxUnread={inboxUnread} />
-      <main className="mx-auto w-full max-w-6xl px-6 py-8 lg:px-10 lg:py-10">{children}</main>
+      <main
+        id="main-content"
+        className="mx-auto w-full max-w-6xl px-6 py-8 lg:px-10 lg:py-10 focus:outline-none"
+        tabIndex={-1}
+      >
+        {children}
+      </main>
     </div>
   );
 }

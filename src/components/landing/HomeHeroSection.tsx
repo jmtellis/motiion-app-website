@@ -72,7 +72,6 @@ export function HomeHeroSection({ headerPullClass, background, children }: HomeH
           {children}
         </motion.div>
       </HeroScrollDepth>
-      <div id="home-hero-end" className="pointer-events-none absolute bottom-0 left-0 h-px w-full" aria-hidden />
     </section>
   );
 }

@@ -1,5 +1,4 @@
-import { ActivityRoutePage, createActivityRouteMetadata } from "@/lib/activityRoutePage";
+import { createActivityRouteMetadata, createActivityRoutePage } from "@/lib/activityRoutePage";
 
 export const generateMetadata = createActivityRouteMetadata("/class");
-
-export default ActivityRoutePage;
+export default createActivityRoutePage("/class");

@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { getProfileDestination } from "@/lib/auth/session";
+import { trackServerEvent } from "@/lib/analytics/track-server";
+import { upsertProfessionalProfileDraft, type ProfessionalProfileDraftInput } from "@/lib/professional-profile/actions";
+import { syncProfessionalProfile } from "@/lib/professional-profile/sync";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type {
   CompleteOnboardingPayload,
@@ -149,6 +152,10 @@ export async function checkUsernameAvailability(
   };
 }
 
+export async function syncOnboardingProfessionalDraft(input: ProfessionalProfileDraftInput) {
+  return upsertProfessionalProfileDraft(input);
+}
+
 export async function completeOnboarding(
   payload: CompleteOnboardingPayload,
 ): Promise<CompleteOnboardingResult> {
@@ -266,6 +273,15 @@ export async function completeOnboarding(
       has_completed_onboarding: true,
     },
   });
+
+  await trackServerEvent("onboarding_completed", {
+    account_type: accountType,
+  });
+
+  if (accountType === "talent") {
+    await syncProfessionalProfile(user.id);
+    await trackServerEvent("magic_moment_talent_ready", { user_id: user.id });
+  }
 
   revalidatePath("/dashboard");
   revalidatePath("/account");

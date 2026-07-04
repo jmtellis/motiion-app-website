@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import { Montserrat } from "next/font/google";
 
-import { CssStudioDev } from "@/components/dev/CssStudioDev";
+import { AutoHideScrollbars } from "@/components/layout/AutoHideScrollbars";
 import "./globals.css";
 
-/** Matches iOS `MotiionTypography` / Figma — Montserrat regular, medium, semibold. */
+/** Product / design-system typography (docs/design.md) */
+const geistSans = GeistSans;
+const geistMono = GeistMono;
+
+/** Marketing pages — Montserrat matches iOS Figma legacy */
 const montserrat = Montserrat({
   variable: "--font-montserrat",
   subsets: ["latin"],
@@ -12,16 +18,52 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.motiion.app").replace(/\/$/, "");
+
 export const metadata: Metadata = {
-  title: "Motiion — Search professional dance talent",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Motiion — Search professional dance talent",
+    template: "%s · Motiion",
+  },
   description:
     "Search verified dance talent profiles, discover creatives and casting teams, and join the Motiion beta for modern casting workflows.",
+  openGraph: {
+    siteName: "Motiion",
+    type: "website",
+    url: SITE_URL,
+    title: "Motiion — Search professional dance talent",
+    description:
+      "Search verified dance talent profiles, discover creatives and casting teams, and join the Motiion beta for modern casting workflows.",
+    images: [{ url: "/motiion-icon-512.png", width: 512, height: 512, alt: "Motiion" }],
+  },
+  twitter: {
+    card: "summary",
+    title: "Motiion — Search professional dance talent",
+    description:
+      "Search verified dance talent profiles, discover creatives and casting teams, and join the Motiion beta.",
+  },
   icons: {
-    icon: "/motiion-icon.svg",
-    shortcut: "/motiion-icon.svg",
-    apple: "/motiion-icon.svg",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/motiion-icon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
 };
+
+const SUPABASE_ORIGIN = (() => {
+  try {
+    return process.env.NEXT_PUBLIC_SUPABASE_URL
+      ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin
+      : null;
+  } catch {
+    return null;
+  }
+})();
 
 export default function RootLayout({
   children,
@@ -30,9 +72,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${montserrat.variable} font-sans antialiased`}>
+      <head>
+        {SUPABASE_ORIGIN ? (
+          <>
+            <link rel="preconnect" href={SUPABASE_ORIGIN} crossOrigin="anonymous" />
+            <link rel="dns-prefetch" href={SUPABASE_ORIGIN} />
+          </>
+        ) : null}
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable} font-sans antialiased`}>
+        <AutoHideScrollbars />
         {children}
-        {process.env.NODE_ENV === "development" ? <CssStudioDev /> : null}
       </body>
     </html>
   );

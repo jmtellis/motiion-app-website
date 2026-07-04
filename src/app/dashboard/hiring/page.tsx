@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
 
-export default function HiringDashboardPage() {
-  redirect("/home");
+import { getProfileDestination, requireAuth } from "@/lib/auth/session";
+
+export default async function HiringDashboardRedirectPage() {
+  const profile = await requireAuth();
+  redirect(getProfileDestination(profile));
 }

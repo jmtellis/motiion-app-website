@@ -95,7 +95,7 @@ function LocationSelector({
         <p className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)]">{label}</p>
       ) : null}
       <div className="relative">
-        <div className="flex items-center gap-3 rounded-full border border-[var(--line)] bg-white px-4 py-3">
+        <div className="flex items-center gap-3 rounded-[var(--radius-field)] border border-[var(--line)] bg-white px-4 py-3">
           <MapPin className="size-4 shrink-0 text-[var(--ink-soft)]" aria-hidden />
           <input
             value={query}
@@ -110,7 +110,7 @@ function LocationSelector({
         </div>
 
         {open && (loading || predictions.length > 0 || error) ? (
-          <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-[var(--line)] bg-white shadow-[0_16px_40px_rgba(17,17,17,0.12)]">
+          <div className="absolute z-20 mt-2 w-full overflow-hidden ui-card shadow-[var(--shadow-raised)]">
             {loading ? <p className="px-4 py-3 text-sm text-[var(--ink-soft)]">Searching…</p> : null}
             {error ? <p className="px-4 py-3 text-sm text-rose-700">{error}</p> : null}
             {predictions.map((prediction) => (
@@ -222,7 +222,7 @@ export function WorkingLocationsEditor({
               const next = [...others, ""];
               onChange(primary.trim() ? [primary.trim(), ...next] : next);
             }}
-            className="inline-flex items-center gap-2 rounded-full border border-dashed border-[var(--line)] px-4 py-2 text-sm font-medium text-[var(--ink-soft)] hover:border-[var(--ink-soft)] hover:text-[var(--ink)]"
+            className="inline-flex items-center gap-2 ui-chip border-dashed px-4 py-2 text-sm font-medium text-[var(--ink-soft)] hover:border-[var(--ink-soft)] hover:text-[var(--ink)]"
           >
             <Plus className="size-4" aria-hidden />
             Add location

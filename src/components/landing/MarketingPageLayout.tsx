@@ -1,12 +1,12 @@
+import { FooterRevealShell } from "@/components/landing/FooterRevealShell";
+import { MarketingBodySurface } from "@/components/landing/MarketingBodySurface";
 import { HeadshotColumnsBackground } from "@/components/landing/HeadshotColumnsBackground";
 import { BrowserThemeColor } from "@/components/landing/BrowserThemeColor";
-import { DanceFloorBackground } from "@/components/landing/DanceFloorBackground";
 import { HeroScrollDepth } from "@/components/landing/HeroScrollDepth";
 import { HeroStudioBackground } from "@/components/landing/HeroStudioBackground";
 import { HomeHeroSection } from "@/components/landing/HomeHeroSection";
 import { HomeMarketingHeader } from "@/components/landing/HomeMarketingHeader";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
-import { Footer } from "@/components/landing/Footer";
 import { HomeMarketingShell } from "@/components/landing/HomeMarketingShell";
 import { MARKETING_DARK } from "@/lib/marketing/dark-theme";
 import type { MarketingHeaderTab } from "@/lib/marketing/marketing-pages";
@@ -40,64 +40,66 @@ export function MarketingPageLayout({
   const browserThemeColor = darkTheme ? MARKETING_DARK.bg : "#fcfcfb";
 
   const page = (
-    <div id="top" className={darkTheme ? "bg-black" : "bg-[var(--paper)]"}>
-      <BrowserThemeColor color={browserThemeColor} />
-      {homeHeader && darkTheme ? <DanceFloorBackground /> : null}
-      {homeHeader ? (
-        <HomeMarketingHeader darkTheme={darkTheme} />
-      ) : (
-        <MarketingHeader activeTab={activeTab} overlay darkTheme={darkTheme} />
-      )}
+    <FooterRevealShell surfaceClass={darkTheme ? "bg-black" : "bg-[var(--paper)]"}>
+      <MarketingBodySurface dark={darkTheme} />
+      <div id="top" className={darkTheme ? "bg-black" : "bg-[var(--paper)]"}>
+        <BrowserThemeColor color={browserThemeColor} />
+        {homeHeader ? (
+          <HomeMarketingHeader darkTheme={darkTheme} />
+        ) : (
+          <MarketingHeader activeTab={activeTab} overlay darkTheme={darkTheme} />
+        )}
 
-      {homeHeader ? (
-        <HomeHeroSection
-          headerPullClass={headerPullClass}
-          background={
-            <>
-              {heroBackgroundImage ? <HeroStudioBackground src={heroBackgroundImage} /> : null}
-              <HeadshotColumnsBackground
-                images={headshotImages}
-                variant={heroBackgroundImage ? "overlay" : "light"}
-              />
-            </>
-          }
-        >
-          {hero}
-        </HomeHeroSection>
-      ) : cleanHero ? (
-        <section
-          className={`relative min-h-svh w-full border-b ${headerPullClass} ${
-            darkTheme ? "border-white/10 bg-black" : "border-[var(--line)] bg-[var(--paper)]"
-          }`}
-        >
-          <div className="flex min-h-svh w-full items-center justify-center px-0 pb-12 pt-28 md:pt-24">
-            {hero}
-          </div>
-        </section>
-      ) : (
-        <section className={`relative min-h-svh w-full overflow-hidden ${headerPullClass}`}>
-          <HeroScrollDepth
+        {homeHeader ? (
+          <HomeHeroSection
+            headerPullClass={headerPullClass}
             background={
               <>
                 {heroBackgroundImage ? <HeroStudioBackground src={heroBackgroundImage} /> : null}
                 <HeadshotColumnsBackground
                   images={headshotImages}
                   variant={heroBackgroundImage ? "overlay" : "light"}
+                  className="opacity-30"
                 />
               </>
             }
           >
+            {hero}
+          </HomeHeroSection>
+        ) : cleanHero ? (
+          <section
+            className={`relative min-h-svh w-full border-b ${headerPullClass} ${
+              darkTheme ? "border-white/10 bg-black" : "border-[var(--line)] bg-[var(--paper)]"
+            }`}
+          >
             <div className="flex min-h-svh w-full items-center justify-center px-0 pb-12 pt-28 md:pt-24">
               {hero}
             </div>
-          </HeroScrollDepth>
-        </section>
-      )}
+          </section>
+        ) : (
+          <section className={`relative min-h-svh w-full overflow-hidden ${headerPullClass}`}>
+            <HeroScrollDepth
+              background={
+                <>
+                  {heroBackgroundImage ? <HeroStudioBackground src={heroBackgroundImage} /> : null}
+                  <HeadshotColumnsBackground
+                    images={headshotImages}
+                    variant={heroBackgroundImage ? "overlay" : "light"}
+                  />
+                </>
+              }
+            >
+              <div className="flex min-h-svh w-full items-center justify-center px-0 pb-12 pt-28 md:pt-24">
+                {hero}
+              </div>
+            </HeroScrollDepth>
+          </section>
+        )}
 
-      {children ? <div className="relative isolate">{children}</div> : null}
-      <Footer />
-    </div>
+        {children ? <div className="relative isolate">{children}</div> : null}
+      </div>
+    </FooterRevealShell>
   );
 
-  return homeHeader ? <HomeMarketingShell>{page}</HomeMarketingShell> : page;
+  return <HomeMarketingShell>{page}</HomeMarketingShell>;
 }

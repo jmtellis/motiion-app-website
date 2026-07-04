@@ -1,0 +1,601 @@
+.signup-split {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background: #0a0a0a;
+  color: #f5f5f3;
+}
+
+@media (min-width: 768px) {
+  .signup-split {
+    flex-direction: row;
+  }
+}
+
+.signup-split-cover {
+  position: relative;
+  min-height: 220px;
+  overflow: hidden;
+  background: #0d1f1a;
+}
+
+@media (min-width: 768px) {
+  .signup-split-cover {
+    min-height: 100svh;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+.signup-split-cover__image {
+  object-fit: cover;
+  opacity: 0.55;
+}
+
+.signup-split-cover__overlay {
+  background:
+    linear-gradient(145deg, rgb(0 80 70 / 0.75) 0%, rgb(0 40 35 / 0.85) 45%, rgb(0 0 0 / 0.92) 100%),
+    radial-gradient(circle at 20% 20%, rgb(0 204 183 / 0.25), transparent 55%);
+}
+
+.signup-split-cover__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: inherit;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .signup-split-cover__content {
+    padding: 3rem 2.5rem;
+  }
+}
+
+.signup-split-cover__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  border-radius: 9999px;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  background: rgb(255 255 255 / 0.08);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.9);
+}
+
+.signup-split-cover__eyebrow-dot {
+  display: inline-block;
+  height: 0.375rem;
+  width: 0.375rem;
+  border-radius: 9999px;
+  background: var(--accent);
+}
+
+.signup-split-cover__headline {
+  max-width: 18rem;
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.signup-split-cover__subtext {
+  max-width: 18rem;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: rgb(255 255 255 / 0.65);
+}
+
+.signup-split-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: max-content;
+  max-width: 100%;
+}
+
+.signup-split-step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.875rem;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  background: rgb(255 255 255 / 0.06);
+  padding: 0.875rem 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: rgb(255 255 255 / 0.75);
+}
+
+.signup-split-step--active {
+  border-color: transparent;
+  background: #fff;
+  color: #111;
+  font-weight: 500;
+}
+
+.signup-split-step--completed {
+  border-color: rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.1);
+  color: rgb(255 255 255 / 0.85);
+}
+
+.signup-split-step--pending {
+  opacity: 0.72;
+}
+
+.signup-split-step--active .signup-split-step__num {
+  background: #111;
+  color: #fff;
+}
+
+.signup-split-step--completed .signup-split-step__num {
+  background: var(--accent);
+  color: #0a0a0a;
+}
+
+.signup-split-step__num {
+  display: inline-flex;
+  height: 1.5rem;
+  width: 1.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.12);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.signup-split-panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 2rem 1.5rem 2.5rem;
+  --ink: #f5f5f3;
+  --ink-soft: rgb(255 255 255 / 0.55);
+  --line: rgb(255 255 255 / 0.12);
+  --tone: rgb(255 255 255 / 0.06);
+}
+
+@media (min-width: 768px) {
+  .signup-split-panel {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 3rem 2.5rem;
+  }
+}
+
+.signup-split-form {
+  width: 100%;
+  max-width: 26rem;
+}
+
+.signup-split-form__title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.signup-split-form__subtitle {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: rgb(255 255 255 / 0.55);
+}
+
+.signup-split-form__body {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.signup-split-oauth-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.signup-split-oauth-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(255 255 255 / 0.04);
+  padding: 0.7rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #fff;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.signup-split-oauth-btn:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.08);
+  border-color: rgb(255 255 255 / 0.22);
+}
+
+.signup-split-oauth-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.signup-split-divider {
+  position: relative;
+  text-align: center;
+}
+
+.signup-split-divider::before {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto;
+  height: 1px;
+  background: rgb(255 255 255 / 0.12);
+}
+
+.signup-split-divider span {
+  position: relative;
+  display: inline-block;
+  background: #0a0a0a;
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+  color: rgb(255 255 255 / 0.45);
+}
+
+.signup-split-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.signup-split-field span {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgb(255 255 255 / 0.85);
+}
+
+.signup-split-field input {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.06);
+  padding: 0.72rem 0.85rem;
+  font-size: 0.875rem;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.signup-split-field input::placeholder {
+  color: rgb(255 255 255 / 0.35);
+}
+
+.signup-split-field input:focus-visible {
+  border-color: rgb(0 204 183 / 0.55);
+  box-shadow: 0 0 0 3px rgb(0 204 183 / 0.15);
+}
+
+.signup-split-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.signup-split-password-wrap {
+  position: relative;
+}
+
+.signup-split-password-wrap input {
+  padding-right: 2.75rem;
+}
+
+.signup-split-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: rgb(255 255 255 / 0.45);
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.signup-split-password-toggle:hover {
+  color: rgb(255 255 255 / 0.75);
+}
+
+.signup-split-hint {
+  font-size: 0.75rem;
+  color: rgb(255 255 255 / 0.4);
+}
+
+.signup-split-submit {
+  width: 100%;
+  border-radius: 9999px;
+  border: 0;
+  background: #fff;
+  padding: 0.8rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.signup-split-submit:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.signup-split-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.signup-split-footer {
+  margin-top: 1.25rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: rgb(255 255 255 / 0.5);
+}
+
+.signup-split-footer a {
+  font-weight: 500;
+  color: #fff;
+  text-decoration: none;
+}
+
+.signup-split-footer a:hover {
+  text-decoration: underline;
+}
+
+.signup-split-error {
+  border-radius: 0.75rem;
+  border: 1px solid rgb(248 113 113 / 0.35);
+  background: rgb(248 113 113 / 0.1);
+  padding: 0.75rem 0.875rem;
+  font-size: 0.875rem;
+  color: #fecaca;
+}
+
+.signup-split-form--onboarding .signup-split-form__body {
+  margin-top: 1.5rem;
+}
+
+.signup-split-form__progress {
+  margin-top: 1.5rem;
+}
+
+.signup-split-form__progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.signup-split-form__progress-label {
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.signup-split-form__progress-count {
+  color: rgb(255 255 255 / 0.45);
+}
+
+.signup-split-form__progress-track {
+  height: 0.25rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.1);
+}
+
+.signup-split-form__progress-bar {
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+.signup-split-form__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgb(255 255 255 / 0.1);
+}
+
+.signup-split-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 9999px;
+  border: 0;
+  background: transparent;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(255 255 255 / 0.65);
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.signup-split-nav-btn:hover:not(:disabled) {
+  color: #fff;
+  background: rgb(255 255 255 / 0.06);
+}
+
+.signup-split-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.signup-split-nav-btn--ghost {
+  padding-inline: 0.5rem;
+}
+
+.signup-split-panel .field > span,
+.signup-split-panel .field > legend {
+  color: rgb(255 255 255 / 0.85);
+}
+
+.signup-split-panel .field > input,
+.signup-split-panel .field > textarea,
+.signup-split-panel .field > select {
+  border-color: rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.06);
+  color: #fff;
+}
+
+.signup-split-panel .field > input::placeholder,
+.signup-split-panel .field > textarea::placeholder {
+  color: rgb(255 255 255 / 0.35);
+}
+
+.signup-split-panel .field > input:focus-visible,
+.signup-split-panel .field > textarea:focus-visible,
+.signup-split-panel .field > select:focus-visible {
+  border-color: rgb(0 204 183 / 0.55);
+  box-shadow: 0 0 0 3px rgb(0 204 183 / 0.15);
+}
+
+.signup-split-choice {
+  width: 100%;
+  border-radius: 0.875rem;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  background: rgb(255 255 255 / 0.04);
+  padding: 1.1rem 1rem;
+  text-align: left;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.signup-split-choice:hover {
+  border-color: rgb(255 255 255 / 0.22);
+  background: rgb(255 255 255 / 0.07);
+}
+
+.signup-split-choice--selected {
+  border-color: rgb(0 204 183 / 0.55);
+  background: rgb(0 204 183 / 0.12);
+}
+
+.signup-split-choice p:first-child {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.signup-split-choice p:last-child {
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: rgb(255 255 255 / 0.55);
+}
+
+.signup-split-pill {
+  border-radius: 9999px;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(255 255 255 / 0.04);
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8125rem;
+  color: rgb(255 255 255 / 0.65);
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.signup-split-pill:hover {
+  border-color: rgb(255 255 255 / 0.22);
+  color: #fff;
+}
+
+.signup-split-pill--selected {
+  border-color: rgb(0 204 183 / 0.55);
+  background: rgb(0 204 183 / 0.12);
+  color: #fff;
+  font-weight: 500;
+}
+
+.signup-split-panel .setup-flow-step-header h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+
+.signup-split-panel .setup-flow-step-header p {
+  margin-top: 0.375rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: rgb(255 255 255 / 0.55);
+}
+
+.signup-split-panel .setup-flow-section-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.85);
+}
+
+.signup-split-panel .rounded-2xl.border.border-\[var\(--line\)\] {
+  border-color: rgb(255 255 255 / 0.12) !important;
+  background: rgb(255 255 255 / 0.04) !important;
+}
+
+.signup-split-panel .rounded-\[24px\].border.border-\[var\(--line\)\] {
+  border-color: rgb(255 255 255 / 0.12) !important;
+  background: rgb(255 255 255 / 0.04) !important;
+}
+
+.signup-split-panel .text-\[var\(--ink\)\] {
+  color: #f5f5f3 !important;
+}
+
+.signup-split-panel .text-\[var\(--ink-soft\)\] {
+  color: rgb(255 255 255 / 0.55) !important;
+}
+
+.signup-split-panel .border-\[var\(--line\)\] {
+  border-color: rgb(255 255 255 / 0.12) !important;
+}
+
+.signup-split-panel .bg-\[var\(--tone\)\] {
+  background: rgb(255 255 255 / 0.06) !important;
+}
+
+.signup-split-panel .bg-white {
+  background: rgb(255 255 255 / 0.06) !important;
+}
+
+.signup-split-panel .btn-primary {
+  border-radius: 9999px;
+  background: #fff;
+  color: #111;
+}
+
+.signup-split-panel .btn-outline {
+  border-color: rgb(255 255 255 / 0.18);
+  color: rgb(255 255 255 / 0.85);
+}
+
+.signup-split-form--onboarding {
+  max-width: 36rem;
+}

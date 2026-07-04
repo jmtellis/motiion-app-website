@@ -13,9 +13,8 @@ export const footerColumns: FooterColumn[] = [
   {
     title: "Platform",
     links: [
-      { label: "For Dancers", href: "/for-talent" },
-      { label: "For Choreographers & Casting", href: "/for-casting" },
-      { label: "Request a Demo", href: "/request-demo" },
+      { label: "Talent", href: "/for-talent" },
+      { label: "Industry Professionals", href: "/for-casting" },
       { label: "Log In", href: "/login" },
       { label: "Sign Up", href: "/signup" },
     ],

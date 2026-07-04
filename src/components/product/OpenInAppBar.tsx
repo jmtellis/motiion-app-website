@@ -1,6 +1,12 @@
 const APP_STORE_URL = "https://www.motiion.app";
 
-export function OpenInAppBar({ label = "Open in Motiion" }: { label?: string }) {
+export function OpenInAppBar({
+  href,
+  label = "Open in Motiion",
+}: {
+  href?: string;
+  label?: string;
+}) {
   return (
     <div
       style={{
@@ -12,7 +18,11 @@ export function OpenInAppBar({ label = "Open in Motiion" }: { label?: string }) 
         justifyContent: "center",
       }}
     >
-      <a className="product-btn-primary" href={APP_STORE_URL} style={{ width: "100%", maxWidth: 360 }}>
+      <a
+        className="product-btn-primary"
+        href={href ?? APP_STORE_URL}
+        style={{ width: "100%", maxWidth: 360 }}
+      >
         {label}
       </a>
     </div>

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type {
@@ -19,6 +20,8 @@ const TABS: { id: ProfileTab; label: string }[] = [
   { id: "visuals", label: "Visuals" },
 ];
 
+const monoLabelClass = "font-mono text-xs font-medium tracking-[0.08em] text-[#8a8a8a] uppercase";
+
 export function PortfolioView({ profile }: { profile: PublicTalentProfile }) {
   const [tab, setTab] = useState<ProfileTab>("about");
   const displayName = profile.full_name?.trim() || "Your portfolio";
@@ -31,41 +34,48 @@ export function PortfolioView({ profile }: { profile: PublicTalentProfile }) {
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex gap-4">
+      <header className="flex flex-col gap-6 border-b border-[#262626] pb-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex gap-5">
           <Headshot url={headshot} name={displayName} />
-          <div>
-            <p className="type-eyebrow text-[#8a8a8a]">Portfolio</p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)]">{displayName}</h1>
-            {profile.username ? (
-              <p className="mt-1 text-sm text-[var(--ink-soft)]">@{profile.username}</p>
-            ) : null}
-            {profile.location ? <p className="mt-1 text-sm text-[var(--ink-soft)]">{profile.location}</p> : null}
+          <div className="min-w-0">
+            <p className="font-mono text-xs font-medium tracking-[0.08em] text-[#5a5a5a] uppercase">
+              Portfolio
+            </p>
+            <h1 className="mt-1.5 text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.02em] text-[#fafafa]">
+              {displayName}
+            </h1>
+            <p className="mt-1.5 font-mono text-xs text-[#5a5a5a]">
+              {[profile.username ? `@${profile.username}` : null, profile.location]
+                .filter(Boolean)
+                .join("  ·  ")}
+            </p>
           </div>
         </div>
         {profile.username ? (
           <Link
             href={`/profile/${profile.username}`}
-            className="btn-outline text-sm"
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-[8px] border border-[#262626] bg-[#1e1e1e] px-4 text-sm font-medium text-[#eaeaea] transition-colors hover:bg-[#2a2a2a]"
             target="_blank"
             rel="noopener noreferrer"
           >
             View public page
+            <ArrowUpRight className="size-3.5 text-[#8a8a8a]" aria-hidden />
           </Link>
         ) : null}
       </header>
 
-      <nav aria-label="Portfolio sections" className="flex flex-wrap gap-2">
+      <nav aria-label="Portfolio sections" className="flex flex-wrap gap-1">
         {TABS.map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={() => setTab(item.id)}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+            className={`rounded-[8px] px-3.5 py-1.5 text-sm font-medium transition-colors ${
               tab === item.id
-                ? "bg-[var(--ink)] text-white"
-                : "border border-[var(--line)] bg-[var(--surface-card)] text-[var(--ink-soft)] hover:text-[var(--ink)]"
+                ? "bg-[#1e1e1e] text-[#fafafa]"
+                : "text-[#8a8a8a] hover:bg-[#151515] hover:text-[#eaeaea]"
             }`}
+            aria-pressed={tab === item.id}
           >
             {item.label}
           </button>
@@ -73,19 +83,11 @@ export function PortfolioView({ profile }: { profile: PublicTalentProfile }) {
       </nav>
 
       {highlights.length > 0 ? (
-        <section>
-          <h2 className="mb-3 type-eyebrow text-[#8a8a8a]">
-            Highlights
-          </h2>
+        <section className="space-y-3">
+          <h2 className={monoLabelClass}>Highlights</h2>
           <div className="flex gap-3 overflow-x-auto pb-2">
             {highlights.map((item) => (
-              <article
-                key={item.id}
-                className="min-w-[12rem] shrink-0 rounded-2xl border border-[var(--line)] bg-[var(--surface-card)] p-4 shadow-[0_8px_24px_rgba(17,17,17,0.04)]"
-              >
-                <p className="font-semibold text-[var(--ink)]">{item.title}</p>
-                {item.subtitle ? <p className="mt-1 text-sm text-[var(--ink-soft)]">{item.subtitle}</p> : null}
-              </article>
+              <HighlightCard key={item.id} item={item} />
             ))}
           </div>
         </section>
@@ -107,16 +109,25 @@ export function PortfolioView({ profile }: { profile: PublicTalentProfile }) {
 function Headshot({ url, name }: { url: string | null; name: string }) {
   if (url) {
     return (
-      <div className="relative size-20 shrink-0 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--tone)]">
+      <div className="relative size-20 shrink-0 overflow-hidden rounded-[14px] border border-[#262626] bg-[#1e1e1e]">
         <Image src={url} alt="" fill className="object-cover" unoptimized />
       </div>
     );
   }
 
   return (
-    <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-[#4a7cff] text-lg font-semibold text-white">
+    <div className="flex size-20 shrink-0 items-center justify-center rounded-[14px] border border-[#262626] bg-[#0c2a26] font-mono text-lg font-medium text-[#2dd4bf]">
       {name.slice(0, 2).toUpperCase()}
     </div>
+  );
+}
+
+function HighlightCard({ item }: { item: ProfileHighlight }) {
+  return (
+    <article className="min-w-[13rem] shrink-0 rounded-[14px] border border-[#262626] bg-[#151515] p-4">
+      <p className="text-sm font-medium text-[#fafafa]">{item.title}</p>
+      {item.subtitle ? <p className="mt-1 text-sm text-[#8a8a8a]">{item.subtitle}</p> : null}
+    </article>
   );
 }
 
@@ -127,46 +138,39 @@ function AboutPanel({
   profile: PublicTalentProfile;
   styleTags: string[];
 }) {
+  const facts: Array<{ label: string; value: string }> = [
+    profile.representation ? { label: "Representation", value: profile.representation } : null,
+    profile.gender ? { label: "Gender", value: profile.gender } : null,
+    profile.height ? { label: "Height", value: profile.height } : null,
+    profile.union_status ? { label: "Union", value: profile.union_status } : null,
+  ].filter((row): row is { label: string; value: string } => row !== null);
+
   return (
-    <section className="grid gap-6 rounded-2xl border border-[var(--line)] bg-[var(--surface-card)] p-6 md:grid-cols-2">
+    <section className="grid gap-6 rounded-[14px] border border-[#262626] bg-[#151515] p-6 md:grid-cols-2">
       <div>
-        <h2 className="text-lg font-semibold text-[var(--ink)]">About</h2>
-        <dl className="mt-4 space-y-3 text-sm">
-          {profile.representation ? (
-            <div>
-              <dt className="text-[var(--ink-soft)]">Representation</dt>
-              <dd className="font-medium text-[var(--ink)]">{profile.representation}</dd>
-            </div>
-          ) : null}
-          {profile.gender ? (
-            <div>
-              <dt className="text-[var(--ink-soft)]">Gender</dt>
-              <dd className="font-medium text-[var(--ink)]">{profile.gender}</dd>
-            </div>
-          ) : null}
-          {profile.height ? (
-            <div>
-              <dt className="text-[var(--ink-soft)]">Height</dt>
-              <dd className="font-medium text-[var(--ink)]">{profile.height}</dd>
-            </div>
-          ) : null}
-          {profile.union_status ? (
-            <div>
-              <dt className="text-[var(--ink-soft)]">Union</dt>
-              <dd className="font-medium text-[var(--ink)]">{profile.union_status}</dd>
-            </div>
-          ) : null}
-        </dl>
+        <h2 className={monoLabelClass}>Details</h2>
+        {facts.length ? (
+          <dl className="mt-4 divide-y divide-[#262626]">
+            {facts.map((row) => (
+              <div key={row.label} className="flex items-baseline justify-between gap-4 py-2.5">
+                <dt className="font-mono text-xs tracking-[0.08em] text-[#5a5a5a] uppercase">{row.label}</dt>
+                <dd className="text-right text-sm font-medium text-[#eaeaea]">{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          <p className="mt-4 text-sm text-[#5a5a5a]">No details added yet.</p>
+        )}
       </div>
       <div>
         {styleTags.length ? (
           <>
-            <h3 className="text-sm font-semibold text-[var(--ink)]">Styles & types</h3>
+            <h3 className={monoLabelClass}>Styles & types</h3>
             <ul className="mt-3 flex flex-wrap gap-2">
               {styleTags.map((tag) => (
                 <li
                   key={tag}
-                  className="rounded-full border border-[var(--line)] bg-[var(--tone)] px-3 py-1 text-xs font-medium text-[var(--ink-soft)]"
+                  className="rounded-full border border-[#262626] bg-[#1e1e1e] px-3 py-1 text-xs font-medium text-[#a3a3a3] capitalize"
                 >
                   {tag}
                 </li>
@@ -176,12 +180,12 @@ function AboutPanel({
         ) : null}
         {profile.skills?.length ? (
           <>
-            <h3 className="mt-6 text-sm font-semibold text-[var(--ink)]">Skills</h3>
+            <h3 className={`mt-6 ${monoLabelClass}`}>Skills</h3>
             <ul className="mt-3 flex flex-wrap gap-2">
               {profile.skills.map((skill) => (
                 <li
                   key={skill}
-                  className="rounded-full border border-[var(--line)] px-3 py-1 text-xs text-[var(--ink-soft)]"
+                  className="rounded-full border border-[#262626] px-3 py-1 text-xs text-[#8a8a8a] capitalize"
                 >
                   {skill}
                 </li>
@@ -206,42 +210,50 @@ function ResumePanel({
   return (
     <section className="space-y-6">
       {resumeUrl ? (
-        <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="btn-outline inline-flex text-sm">
+        <a
+          href={resumeUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex h-10 items-center gap-1.5 rounded-[8px] border border-[#262626] bg-[#1e1e1e] px-4 text-sm font-medium text-[#eaeaea] transition-colors hover:bg-[#2a2a2a]"
+        >
           Open resume PDF
+          <ArrowUpRight className="size-3.5 text-[#8a8a8a]" aria-hidden />
         </a>
       ) : null}
-      <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-card)] p-6">
-        <h2 className="text-lg font-semibold text-[var(--ink)]">Experience</h2>
+      <div className="rounded-[14px] border border-[#262626] bg-[#151515] p-6">
+        <h2 className={monoLabelClass}>Experience</h2>
         {experiences.length ? (
-          <ul className="mt-4 space-y-4">
+          <ul className="mt-4 divide-y divide-[#262626]">
             {experiences.map((item, index) => (
-              <li key={`${item.title}-${index}`} className="border-b border-[var(--line)] pb-4 last:border-0 last:pb-0">
-                <p className="font-semibold text-[var(--ink)]">{item.title}</p>
-                {item.role ? <p className="text-sm text-[var(--ink-soft)]">{item.role}</p> : null}
-                {item.credits ? <p className="mt-1 text-sm text-[var(--ink-soft)]">{item.credits}</p> : null}
+              <li key={`${item.title}-${index}`} className="py-4 first:pt-0 last:pb-0">
+                <p className="text-sm font-medium text-[#fafafa]">{item.title}</p>
+                {item.role ? <p className="mt-0.5 text-sm text-[#8a8a8a]">{item.role}</p> : null}
+                {item.credits ? <p className="mt-1 text-sm text-[#8a8a8a]">{item.credits}</p> : null}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="mt-3 text-sm text-[var(--ink-soft)]">No credits added yet.</p>
+          <p className="mt-3 text-sm text-[#5a5a5a]">No credits added yet.</p>
         )}
       </div>
-      <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-card)] p-6">
-        <h2 className="text-lg font-semibold text-[var(--ink)]">Training</h2>
+      <div className="rounded-[14px] border border-[#262626] bg-[#151515] p-6">
+        <h2 className={monoLabelClass}>Training</h2>
         {training?.length ? (
-          <ul className="mt-4 space-y-3">
+          <ul className="mt-4 divide-y divide-[#262626]">
             {training.map((item, index) => (
-              <li key={`${item.title ?? item.organization ?? "training"}-${index}`}>
-                <p className="font-semibold text-[var(--ink)]">{item.title ?? item.organization ?? "Training"}</p>
+              <li key={`${item.title ?? item.organization ?? "training"}-${index}`} className="py-3 first:pt-0 last:pb-0">
+                <p className="text-sm font-medium text-[#fafafa]">
+                  {item.title ?? item.organization ?? "Training"}
+                </p>
                 {item.organization && item.title ? (
-                  <p className="text-sm text-[var(--ink-soft)]">{item.organization}</p>
+                  <p className="mt-0.5 text-sm text-[#8a8a8a]">{item.organization}</p>
                 ) : null}
-                {item.year ? <p className="text-sm text-[var(--ink-soft)]">{item.year}</p> : null}
+                {item.year ? <p className="mt-0.5 font-mono text-xs text-[#5a5a5a]">{item.year}</p> : null}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="mt-3 text-sm text-[var(--ink-soft)]">No training listed yet.</p>
+          <p className="mt-3 text-sm text-[#5a5a5a]">No training listed yet.</p>
         )}
       </div>
     </section>
@@ -251,7 +263,7 @@ function ResumePanel({
 function VisualsPanel({ visuals }: { visuals: ProfileVisual[] }) {
   if (!visuals.length) {
     return (
-      <p className="rounded-2xl border border-dashed border-[var(--line)] bg-[var(--tone)] px-8 py-12 text-center text-sm text-[var(--ink-soft)]">
+      <p className="rounded-[14px] border border-dashed border-[#262626] bg-[#151515] px-8 py-12 text-center text-sm text-[#8a8a8a]">
         No visuals uploaded yet.
       </p>
     );
@@ -260,19 +272,18 @@ function VisualsPanel({ visuals }: { visuals: ProfileVisual[] }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {visuals.map((visual) => (
-        <article key={visual.id} className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface-card)]">
+        <article
+          key={visual.id}
+          className="overflow-hidden rounded-[14px] border border-[#262626] bg-[#151515]"
+        >
           {visual.url ? (
-            <div className="relative aspect-[4/5] bg-[var(--tone)]">
-              <Image
-                src={visual.url}
-                alt={visual.kind}
-                fill
-                className="object-cover"
-                unoptimized
-              />
+            <div className="relative aspect-[4/5] bg-[#1e1e1e]">
+              <Image src={visual.url} alt={visual.kind} fill className="object-cover" unoptimized />
             </div>
           ) : null}
-          <p className="px-3 py-2 text-sm font-medium capitalize text-[var(--ink)]">{visual.kind}</p>
+          <p className="px-4 py-2.5 font-mono text-xs font-medium tracking-[0.08em] text-[#8a8a8a] uppercase">
+            {visual.kind}
+          </p>
         </article>
       ))}
     </div>

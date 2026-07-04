@@ -46,10 +46,10 @@ export function MessengerShell({
   if (!conversations.length) {
     return (
       <div className={`px-6 py-10 text-center ${isDashboard ? "bd-muted-panel" : "ui-muted-panel"}`}>
-        <h2 className={`text-xl font-semibold ${isDashboard ? "text-white/92" : "text-[var(--ink)]"}`}>
+        <h2 className={`text-xl font-semibold ${isDashboard ? "text-white/92" : "text-[#fafafa]"}`}>
           No conversations yet
         </h2>
-        <p className={`mx-auto mt-2 max-w-md text-sm ${isDashboard ? "text-white/50" : "text-[var(--ink-soft)]"}`}>
+        <p className={`mx-auto mt-2 max-w-md text-sm ${isDashboard ? "text-white/50" : "text-[#8a8a8a]"}`}>
           When you message talent or respond to invites, threads will show up here.
         </p>
       </div>
@@ -59,12 +59,12 @@ export function MessengerShell({
   return (
     <div
       className={`grid h-[70vh] min-h-[420px] overflow-hidden rounded-2xl border md:grid-cols-[minmax(240px,1fr)_2fr] ${
-        isDashboard ? "border-white/8 bg-white/2" : "border-[var(--line)] bg-[var(--surface,transparent)]"
+        isDashboard ? "border-white/8 bg-white/2" : "border-[#262626] bg-[#151515]"
       }`}
     >
       <aside
         className={`min-h-0 overflow-y-auto border-r md:block ${
-          isDashboard ? "border-white/8" : "border-[var(--line)]"
+          isDashboard ? "border-white/8" : "border-[#262626]"
         } ${active ? "hidden" : "block"}`}
       >
         <ul>
@@ -79,10 +79,10 @@ export function MessengerShell({
                     isActive
                       ? isDashboard
                         ? "bg-white/8"
-                        : "bg-[var(--tone)]"
+                        : "bg-[#1e1e1e]"
                       : isDashboard
                         ? "hover:bg-white/4"
-                        : "hover:bg-[var(--tone)]/60"
+                        : "hover:bg-[#1e1e1e]/70"
                   }`}
                 >
                   <ListAvatar url={row.participant_avatar_url} name={row.participant_name} />
@@ -90,25 +90,25 @@ export function MessengerShell({
                     <span className="flex items-baseline justify-between gap-2">
                       <span
                         className={`truncate text-sm font-semibold ${
-                          isDashboard ? "text-white/90" : "text-[var(--ink)]"
+                          isDashboard ? "text-white/90" : "text-[#fafafa]"
                         }`}
                       >
                         {row.participant_name}
                       </span>
-                      <span className={`shrink-0 text-[11px] ${isDashboard ? "text-white/40" : "text-[var(--ink-soft)]"}`}>
+                      <span className={`shrink-0 text-[11px] ${isDashboard ? "text-white/40" : "text-[#5a5a5a]"}`}>
                         {formatWhen(row.last_message_at)}
                       </span>
                     </span>
                     <span
                       className={`mt-0.5 line-clamp-1 block text-xs ${
-                        isDashboard ? "text-white/50" : "text-[var(--ink-soft)]"
+                        isDashboard ? "text-white/50" : "text-[#8a8a8a]"
                       }`}
                     >
                       {row.last_message_body?.trim() || "No messages yet"}
                     </span>
                   </span>
                   {row.unread_count > 0 ? (
-                    <span className="mt-1 inline-flex min-w-[1.15rem] shrink-0 items-center justify-center rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[10px] font-bold text-[#0a0a0a]">
+                    <span className="mt-1 inline-flex min-w-[1.15rem] shrink-0 items-center justify-center rounded-full bg-[var(--accent)] px-1.5 py-0.5 font-mono text-[10px] font-bold text-[#04231e]">
                       {row.unread_count > 99 ? "99+" : row.unread_count}
                     </span>
                   ) : null}
@@ -126,7 +126,7 @@ export function MessengerShell({
               type="button"
               onClick={() => setActiveId(null)}
               className={`flex items-center gap-1.5 px-4 pt-3 text-xs font-medium md:hidden ${
-                isDashboard ? "text-white/55" : "text-[var(--ink-soft)]"
+                isDashboard ? "text-white/55" : "text-[#8a8a8a]"
               }`}
             >
               <ArrowLeft className="size-3.5" /> All conversations
@@ -135,7 +135,7 @@ export function MessengerShell({
           </div>
         ) : (
           <div className="flex h-full items-center justify-center p-8 text-center">
-            <p className={`text-sm ${isDashboard ? "text-white/45" : "text-[var(--ink-soft)]"}`}>
+            <p className={`text-sm ${isDashboard ? "text-white/45" : "text-[#5a5a5a]"}`}>
               Select a conversation to read and reply.
             </p>
           </div>
@@ -163,7 +163,7 @@ function ListAvatar({ url, name }: { url: string | null; name: string }) {
   }
 
   return (
-    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#4a7cff] text-xs font-semibold text-white">
+    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#0c2a26] text-xs font-semibold text-[#2dd4bf]">
       {initials || "?"}
     </span>
   );

@@ -16,10 +16,10 @@
   --spacing-md: 12px;
   --spacing-lg: 16px;
   --spacing-xl: 24px;
-  --product-radius-button: 10px;
-  --product-radius-field: 12px;
+  --product-radius-button: 8px;
+  --product-radius-field: 8px;
   --product-radius-card: 14px;
-  --product-radius-panel: 18px;
+  --product-radius-panel: 20px;
   --product-stage: #0a0a0a;
   --product-graphite: #141414;
 
@@ -37,37 +37,43 @@
 }
 
 .product-glass-card {
-  background: rgb(255 255 255 / 0.045);
+  background: #151515;
   border: 1px solid var(--border-low);
   border-radius: var(--product-radius-card);
 }
 
 .product-tab {
   border: 0;
+  border-radius: 8px;
   background: transparent;
-  color: var(--text-low);
+  color: #8a8a8a;
   font-size: 14px;
-  font-weight: 600;
-  padding: 8px 0;
+  font-weight: 500;
+  padding: 6px 14px;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.product-tab:hover {
+  background: #151515;
+  color: #eaeaea;
 }
 
 .product-tab[data-active="true"] {
+  background: #1e1e1e;
   color: var(--text-default);
-  border-bottom-color: var(--primary-500);
 }
 
 .product-pill {
   display: inline-flex;
   align-items: center;
-  border-radius: 10px;
-  padding: 6px 10px;
+  border-radius: 9999px;
+  padding: 5px 12px;
   font-size: 12px;
-  font-weight: 600;
-  background: var(--surface-overlay);
+  font-weight: 500;
+  background: #1e1e1e;
   border: 1px solid var(--border-low);
-  color: var(--text-default);
+  color: #a3a3a3;
 }
 
 .product-btn-primary {

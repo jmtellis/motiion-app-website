@@ -8,11 +8,15 @@ export default async function InboxPage() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <p className="text-xs font-semibold tracking-[0.2em] text-[var(--accent)] uppercase">Inbox</p>
-        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)]">Messages</h1>
-        <p className="text-base text-[var(--ink-soft)]">
-          Conversations from jobs, classes, sessions, and direct messages.
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[#262626] pb-6">
+        <div className="space-y-1.5">
+          <p className="font-mono text-xs font-medium tracking-[0.08em] text-[#5a5a5a] uppercase">Inbox</p>
+          <h1 className="text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.02em] text-[#fafafa]">
+            Messages
+          </h1>
+        </div>
+        <p className="font-mono text-xs tracking-[0.08em] text-[#5a5a5a] uppercase">
+          {conversations.length} threads
         </p>
       </header>
       <MessengerShell conversations={conversations} currentUserId={profile.id} error={error} />

@@ -8,10 +8,10 @@
 
 .talent-navigator {
   --tn-bg: #0a0a0a;
-  --tn-bg-elevated: #0c0c0c;
+  --tn-bg-elevated: #151515;
   --tn-bg-panel: #0a0a0a;
-  --tn-border: rgb(255 255 255 / 0.06);
-  --tn-border-strong: rgb(255 255 255 / 0.1);
+  --tn-border: #262626;
+  --tn-border-strong: #3a3a3a;
   --tn-accent: var(--accent);
   --tn-accent-dark: var(--accent-dark);
   --tn-accent-soft: color-mix(in oklab, var(--accent) 35%, transparent);

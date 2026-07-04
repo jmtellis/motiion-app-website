@@ -141,10 +141,10 @@ export function ConversationPane({
               <div
                 className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                   isMine
-                    ? "bg-[var(--accent)] text-[#0a0a0a]"
+                    ? "bg-[#fafafa] text-[#0a0a0a]"
                     : isDashboard
                       ? "bg-white/8 text-white/88"
-                      : "bg-[var(--tone)] text-[var(--ink)]"
+                      : "bg-[#1e1e1e] text-[#eaeaea]"
                 }`}
               >
                 {message.deleted_at ? (
@@ -187,13 +187,13 @@ export function ConversationPane({
             className={`min-h-[44px] flex-1 resize-none rounded-xl border px-3 py-2.5 text-sm outline-none ${
               isDashboard
                 ? "border-white/12 bg-white/4 text-white/90 placeholder:text-white/35 focus:border-white/30"
-                : "border-[var(--line)] bg-transparent text-[var(--ink)] placeholder:text-[var(--ink-soft)] focus:border-[var(--accent)]"
+                : "border-[#262626] bg-[#0a0a0a] text-[#eaeaea] placeholder:text-[#5a5a5a] focus:border-[rgb(45_212_191_/_0.55)]"
             }`}
           />
           <button
             type="submit"
             disabled={isSending || !draft.trim()}
-            className="rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-[#0a0a0a] disabled:opacity-40"
+            className="rounded-[8px] bg-[#fafafa] px-4 py-2.5 text-sm font-medium text-[#0a0a0a] transition-colors hover:bg-[#e6e6e6] disabled:opacity-40"
           >
             {isSending ? "Sending…" : "Send"}
           </button>
@@ -221,7 +221,7 @@ function PaneAvatar({ url, name }: { url: string | null; name: string }) {
   }
 
   return (
-    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#4a7cff] text-xs font-semibold text-white">
+    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#0c2a26] text-xs font-semibold text-[#2dd4bf]">
       {initials || "?"}
     </div>
   );

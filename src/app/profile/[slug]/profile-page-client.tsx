@@ -20,6 +20,15 @@ const TABS: { id: ProfileTab; label: string }[] = [
   { id: "visuals", label: "Visuals" },
 ];
 
+const monoLabelStyle: React.CSSProperties = {
+  fontFamily: "var(--font-mono), monospace",
+  fontSize: 11,
+  fontWeight: 500,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+  color: "#8a8a8a",
+};
+
 export default function ProfilePageClient({ profile }: { profile: PublicTalentProfile }) {
   const [tab, setTab] = useState<ProfileTab>("about");
 
@@ -79,7 +88,7 @@ export default function ProfilePageClient({ profile }: { profile: PublicTalentPr
 
         {highlights.length > 0 ? (
           <section aria-label="Highlights">
-            <h2 style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: "var(--text-low)" }}>
+            <h2 style={{ ...monoLabelStyle, margin: "0 0 10px" }}>
               Highlights
             </h2>
             <div className="product-highlights-rail">
@@ -199,19 +208,19 @@ function StatGrid({ profile }: { profile: PublicTalentProfile }) {
     <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10 }}>
       {profile.gender ? (
         <div>
-          <dt style={{ margin: 0, fontSize: 11, color: "var(--text-low)", textTransform: "uppercase", letterSpacing: 0.5 }}>Gender</dt>
+          <dt style={{ ...monoLabelStyle, margin: 0 }}>Gender</dt>
           <dd style={{ margin: "4px 0 0", fontSize: 15, fontWeight: 600 }}>{profile.gender}</dd>
         </div>
       ) : null}
       {profile.height ? (
         <div>
-          <dt style={{ margin: 0, fontSize: 11, color: "var(--text-low)", textTransform: "uppercase", letterSpacing: 0.5 }}>Height</dt>
+          <dt style={{ ...monoLabelStyle, margin: 0 }}>Height</dt>
           <dd style={{ margin: "4px 0 0", fontSize: 15, fontWeight: 600 }}>{profile.height}</dd>
         </div>
       ) : null}
       {profile.union_status ? (
         <div>
-          <dt style={{ margin: 0, fontSize: 11, color: "var(--text-low)", textTransform: "uppercase", letterSpacing: 0.5 }}>Union</dt>
+          <dt style={{ ...monoLabelStyle, margin: 0 }}>Union</dt>
           <dd style={{ margin: "4px 0 0", fontSize: 15, fontWeight: 600 }}>{profile.union_status}</dd>
         </div>
       ) : null}
@@ -222,7 +231,7 @@ function StatGrid({ profile }: { profile: PublicTalentProfile }) {
 function TagGroup({ title, tags }: { title: string; tags: string[] }) {
   return (
     <div>
-      <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 700, color: "var(--text-low)", textTransform: "uppercase", letterSpacing: 0.5 }}>
+      <p style={{ ...monoLabelStyle, margin: "0 0 8px" }}>
         {title}
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>

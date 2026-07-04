@@ -65,10 +65,10 @@ export function PillarSection({
       : resolvedSurface === "paper"
         ? "bg-[var(--paper)]"
         : surface
-          ? "bg-black"
+          ? "bg-[#0a0a0a]"
           : altBackground
-            ? "bg-black"
-            : "bg-black");
+            ? "bg-[#0a0a0a]"
+            : "bg-[#0a0a0a]");
 
   const lightSurface = resolvedSurface === "tone" || resolvedSurface === "paper";
 
@@ -82,7 +82,7 @@ export function PillarSection({
       id={`solution-${index + 1}`}
       variant={variant}
       className={`flex min-h-svh flex-col border-t ${
-        lightSurface ? "border-[var(--line)]" : "border-white/10"
+        lightSurface ? "border-[var(--line)]" : "border-[#262626]"
       } ${bgClass}`}
     >
       <div className="flex min-h-svh w-full flex-col justify-center px-6 py-12 sm:px-10 sm:py-16">

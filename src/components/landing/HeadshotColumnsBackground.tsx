@@ -8,7 +8,7 @@ import { portraitWallImages } from "@/lib/mock-data";
 const HERO_TINT_LIGHT = {
   sky: "rgba(186, 220, 245, 0.12)",
   cyan: "rgba(0, 168, 200, 0.05)",
-  brand: "rgba(0, 204, 183, 0.03)",
+  brand: "rgba(45, 212, 191, 0.03)",
   paper: "rgba(252, 252, 251, 0.65)",
 } as const;
 

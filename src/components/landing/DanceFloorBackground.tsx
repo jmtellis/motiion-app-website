@@ -92,10 +92,10 @@ function TapeGrid() {
     <svg className="absolute inset-0 h-full w-full opacity-40" preserveAspectRatio="none" viewBox="0 0 1440 900">
       <defs>
         <pattern id="tape-h" width="120" height="120" patternUnits="userSpaceOnUse">
-          <path d="M0 60 H120" stroke="rgba(0, 204, 183, 0.08)" strokeWidth="1" strokeDasharray="6 8" />
+          <path d="M0 60 H120" stroke="rgba(45, 212, 191, 0.08)" strokeWidth="1" strokeDasharray="6 8" />
         </pattern>
         <pattern id="tape-v" width="120" height="120" patternUnits="userSpaceOnUse">
-          <path d="M60 0 V120" stroke="rgba(0, 204, 183, 0.06)" strokeWidth="1" strokeDasharray="4 10" />
+          <path d="M60 0 V120" stroke="rgba(45, 212, 191, 0.06)" strokeWidth="1" strokeDasharray="4 10" />
         </pattern>
       </defs>
       <rect width="100%" height="100%" fill="url(#tape-h)" />
@@ -122,7 +122,7 @@ function StudioMarkings() {
             width={box.w}
             height={box.h}
             fill="none"
-            stroke="rgba(0, 204, 183, 0.2)"
+            stroke="rgba(45, 212, 191, 0.2)"
             strokeWidth="1"
             strokeDasharray="8 6"
           />
@@ -147,7 +147,7 @@ function StudioMarkings() {
         </g>
       ))}
       {/* Diagonal tape strips */}
-      <line x1="-100" y1="650" x2="1540" y2="200" stroke="rgba(0, 204, 183, 0.06)" strokeWidth="2" />
+      <line x1="-100" y1="650" x2="1540" y2="200" stroke="rgba(45, 212, 191, 0.06)" strokeWidth="2" />
       <line x1="-80" y1="720" x2="1520" y2="280" stroke="rgba(255, 255, 255, 0.04)" strokeWidth="1" strokeDasharray="12 16" />
     </svg>
   );

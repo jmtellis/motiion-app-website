@@ -7,7 +7,7 @@ export function MarketingBodySurface({ dark = false }: { dark?: boolean }) {
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
-    const surface = dark ? "#000000" : "var(--paper)";
+    const surface = dark ? "#0a0a0a" : "var(--paper)";
 
     html.style.backgroundColor = surface;
     body.style.backgroundColor = surface;

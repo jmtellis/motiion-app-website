@@ -50,11 +50,15 @@ export function IosDownloadHeroButton({
                 close();
                 openBetaSignup();
               }}
-              className="btn-primary w-full sm:flex-1"
+              className="btn-primary btn-on-dark w-full sm:flex-1"
             >
               {iosHeroCta.modal.betaCta.label}
             </button>
-            <button type="button" onClick={close} className="btn-outline w-full sm:flex-1">
+            <button
+              type="button"
+              onClick={close}
+              className="btn-outline btn-outline-on-dark w-full sm:flex-1"
+            >
               {iosHeroCta.modal.dismissLabel}
             </button>
           </div>

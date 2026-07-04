@@ -82,15 +82,16 @@ export function BetaForm({
     }
   };
 
+  const darkFieldClass =
+    "[&_.field>span]:text-[#eaeaea] [&_.field>legend]:text-[#eaeaea] [&_.field>input]:border-[#262626] [&_.field>input]:bg-[#0a0a0a] [&_.field>input]:text-[#fafafa] [&_.field>input]::placeholder:text-[#5a5a5a] [&_.field>textarea]:border-[#262626] [&_.field>textarea]:bg-[#0a0a0a] [&_.field>textarea]:text-[#fafafa] [&_.field>select]:border-[#262626] [&_.field>select]:bg-[#0a0a0a] [&_.field>select]:text-[#fafafa] [&_label]:text-[#a3a3a3]";
+
   const shellClass = embedded
-    ? ""
+    ? cn(dark && darkFieldClass)
     : cn(
         compact
           ? "rounded-[var(--radius-card)] border p-4 sm:p-5"
           : "rounded-[var(--radius-panel)] border p-5 md:p-6",
-        dark
-          ? "border-white/12 bg-black [&_.field>span]:text-white/85 [&_.field>legend]:text-white/85 [&_.field>input]:border-white/15 [&_.field>input]:bg-black [&_.field>input]:text-white [&_.field>input]::placeholder:text-white/35 [&_.field>textarea]:border-white/15 [&_.field>textarea]:bg-black [&_.field>textarea]:text-white [&_.field>select]:border-white/15 [&_.field>select]:bg-black [&_.field>select]:text-white [&_label]:text-white/80"
-          : "border-[var(--line)] bg-white",
+        dark ? cn("border-[#262626] bg-[#151515]", darkFieldClass) : "border-[var(--line)] bg-white",
       );
 
   const formSpaceClass = compact ? "space-y-2.5" : "space-y-4";
@@ -198,10 +199,10 @@ export function BetaForm({
           <span>Optional notes</span>
           <fieldset className="min-w-0 border-0 p-0">
             <legend
-              className={`mb-1.5 font-semibold ${dark ? "text-white/85" : "text-[var(--ink)]"} ${compact ? "text-xs leading-snug" : "text-[0.85rem]"}`}
+              className={`mb-1.5 font-semibold ${dark ? "text-[#eaeaea]" : "text-[var(--ink)]"} ${compact ? "text-xs leading-snug" : "text-[0.85rem]"}`}
             >
               How did you hear about us?{" "}
-              <span className={`font-normal ${dark ? "text-white/50" : "text-[var(--ink-soft)]"}`}>(select all)</span>
+              <span className={`font-normal ${dark ? "text-[#8a8a8a]" : "text-[var(--ink-soft)]"}`}>(select all)</span>
             </legend>
             <div
               className={
@@ -215,7 +216,7 @@ export function BetaForm({
                 return (
                   <label
                     key={option.value}
-                    className={`inline-flex cursor-pointer items-center gap-2 ${dark ? "text-white/80" : "text-[var(--ink)]"} ${compact ? "text-xs" : "gap-2.5 text-sm"}`}
+                    className={`inline-flex cursor-pointer items-center gap-2 ${dark ? "text-[#a3a3a3]" : "text-[var(--ink)]"} ${compact ? "text-xs" : "gap-2.5 text-sm"}`}
                   >
                     <input
                       type="checkbox"
@@ -252,7 +253,11 @@ export function BetaForm({
           />
         </div>
 
-        <button type="submit" className="btn-primary w-full" disabled={isSubmitting}>
+        <button
+          type="submit"
+          className={cn("btn-primary w-full", dark && "btn-on-dark")}
+          disabled={isSubmitting}
+        >
           {isSubmitting ? "Submitting..." : "Join Beta"}
         </button>
       </form>

@@ -10,7 +10,7 @@ export function HeroStudioBackground({
   alt?: string;
 }) {
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden bg-black" aria-hidden>
+    <div className="pointer-events-none absolute inset-0 overflow-hidden bg-[#0a0a0a]" aria-hidden>
       <Image
         src={src}
         alt={alt}

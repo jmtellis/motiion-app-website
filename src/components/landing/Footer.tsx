@@ -30,7 +30,7 @@ function FooterSocialIcon({ link }: { link: FooterSocialLink }) {
     );
 
   const className =
-    "inline-flex text-white/45 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60";
+    "inline-flex text-[#5a5a5a] transition-colors hover:text-[#fafafa] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
 
   if (link.href === "#") {
     return (
@@ -48,7 +48,7 @@ function FooterSocialIcon({ link }: { link: FooterSocialLink }) {
 }
 
 function FooterLinkItem({ link }: { link: FooterLink }) {
-  const className = "text-sm text-white/75 transition-colors hover:text-white";
+  const className = "text-sm text-[#8a8a8a] transition-colors hover:text-[#fafafa]";
 
   if (link.href.startsWith("mailto:")) {
     return (
@@ -60,7 +60,7 @@ function FooterLinkItem({ link }: { link: FooterLink }) {
 
   if (link.href === "#") {
     return (
-      <span className="cursor-default text-sm text-white/50" aria-disabled="true">
+      <span className="cursor-default text-sm text-[#5a5a5a]" aria-disabled="true">
         {link.label}
       </span>
     );
@@ -76,7 +76,7 @@ function FooterLinkItem({ link }: { link: FooterLink }) {
 function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) {
   return (
     <div className="w-[7.25rem] shrink-0">
-      <h3 className="text-xs font-semibold tracking-[0.16em] text-white/50 uppercase">{title}</h3>
+      <h3 className="type-eyebrow text-[#5a5a5a]">{title}</h3>
       <ul className="mt-3 space-y-2">
         {links.map((link) => (
           <li key={link.label}>
@@ -93,22 +93,24 @@ export function Footer({ className }: { className?: string }) {
 
   return (
     <footer
-      className={`relative overflow-hidden border-t border-white/10 text-white${className ? ` ${className}` : ""}`}
+      className={`relative overflow-hidden border-t border-[#262626] bg-[#0a0a0a] text-white${className ? ` ${className}` : ""}`}
     >
       <div
-        className="pointer-events-none absolute inset-0 bg-[#0a1214] bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url(/footer-background.png)" }}
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 55% 45% at 50% 115%, rgb(45 212 191 / 0.07) 0%, transparent 65%)",
+        }}
         aria-hidden
       />
-      <div className="pointer-events-none absolute inset-0 bg-[#0a1214]/35" aria-hidden />
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-16 lg:px-10 lg:py-20">
         <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
           <div className="max-w-sm space-y-3">
-            <p className="text-base font-semibold tracking-tight text-white">
+            <p className="text-base font-semibold tracking-tight text-[#fafafa]">
               Moving the industry forward
             </p>
-            <p className="text-sm leading-relaxed text-white/75">
+            <p className="text-sm leading-relaxed text-[#8a8a8a]">
               Motiion aims to empower every creative to build a successful, lasting career with
               tools that support their craft. We bridge the gap between innovation and artistry,
               helping creators move with purpose, strengthen connections, and turn their passion
@@ -126,7 +128,7 @@ export function Footer({ className }: { className?: string }) {
           </nav>
         </div>
 
-        <div className="mt-14 flex flex-col gap-4 border-t border-white/10 pt-8 text-sm text-white/50 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="mt-14 flex flex-col gap-4 border-t border-[#262626] pt-8 text-sm text-[#5a5a5a] sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <p>© {year} Motiion. All rights reserved.</p>
             <div className="flex items-center gap-2.5" aria-label="Social media">
@@ -135,7 +137,7 @@ export function Footer({ className }: { className?: string }) {
               ))}
             </div>
           </div>
-          <p className="text-white/40">Built for dance and the creative industries.</p>
+          <p className="text-[#5a5a5a]">Built for dance and the creative industries.</p>
         </div>
       </div>
     </footer>

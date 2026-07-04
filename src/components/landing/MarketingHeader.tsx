@@ -39,8 +39,8 @@ export async function MarketingHeader({
 
   const headerSurfaceClass = darkTheme
     ? overlay
-      ? "max-md:bg-transparent md:border-white/10 md:bg-[var(--stage-black)]/95"
-      : "border-white/10 bg-[var(--stage-black)]"
+      ? "max-md:bg-transparent md:border-[#262626] md:bg-[var(--stage-black)]/95"
+      : "border-[#262626] bg-[var(--stage-black)]"
     : overlay
       ? "max-md:bg-transparent md:border-[var(--line)]/80 md:bg-[var(--paper)]/95"
       : "border-[var(--line)]/80 bg-[var(--paper)]";
@@ -48,8 +48,8 @@ export async function MarketingHeader({
   const tabClass = (active: boolean) =>
     darkTheme
       ? active
-        ? "border-[var(--accent)] text-on-dark-primary"
-        : "border-transparent text-white/60 hover:border-white/25 hover:text-white"
+        ? "border-transparent rounded-[8px] bg-[#151515] px-3 py-1.5 text-[#fafafa]"
+        : "border-transparent rounded-[8px] px-3 py-1.5 text-[#8a8a8a] hover:bg-[#151515] hover:text-[#eaeaea]"
       : active
         ? "border-[var(--accent-dark)] text-[var(--ink)]"
         : "border-transparent text-[var(--ink-soft)] hover:border-[var(--line)] hover:text-[var(--ink)]";
@@ -57,8 +57,8 @@ export async function MarketingHeader({
   const mobileTabClass = (active: boolean) =>
     darkTheme
       ? active
-        ? "bg-white text-black"
-        : "text-white/60 hover:bg-white/10"
+        ? "bg-[#fafafa] text-[#0a0a0a]"
+        : "text-[#8a8a8a] hover:bg-[#151515]"
       : active
         ? "bg-[var(--ink)] text-white"
         : "text-[var(--ink-soft)] hover:bg-white/80";

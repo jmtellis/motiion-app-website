@@ -59,10 +59,11 @@ export function HomeMarketingHeaderClient({
     };
   }, []);
 
-  const showSideContent = pastHero || !!reduceMotion;
+  void reduceMotion;
+  const showSideContent = true;
 
   const tabClass = darkTheme
-    ? "border-b-2 border-transparent pb-0.5 text-center text-xs font-semibold whitespace-nowrap text-white/60 transition-colors hover:border-white/25 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:text-sm"
+    ? "rounded-[8px] px-3 py-1.5 text-center text-xs font-medium whitespace-nowrap text-[#8a8a8a] transition-colors hover:bg-[#151515] hover:text-[#eaeaea] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:text-sm"
     : "border-b-2 border-transparent pb-0.5 text-center text-xs font-semibold whitespace-nowrap text-[var(--ink-soft)] transition-colors hover:border-[var(--line)] hover:text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:text-sm";
 
   const mobileTabClass = cn(tabClass, "flex flex-1 items-center justify-center min-w-0");
@@ -73,7 +74,7 @@ export function HomeMarketingHeaderClient({
       className="inline-flex items-center transition-opacity duration-500 hover:opacity-80 motion-reduce:transition-none md:absolute md:top-1/2 md:left-1/2 md:z-10 md:-translate-x-1/2 md:-translate-y-1/2"
       aria-label="Motiion home"
     >
-      <MotiionBrandMark priority inverted={darkTheme || !pastHero} />
+      <MotiionBrandMark priority inverted={darkTheme} />
     </Link>
   );
 
@@ -95,7 +96,7 @@ export function HomeMarketingHeaderClient({
         "sticky top-0 z-50 border-b max-md:border-b-0 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-500 ease-out motion-reduce:transition-none",
         pastHero
           ? darkTheme
-            ? "border-transparent bg-transparent shadow-none md:border-white/10 md:bg-[var(--stage-black)]/95"
+            ? "border-transparent bg-[var(--stage-black)]/90 shadow-none backdrop-blur-md md:border-[#262626]"
             : "border-transparent bg-transparent shadow-none md:border-[var(--line)]/80 md:bg-[var(--paper)]/95"
           : "border-transparent bg-transparent shadow-none",
       )}

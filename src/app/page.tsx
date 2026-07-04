@@ -5,7 +5,6 @@ import { HomeLandingHero, HomeLandingSections } from "@/components/landing/HomeL
 import { MarketingPageLayout } from "@/components/landing/MarketingPageLayout";
 import { getProfileDestination, isOnboardingComplete } from "@/lib/auth/profile";
 import { getCurrentUserProfile } from "@/lib/auth/session";
-import { getHeroHeadshotImages } from "@/lib/search/search-profiles";
 import { MARKETING_DARK } from "@/lib/marketing/dark-theme";
 
 export const viewport: Viewport = {
@@ -19,14 +18,11 @@ export default async function Home() {
     redirect(getProfileDestination(profile));
   }
 
-  const headshotImages = await getHeroHeadshotImages();
-
   return (
     <MarketingPageLayout
       homeHeader
       darkTheme
-      headshotImages={headshotImages}
-      heroBackgroundImage="/hero-studio-background.png"
+      cleanHero
       activeTab={null}
       hero={<HomeLandingHero dark />}
     >

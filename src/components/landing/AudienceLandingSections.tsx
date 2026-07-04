@@ -11,7 +11,7 @@ function cn(...classes: Array<string | false | null | undefined>) {
 function audienceSectionClass(altBackground: boolean, dark: boolean) {
   const base = "ui-section-narrative border-t";
   if (dark) {
-    return cn(base, altBackground ? "border-white/10 bg-[var(--graphite)]" : "border-white/10 bg-[var(--stage-black)]");
+    return cn(base, altBackground ? "border-[#262626] bg-[var(--graphite)]" : "border-[#262626] bg-[var(--stage-black)]");
   }
   return cn(base, altBackground ? "border-[var(--line)] bg-[var(--tone)]" : "border-[var(--line)] bg-[var(--paper)]");
 }
@@ -35,7 +35,7 @@ export function AudienceLandingSections({
           >
             {content.benefitsTitle}
           </h2>
-          <div className="mt-8 divide-y divide-[var(--line)] dark:divide-white/10">
+          <div className={cn("mt-8 divide-y", dark ? "divide-[#262626]" : "divide-[var(--line)]")}>
             {content.benefits.map((item, index) => (
               <Reveal key={item.title} delay={index * 0.04} amount={0.12} distance={16}>
                 <article className="ui-reveal-row">
@@ -81,7 +81,7 @@ export function AudienceLandingSections({
                       className={cn(
                         "inline-flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-chip)] border text-sm font-semibold",
                         dark
-                          ? "border-white/15 bg-white/10 text-on-dark-primary"
+                          ? "border-[#262626] bg-[#1e1e1e] font-mono text-on-dark-primary"
                           : "border-[var(--line)] bg-white text-[var(--ink)]",
                       )}
                     >
@@ -102,7 +102,7 @@ export function AudienceLandingSections({
             <div
               className={cn(
                 "ui-panel p-5",
-                dark && "ui-panel-dark border-white/12",
+                dark && "ui-panel-dark",
               )}
             >
               <h3

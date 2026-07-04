@@ -117,7 +117,7 @@ export function ProductProofStrip({
       id="product"
       variant="editorial-slide"
       className={`overflow-hidden border-t px-6 py-16 sm:px-10 sm:py-20 ${
-        dark ? "border-white/10 bg-black/80 backdrop-blur-[2px]" : `border-[var(--line)] ${lightBg}`
+        dark ? "border-[#262626] bg-[#0a0a0a]/80 backdrop-blur-[2px]" : `border-[var(--line)] ${lightBg}`
       }`}
     >
       <div className="mx-auto w-full max-w-6xl">

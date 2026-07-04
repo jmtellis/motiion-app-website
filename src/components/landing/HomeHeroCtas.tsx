@@ -62,11 +62,15 @@ export function HomeHeroCtas({ dark = false }: { dark?: boolean }) {
                 close();
                 openBetaSignup();
               }}
-              className="btn-primary w-full sm:flex-1"
+              className="btn-primary btn-on-dark w-full sm:flex-1"
             >
               {iosHeroCta.modal.betaCta.label}
             </button>
-            <button type="button" onClick={close} className="btn-outline w-full sm:flex-1">
+            <button
+              type="button"
+              onClick={close}
+              className="btn-outline btn-outline-on-dark w-full sm:flex-1"
+            >
               {iosHeroCta.modal.dismissLabel}
             </button>
           </div>
@@ -87,10 +91,10 @@ export function HomeHeroCtas({ dark = false }: { dark?: boolean }) {
                 <Link
                   href={path.href}
                   onClick={close}
-                  className="ui-card-interactive group flex w-full flex-col px-4 py-3.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                  className="group flex w-full flex-col rounded-[14px] border border-[#262626] bg-[#1e1e1e] px-4 py-3.5 text-left transition-colors hover:border-[#3a3a3a] hover:bg-[#2a2a2a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                 >
-                  <span className="text-sm font-semibold text-[var(--ink)]">{path.label}</span>
-                  <span className="mt-1 text-sm leading-snug text-[var(--ink-soft)]">
+                  <span className="text-sm font-semibold text-[#fafafa]">{path.label}</span>
+                  <span className="mt-1 text-sm leading-snug text-[#a3a3a3]">
                     {path.description}
                   </span>
                 </Link>

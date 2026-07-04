@@ -75,7 +75,7 @@ export function FeatureNarrativeSection({
     <section
       id={id}
       ref={sectionRef}
-      className={`ui-section-narrative border-t ${dark ? "border-white/10 bg-[var(--stage-black)]" : "border-[var(--line)] bg-[var(--paper)]"}`}
+      className={`ui-section-narrative border-t ${dark ? "border-[#262626] bg-[var(--stage-black)]" : "border-[var(--line)] bg-[var(--paper)]"}`}
     >
       <div
         className={`ui-split-scroll ui-split-scroll--sticky-left ${mediaFirst ? "[&>*:first-child]:lg:order-2 [&>*:last-child]:lg:order-1" : ""}`}

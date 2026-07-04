@@ -8,7 +8,7 @@ function cn(...classes: Array<string | false | null | undefined>) {
 
 export function FooterRevealShell({
   children,
-  surfaceClass = "bg-black",
+  surfaceClass = "bg-[#0a0a0a]",
 }: {
   children: ReactNode;
   surfaceClass?: string;

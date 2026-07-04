@@ -42,7 +42,7 @@ function StudioBeat({
       <div
         className={cn(
           "relative mt-10 w-full max-w-3xl overflow-hidden rounded-2xl border",
-          dark ? "border-white/10" : "border-[var(--line)]",
+          dark ? "border-[#262626]" : "border-[var(--line)]",
         )}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -84,7 +84,7 @@ function StudioSceneContent({ dark }: { dark: boolean }) {
             <div
               className={cn(
                 "relative mx-auto mt-10 w-full max-w-3xl overflow-hidden rounded-2xl border",
-                dark ? "border-white/10" : "border-[var(--line)]",
+                dark ? "border-[#262626]" : "border-[var(--line)]",
               )}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -148,7 +148,7 @@ export function StudioTransitionSection({ dark = false }: { dark?: boolean }) {
       sceneHeight="min-h-[180svh] md:min-h-[200svh]"
       className={cn(
         "border-t",
-        dark ? "border-white/10 bg-black/75" : "border-[var(--line)] bg-[var(--tone)]",
+        dark ? "border-[#262626] bg-[#0a0a0a]/75" : "border-[var(--line)] bg-[var(--tone)]",
       )}
     >
       <StudioSceneContent dark={dark} />

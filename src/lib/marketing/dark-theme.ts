@@ -1,7 +1,7 @@
-/** Home / marketing dark palette — pure black page surfaces (footer keeps its own treatment). */
+/** Home / marketing dark palette — docs/design.md canvas + hairline tokens. */
 export const MARKETING_DARK = {
-  bg: "#000000",
-  surface: "#000000",
-  surfaceAlt: "#000000",
-  line: "rgba(255, 255, 255, 0.1)",
+  bg: "#0a0a0a",
+  surface: "#151515",
+  surfaceAlt: "#1e1e1e",
+  line: "#262626",
 } as const;

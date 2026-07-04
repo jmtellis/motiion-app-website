@@ -12,7 +12,7 @@ export default function CastingNotFound() {
         </p>
         <Link
           href="https://www.motiion.app"
-          style={{ display: "inline-block", marginTop: 20, color: "#00ccb7" }}
+          style={{ display: "inline-block", marginTop: 20, color: "#2dd4bf" }}
         >
           motiion.app
         </Link>

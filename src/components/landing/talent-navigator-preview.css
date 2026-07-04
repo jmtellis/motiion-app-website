@@ -1,8 +1,8 @@
 .talent-navigator-preview {
-  --tn-accent: #00ccb7;
-  --tn-accent-soft: rgb(0 204 183 / 0.32);
-  --tn-glow: rgb(0 204 183 / 0.18);
-  --tn-glow-strong: rgb(0 204 183 / 0.42);
+  --tn-accent: #2dd4bf;
+  --tn-accent-soft: rgb(45 212 191 / 0.32);
+  --tn-glow: rgb(45 212 191 / 0.18);
+  --tn-glow-strong: rgb(45 212 191 / 0.42);
   --tn-stage-inset: 0.65rem;
 
   display: flex;
@@ -86,8 +86,8 @@
 }
 
 .talent-navigator-preview__pill--active {
-  border-color: rgb(0 204 183 / 0.45);
-  background: rgb(0 204 183 / 0.14);
+  border-color: rgb(45 212 191 / 0.45);
+  background: rgb(45 212 191 / 0.14);
   color: rgb(255 255 255 / 0.95);
 }
 

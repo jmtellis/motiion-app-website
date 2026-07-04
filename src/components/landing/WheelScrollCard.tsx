@@ -79,7 +79,7 @@ function WheelCardPanel({
       />
       <p
         className={`mt-3 text-pretty text-sm leading-relaxed sm:text-[0.9375rem] ${
-          dark ? "text-white/62" : "text-[var(--ink-soft)]"
+          dark ? "text-on-dark-secondary" : "text-[var(--ink-soft)]"
         }`}
       >
         {description}

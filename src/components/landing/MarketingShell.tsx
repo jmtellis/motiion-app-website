@@ -11,9 +11,9 @@ export function MarketingShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[var(--paper)]">
+    <div className="theme-marketing-dark min-h-screen bg-[#0a0a0a]">
       <div className="relative">
-        <MarketingHeader activeTab={activeTab} />
+        <MarketingHeader activeTab={activeTab} darkTheme />
       </div>
       {children}
       <Footer />

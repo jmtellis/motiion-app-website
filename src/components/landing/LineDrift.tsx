@@ -55,7 +55,7 @@ export function LineDrift({ className, speed = 1, children }: LineDriftProps) {
 }
 
 function DefaultLines({ variant = "primary" }: { variant?: "primary" | "secondary" }) {
-  const color = variant === "primary" ? "rgba(0, 204, 183, 0.12)" : "rgba(255, 255, 255, 0.06)";
+  const color = variant === "primary" ? "rgba(45, 212, 191, 0.12)" : "rgba(255, 255, 255, 0.06)";
   return (
     <svg className="h-full w-[120%] -translate-x-[10%]" preserveAspectRatio="none" viewBox="0 0 1200 800">
       {[120, 280, 440, 600, 760].map((y) => (

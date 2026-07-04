@@ -41,15 +41,15 @@
   --line: #e7e6e2;
   --ink: #151515;
   --ink-soft: #5f5f5a;
-  --accent: #00ccb7;
-  --accent-dark: #00a899;
+  --accent: #2dd4bf;
+  --accent-dark: #14b8a6;
   /* Figma / ios.json — Colors/Button Surface (light) */
   --btn-surface-default: #111111;
   --btn-surface-accent: #007a6e;
   --btn-surface-tint: rgb(66 66 66 / 0.13);
   --btn-text-on-fill: #ffffff;
   --btn-border-default: #9f9f9f;
-  --btn-radius: 10px;
+  --btn-radius: 8px;
   --btn-height: 2.25rem;
   --btn-font-size: 0.875rem;
   --btn-shadow: none;
@@ -68,10 +68,10 @@
   --shadow-surface: none;
   --shadow-raised: 0 10px 30px rgb(17 17 17 / 0.08);
 
-  /* Perplexity-inspired neutral stage palette */
+  /* Neutral stage palette — aligned to docs/design.md surfaces */
   --stage-black: #0a0a0a;
-  --graphite: #141414;
-  --graphite-soft: #1c1c1c;
+  --graphite: #151515;
+  --graphite-soft: #1e1e1e;
   --surface-quiet: color-mix(in oklab, var(--paper), var(--tone) 18%);
   --surface-command: rgb(255 255 255 / 0.96);
   --surface-command-dark: rgb(20 20 20 / 0.88);
@@ -176,19 +176,21 @@ h3 {
 }
 
 /* Marketing & product typography roles */
+/* design.md mono-label — Geist Mono micro-label for eyebrows and metadata */
 .type-eyebrow {
+  font-family: var(--font-mono);
   font-size: 0.75rem;
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: var(--type-label-tracking);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .type-display-xl {
   font-size: clamp(3rem, 6vw, 5.5rem);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.04;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
 }
 
 /* Mighty-style horizontal scroll marquees */
@@ -268,16 +270,17 @@ h3 {
   line-height: var(--type-caption-leading);
 }
 
+/* design.md three-step contrast ladder */
 .text-on-dark-primary {
-  color: rgb(255 255 255 / 0.95);
+  color: var(--ds-on-background);
 }
 
 .text-on-dark-secondary {
-  color: rgb(255 255 255 / 0.82);
+  color: #a3a3a3;
 }
 
 .text-on-dark-tertiary {
-  color: rgb(255 255 255 / 0.58);
+  color: var(--ds-muted);
 }
 
 .section-wrap {
@@ -316,9 +319,9 @@ h3 {
 }
 
 .ui-panel-dark {
-  border: 1px solid rgb(255 255 255 / 0.1);
-  border-radius: var(--radius-panel);
-  background: #151515;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-surface);
   box-shadow: var(--shadow-surface);
 }
 
@@ -339,9 +342,9 @@ h3 {
 .ui-chip-dark {
   display: inline-flex;
   align-items: center;
-  border: 1px solid rgb(255 255 255 / 0.12);
-  border-radius: var(--radius-chip);
-  background: rgb(255 255 255 / 0.08);
+  border: 1px solid var(--ds-border);
+  border-radius: 9999px;
+  background: var(--ds-surface-raised);
 }
 
 .ui-quiet-surface {
@@ -441,12 +444,11 @@ h3 {
 
 .ui-wheel-card {
   height: min(68svh, 42rem);
-  border-radius: 28px;
-  border: 1px solid rgb(255 255 255 / 0.09);
+  border-radius: var(--ds-radius-xl);
+  border: 1px solid var(--ds-border);
   background:
-    radial-gradient(ellipse 90% 70% at 50% -18%, rgb(0 204 183 / 0.07) 0%, transparent 62%),
-    radial-gradient(ellipse 90% 70% at 50% 118%, rgb(0 204 183 / 0.07) 0%, transparent 62%),
-    linear-gradient(180deg, rgb(20 22 22) 0%, rgb(8 9 9) 100%);
+    radial-gradient(ellipse 90% 70% at 50% -18%, rgb(45 212 191 / 0.05) 0%, transparent 62%),
+    var(--ds-surface);
   box-shadow: none;
 }
 
@@ -505,6 +507,33 @@ h3 {
     font-size: 0.75rem;
     line-height: 1.45;
   }
+}
+
+/* design.md hero — ambient accent wash + hairline product frame */
+.marketing-hero-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 42% at 50% -6%, rgb(45 212 191 / 0.1) 0%, transparent 62%),
+    radial-gradient(ellipse 44% 30% at 50% 108%, rgb(45 212 191 / 0.05) 0%, transparent 60%);
+}
+
+.marketing-hero-panel {
+  position: relative;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  background: var(--ds-surface);
+  padding: 0.5rem;
+}
+
+.marketing-hero-panel::before {
+  content: "";
+  position: absolute;
+  inset: -3rem -4rem;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 62% 58% at 50% 42%, rgb(45 212 191 / 0.09) 0%, transparent 68%);
 }
 
 .marketing-footer-reveal {
@@ -613,35 +642,37 @@ h3 {
   opacity: 1;
 }
 
-/* High-contrast CTA on dark marketing hero */
+/* High-contrast CTA on dark marketing surfaces — design.md button-primary */
 .btn-on-dark {
-  background: #ffffff;
-  color: #0a1214;
-  border-color: rgba(255, 255, 255, 0.25);
+  background: var(--ds-primary);
+  color: var(--ds-on-primary);
+  border-color: transparent;
   box-shadow: none;
 }
 
 .btn-on-dark:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.92);
+  background: #e6e6e6;
 }
 
 .btn-on-dark:focus-visible {
-  outline: 2px solid #ffffff;
+  outline: 2px solid var(--ds-accent);
   outline-offset: 2px;
 }
 
+/* design.md button-secondary — raised surface with hairline border */
 .btn-outline-on-dark,
 .btn-outline.btn-outline-on-dark {
-  background: transparent;
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.85);
+  background: var(--ds-surface-raised);
+  color: var(--ds-on-surface);
+  border-color: var(--ds-border);
+  border-width: 1px;
   box-shadow: none;
 }
 
 .btn-outline-on-dark:hover:not(:disabled),
 .btn-outline.btn-outline-on-dark:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: #ffffff;
+  background: #2a2a2a;
+  border-color: var(--ds-border-strong);
 }
 
 .btn-outline-on-dark:focus-visible,
@@ -683,53 +714,52 @@ h3 {
   padding-block: 0.625rem;
 }
 
-/* Perplexity-style marketing hero pills — accent fill + ghost outline */
+/* design.md marketing CTAs — white primary + raised-surface secondary, md radius */
 .btn-hero-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   min-height: 2.75rem;
-  padding-inline: 1.375rem;
+  padding-inline: 1.25rem;
   padding-block: 0.625rem;
-  border-radius: 9999px;
+  border-radius: var(--ds-radius-md);
   border: 1px solid transparent;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.25;
   text-decoration: none;
   transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease;
 }
 
 .btn-hero-pill-accent {
-  background: var(--accent);
-  color: #ffffff;
-  border-color: color-mix(in oklab, var(--accent), black 10%);
+  background: var(--ds-primary);
+  color: var(--ds-on-primary);
+  border-color: transparent;
 }
 
 .btn-hero-pill-accent:hover:not(:disabled) {
-  background: var(--accent-dark);
-  border-color: var(--accent-dark);
+  background: #e6e6e6;
 }
 
 .btn-hero-pill-accent:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--ds-accent);
   outline-offset: 2px;
 }
 
 .btn-hero-pill-ghost {
-  background: transparent;
-  color: #ffffff;
-  border-color: rgb(255 255 255 / 0.55);
+  background: var(--ds-surface-raised);
+  color: var(--ds-on-surface);
+  border-color: var(--ds-border);
 }
 
 .btn-hero-pill-ghost:hover:not(:disabled) {
-  background: rgb(255 255 255 / 0.06);
-  border-color: rgb(255 255 255 / 0.85);
+  background: #2a2a2a;
+  border-color: var(--ds-border-strong);
 }
 
 .btn-hero-pill-ghost:focus-visible {
-  outline: 2px solid #ffffff;
+  outline: 2px solid var(--ds-accent);
   outline-offset: 2px;
 }
 
@@ -777,8 +807,53 @@ h3 {
 }
 
 .marketing-dialog::backdrop {
-  background: rgb(10 18 20 / 0.55);
+  background: rgb(0 0 0 / 0.7);
   backdrop-filter: blur(4px);
+}
+
+/* Dark marketing scope — remaps light tokens so shared components render on the design.md canvas */
+.theme-marketing-dark {
+  --paper: #0a0a0a;
+  --tone: #151515;
+  --line: #262626;
+  --ink: #fafafa;
+  --ink-soft: #a3a3a3;
+  --surface-card: #151515;
+  --surface-muted: #1e1e1e;
+  --surface-panel: #151515;
+  --border-subtle: #262626;
+  color-scheme: dark;
+}
+
+.theme-marketing-dark .field > input,
+.theme-marketing-dark .field > textarea,
+.theme-marketing-dark .field > select {
+  background: #0a0a0a;
+}
+
+.theme-marketing-dark .ui-card-interactive:hover {
+  border-color: var(--ds-border-strong);
+  background: var(--ds-surface-raised);
+}
+
+.theme-marketing-dark .btn-primary {
+  background: var(--ds-primary);
+  color: var(--ds-on-primary);
+}
+
+.theme-marketing-dark .btn-primary:hover:not(:disabled) {
+  background: #e6e6e6;
+}
+
+.theme-marketing-dark .btn-outline {
+  background: var(--ds-surface-raised);
+  border: 1px solid var(--ds-border);
+  color: var(--ds-on-surface);
+}
+
+.theme-marketing-dark .btn-outline:hover:not(:disabled) {
+  background: #2a2a2a;
+  border-color: var(--ds-border-strong);
 }
 
 .field {

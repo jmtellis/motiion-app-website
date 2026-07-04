@@ -35,7 +35,7 @@
 .signup-split-cover__overlay {
   background:
     linear-gradient(145deg, rgb(0 80 70 / 0.75) 0%, rgb(0 40 35 / 0.85) 45%, rgb(0 0 0 / 0.92) 100%),
-    radial-gradient(circle at 20% 20%, rgb(0 204 183 / 0.25), transparent 55%);
+    radial-gradient(circle at 20% 20%, rgb(45 212 191 / 0.25), transparent 55%);
 }
 
 .signup-split-cover__content {
@@ -286,8 +286,8 @@
 }
 
 .signup-split-field input:focus-visible {
-  border-color: rgb(0 204 183 / 0.55);
-  box-shadow: 0 0 0 3px rgb(0 204 183 / 0.15);
+  border-color: rgb(45 212 191 / 0.55);
+  box-shadow: 0 0 0 3px rgb(45 212 191 / 0.15);
 }
 
 .signup-split-field-row {
@@ -476,8 +476,8 @@
 .signup-split-panel .field > input:focus-visible,
 .signup-split-panel .field > textarea:focus-visible,
 .signup-split-panel .field > select:focus-visible {
-  border-color: rgb(0 204 183 / 0.55);
-  box-shadow: 0 0 0 3px rgb(0 204 183 / 0.15);
+  border-color: rgb(45 212 191 / 0.55);
+  box-shadow: 0 0 0 3px rgb(45 212 191 / 0.15);
 }
 
 .signup-split-choice {
@@ -496,8 +496,8 @@
 }
 
 .signup-split-choice--selected {
-  border-color: rgb(0 204 183 / 0.55);
-  background: rgb(0 204 183 / 0.12);
+  border-color: rgb(45 212 191 / 0.55);
+  background: rgb(45 212 191 / 0.12);
 }
 
 .signup-split-choice p:first-child {
@@ -529,8 +529,8 @@
 }
 
 .signup-split-pill--selected {
-  border-color: rgb(0 204 183 / 0.55);
-  background: rgb(0 204 183 / 0.12);
+  border-color: rgb(45 212 191 / 0.55);
+  background: rgb(45 212 191 / 0.12);
   color: #fff;
   font-weight: 500;
 }

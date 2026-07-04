@@ -53,13 +53,13 @@ export function MarketingDialog({
       }}
     >
       <div
-        className={`relative z-10 w-full max-w-md rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--paper)] p-5 shadow-[var(--shadow-raised)] sm:p-6 ${panelClassName ?? ""}`}
+        className={`relative z-10 w-full max-w-md rounded-[20px] border border-[#262626] bg-[#151515] p-5 sm:p-6 ${panelClassName ?? ""}`}
         onClick={(event) => event.stopPropagation()}
       >
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-button)] text-[var(--ink-soft)] transition hover:bg-[var(--tone)] hover:text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+          className="absolute top-4 right-4 inline-flex h-9 w-9 items-center justify-center rounded-[8px] text-[#8a8a8a] transition hover:bg-[#1e1e1e] hover:text-[#eaeaea] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
           aria-label="Close"
         >
           <span aria-hidden className="text-xl leading-none">
@@ -67,11 +67,11 @@ export function MarketingDialog({
           </span>
         </button>
 
-        <h2 id={titleId} className="type-heading-2 pr-10 text-left text-[var(--ink)]">
+        <h2 id={titleId} className="type-heading-2 pr-10 text-left text-[#fafafa]">
           {title}
         </h2>
         {description ? (
-          <p id={descriptionId} className="type-body-lg mt-3 text-left text-pretty text-[var(--ink-soft)]">
+          <p id={descriptionId} className="type-body-lg mt-3 text-left text-pretty text-[#a3a3a3]">
             {description}
           </p>
         ) : null}

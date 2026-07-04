@@ -20,11 +20,13 @@ export function MarketingHeroOverlay({
     <div className="animate-enter flex w-full max-w-3xl flex-col items-center gap-7 px-6 text-center">
       <div
         className={cn(
-          "ui-chip gap-2 px-3 py-1",
-          dark && "ui-chip-dark",
+          "inline-flex items-center gap-2 rounded-full px-3 py-1",
+          dark
+            ? "border border-[rgb(45_212_191_/_0.25)] bg-[#0c2a26]"
+            : "ui-chip",
         )}
       >
-        <span className="inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" aria-hidden />
+        <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" aria-hidden />
         <p className="type-eyebrow text-[var(--accent)]">{content.eyebrow}</p>
       </div>
 

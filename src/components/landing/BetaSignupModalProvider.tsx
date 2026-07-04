@@ -62,7 +62,7 @@ export function BetaSignupModalProvider({ children }: { children: ReactNode }) {
           descriptionId={descriptionId}
           panelClassName="max-h-[min(90svh,calc(100svh-2rem))] max-w-lg overflow-y-auto"
         >
-          <BetaForm compact embedded />
+          <BetaForm compact embedded dark />
         </MarketingDialog>
       ) : null}
     </BetaSignupModalContext.Provider>

@@ -21,7 +21,7 @@ export function FeatureWheelStack({
   dark?: boolean;
 }) {
   return (
-    <section className="ui-wheel-stack border-t border-white/10 bg-black">
+    <section className="ui-wheel-stack border-t border-[#262626] bg-[#0a0a0a]">
       <div className="ui-wheel-lead-in" aria-hidden />
       <div className="ui-wheel-list">
         {items.map((item) => (

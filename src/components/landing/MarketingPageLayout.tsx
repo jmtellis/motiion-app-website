@@ -40,9 +40,9 @@ export function MarketingPageLayout({
   const browserThemeColor = darkTheme ? MARKETING_DARK.bg : "#fcfcfb";
 
   const page = (
-    <FooterRevealShell surfaceClass={darkTheme ? "bg-black" : "bg-[var(--paper)]"}>
+    <FooterRevealShell surfaceClass={darkTheme ? "bg-[#0a0a0a]" : "bg-[var(--paper)]"}>
       <MarketingBodySurface dark={darkTheme} />
-      <div id="top" className={darkTheme ? "bg-black" : "bg-[var(--paper)]"}>
+      <div id="top" className={darkTheme ? "bg-[#0a0a0a]" : "bg-[var(--paper)]"}>
         <BrowserThemeColor color={browserThemeColor} />
         {homeHeader ? (
           <HomeMarketingHeader darkTheme={darkTheme} />
@@ -50,7 +50,18 @@ export function MarketingPageLayout({
           <MarketingHeader activeTab={activeTab} overlay darkTheme={darkTheme} />
         )}
 
-        {homeHeader ? (
+        {cleanHero ? (
+          <section
+            className={`relative w-full border-b ${headerPullClass} ${
+              darkTheme ? "border-[#262626] bg-[#0a0a0a]" : "border-[var(--line)] bg-[var(--paper)]"
+            }`}
+          >
+            {darkTheme ? <div className="marketing-hero-glow" aria-hidden /> : null}
+            <div className="relative flex min-h-svh w-full items-center justify-center px-0 pb-16 pt-28 md:pt-28">
+              {hero}
+            </div>
+          </section>
+        ) : homeHeader ? (
           <HomeHeroSection
             headerPullClass={headerPullClass}
             background={
@@ -66,16 +77,6 @@ export function MarketingPageLayout({
           >
             {hero}
           </HomeHeroSection>
-        ) : cleanHero ? (
-          <section
-            className={`relative min-h-svh w-full border-b ${headerPullClass} ${
-              darkTheme ? "border-white/10 bg-black" : "border-[var(--line)] bg-[var(--paper)]"
-            }`}
-          >
-            <div className="flex min-h-svh w-full items-center justify-center px-0 pb-12 pt-28 md:pt-24">
-              {hero}
-            </div>
-          </section>
         ) : (
           <section className={`relative min-h-svh w-full overflow-hidden ${headerPullClass}`}>
             <HeroScrollDepth

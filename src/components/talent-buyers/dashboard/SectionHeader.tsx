@@ -18,15 +18,26 @@ export function SectionHeader({
   const isDashboard = size === "dashboard";
   const isDark = tone === "dark" || isDashboard;
 
+  if (isDashboard) {
+    return (
+      <div className="flex flex-col gap-2 pr-10 sm:flex-row sm:items-baseline sm:justify-between">
+        <div className="space-y-1">
+          <h2 className="font-mono text-xs font-medium tracking-[0.08em] text-[#8a8a8a] uppercase">
+            {title}
+            {typeof count === "number" ? <span className="ml-2 text-[#5a5a5a]">{count}</span> : null}
+          </h2>
+          {description ? <p className="text-sm text-[#5a5a5a]">{description}</p> : null}
+        </div>
+        {action ? <div className="flex shrink-0 items-center gap-2">{action}</div> : null}
+      </div>
+    );
+  }
+
   return (
-    <div className={`flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between ${isDashboard ? "pr-10" : ""}`}>
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
       <div className="space-y-0.5">
         <div className="flex items-center gap-2">
-          <h2
-            className={`font-semibold ${
-              isDashboard ? "text-2xl" : "text-xl"
-            } ${isDark ? "text-white/92" : "text-[var(--ink)]"}`}
-          >
+          <h2 className={`text-xl font-semibold ${isDark ? "text-white/92" : "text-[var(--ink)]"}`}>
             {title}
           </h2>
           {typeof count === "number" ? (

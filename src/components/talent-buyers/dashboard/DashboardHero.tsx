@@ -1,5 +1,3 @@
-import { CalendarDays, FolderKanban, Users } from "lucide-react";
-
 type DashboardHeroProps = {
   firstName: string;
   subtitle: string;
@@ -10,55 +8,42 @@ type DashboardHeroProps = {
   };
 };
 
-function StatPill({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof FolderKanban;
-  label: string;
-  value: number;
-}) {
-  return (
-    <div className="bd-chip flex items-center gap-3 px-4 py-2.5">
-      <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-white/6 text-white/80">
-        <Icon className="size-3.5" aria-hidden />
-      </span>
-      <div>
-        <p className="text-lg font-semibold leading-none text-white/92">{value}</p>
-        <p className="mt-0.5 text-xs text-white/50">{label}</p>
-      </div>
-    </div>
-  );
+function todayLabel() {
+  return new Date()
+    .toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })
+    .toUpperCase();
 }
 
-function HeroDecoration() {
+function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bd-hero-deco hidden shrink-0 sm:block" aria-hidden>
-      <span className="bd-hero-deco__ring" />
-      <span className="bd-hero-deco__ring" />
-      <span className="bd-hero-deco__ring" />
-      <span className="bd-hero-deco__dot" />
+    <div className="min-w-[7rem]">
+      <p className="text-2xl font-semibold leading-none tracking-[-0.02em] text-[#fafafa]">{value}</p>
+      <p className="mt-1.5 font-mono text-[11px] font-medium tracking-[0.08em] text-[#5a5a5a] uppercase">
+        {label}
+      </p>
     </div>
   );
 }
 
 export function DashboardHero({ firstName, subtitle, stats }: DashboardHeroProps) {
   return (
-    <section className="bd-section flex flex-col gap-5 pb-8 md:flex-row md:items-end md:justify-between">
+    <section className="bd-section flex flex-col gap-6 pb-8 md:flex-row md:items-end md:justify-between">
       <div className="min-w-0 space-y-2">
-        <p className="text-xs font-semibold tracking-[0.18em] text-white/42 uppercase">Dashboard</p>
-        <h1 className="text-3xl font-semibold tracking-tight text-white/92 md:text-4xl">
+        <p className="font-mono text-xs font-medium tracking-[0.08em] text-[#5a5a5a] uppercase">
+          Dashboard · {todayLabel()}
+        </p>
+        <h1 className="text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.02em] text-[#fafafa]">
           Welcome back, {firstName}.
         </h1>
-        <p className="max-w-xl text-sm leading-relaxed text-white/58 md:text-base">{subtitle}</p>
+        <p className="max-w-xl text-sm leading-relaxed text-[#8a8a8a]">{subtitle}</p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 md:justify-end">
-        <StatPill icon={FolderKanban} label="Active projects" value={stats.activeProjects} />
-        <StatPill icon={CalendarDays} label="Upcoming events" value={stats.upcomingEvents} />
-        <StatPill icon={Users} label="Recent talent" value={stats.recentTalent} />
-        <HeroDecoration />
+      <div className="flex shrink-0 items-start gap-8 md:justify-end">
+        <Stat label="Active projects" value={stats.activeProjects} />
+        <span className="hidden h-12 w-px bg-[#262626] sm:block" aria-hidden />
+        <Stat label="Upcoming events" value={stats.upcomingEvents} />
+        <span className="hidden h-12 w-px bg-[#262626] sm:block" aria-hidden />
+        <Stat label="Recent talent" value={stats.recentTalent} />
       </div>
     </section>
   );

@@ -86,7 +86,7 @@ export function ProjectTable({
       <div className="hidden md:block">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className={`text-xs font-semibold tracking-[0.08em] uppercase ${dashboard ? "" : "border-b border-[var(--line)] bg-[var(--tone)]/50 text-[var(--ink-soft)]"}`}>
+            <tr className={`text-xs uppercase ${dashboard ? "font-mono font-medium tracking-[0.08em] text-[#5a5a5a]" : "border-b border-[var(--line)] bg-[var(--tone)]/50 font-semibold tracking-[0.08em] text-[var(--ink-soft)]"}`}>
               <th className="px-0 py-4 font-semibold">Project</th>
               <th className="px-4 py-4 font-semibold">Type</th>
               <th className="px-4 py-4 font-semibold">Status</th>

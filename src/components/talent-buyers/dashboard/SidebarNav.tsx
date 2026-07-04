@@ -45,10 +45,10 @@ function OrganizationSwitcher({ profile, collapsed }: { profile: DashboardProfil
   const orgName = profile.organizationName || profile.companyName || "Your organization";
 
   return (
-    <div className="mb-4 rounded-xl border border-white/10 bg-white/5 p-3">
-      <p className="text-[10px] font-semibold tracking-[0.16em] text-white/50 uppercase">Workspace</p>
-      <p className="mt-1 truncate text-sm font-semibold text-white">{orgName}</p>
-      <p className="mt-0.5 truncate text-xs text-white/55">{profile.fullName}</p>
+    <div className="mb-4 rounded-[8px] border border-[#262626] bg-[#1e1e1e] p-3">
+      <p className="font-mono text-[10px] font-medium tracking-[0.08em] text-[#5a5a5a] uppercase">Workspace</p>
+      <p className="mt-1 truncate text-sm font-semibold text-[#fafafa]">{orgName}</p>
+      <p className="mt-0.5 truncate text-xs text-[#8a8a8a]">{profile.fullName}</p>
     </div>
   );
 }
@@ -73,10 +73,10 @@ function NavLink({
       href={href}
       onClick={onNavigate}
       title={collapsed ? label : undefined}
-      className={`flex items-center rounded-xl text-sm font-medium transition ${
+      className={`flex items-center rounded-[8px] text-sm font-medium transition-colors ${
         collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"
       } ${
-        active ? "bg-white/12 text-white" : "text-white/70 hover:bg-white/8 hover:text-white"
+        active ? "bg-[#1e1e1e] text-[#fafafa]" : "text-[#8a8a8a] hover:bg-[#1e1e1e]/60 hover:text-[#eaeaea]"
       }`}
       aria-current={active ? "page" : undefined}
     >
@@ -136,7 +136,7 @@ function SidebarContent({
           {settingsNavItem ? (
             <>
               <div
-                className={`border-t border-white/10 ${collapsed ? "my-2" : "my-3"}`}
+                className={`border-t border-[#262626] ${collapsed ? "my-2" : "my-3"}`}
                 role="separator"
                 aria-hidden
               />
@@ -158,7 +158,7 @@ function SidebarContent({
           <button
             type="button"
             onClick={onToggleSidebar}
-            className={`flex w-full items-center rounded-xl text-sm font-medium text-white/70 transition hover:bg-white/8 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${
+            className={`flex w-full items-center rounded-[8px] text-sm font-medium text-[#8a8a8a] transition-colors hover:bg-[#1e1e1e]/60 hover:text-[#eaeaea] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2dd4bf] ${
               collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"
             }`}
             aria-label={
@@ -212,7 +212,7 @@ export function SidebarNav({
 
       <aside
         id="buyer-sidebar-nav"
-        className={`sticky top-0 z-50 flex h-screen shrink-0 flex-col bg-[#151515] transition-[width,transform] duration-200 ${
+        className={`sticky top-0 z-50 flex h-screen shrink-0 flex-col border-r border-[#262626] bg-[#0f0f0f] transition-[width,transform] duration-200 ${
           collapsed ? "w-16" : "w-64"
         } max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:w-[min(100%,17.5rem)] max-lg:translate-x-0 ${
           showMobileDrawer ? "max-lg:translate-x-0" : "max-lg:-translate-x-full"

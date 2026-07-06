@@ -9,7 +9,7 @@
   justify-content: center;
   gap: var(--fc-header-gap);
   overflow: hidden;
-  padding: clamp(1rem, 2.5vh, 1.5rem) 0;
+  padding-block: clamp(2.5rem, 6vh, 4.5rem);
   box-sizing: border-box;
 }
 
@@ -251,4 +251,46 @@
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--accent);
+}
+
+.home-signup-section--footer-reveal {
+  display: flex;
+  min-height: 0;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.home-signup-section--footer-reveal__inner {
+  width: min(100%, 40rem);
+}
+
+.home-signup-section--footer-reveal .type-heading-1 {
+  font-size: clamp(1.25rem, 2.8vw, 1.75rem);
+  line-height: 1.15;
+}
+
+.home-signup-section--footer-reveal .type-lead {
+  font-size: clamp(0.875rem, 1.8vw, 1rem);
+  line-height: 1.45;
+}
+
+.home-signup-section--footer-reveal .home-signup-section__grid {
+  max-width: 34rem;
+  gap: 0.75rem;
+}
+
+.home-signup-section--footer-reveal .home-signup-section__card {
+  padding: 1rem;
+  gap: 0.5rem;
+}
+
+.home-signup-section--footer-reveal .home-signup-section__card-label {
+  font-size: 0.9375rem;
+}
+
+.home-signup-section--footer-reveal .home-signup-section__card-description {
+  font-size: 0.8125rem;
+  line-height: 1.4;
 }

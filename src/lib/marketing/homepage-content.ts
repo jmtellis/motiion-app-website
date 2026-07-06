@@ -141,7 +141,7 @@ export const homeHero = {
   ],
 };
 
-/** Outline scroll marquees — below hero and above footer reveal. */
+/** Outline scroll marquees — anchored to the bottom of the brand statement section. */
 export const landingMarquees = {
   belowHero: {
     segments: ["Discover", "Motiion", "Talent", "Database"],
@@ -150,10 +150,6 @@ export const landingMarquees = {
   belowBrandStatement: {
     segments: ["Creatives", "Management", "Labels", "Agents", "Casting", "Production"],
     direction: "left" as const,
-  },
-  aboveFooter: {
-    segments: ["Discover", "Motiion", "Talent", "Database", "Casting", "Production"],
-    direction: "right" as const,
   },
 } as const;
 
@@ -173,14 +169,14 @@ export const homeSignupSection = {
     {
       id: "talent",
       label: "Creative Talent",
-      description: "For dancers and choreographers building a profile and getting discovered.",
+      description: "For dancers and choreographers building a profile and managing their career.",
       href: "/signup",
       cta: "Sign up as talent",
     },
     {
       id: "industry",
       label: "Industry Professional",
-      description: "For casting teams, agencies, and producers discovering and booking talent.",
+      description: "For casting teams, agencies, and producers discovering and managing talent.",
       href: "/talent-buyers/signup",
       cta: "Sign up as industry",
     },

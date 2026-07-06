@@ -1,6 +1,9 @@
-import Link from "next/link";
+import { LegalPageShell } from "@/components/landing/LegalPageShell";
+import { legalMarketingViewport, type LegalPageSection } from "@/lib/marketing/legal-page";
 
-const termsSections = [
+export const viewport = legalMarketingViewport;
+
+const termsSections: LegalPageSection[] = [
   {
     title: "General terms",
     paragraphs: [
@@ -155,78 +158,12 @@ const termsSections = [
 
 export default function TermsPage() {
   return (
-    <main className="min-h-screen bg-[#0a0a0a]">
-      <div className="mx-auto w-full max-w-4xl px-6 py-12 lg:px-10 lg:py-16">
-        <Link
-          href="/"
-          className="text-sm font-medium text-[#a3a3a3] transition-colors hover:text-[#fafafa]"
-        >
-          Back to home
-        </Link>
-
-        <header className="mt-6 border-b border-[#262626] pb-8">
-          <p className="type-eyebrow text-[var(--accent)]">
-            Legal
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#fafafa] sm:text-4xl">
-            Terms &amp; Conditions
-          </h1>
-          <p className="mt-3 text-sm text-[#a3a3a3]">
-            Updated at February 3rd, 2026
-          </p>
-          <p className="mt-5 text-base leading-relaxed text-[#a3a3a3]">
-            These Terms &amp; Conditions govern your use of Motiion services,
-            including our website and related applications. By using the service,
-            you agree to these terms.
-          </p>
-        </header>
-
-        <div className="mt-10 space-y-8">
-          {termsSections.map((section) => (
-            <section key={section.title} className="space-y-3">
-              <h2 className="text-xl font-semibold tracking-tight text-[#fafafa]">
-                {section.title}
-              </h2>
-              {section.paragraphs?.map((paragraph) => (
-                <p
-                  key={paragraph}
-                  className="text-sm leading-relaxed text-[#a3a3a3] sm:text-base"
-                >
-                  {paragraph}
-                </p>
-              ))}
-              {section.bullets && section.bullets.length > 0 ? (
-                <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-[#a3a3a3] sm:text-base">
-                  {section.bullets.map((bullet) => (
-                    <li key={bullet}>{bullet}</li>
-                  ))}
-                </ul>
-              ) : null}
-            </section>
-          ))}
-        </div>
-
-        <section className="mt-12 border-t border-[#262626] pt-8">
-          <h2 className="text-xl font-semibold tracking-tight text-[#fafafa]">
-            Contact us
-          </h2>
-          <p className="mt-3 text-sm leading-relaxed text-[#a3a3a3] sm:text-base">
-            If you have questions about these Terms, contact us:
-          </p>
-          <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-[#a3a3a3] sm:text-base">
-            <li>Via email: info@motiion.io</li>
-            <li>
-              Via link:{" "}
-              <a
-                href="https://www.motiion.io/contact"
-                className="underline decoration-[#3a3a3a] underline-offset-4 transition-colors hover:text-[#fafafa]"
-              >
-                www.motiion.io/contact
-              </a>
-            </li>
-          </ul>
-        </section>
-      </div>
-    </main>
+    <LegalPageShell
+      title="Terms & Conditions"
+      updatedAt="Updated at February 3rd, 2026"
+      intro="These Terms & Conditions govern your use of Motiion services, including our website and related applications. By using the service, you agree to these terms."
+      sections={termsSections}
+      contactIntro="If you have questions about these Terms, contact us:"
+    />
   );
 }

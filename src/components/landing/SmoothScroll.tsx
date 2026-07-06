@@ -1,5 +1,7 @@
 "use client";
 
+import "lenis/dist/lenis.css";
+
 import Lenis from "lenis";
 import { useReducedMotion } from "motion/react";
 import { useEffect, type ReactNode } from "react";
@@ -22,6 +24,7 @@ export function SmoothScroll({ children, enabled = true }: SmoothScrollProps) {
       smoothWheel: true,
       syncTouch: false,
       wheelMultiplier: 0.9,
+      overscroll: false,
     });
 
     let frame = 0;

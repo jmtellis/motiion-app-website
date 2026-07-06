@@ -22,9 +22,9 @@ export const footerColumns: FooterColumn[] = [
   {
     title: "Company",
     links: [
-      { label: "About Motiion", href: "#" },
-      { label: "Careers", href: "#" },
-      { label: "Press", href: "#" },
+      { label: "About", href: "https://www.motiion.io/about" },
+      { label: "Careers", href: "https://www.motiion.io/careers" },
+      { label: "Partnerships", href: "https://www.motiion.io/partnerships" },
       { label: "Contact", href: "mailto:hello@motiion.com" },
       { label: "Beta Program", href: "/#signup" },
     ],
@@ -44,7 +44,7 @@ export const footerColumns: FooterColumn[] = [
     links: [
       { label: "Privacy Policy", href: "/privacy" },
       { label: "Terms of Service", href: "/terms" },
-      { label: "Cookie Policy", href: "#" },
+      { label: "Cookie Policy", href: "/cookies" },
     ],
   },
 ];

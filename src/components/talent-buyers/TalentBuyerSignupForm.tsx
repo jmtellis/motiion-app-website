@@ -177,12 +177,14 @@ export function TalentBuyerSignupForm() {
           </button>
         </form>
 
-        <p className="signup-split-footer">
-          Already have an account? <Link href="/login">Log in</Link>
-        </p>
-        <p className="signup-split-footer">
-          Joining as talent? <Link href="/signup">Dancer & choreographer sign up</Link>
-        </p>
+        <div className="signup-split-alt-auth">
+          <Link href="/signup" className="signup-split-text-btn">
+            Sign up as talent
+          </Link>
+          <p className="signup-split-alt-auth__secondary">
+            Already have an account? <Link href="/login" className="signup-split-text-btn">Log in</Link>
+          </p>
+        </div>
       </div>
     </div>
   );

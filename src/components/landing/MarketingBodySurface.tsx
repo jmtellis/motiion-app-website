@@ -11,10 +11,14 @@ export function MarketingBodySurface({ dark = false }: { dark?: boolean }) {
 
     html.style.backgroundColor = surface;
     body.style.backgroundColor = surface;
+    html.style.overscrollBehavior = "none";
+    body.style.overscrollBehavior = "none";
 
     return () => {
       html.style.backgroundColor = "";
       body.style.backgroundColor = "";
+      html.style.overscrollBehavior = "";
+      body.style.overscrollBehavior = "";
     };
   }, [dark]);
 

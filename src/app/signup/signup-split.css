@@ -1,7 +1,12 @@
 .signup-split {
   min-height: 100svh;
+  min-height: 100dvh;
+  height: 100svh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  overscroll-behavior: none;
   background: #0a0a0a;
   color: #f5f5f3;
 }
@@ -14,28 +19,25 @@
 
 .signup-split-cover {
   position: relative;
+  flex: 0 0 auto;
   min-height: 220px;
   overflow: hidden;
-  background: #0d1f1a;
+  overscroll-behavior: none;
+  background: #0a0a0a;
 }
 
 @media (min-width: 768px) {
   .signup-split-cover {
-    min-height: 100svh;
+    min-height: 0;
     flex: 1 1 0;
     min-width: 0;
   }
 }
 
-.signup-split-cover__image {
-  object-fit: cover;
-  opacity: 0.55;
-}
-
 .signup-split-cover__overlay {
   background:
-    linear-gradient(145deg, rgb(0 80 70 / 0.75) 0%, rgb(0 40 35 / 0.85) 45%, rgb(0 0 0 / 0.92) 100%),
-    radial-gradient(circle at 20% 20%, rgb(45 212 191 / 0.25), transparent 55%);
+    radial-gradient(ellipse 120% 85% at 50% 40%, transparent 30%, rgb(0 0 0 / 0.5) 100%),
+    linear-gradient(180deg, rgb(10 10 10 / 0.12) 0%, rgb(0 0 0 / 0.62) 100%);
 }
 
 .signup-split-cover__content {
@@ -44,13 +46,83 @@
   display: flex;
   min-height: inherit;
   flex-direction: column;
-  justify-content: space-between;
   padding: 2rem 1.5rem;
+}
+
+.signup-split-cover__intro {
+  flex-shrink: 0;
+}
+
+.signup-split-cover__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.signup-split-cover__alt-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  text-align: center;
+}
+
+.signup-split-cover__alt-link {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: rgb(255 255 255 / 0.55);
+}
+
+.signup-split-cover__alt-link a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.25rem;
+  border-radius: 9999px;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.06);
+  padding: 0.35rem 0.75rem;
+  font-weight: 500;
+  color: #fff;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.signup-split-cover__alt-link a:hover {
+  background: rgb(255 255 255 / 0.1);
+  border-color: rgb(255 255 255 / 0.32);
+}
+
+.signup-split-cover__marquee {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  width: calc(100% + 3rem);
+  margin-inline: -1.5rem;
+  overflow: hidden;
+}
+
+.signup-split-cover__marquee .type-marquee {
+  font-size: clamp(1.5rem, 3.5vw, 2.75rem);
+}
+
+@media (min-width: 768px) {
+  .signup-split-cover__marquee {
+    width: calc(100% + 5rem);
+    margin-inline: -2.5rem;
+  }
 }
 
 @media (min-width: 768px) {
   .signup-split-cover__content {
     padding: 3rem 2.5rem;
+    height: 100%;
   }
 }
 
@@ -58,7 +130,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 3rem;
   border-radius: 9999px;
   border: 1px solid rgb(255 255 255 / 0.18);
   background: rgb(255 255 255 / 0.08);
@@ -70,16 +142,8 @@
   color: rgb(255 255 255 / 0.9);
 }
 
-.signup-split-cover__eyebrow-dot {
-  display: inline-block;
-  height: 0.375rem;
-  width: 0.375rem;
-  border-radius: 9999px;
-  background: var(--accent);
-}
-
 .signup-split-cover__headline {
-  max-width: 18rem;
+  max-width: min(32rem, 100%);
   font-size: clamp(1.75rem, 3vw, 2.5rem);
   font-weight: 600;
   line-height: 1.15;
@@ -87,7 +151,7 @@
 }
 
 .signup-split-cover__subtext {
-  max-width: 18rem;
+  max-width: min(32rem, 100%);
   margin-top: 1rem;
   font-size: 0.875rem;
   line-height: 1.5;
@@ -96,23 +160,35 @@
 
 .signup-split-steps {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  width: max-content;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.625rem;
+  width: 100%;
   max-width: 100%;
+  margin-top: 2rem;
+  flex-shrink: 0;
 }
 
 .signup-split-step {
   display: flex;
+  flex: 1 1 0;
+  min-width: 0;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.625rem;
   border-radius: 0.875rem;
   border: 1px solid rgb(255 255 255 / 0.12);
   background: rgb(255 255 255 / 0.06);
-  padding: 0.875rem 1rem;
-  font-size: 0.8125rem;
+  padding: 0.75rem 0.875rem;
+  font-size: 0.75rem;
   line-height: 1.35;
   color: rgb(255 255 255 / 0.75);
+}
+
+@media (min-width: 768px) {
+  .signup-split-step {
+    padding: 0.875rem 1rem;
+    font-size: 0.8125rem;
+  }
 }
 
 .signup-split-step--active {
@@ -157,11 +233,13 @@
 
 .signup-split-panel {
   display: flex;
-  flex: 1;
+  flex: 1 1 auto;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: none;
   padding: 2rem 1.5rem 2.5rem;
   --ink: #f5f5f3;
   --ink-soft: rgb(255 255 255 / 0.55);
@@ -364,6 +442,57 @@
 
 .signup-split-footer a:hover {
   text-decoration: underline;
+}
+
+.signup-split-signup-options {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.signup-split-signup-options__label {
+  margin: 0;
+  font-size: 0.875rem;
+  color: rgb(255 255 255 / 0.5);
+}
+
+.signup-split-signup-options__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.signup-split-text-btn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.signup-split-text-btn:hover {
+  color: rgb(255 255 255 / 0.75);
+  text-decoration: underline;
+}
+
+.signup-split-alt-auth {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.signup-split-alt-auth__secondary {
+  margin: 0;
+  font-size: 0.875rem;
+  color: rgb(255 255 255 / 0.5);
 }
 
 .signup-split-error {

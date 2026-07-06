@@ -1,7 +1,7 @@
 import { EditorialHeadline } from "@/components/landing/EditorialHeadline";
 import { FeatureCarousel } from "@/components/landing/FeatureCarousel";
 import { HomeHeroCtas } from "@/components/landing/HomeHeroCtas";
-import { HomeSignupSection } from "@/components/landing/HomeSignupSection";
+import { LandingHeroMarquee } from "@/components/landing/LandingHeroMarquee";
 import { Reveal } from "@/components/landing/Reveal";
 import { SectionTransition } from "@/components/landing/SectionTransition";
 import {
@@ -46,20 +46,21 @@ export function HomeLandingSections({ dark = true }: { dark?: boolean }) {
       <SectionTransition
         id="brand-statement"
         variant="line-drift"
-        className="marketing-viewport-section marketing-viewport-section--center relative z-[1] border-t border-[#262626] bg-[var(--stage-black)]"
+        className="marketing-viewport-section relative z-[1] flex flex-col bg-[var(--stage-black)]"
       >
-        <Reveal amount={0.18} distance={28}>
-          <EditorialHeadline
-            parts={homeBrandStatementSection.headlineParts}
-            as="h2"
-            size="display-xl"
-            dark={dark}
-            className="mx-auto max-w-4xl px-6 text-center sm:px-10"
-          />
-        </Reveal>
+        <div className="flex flex-1 flex-col justify-center">
+          <Reveal amount={0.18} distance={28}>
+            <EditorialHeadline
+              parts={homeBrandStatementSection.headlineParts}
+              as="h2"
+              size="display-xl"
+              dark={dark}
+              className="mx-auto max-w-4xl px-6 text-center sm:px-10"
+            />
+          </Reveal>
+        </div>
+        <LandingHeroMarquee />
       </SectionTransition>
-
-      <HomeSignupSection />
     </>
   );
 }

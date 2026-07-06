@@ -1,6 +1,6 @@
 import { HeroShaderVideoBackground } from "@/components/landing/HeroShaderVideoBackground";
 import { FooterRevealShell } from "@/components/landing/FooterRevealShell";
-import { LandingFooterMarquee } from "@/components/landing/LandingFooterMarquee";
+import { HomeSignupSection } from "@/components/landing/HomeSignupSection";
 import { MarketingBodySurface } from "@/components/landing/MarketingBodySurface";
 import { HeadshotColumnsBackground } from "@/components/landing/HeadshotColumnsBackground";
 import { BrowserThemeColor } from "@/components/landing/BrowserThemeColor";
@@ -22,6 +22,7 @@ export function MarketingPageLayout({
   heroVideo,
   darkTheme = false,
   cleanHero = false,
+  heroSize = "full",
 }: {
   activeTab: MarketingHeaderTab;
   headshotImages?: string[];
@@ -37,16 +38,22 @@ export function MarketingPageLayout({
   darkTheme?: boolean;
   /** Audience pages: plain hero surface, no portrait wall. */
   cleanHero?: boolean;
+  /** Compact hero for legal and text-heavy marketing pages. */
+  heroSize?: "full" | "compact";
 }) {
   const headerPullClass = homeHeader
     ? "-mt-[5.75rem] md:-mt-[4.5rem]"
     : "-mt-[6.25rem] md:-mt-[4.5rem]";
+  const cleanHeroLayoutClass =
+    heroSize === "compact"
+      ? "relative flex w-full items-start justify-center px-0 pb-10 pt-28 md:pb-12 md:pt-28"
+      : "relative flex min-h-svh w-full items-center justify-center px-0 pb-16 pt-28 md:pt-28";
   const browserThemeColor = darkTheme ? MARKETING_DARK.bg : "#fcfcfb";
 
   const page = (
     <FooterRevealShell
       surfaceClass={darkTheme ? "bg-[#0a0a0a]" : "bg-[var(--paper)]"}
-      footerBand={darkTheme ? <LandingFooterMarquee /> : undefined}
+      footerBand={darkTheme ? <HomeSignupSection variant="footer-reveal" /> : undefined}
     >
       <MarketingBodySurface dark={darkTheme} />
       <div id="top" className={darkTheme ? "bg-[#0a0a0a]" : "bg-[var(--paper)]"}>
@@ -64,7 +71,7 @@ export function MarketingPageLayout({
             }`}
           >
             {darkTheme ? <div className="marketing-hero-glow" aria-hidden /> : null}
-            <div className="relative flex min-h-svh w-full items-center justify-center px-0 pb-16 pt-28 md:pt-28">
+            <div className={cleanHeroLayoutClass}>
               {hero}
             </div>
           </section>

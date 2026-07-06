@@ -110,12 +110,17 @@ export function LoginForm() {
           </button>
         </form>
 
-        <p className="signup-split-footer">
-          Need an account? <Link href="/signup">Sign up</Link>
-        </p>
-        <p className="signup-split-footer">
-          Industry professional? <Link href="/talent-buyers/signup">Sign up here</Link>
-        </p>
+        <div className="signup-split-signup-options">
+          <p className="signup-split-signup-options__label">Need to create an account?</p>
+          <div className="signup-split-signup-options__actions">
+            <Link href="/signup" className="signup-split-text-btn">
+              Sign up as talent
+            </Link>
+            <Link href="/talent-buyers/signup" className="signup-split-text-btn">
+              Sign up as an industry professional
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

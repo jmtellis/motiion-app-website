@@ -45,6 +45,39 @@ type SectionTransitionProps = {
   children: ReactNode;
 };
 
+function LineDriftSectionTransition({
+  id,
+  className,
+  children,
+}: {
+  id?: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const motionProgress = useScrollProgressMotion(scrollYProgress, SCROLL_SPRING_SECTION);
+  const driftOpacity = useTransform(motionProgress, [0, 0.2, 0.52, 0.74, 0.9, 1], [0.15, 1, 1, 0.55, 0.12, 0]);
+  const driftY = useTransform(motionProgress, [0.58, 1], [0, -52]);
+
+  return (
+    <motion.section
+      ref={ref}
+      id={id}
+      className={cn("relative overflow-hidden", className)}
+      style={{ opacity: driftOpacity, y: driftY }}
+    >
+      <SectionScrollContext.Provider value={motionProgress}>
+        <LineDrift className="pointer-events-none absolute inset-0 overflow-hidden opacity-60" speed={1.1} />
+        <div className="relative z-[1] flex min-h-[inherit] w-full flex-1 flex-col">{children}</div>
+      </SectionScrollContext.Provider>
+    </motion.section>
+  );
+}
+
 function SectionTransitionBody({
   variant,
   children,
@@ -64,8 +97,6 @@ function SectionTransitionBody({
   const focusOpacity = useTransform(progress, [0, 0.18, 0.82, 1], [0.35, 1, 1, 0.72]);
   const focusY = useTransform(progress, [0, 0.35, 0.65, 1], [40, 0, 0, -20]);
 
-  const driftOpacity = useTransform(progress, [0, 0.22, 0.78, 1], [0.2, 1, 1, 0.8]);
-
   switch (variant) {
     case "editorial-slide":
       return (
@@ -81,18 +112,6 @@ function SectionTransitionBody({
         >
           {children}
         </motion.div>
-      );
-    case "line-drift":
-      return (
-        <>
-          <LineDrift className="pointer-events-none absolute inset-0 overflow-hidden opacity-60" speed={1.1} />
-          <motion.div
-            className="relative z-[1] flex min-h-[inherit] w-full flex-col justify-center"
-            style={{ opacity: driftOpacity }}
-          >
-            {children}
-          </motion.div>
-        </>
       );
     case "parallax":
     case "rise":
@@ -129,6 +148,22 @@ export function SectionTransition({
       <ScrollScene id={id} className={className} sceneHeight={sceneHeight ?? "min-h-[200svh]"}>
         {children}
       </ScrollScene>
+    );
+  }
+
+  if (variant === "line-drift") {
+    if (reduceMotion) {
+      return (
+        <section id={id} className={cn("relative overflow-hidden", className)}>
+          {children}
+        </section>
+      );
+    }
+
+    return (
+      <LineDriftSectionTransition id={id} className={className}>
+        {children}
+      </LineDriftSectionTransition>
     );
   }
 

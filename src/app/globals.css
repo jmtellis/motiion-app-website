@@ -619,6 +619,35 @@ h3 {
   justify-content: flex-end;
 }
 
+.marketing-footer-reveal__footer:has(.marketing-footer-reveal__band)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: #0a1214 url(/footer-background.png) center bottom / cover no-repeat;
+  pointer-events: none;
+}
+
+.marketing-footer-reveal__footer:has(.marketing-footer-reveal__band)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(180deg, rgb(10 18 20 / 0.32) 0%, rgb(10 18 20 / 0.32) 100%),
+    linear-gradient(
+      180deg,
+      #0a0a0a 0%,
+      #0a0a0a 20%,
+      rgb(10 10 10 / 0.94) 36%,
+      rgb(10 10 10 / 0.68) 52%,
+      rgb(10 10 10 / 0.32) 68%,
+      rgb(10 18 20 / 0.1) 84%,
+      transparent 100%
+    );
+  pointer-events: none;
+}
+
 .marketing-footer-reveal__band {
   position: relative;
   z-index: 1;
@@ -628,14 +657,19 @@ h3 {
   justify-content: center;
   width: 100%;
   min-height: 0;
-  background: var(--stage-black);
+  overflow: hidden;
+  background: transparent;
 }
 
 .marketing-footer-reveal__band > * {
+  position: relative;
+  z-index: 1;
   width: 100%;
 }
 
 .marketing-footer-reveal__footer > footer {
+  position: relative;
+  z-index: 1;
   flex: 0 0 auto;
   width: 100%;
 }
@@ -643,6 +677,11 @@ h3 {
 .marketing-footer-reveal__footer > footer > div {
   min-height: auto;
   padding-block: clamp(1.5rem, 3vh, 2.5rem);
+}
+
+.marketing-footer-reveal__footer:has(.marketing-footer-reveal__band) > footer > div {
+  padding-top: clamp(1rem, 2vh, 1.5rem) !important;
+  padding-bottom: clamp(2rem, 4vh, 3rem) !important;
 }
 
 .ui-section-narrative {

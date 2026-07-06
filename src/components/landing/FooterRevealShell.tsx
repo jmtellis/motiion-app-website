@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { Footer } from "@/components/landing/Footer";
+import { FooterRevealAnimatedPanel } from "@/components/landing/FooterRevealAnimatedPanel";
 
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -18,11 +18,7 @@ export function FooterRevealShell({
   return (
     <div className="marketing-footer-reveal">
       <div className={cn("marketing-footer-reveal__content", surfaceClass)}>{children}</div>
-      <div className="marketing-footer-reveal__spacer" aria-hidden />
-      <div className="marketing-footer-reveal__footer">
-        {footerBand ? <div className="marketing-footer-reveal__band">{footerBand}</div> : null}
-        <Footer />
-      </div>
+      <FooterRevealAnimatedPanel footerBand={footerBand} />
     </div>
   );
 }

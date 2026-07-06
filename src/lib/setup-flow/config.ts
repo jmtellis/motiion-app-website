@@ -1,4 +1,5 @@
 import type { SignupSplitStep } from "@/components/auth/SignupSplitShell";
+import { roleOptions } from "@/lib/talent-buyers/onboarding";
 
 export type SetupFlowAudience = "talent" | "industry";
 
@@ -56,6 +57,28 @@ export const setupFlowConfig: Record<SetupFlowAudience, SetupFlowAudienceConfig>
       "Discover talent and run projects",
     ],
   },
+};
+
+export const signupSplitMarquees = {
+  talent: {
+    segments: ["Choreographers", "Dancers"],
+    direction: "right" as const,
+  },
+  industry: {
+    segments: roleOptions.map((option) => option.label),
+    direction: "left" as const,
+  },
+} satisfies Record<
+  SetupFlowAudience,
+  { segments: readonly string[]; direction: "left" | "right" }
+>;
+
+export const loginSplitMarquee = {
+  segments: [
+    ...signupSplitMarquees.talent.segments,
+    ...signupSplitMarquees.industry.segments,
+  ],
+  direction: "left" as const,
 };
 
 export function resolveSetupFlowPhase({
@@ -118,6 +141,7 @@ export function getSetupFlowShellProps({
     subtext: config.subtexts[phase],
     steps: buildMacroSteps(audience, phase),
     showSteps: true,
+    marquee: signupSplitMarquees[audience],
   };
 }
 
@@ -129,5 +153,6 @@ export function getLoginShellProps() {
       "Sign in to your talent profile or industry workspace to pick up where you left off.",
     steps: [] as SignupSplitStep[],
     showSteps: false,
+    marquee: loginSplitMarquee,
   };
 }

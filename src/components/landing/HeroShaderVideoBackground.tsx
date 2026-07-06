@@ -32,17 +32,10 @@ uniform float u_time;
 
 varying vec2 v_uv;
 
+// object-fit: cover — scale uniformly, crop overflow on the limiting axis
 vec2 coverUV(vec2 uv, vec2 canvasSize, vec2 mediaSize) {
-  float canvasAspect = canvasSize.x / canvasSize.y;
-  float mediaAspect = mediaSize.x / max(mediaSize.y, 1.0);
-  vec2 scale = vec2(1.0);
-
-  if (canvasAspect > mediaAspect) {
-    scale.x = canvasAspect / mediaAspect;
-  } else {
-    scale.y = mediaAspect / canvasAspect;
-  }
-
+  float ratio = max(canvasSize.x / max(mediaSize.x, 1.0), canvasSize.y / max(mediaSize.y, 1.0));
+  vec2 scale = mediaSize * ratio / canvasSize;
   return (uv - 0.5) / scale + 0.5;
 }
 

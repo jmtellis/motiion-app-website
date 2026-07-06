@@ -165,12 +165,14 @@ export function SignupForm() {
           </button>
         </form>
 
-        <p className="signup-split-footer">
-          Already have an account? <Link href="/login">Log in</Link>
-        </p>
-        <p className="signup-split-footer">
-          Industry professional? <Link href="/talent-buyers/signup">Sign up here</Link>
-        </p>
+        <div className="signup-split-alt-auth">
+          <Link href="/talent-buyers/signup" className="signup-split-text-btn">
+            Sign up as an industry professional
+          </Link>
+          <p className="signup-split-alt-auth__secondary">
+            Already have an account? <Link href="/login" className="signup-split-text-btn">Log in</Link>
+          </p>
+        </div>
       </div>
     </div>
   );

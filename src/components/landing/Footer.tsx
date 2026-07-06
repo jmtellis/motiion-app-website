@@ -8,6 +8,8 @@ import {
   type FooterSocialLink,
 } from "@/lib/marketing/footer-links";
 
+import "./footer.css";
+
 function TikTokIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
@@ -30,7 +32,7 @@ function FooterSocialIcon({ link }: { link: FooterSocialLink }) {
     );
 
   const className =
-    "inline-flex text-[#5a5a5a] transition-colors hover:text-[#fafafa] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
+    "inline-flex text-[#b8b8b8] transition-colors hover:text-[#fafafa] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
 
   if (link.href === "#") {
     return (
@@ -51,6 +53,14 @@ function FooterLinkItem({ link }: { link: FooterLink }) {
   const className = "text-sm text-[#8a8a8a] transition-colors hover:text-[#fafafa]";
 
   if (link.href.startsWith("mailto:")) {
+    return (
+      <a href={link.href} className={className}>
+        {link.label}
+      </a>
+    );
+  }
+
+  if (link.href.startsWith("http://") || link.href.startsWith("https://")) {
     return (
       <a href={link.href} className={className}>
         {link.label}
@@ -88,33 +98,33 @@ function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) 
   );
 }
 
-export function Footer({ className }: { className?: string }) {
+export function Footer({ className, bare = false }: { className?: string; bare?: boolean }) {
   const year = new Date().getFullYear();
 
   return (
     <footer
-      className={`relative overflow-hidden border-t border-[#262626] bg-[#0a0a0a] text-white${className ? ` ${className}` : ""}`}
+      className={`relative overflow-hidden text-white${bare ? " bg-transparent" : " bg-[#0a0a0a]"}${className ? ` ${className}` : ""}`}
     >
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 55% 45% at 50% 115%, rgb(45 212 191 / 0.07) 0%, transparent 65%)",
-        }}
-        aria-hidden
-      />
+      {!bare ? (
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 55% 45% at 50% 115%, rgb(45 212 191 / 0.07) 0%, transparent 65%)",
+          }}
+          aria-hidden
+        />
+      ) : null}
 
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-16 lg:px-10 lg:py-20">
+      <div className="landing-footer__inner relative z-10 mx-auto w-full max-w-6xl px-6 py-16 pb-20 lg:px-10 lg:py-20 lg:pb-24">
         <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
           <div className="max-w-sm space-y-3">
             <p className="text-base font-semibold tracking-tight text-[#fafafa]">
               Moving the industry forward
             </p>
             <p className="text-sm leading-relaxed text-[#8a8a8a]">
-              Motiion aims to empower every creative to build a successful, lasting career with
-              tools that support their craft. We bridge the gap between innovation and artistry,
-              helping creators move with purpose, strengthen connections, and turn their passion
-              into sustainable careers.
+              We envision a future where every creative has access to the tools, relationships, and
+              opportunities needed to turn passion into a sustainable career.
             </p>
           </div>
 
@@ -128,8 +138,9 @@ export function Footer({ className }: { className?: string }) {
           </nav>
         </div>
 
-        <div className="mt-14 flex flex-col gap-4 border-t border-[#262626] pt-8 text-sm text-[#5a5a5a] sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="landing-footer__meta mt-14 pt-8">
+          <div className="landing-footer__meta-divider" aria-hidden />
+          <div className="landing-footer__meta-row">
             <p>© {year} Motiion. All rights reserved.</p>
             <div className="flex items-center gap-2.5" aria-label="Social media">
               {footerSocialLinks.map((link) => (
@@ -137,7 +148,6 @@ export function Footer({ className }: { className?: string }) {
               ))}
             </div>
           </div>
-          <p className="text-[#5a5a5a]">Built for dance and the creative industries.</p>
         </div>
       </div>
     </footer>

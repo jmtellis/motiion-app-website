@@ -12,7 +12,7 @@ export function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="theme-dark min-h-screen bg-[#151515]">
+    <div className="theme-dark min-h-screen bg-[#0a0a0a]">
       <AppAnalytics />
       <BuyerDashboardShell profile={profile}>{children}</BuyerDashboardShell>
     </div>

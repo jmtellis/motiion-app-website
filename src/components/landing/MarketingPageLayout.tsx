@@ -1,4 +1,6 @@
+import { HeroShaderVideoBackground } from "@/components/landing/HeroShaderVideoBackground";
 import { FooterRevealShell } from "@/components/landing/FooterRevealShell";
+import { LandingFooterMarquee } from "@/components/landing/LandingFooterMarquee";
 import { MarketingBodySurface } from "@/components/landing/MarketingBodySurface";
 import { HeadshotColumnsBackground } from "@/components/landing/HeadshotColumnsBackground";
 import { BrowserThemeColor } from "@/components/landing/BrowserThemeColor";
@@ -6,7 +8,6 @@ import { HeroScrollDepth } from "@/components/landing/HeroScrollDepth";
 import { HeroStudioBackground } from "@/components/landing/HeroStudioBackground";
 import { HomeHeroSection } from "@/components/landing/HomeHeroSection";
 import { HomeMarketingHeader } from "@/components/landing/HomeMarketingHeader";
-import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { HomeMarketingShell } from "@/components/landing/HomeMarketingShell";
 import { MARKETING_DARK } from "@/lib/marketing/dark-theme";
 import type { MarketingHeaderTab } from "@/lib/marketing/marketing-pages";
@@ -18,6 +19,7 @@ export function MarketingPageLayout({
   children,
   homeHeader = false,
   heroBackgroundImage,
+  heroVideo,
   darkTheme = false,
   cleanHero = false,
 }: {
@@ -29,6 +31,8 @@ export function MarketingPageLayout({
   homeHeader?: boolean;
   /** Studio plate behind the headshot wall (home). */
   heroBackgroundImage?: string;
+  /** Shader-treated background video for the home hero. */
+  heroVideo?: { src: string; poster: string; alt: string };
   /** Dark page body below hero (home). */
   darkTheme?: boolean;
   /** Audience pages: plain hero surface, no portrait wall. */
@@ -40,15 +44,18 @@ export function MarketingPageLayout({
   const browserThemeColor = darkTheme ? MARKETING_DARK.bg : "#fcfcfb";
 
   const page = (
-    <FooterRevealShell surfaceClass={darkTheme ? "bg-[#0a0a0a]" : "bg-[var(--paper)]"}>
+    <FooterRevealShell
+      surfaceClass={darkTheme ? "bg-[#0a0a0a]" : "bg-[var(--paper)]"}
+      footerBand={darkTheme ? <LandingFooterMarquee /> : undefined}
+    >
       <MarketingBodySurface dark={darkTheme} />
       <div id="top" className={darkTheme ? "bg-[#0a0a0a]" : "bg-[var(--paper)]"}>
         <BrowserThemeColor color={browserThemeColor} />
-        {homeHeader ? (
-          <HomeMarketingHeader darkTheme={darkTheme} />
-        ) : (
-          <MarketingHeader activeTab={activeTab} overlay darkTheme={darkTheme} />
-        )}
+        <HomeMarketingHeader
+          activeTab={homeHeader ? null : activeTab}
+          darkTheme={darkTheme}
+          wordmarkHeader={!homeHeader}
+        />
 
         {cleanHero ? (
           <section
@@ -65,14 +72,22 @@ export function MarketingPageLayout({
           <HomeHeroSection
             headerPullClass={headerPullClass}
             background={
-              <>
-                {heroBackgroundImage ? <HeroStudioBackground src={heroBackgroundImage} /> : null}
-                <HeadshotColumnsBackground
-                  images={headshotImages}
-                  variant={heroBackgroundImage ? "overlay" : "light"}
-                  className="opacity-30"
+              heroVideo ? (
+                <HeroShaderVideoBackground
+                  src={heroVideo.src}
+                  poster={heroVideo.poster}
+                  alt={heroVideo.alt}
                 />
-              </>
+              ) : (
+                <>
+                  {heroBackgroundImage ? <HeroStudioBackground src={heroBackgroundImage} /> : null}
+                  <HeadshotColumnsBackground
+                    images={headshotImages}
+                    variant={heroBackgroundImage ? "overlay" : "light"}
+                    className="opacity-30"
+                  />
+                </>
+              )
             }
           >
             {hero}

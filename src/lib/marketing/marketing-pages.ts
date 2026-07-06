@@ -8,13 +8,43 @@ export const INDUSTRY_PRO_SIGNUP_CTA = { label: "Sign up", href: "/talent-buyers
 /** Root landing and other pages where no audience tab is selected. */
 export type MarketingHeaderTab = MarketingTab | null;
 
+export type BenefitIconKey =
+  | "images"
+  | "search"
+  | "mail"
+  | "user-circle"
+  | "users"
+  | "sparkles"
+  | "folder-kanban"
+  | "bookmark"
+  | "list-checks"
+  | "layout-dashboard"
+  | "message-square";
+
+export type BenefitPreviewKind =
+  | "talent-portfolio"
+  | "talent-discovery"
+  | "talent-inbox"
+  | "industry-navigator"
+  | "industry-projects"
+  | "industry-roster"
+  | "industry-shortlist";
+
+export type AudienceBenefit = {
+  title: string;
+  description: string;
+  icon: BenefitIconKey;
+  featured?: boolean;
+  preview?: BenefitPreviewKind;
+};
+
 export type AudiencePageContent = {
   eyebrow: string;
   headline: string;
   summary: string;
   heroCtas: { primary: { label: string; href: string }; secondary?: { label: string; href: string } };
   benefitsTitle: string;
-  benefits: { title: string; description: string }[];
+  benefits: AudienceBenefit[];
   workflowTitle: string;
   workflowSteps: string[];
   trustTitle: string;
@@ -41,31 +71,41 @@ export const talentPageContent: AudiencePageContent = {
       title: "Living portfolio",
       description:
         "Keep headshots, reels, credits, training, and sizing in one place that updates as your career moves.",
+      icon: "images",
+      featured: true,
+      preview: "talent-portfolio",
     },
     {
       title: "Right discovery",
       description:
         "Show up in search with style, skills, and experience filters industry teams actually use.",
+      icon: "search",
+      featured: true,
+      preview: "talent-discovery",
     },
     {
       title: "Faster invites",
       description:
         "Class, session, event, and casting invites land in one inbox so you can accept or decline with context.",
+      icon: "mail",
     },
     {
       title: "One profile",
       description:
         "Share one verified Motiion profile instead of chasing links, PDFs, and outdated folders for every submission.",
+      icon: "user-circle",
     },
     {
       title: "Any representation",
       description:
         "Whether you book on your own or through an agency, your materials stay presentation-ready.",
+      icon: "users",
     },
     {
       title: "Community growth",
       description:
         "Discover classes, sessions, and collaborators on the same network hiring teams use every day.",
+      icon: "sparkles",
     },
   ],
   workflowTitle: "How it works for talent",
@@ -124,31 +164,41 @@ export const castingPageContent: AudiencePageContent = {
       title: "Talent database",
       description:
         "Search verified dancers and choreographers by style, experience, location, and talent type instead of scrolling social feeds and email threads.",
+      icon: "search",
+      featured: true,
+      preview: "industry-navigator",
     },
     {
       title: "Project workspace",
       description:
         "Create projects, publish castings with roles and submission rules, and track progress from draft to live.",
+      icon: "folder-kanban",
+      featured: true,
+      preview: "industry-projects",
     },
     {
       title: "Roster management",
       description:
         "Save talent, organize rosters, and keep your go-to people accessible for the next brief or production.",
+      icon: "bookmark",
     },
     {
       title: "Faster shortlists",
       description:
         "Compare candidates, share selections with collaborators, and move review cycles from debate to decision.",
+      icon: "list-checks",
     },
     {
       title: "Less admin",
       description:
         "Centralize discovery, outreach, and project context instead of rebuilding spreadsheets for every job.",
+      icon: "layout-dashboard",
     },
     {
       title: "Clear communication",
       description:
         "Keep conversations tied to roles, castings, and sessions so nothing gets lost across tools.",
+      icon: "message-square",
     },
   ],
   workflowTitle: "How it works for industry professionals",

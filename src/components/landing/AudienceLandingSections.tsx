@@ -1,3 +1,4 @@
+import { AudienceBenefitsShowcase } from "@/components/landing/AudienceBenefitsShowcase";
 import { BetaForm } from "@/components/landing/BetaForm";
 import { FAQAccordion } from "@/components/landing/FAQAccordion";
 import { Reveal } from "@/components/landing/Reveal";
@@ -27,38 +28,12 @@ export function AudienceLandingSections({
     <>
       <section id="benefits" className={audienceSectionClass(false, dark)}>
         <Reveal amount={0.18} distance={24} className="w-full max-w-6xl">
-          <h2
-            className={cn(
-              "type-heading-1 text-center text-balance",
-              dark ? "text-on-dark-primary" : "text-[var(--ink)]",
-            )}
-          >
-            {content.benefitsTitle}
-          </h2>
-          <div className={cn("mt-8 divide-y", dark ? "divide-[#262626]" : "divide-[var(--line)]")}>
-            {content.benefits.map((item, index) => (
-              <Reveal key={item.title} delay={index * 0.04} amount={0.12} distance={16}>
-                <article className="ui-reveal-row">
-                  <h3
-                    className={cn(
-                      "type-label font-semibold",
-                      dark ? "text-on-dark-primary" : "text-[var(--ink)]",
-                    )}
-                  >
-                    {item.title}
-                  </h3>
-                  <p
-                    className={cn(
-                      "type-body mt-2 max-w-2xl",
-                      dark ? "text-on-dark-secondary" : "text-[var(--ink-soft)]",
-                    )}
-                  >
-                    {item.description}
-                  </p>
-                </article>
-              </Reveal>
-            ))}
-          </div>
+          <AudienceBenefitsShowcase
+            title={content.benefitsTitle}
+            intro={content.summary}
+            benefits={content.benefits}
+            dark={dark}
+          />
         </Reveal>
       </section>
 

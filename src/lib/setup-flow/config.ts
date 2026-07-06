@@ -117,5 +117,17 @@ export function getSetupFlowShellProps({
     headline: config.headlines[phase],
     subtext: config.subtexts[phase],
     steps: buildMacroSteps(audience, phase),
+    showSteps: true,
+  };
+}
+
+export function getLoginShellProps() {
+  return {
+    audienceLabel: "Motiion",
+    headline: "Welcome back",
+    subtext:
+      "Sign in to your talent profile or industry workspace to pick up where you left off.",
+    steps: [] as SignupSplitStep[],
+    showSteps: false,
   };
 }

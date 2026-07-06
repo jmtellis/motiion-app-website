@@ -30,7 +30,7 @@ export function BuyerDashboardShell({
   }
 
   return (
-    <div className="flex h-screen min-h-screen bg-[#151515]">
+    <div className="flex h-screen min-h-screen bg-[#0a0a0a]">
       <SidebarNav
         profile={profile}
         collapsed={!sidebarExpanded}
@@ -40,8 +40,8 @@ export function BuyerDashboardShell({
         sidebarExpanded={sidebarExpanded}
       />
 
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col pt-2 pr-2 pb-2">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-panel)] bg-[#0a0a0a]">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#0a0a0a]">
           {!hideShellChrome && !mobileOpen ? (
             <BuyerChromeBar
               start={

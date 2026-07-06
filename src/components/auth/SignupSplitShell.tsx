@@ -24,6 +24,7 @@ type SignupSplitShellProps = {
   headline: string;
   subtext: string;
   steps: SignupSplitStep[];
+  showSteps?: boolean;
   children: ReactNode;
 };
 
@@ -32,6 +33,7 @@ export function SignupSplitShell({
   headline,
   subtext,
   steps,
+  showSteps = true,
   children,
 }: SignupSplitShellProps) {
   return (
@@ -55,24 +57,26 @@ export function SignupSplitShell({
             <p className="signup-split-cover__headline">{headline}</p>
             <p className="signup-split-cover__subtext">{subtext}</p>
           </div>
-          <ol className="signup-split-steps" aria-label="Setup steps">
-            {steps.map((step) => {
-              const status = resolveStepStatus(step);
+          {showSteps && steps.length > 0 ? (
+            <ol className="signup-split-steps" aria-label="Setup steps">
+              {steps.map((step) => {
+                const status = resolveStepStatus(step);
 
-              return (
-                <li
-                  key={step.number}
-                  className={`signup-split-step signup-split-step--${status}`}
-                  aria-current={status === "active" ? "step" : undefined}
-                >
-                  <span className="signup-split-step__num" aria-hidden>
-                    {status === "completed" ? <Check className="size-3.5" strokeWidth={2.5} /> : step.number}
-                  </span>
-                  <span>{step.label}</span>
-                </li>
-              );
-            })}
-          </ol>
+                return (
+                  <li
+                    key={step.number}
+                    className={`signup-split-step signup-split-step--${status}`}
+                    aria-current={status === "active" ? "step" : undefined}
+                  >
+                    <span className="signup-split-step__num" aria-hidden>
+                      {status === "completed" ? <Check className="size-3.5" strokeWidth={2.5} /> : step.number}
+                    </span>
+                    <span>{step.label}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          ) : null}
         </div>
       </aside>
       <main className="signup-split-panel">{children}</main>

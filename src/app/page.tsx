@@ -6,6 +6,7 @@ import { MarketingPageLayout } from "@/components/landing/MarketingPageLayout";
 import { getProfileDestination, isOnboardingComplete } from "@/lib/auth/profile";
 import { getCurrentUserProfile } from "@/lib/auth/session";
 import { MARKETING_DARK } from "@/lib/marketing/dark-theme";
+import { homeHeroVideo } from "@/lib/marketing/hero-video";
 
 export const viewport: Viewport = {
   themeColor: MARKETING_DARK.bg,
@@ -22,8 +23,8 @@ export default async function Home() {
     <MarketingPageLayout
       homeHeader
       darkTheme
-      cleanHero
       activeTab={null}
+      heroVideo={homeHeroVideo}
       hero={<HomeLandingHero dark />}
     >
       <HomeLandingSections dark />

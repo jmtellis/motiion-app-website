@@ -24,7 +24,9 @@ export function SignupSplitOAuth({
   async function handleOAuth(provider: "google" | "apple") {
     const supabase = createClientSupabaseClient();
     if (!supabase) {
-      setError("Sign-up is not configured yet. Add Supabase environment variables to enable auth.");
+      setError(
+        `${flow === "login" ? "Sign-in" : "Sign-up"} is not configured yet. Add Supabase environment variables to enable auth.`,
+      );
       return;
     }
 

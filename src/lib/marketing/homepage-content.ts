@@ -43,7 +43,7 @@ export type AudienceProfile = {
 /** Brand statement band after the solution pillars. */
 export const homeBrandStatementSection = {
   headlineParts: [
-    "For the artists who perform, and the people who hire them.",
+    "Motiion is the operating system for creative careers.",
   ] as EditorialPart[],
 };
 
@@ -88,7 +88,7 @@ export const homeHero = {
       ".",
     ] as EditorialPart[],
   },
-  subtext: "Connecting the dance community, managing performers, and organizing bookings.",
+  subtext: "Reshaping how professional dancers are discovered, booked, and managed.",
   pillars: [
     {
       title: "Discover smarter",
@@ -96,11 +96,10 @@ export const homeHero = {
         { text: "Discover", emphasis: true },
         " smarter",
       ] as EditorialPart[],
-      description:
-        "The right dancer and the right job often miss each other entirely. Motiion brings auditions, castings, classes, and gigs into one stream where talent and teams find each other without the group chats, scattered posts, or stale lists.",
+      description: "Auditions, castings, and gigs in one unified stream.",
       image: {
-        src: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1400&q=80",
-        alt: "Dancers rehearsing in a studio",
+        src: "/images/pillars/discover-smarter.png",
+        alt: "Two dancers in silhouette against a warm orange backdrop",
       },
     },
     {
@@ -109,12 +108,10 @@ export const homeHero = {
         { text: "Verify", emphasis: true },
         " instantly",
       ] as EditorialPart[],
-      description:
-        "A casting question goes out on Monday. The answer arrives Friday, three threads later. Motiion keeps headshots, sizing, availability, and credits in one profile that stays current, so teams get what they need without the chase.",
+      description: "Headshots, sizing, and credits kept current in one profile.",
       image: {
-        src: "/videos/verify.mp4",
-        kind: "video" as const,
-        alt: "Motiion verify profile flow",
+        src: "/images/pillars/verify-instantly.png",
+        alt: "Dancer in a dynamic pose against a white studio background",
       },
     },
     {
@@ -123,11 +120,10 @@ export const homeHero = {
         { text: "Decide", emphasis: true },
         " faster",
       ] as EditorialPart[],
-      description:
-        "The shortlist is ready. The debate happens across five chats. Motiion gives teams tools to collaborate on the final call, then notifies dancers the moment casting is locked so they can plan what comes next.",
+      description: "Collaborate on shortlists and lock casting in one place.",
       image: {
-        src: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1400&q=80",
-        alt: "Live performance with stage lighting",
+        src: "/images/pillars/decide-faster.png",
+        alt: "Dancer in black velvet on a terracotta studio set",
       },
     },
   ],
@@ -145,7 +141,7 @@ export const homeHero = {
   ],
 };
 
-/** Outline scroll marquees — below hero and below brand statement. */
+/** Outline scroll marquees — below hero and above footer reveal. */
 export const landingMarquees = {
   belowHero: {
     segments: ["Discover", "Motiion", "Talent", "Database"],
@@ -155,6 +151,40 @@ export const landingMarquees = {
     segments: ["Creatives", "Management", "Labels", "Agents", "Casting", "Production"],
     direction: "left" as const,
   },
+  aboveFooter: {
+    segments: ["Discover", "Motiion", "Talent", "Database", "Casting", "Production"],
+    direction: "right" as const,
+  },
+} as const;
+
+export const homePillarsSection = {
+  title: "A workflow more creative than ever.",
+} as const;
+
+export const homeSignupScrollCta = {
+  label: "Sign up",
+} as const;
+
+export const homeSignupSection = {
+  eyebrow: "Get started",
+  title: "Join Motiion.",
+  description: "Create a talent profile or set up an industry workspace.",
+  paths: [
+    {
+      id: "talent",
+      label: "Creative Talent",
+      description: "For dancers and choreographers building a profile and getting discovered.",
+      href: "/signup",
+      cta: "Sign up as talent",
+    },
+    {
+      id: "industry",
+      label: "Industry Professional",
+      description: "For casting teams, agencies, and producers discovering and booking talent.",
+      href: "/talent-buyers/signup",
+      cta: "Sign up as industry",
+    },
+  ],
 } as const;
 
 export const studioTransitionSection = {
@@ -213,7 +243,7 @@ export const productProofStrip = {
 };
 
 export const homepageIntro = {
-  eyebrow: "Professional talent infrastructure",
+  eyebrow: "The creative operating system",
   title: "For those with the audacity to pursue their dreams.",
   description:
     "Starting with dance, Motiion is building the blueprint for how the creative world discovers and hires talent.",

@@ -64,7 +64,6 @@ function SectionTransitionBody({
   const focusOpacity = useTransform(progress, [0, 0.18, 0.82, 1], [0.35, 1, 1, 0.72]);
   const focusY = useTransform(progress, [0, 0.35, 0.65, 1], [40, 0, 0, -20]);
 
-  const driftY = useTransform(progress, [0, 0.4, 0.6, 1], [48, 0, 0, -24]);
   const driftOpacity = useTransform(progress, [0, 0.22, 0.78, 1], [0.2, 1, 1, 0.8]);
 
   switch (variant) {
@@ -87,7 +86,10 @@ function SectionTransitionBody({
       return (
         <>
           <LineDrift className="pointer-events-none absolute inset-0 overflow-hidden opacity-60" speed={1.1} />
-          <motion.div className="relative z-[1]" style={{ y: driftY, opacity: driftOpacity }}>
+          <motion.div
+            className="relative z-[1] flex min-h-[inherit] w-full flex-col justify-center"
+            style={{ opacity: driftOpacity }}
+          >
             {children}
           </motion.div>
         </>

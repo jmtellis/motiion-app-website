@@ -509,6 +509,52 @@ h3 {
   }
 }
 
+/* Landing sections — one viewport band below the sticky marketing header */
+:root {
+  --marketing-header-height: 5.75rem;
+}
+
+@media (width >= 48rem) {
+  :root {
+    --marketing-header-height: 4.5rem;
+  }
+}
+
+.marketing-viewport-section {
+  min-height: calc(100svh - var(--marketing-header-height));
+  min-height: calc(100dvh - var(--marketing-header-height));
+  scroll-margin-top: var(--marketing-header-height);
+  box-sizing: border-box;
+}
+
+.marketing-viewport-section--center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.marketing-viewport-section .marketing-viewport-section--center {
+  min-height: inherit;
+}
+
+/* Home hero — full viewport bleed under sticky header (negative margin pull) */
+.home-hero-section {
+  display: flex;
+  min-height: 100svh;
+  min-height: 100dvh;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.home-hero-section__foreground {
+  display: flex;
+  min-height: inherit;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
 /* design.md hero — ambient accent wash + hairline product frame */
 .marketing-hero-glow {
   position: absolute;
@@ -540,6 +586,8 @@ h3 {
   position: relative;
   min-height: 100%;
   isolation: isolate;
+  --footer-reveal-height: calc(100svh - var(--marketing-header-height));
+  --footer-reveal-height: calc(100dvh - var(--marketing-header-height));
 }
 
 .marketing-footer-reveal__content {
@@ -551,7 +599,7 @@ h3 {
 .marketing-footer-reveal__spacer {
   position: relative;
   z-index: 0;
-  height: var(--footer-reveal-height, 38rem);
+  height: var(--footer-reveal-height);
   pointer-events: none;
 }
 
@@ -560,13 +608,41 @@ h3 {
   inset-inline: 0;
   bottom: 0;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: var(--footer-reveal-height);
+  max-height: var(--footer-reveal-height);
   pointer-events: auto;
 }
 
-@media (width >= 64rem) {
-  .marketing-footer-reveal {
-    --footer-reveal-height: 40rem;
-  }
+.marketing-footer-reveal__footer:not(:has(.marketing-footer-reveal__band)) {
+  justify-content: flex-end;
+}
+
+.marketing-footer-reveal__band {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+  background: var(--stage-black);
+}
+
+.marketing-footer-reveal__band > * {
+  width: 100%;
+}
+
+.marketing-footer-reveal__footer > footer {
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+.marketing-footer-reveal__footer > footer > div {
+  min-height: auto;
+  padding-block: clamp(1.5rem, 3vh, 2.5rem);
 }
 
 .ui-section-narrative {
@@ -714,7 +790,7 @@ h3 {
   padding-block: 0.625rem;
 }
 
-/* design.md marketing CTAs — white primary + raised-surface secondary, md radius */
+/* design.md marketing CTAs — glass pill buttons on hero / dark surfaces */
 .btn-hero-pill {
   display: inline-flex;
   align-items: center;
@@ -723,44 +799,70 @@ h3 {
   min-height: 2.75rem;
   padding-inline: 1.25rem;
   padding-block: 0.625rem;
-  border-radius: var(--ds-radius-md);
-  border: 1px solid transparent;
+  border-radius: 9999px;
+  border: none;
   font-size: 0.875rem;
   font-weight: 500;
   line-height: 1.25;
   text-decoration: none;
-  transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease;
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  backdrop-filter: blur(18px) saturate(1.35);
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .btn-hero-pill-accent {
-  background: var(--ds-primary);
-  color: var(--ds-on-primary);
-  border-color: transparent;
+  background: rgb(255 255 255 / 0.2);
+  color: #fafafa;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.22);
 }
 
 .btn-hero-pill-accent:hover:not(:disabled) {
-  background: #e6e6e6;
+  background: rgb(255 255 255 / 0.3);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.26);
 }
 
 .btn-hero-pill-accent:focus-visible {
-  outline: 2px solid var(--ds-accent);
+  outline: 2px solid rgb(45 212 191 / 0.65);
   outline-offset: 2px;
 }
 
 .btn-hero-pill-ghost {
-  background: var(--ds-surface-raised);
-  color: var(--ds-on-surface);
-  border-color: var(--ds-border);
+  background: rgb(255 255 255 / 0.06);
+  color: rgb(255 255 255 / 0.92);
+  border: 1px solid rgb(255 255 255 / 0.16);
+  box-shadow: none;
 }
 
 .btn-hero-pill-ghost:hover:not(:disabled) {
-  background: #2a2a2a;
-  border-color: var(--ds-border-strong);
+  background: rgb(255 255 255 / 0.12);
+  border-color: rgb(255 255 255 / 0.24);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
 }
 
 .btn-hero-pill-ghost:focus-visible {
-  outline: 2px solid var(--ds-accent);
+  outline: 2px solid rgb(255 255 255 / 0.45);
   outline-offset: 2px;
+}
+
+.btn-hero-pill-compact {
+  min-height: 2rem;
+  padding-inline: 0.875rem;
+  padding-block: 0.3125rem;
+  font-size: 0.8125rem;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .btn-hero-pill-accent {
+    background: rgb(255 255 255 / 0.88);
+    color: #0a0a0a;
+  }
+
+  .btn-hero-pill-ghost {
+    background: rgb(30 30 30 / 0.92);
+  }
 }
 
 .btn-secondary {

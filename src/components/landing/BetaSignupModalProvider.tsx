@@ -13,6 +13,7 @@ import {
 import { BetaForm } from "@/components/landing/BetaForm";
 import { MarketingDialog } from "@/components/landing/MarketingDialog";
 import { betaSignupSection } from "@/lib/marketing/homepage-content";
+import { scrollToSignupSection } from "@/lib/marketing/scroll-to-signup";
 
 type BetaSignupModalContextValue = {
   openBetaSignup: () => void;
@@ -38,16 +39,16 @@ export function BetaSignupModalProvider({ children }: { children: ReactNode }) {
   const closeBetaSignup = useCallback(() => setOpen(false), []);
 
   useEffect(() => {
-    const maybeOpenFromHash = () => {
+    const maybeScrollFromHash = () => {
       if (window.location.hash === "#signup") {
-        setOpen(true);
+        scrollToSignupSection();
         window.history.replaceState(null, "", window.location.pathname + window.location.search);
       }
     };
 
-    maybeOpenFromHash();
-    window.addEventListener("hashchange", maybeOpenFromHash);
-    return () => window.removeEventListener("hashchange", maybeOpenFromHash);
+    maybeScrollFromHash();
+    window.addEventListener("hashchange", maybeScrollFromHash);
+    return () => window.removeEventListener("hashchange", maybeScrollFromHash);
   }, []);
 
   return (

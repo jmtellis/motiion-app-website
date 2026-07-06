@@ -142,6 +142,7 @@ export function getSetupFlowShellProps({
     steps: buildMacroSteps(audience, phase),
     showSteps: true,
     marquee: signupSplitMarquees[audience],
+    showReturnHome: surface === "signup",
   };
 }
 
@@ -154,5 +155,6 @@ export function getLoginShellProps() {
     steps: [] as SignupSplitStep[],
     showSteps: false,
     marquee: loginSplitMarquee,
+    showReturnHome: true,
   };
 }

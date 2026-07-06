@@ -10,7 +10,7 @@ import type { MarketingHeaderTab, MarketingTab } from "@/lib/marketing/marketing
 import type { DashboardProfile } from "@/types/database";
 
 const marketingTabs: { id: MarketingTab; label: string; href: string }[] = [
-  { id: "talent", label: "Talent", href: "/for-talent" },
+  { id: "talent", label: "Creative Talent", href: "/for-talent" },
   { id: "casting", label: "Industry Professionals", href: "/for-casting" },
 ];
 

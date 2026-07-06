@@ -16,8 +16,10 @@ export function FooterRevealAnimatedPanel({ footerBand }: { footerBand?: ReactNo
     offset: ["start end", "end end"],
   });
   const motionProgress = useScrollProgressMotion(scrollYProgress, SCROLL_SPRING_SECTION);
-  const opacity = useTransform(motionProgress, [0, 0.22, 0.62, 1], [0, 0.35, 0.9, 1]);
+  const opacity = useTransform(motionProgress, [0, 0.12, 0.22, 0.62, 1], [0, 0, 0.35, 0.9, 1]);
   const y = useTransform(motionProgress, [0, 0.35, 1], [28, 10, 0]);
+  const visibility = useTransform(opacity, (value) => (value > 0.01 ? "visible" : "hidden"));
+  const pointerEvents = useTransform(opacity, (value) => (value > 0.01 ? "auto" : "none"));
 
   const animateReveal = Boolean(footerBand) && !reduceMotion;
 
@@ -31,10 +33,10 @@ export function FooterRevealAnimatedPanel({ footerBand }: { footerBand?: ReactNo
       />
       <motion.div
         className="marketing-footer-reveal__footer"
-        style={animateReveal ? { opacity, y } : undefined}
+        style={animateReveal ? { opacity, y, visibility, pointerEvents } : undefined}
       >
         {footerBand ? <div className="marketing-footer-reveal__band">{footerBand}</div> : null}
-        <Footer bare={Boolean(footerBand)} />
+        <Footer bare={Boolean(footerBand)} reveal={Boolean(footerBand)} />
       </motion.div>
     </>
   );

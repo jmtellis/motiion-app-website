@@ -1,5 +1,6 @@
 import { HeroShaderVideoBackground } from "@/components/landing/HeroShaderVideoBackground";
 import { FooterRevealShell } from "@/components/landing/FooterRevealShell";
+import { HomeEnterTransition } from "@/components/landing/HomeEnterTransition";
 import { HomeSignupSection } from "@/components/landing/HomeSignupSection";
 import { MarketingBodySurface } from "@/components/landing/MarketingBodySurface";
 import { HeadshotColumnsBackground } from "@/components/landing/HeadshotColumnsBackground";
@@ -50,11 +51,8 @@ export function MarketingPageLayout({
       : "relative flex min-h-svh w-full items-center justify-center px-0 pb-16 pt-28 md:pt-28";
   const browserThemeColor = darkTheme ? MARKETING_DARK.bg : "#fcfcfb";
 
-  const page = (
-    <FooterRevealShell
-      surfaceClass={darkTheme ? "bg-[#0a0a0a]" : "bg-[var(--paper)]"}
-      footerBand={darkTheme ? <HomeSignupSection variant="footer-reveal" /> : undefined}
-    >
+  const scrollContent = (
+    <>
       <MarketingBodySurface dark={darkTheme} />
       <div id="top" className={darkTheme ? "bg-[#0a0a0a]" : "bg-[var(--paper)]"}>
         <BrowserThemeColor color={browserThemeColor} />
@@ -121,6 +119,19 @@ export function MarketingPageLayout({
 
         {children ? <div className="relative isolate">{children}</div> : null}
       </div>
+    </>
+  );
+
+  const page = (
+    <FooterRevealShell
+      surfaceClass={darkTheme ? "bg-[#0a0a0a]" : "bg-[var(--paper)]"}
+      footerBand={darkTheme ? <HomeSignupSection variant="footer-reveal" /> : undefined}
+    >
+      {homeHeader && darkTheme ? (
+        <HomeEnterTransition>{scrollContent}</HomeEnterTransition>
+      ) : (
+        scrollContent
+      )}
     </FooterRevealShell>
   );
 

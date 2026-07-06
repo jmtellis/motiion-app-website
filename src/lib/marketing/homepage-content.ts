@@ -43,7 +43,7 @@ export type AudienceProfile = {
 /** Brand statement band after the solution pillars. */
 export const homeBrandStatementSection = {
   headlineParts: [
-    "Motiion is the operating system for creative careers.",
+    "Starting with dance, we're building the operating system for creative careers.",
   ] as EditorialPart[],
 };
 
@@ -163,7 +163,7 @@ export const homeSignupScrollCta = {
 
 export const homeSignupSection = {
   eyebrow: "Get started",
-  title: "Join Motiion.",
+  title: "Sign up for free",
   description: "Create a talent profile or set up an industry workspace.",
   paths: [
     {
@@ -239,7 +239,7 @@ export const productProofStrip = {
 };
 
 export const homepageIntro = {
-  eyebrow: "The creative operating system",
+  eyebrow: "The industry operating system",
   title: "For those with the audacity to pursue their dreams.",
   description:
     "Starting with dance, Motiion is building the blueprint for how the creative world discovers and hires talent.",

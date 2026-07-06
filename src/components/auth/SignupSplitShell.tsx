@@ -1,8 +1,9 @@
 "use client";
 
 import { Check } from "lucide-react";
-import Link from "next/link";
 import type { ReactNode } from "react";
+
+import { AuthSplitLink, AuthSplitTransitionProvider } from "@/components/auth/AuthSplitTransition";
 
 import { HeroShaderVideoBackground } from "@/components/landing/HeroShaderVideoBackground";
 import { ScrollMarquee } from "@/components/landing/ScrollMarquee";
@@ -44,6 +45,7 @@ type SignupSplitShellProps = {
   showSteps?: boolean;
   marquee?: SignupSplitMarquee;
   coverAltLinks?: readonly SignupSplitCoverLink[];
+  showReturnHome?: boolean;
   children: ReactNode;
 };
 
@@ -55,25 +57,34 @@ export function SignupSplitShell({
   showSteps = true,
   marquee,
   coverAltLinks,
+  showReturnHome = false,
   children,
 }: SignupSplitShellProps) {
   return (
-    <SmoothScroll>
-      <MarketingBodySurface dark />
-      <div className="signup-split">
-        <aside className="signup-split-cover relative">
-          <HeroShaderVideoBackground
-            src={homeHeroVideo.src}
-            poster={homeHeroVideo.poster}
-            alt={homeHeroVideo.alt}
-          />
-          <div className="signup-split-cover__overlay absolute inset-0" aria-hidden />
-          <div className="signup-split-cover__content">
-            <div className="signup-split-cover__intro">
-              <p className="signup-split-cover__eyebrow">{audienceLabel}</p>
-              <p className="signup-split-cover__headline">{headline}</p>
-              <p className="signup-split-cover__subtext">{subtext}</p>
-            </div>
+    <AuthSplitTransitionProvider>
+      <SmoothScroll>
+        <MarketingBodySurface dark />
+        <div className="signup-split">
+          <aside className="signup-split-cover relative">
+            <HeroShaderVideoBackground
+              src={homeHeroVideo.src}
+              poster={homeHeroVideo.poster}
+              alt={homeHeroVideo.alt}
+            />
+            <div className="signup-split-cover__overlay absolute inset-0" aria-hidden />
+            <div className="signup-split-cover__content">
+              <div className="signup-split-cover__intro">
+                <div className="signup-split-cover__header">
+                  <p className="signup-split-cover__eyebrow">{audienceLabel}</p>
+                  {showReturnHome ? (
+                    <AuthSplitLink href="/" className="signup-split-cover__home-link">
+                      Return to home
+                    </AuthSplitLink>
+                  ) : null}
+                </div>
+                <p className="signup-split-cover__headline">{headline}</p>
+                <p className="signup-split-cover__subtext">{subtext}</p>
+              </div>
             {showSteps && steps.length > 0 ? (
               <ol className="signup-split-steps" aria-label="Setup steps">
                 {steps.map((step) => {
@@ -105,7 +116,7 @@ export function SignupSplitShell({
                     {coverAltLinks.map((item) => (
                       <p key={`${item.href}-${item.label}`} className="signup-split-cover__alt-link">
                         {item.prefix}{" "}
-                        <Link href={item.href}>{item.label}</Link>
+                        <AuthSplitLink href={item.href}>{item.label}</AuthSplitLink>
                       </p>
                     ))}
                   </nav>
@@ -129,7 +140,8 @@ export function SignupSplitShell({
           {children}
         </main>
       </div>
-    </SmoothScroll>
+      </SmoothScroll>
+    </AuthSplitTransitionProvider>
   );
 }
 

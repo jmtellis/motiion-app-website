@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { AuthSplitLink } from "@/components/auth/AuthSplitTransition";
 import { SignupSplitFormHeader } from "@/components/auth/SignupSplitShell";
 import { SignupSplitDivider, SignupSplitOAuth } from "@/components/auth/SignupSplitOAuth";
 import { resolveClientLoginDestination } from "@/lib/auth/login-redirect";
@@ -113,12 +113,12 @@ export function LoginForm() {
         <div className="signup-split-signup-options">
           <p className="signup-split-signup-options__label">Need to create an account?</p>
           <div className="signup-split-signup-options__actions">
-            <Link href="/signup" className="signup-split-text-btn">
+            <AuthSplitLink href="/signup" className="signup-split-text-btn">
               Sign up as talent
-            </Link>
-            <Link href="/talent-buyers/signup" className="signup-split-text-btn">
+            </AuthSplitLink>
+            <AuthSplitLink href="/talent-buyers/signup" className="signup-split-text-btn">
               Sign up as an industry professional
-            </Link>
+            </AuthSplitLink>
           </div>
         </div>
       </div>

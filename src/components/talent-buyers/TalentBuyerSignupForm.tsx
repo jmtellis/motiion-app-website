@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 
+import { AuthSplitLink } from "@/components/auth/AuthSplitTransition";
 import { SignupSplitFormHeader } from "@/components/auth/SignupSplitShell";
 import { SignupSplitDivider, SignupSplitOAuth } from "@/components/auth/SignupSplitOAuth";
 import { trackClientEvent } from "@/lib/analytics/track-client";
@@ -178,11 +178,14 @@ export function TalentBuyerSignupForm() {
         </form>
 
         <div className="signup-split-alt-auth">
-          <Link href="/signup" className="signup-split-text-btn">
+          <AuthSplitLink href="/signup" className="signup-split-text-btn">
             Sign up as talent
-          </Link>
+          </AuthSplitLink>
           <p className="signup-split-alt-auth__secondary">
-            Already have an account? <Link href="/login" className="signup-split-text-btn">Log in</Link>
+            Already have an account?{" "}
+            <AuthSplitLink href="/login" className="signup-split-text-btn">
+              Log in
+            </AuthSplitLink>
           </p>
         </div>
       </div>

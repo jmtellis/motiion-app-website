@@ -1,14 +1,11 @@
+import { BrandStatementSection } from "@/components/landing/BrandStatementSection";
 import { EditorialHeadline } from "@/components/landing/EditorialHeadline";
 import { FeatureCarousel } from "@/components/landing/FeatureCarousel";
 import { HomeHeroCtas } from "@/components/landing/HomeHeroCtas";
-import { LandingHeroMarquee } from "@/components/landing/LandingHeroMarquee";
-import { Reveal } from "@/components/landing/Reveal";
-import { SectionTransition } from "@/components/landing/SectionTransition";
 import {
   homeBrandStatementSection,
   homeHero,
   homePillarsSection,
-  homepageIntro,
 } from "@/lib/marketing/homepage-content";
 
 export function HomeLandingHero({ dark = true }: { dark?: boolean }) {
@@ -16,7 +13,6 @@ export function HomeLandingHero({ dark = true }: { dark?: boolean }) {
 
   return (
     <div className="animate-enter flex w-full flex-col items-center gap-6 px-6 text-center sm:gap-8">
-      <p className="type-eyebrow text-on-dark-tertiary">{homepageIntro.eyebrow}</p>
       <EditorialHeadline
         parts={homeHero.headline.parts}
         as="h1"
@@ -43,24 +39,10 @@ export function HomeLandingSections({ dark = true }: { dark?: boolean }) {
         }))}
       />
 
-      <SectionTransition
-        id="brand-statement"
-        variant="line-drift"
-        className="marketing-viewport-section relative z-[1] flex flex-col bg-[var(--stage-black)]"
-      >
-        <div className="flex flex-1 flex-col justify-center">
-          <Reveal amount={0.18} distance={28}>
-            <EditorialHeadline
-              parts={homeBrandStatementSection.headlineParts}
-              as="h2"
-              size="display-xl"
-              dark={dark}
-              className="mx-auto max-w-4xl px-6 text-center sm:px-10"
-            />
-          </Reveal>
-        </div>
-        <LandingHeroMarquee />
-      </SectionTransition>
+      <BrandStatementSection
+        headlineParts={homeBrandStatementSection.headlineParts}
+        dark={dark}
+      />
     </>
   );
 }

@@ -202,6 +202,19 @@ h3 {
   text-transform: uppercase;
 }
 
+.landing-hero-marquee .type-marquee {
+  font-size: clamp(3.75rem, 16vw, 7.5rem);
+  line-height: 0.92;
+}
+
+@media (max-width: 767px) {
+  .landing-hero-marquee .type-marquee {
+    font-size: clamp(4rem, 18vw, 5.5rem);
+    letter-spacing: -0.035em;
+    -webkit-text-stroke: 1.75px rgb(255 255 255 / 0.22);
+  }
+}
+
 .type-display {
   font-size: var(--type-display-size);
   font-weight: 600;
@@ -582,6 +595,25 @@ h3 {
   background: radial-gradient(ellipse 62% 58% at 50% 42%, rgb(45 212 191 / 0.09) 0%, transparent 68%);
 }
 
+.home-enter-transition {
+  opacity: 1;
+  transition: opacity 0.36s ease;
+}
+
+.home-enter-transition--enter {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-enter-transition {
+    transition-duration: 0.01ms;
+  }
+
+  .home-enter-transition--enter {
+    opacity: 1;
+  }
+}
+
 .marketing-footer-reveal {
   position: relative;
   min-height: 100%;
@@ -619,6 +651,12 @@ h3 {
   justify-content: flex-end;
 }
 
+.marketing-footer-reveal__footer:has(.marketing-footer-reveal__band) {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .marketing-footer-reveal__footer:has(.marketing-footer-reveal__band)::before {
   content: "";
   position: absolute;
@@ -634,17 +672,17 @@ h3 {
   inset: 0;
   z-index: 0;
   background:
-    linear-gradient(180deg, rgb(10 18 20 / 0.32) 0%, rgb(10 18 20 / 0.32) 100%),
     linear-gradient(
       180deg,
-      #0a0a0a 0%,
-      #0a0a0a 20%,
-      rgb(10 10 10 / 0.94) 36%,
-      rgb(10 10 10 / 0.68) 52%,
-      rgb(10 10 10 / 0.32) 68%,
-      rgb(10 18 20 / 0.1) 84%,
-      transparent 100%
-    );
+      var(--stage-black) 0%,
+      var(--stage-black) 36%,
+      rgb(10 10 10 / 0.96) 46%,
+      rgb(10 10 10 / 0.82) 56%,
+      rgb(10 10 10 / 0.52) 68%,
+      rgb(10 10 10 / 0.18) 80%,
+      transparent 94%
+    ),
+    linear-gradient(180deg, transparent 0%, transparent 52%, rgb(10 18 20 / 0.28) 100%);
   pointer-events: none;
 }
 

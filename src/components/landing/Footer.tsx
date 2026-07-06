@@ -98,14 +98,36 @@ function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) 
   );
 }
 
-export function Footer({ className, bare = false }: { className?: string; bare?: boolean }) {
+function FooterVisionBlurb() {
+  return (
+    <div className="max-w-sm space-y-3">
+      <p className="text-base font-semibold tracking-tight text-[#fafafa]">Moving the industry forward</p>
+      <p className="text-sm leading-relaxed text-[#8a8a8a]">
+        We envision a future where every creative has access to the tools, relationships, and
+        opportunities needed to turn passion into a sustainable career.
+      </p>
+    </div>
+  );
+}
+
+export function Footer({
+  className,
+  bare = false,
+  reveal = false,
+}: {
+  className?: string;
+  bare?: boolean;
+  /** Footer reveal panel: vision only on mobile; full footer from md up. */
+  reveal?: boolean;
+}) {
   const year = new Date().getFullYear();
+  const transparentSurface = bare || reveal;
 
   return (
     <footer
-      className={`relative overflow-hidden text-white${bare ? " bg-transparent" : " bg-[#0a0a0a]"}${className ? ` ${className}` : ""}`}
+      className={`relative overflow-hidden text-white${transparentSurface ? " bg-transparent" : " bg-[#0a0a0a]"}${className ? ` ${className}` : ""}`}
     >
-      {!bare ? (
+      {!transparentSurface ? (
         <div
           className="pointer-events-none absolute inset-0"
           style={{
@@ -116,21 +138,21 @@ export function Footer({ className, bare = false }: { className?: string; bare?:
         />
       ) : null}
 
-      <div className="landing-footer__inner relative z-10 mx-auto w-full max-w-6xl px-6 py-16 pb-20 lg:px-10 lg:py-20 lg:pb-24">
+      <div
+        className={`landing-footer__inner relative z-10 mx-auto w-full max-w-6xl px-6 lg:px-10 ${
+          reveal
+            ? "py-8 pb-10 md:py-16 md:pb-20 lg:py-20 lg:pb-24"
+            : "py-16 pb-20 lg:py-20 lg:pb-24"
+        }`}
+      >
         <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
-          <div className="max-w-sm space-y-3">
-            <p className="text-base font-semibold tracking-tight text-[#fafafa]">
-              Moving the industry forward
-            </p>
-            <p className="text-sm leading-relaxed text-[#8a8a8a]">
-              We envision a future where every creative has access to the tools, relationships, and
-              opportunities needed to turn passion into a sustainable career.
-            </p>
-          </div>
+          <FooterVisionBlurb />
 
           <nav
             aria-label="Footer"
-            className="flex flex-wrap justify-end gap-x-5 gap-y-8 lg:gap-x-6 lg:gap-y-0"
+            className={`flex-wrap justify-end gap-x-5 gap-y-8 lg:gap-x-6 lg:gap-y-0 ${
+              reveal ? "hidden md:flex" : "flex"
+            }`}
           >
             {footerColumns.map((column) => (
               <FooterColumn key={column.title} title={column.title} links={column.links} />
@@ -138,7 +160,7 @@ export function Footer({ className, bare = false }: { className?: string; bare?:
           </nav>
         </div>
 
-        <div className="landing-footer__meta mt-14 pt-8">
+        <div className={`landing-footer__meta pt-8 ${reveal ? "mt-8 hidden md:block md:mt-14" : "mt-14"}`}>
           <div className="landing-footer__meta-divider" aria-hidden />
           <div className="landing-footer__meta-row">
             <p>© {year} Motiion. All rights reserved.</p>

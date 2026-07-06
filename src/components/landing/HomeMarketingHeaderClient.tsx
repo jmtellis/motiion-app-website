@@ -18,7 +18,7 @@ import {
 import { scrollToSignupSection } from "@/lib/marketing/scroll-to-signup";
 
 const marketingTabs: { id: MarketingTab; label: string; href: string }[] = [
-  { id: "talent", label: "Talent", href: "/for-talent" },
+  { id: "talent", label: "Creative Talent", href: "/for-talent" },
   { id: "casting", label: "Industry Professionals", href: "/for-casting" },
 ];
 
@@ -105,20 +105,20 @@ function MarketingHeaderMobileScrolledBar({
   return (
     <div ref={rootRef} className="relative">
       <div className="grid grid-cols-[2.5rem_1fr_2.5rem] items-center gap-2 px-6 py-3">
-        <div aria-hidden className="size-10" />
-        <div className="flex min-w-0 items-center justify-center">{wordmark}</div>
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-start">
           <button
             type="button"
-            className="inline-flex size-10 items-center justify-center rounded-[8px] border border-[#262626] bg-[#1e1e1e] text-white transition hover:bg-[#2a2a2a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+            className="inline-flex size-10 items-center justify-center text-white transition hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
             aria-expanded={open}
             aria-controls={menuId}
             aria-label={open ? "Close menu" : "Open menu"}
             onClick={() => onOpenChange(!open)}
           >
-            {open ? <X className="size-5" aria-hidden /> : <Menu className="size-5" aria-hidden />}
+            {open ? <X className="size-6" aria-hidden /> : <Menu className="size-6" aria-hidden />}
           </button>
         </div>
+        <div className="flex min-w-0 items-center justify-center">{wordmark}</div>
+        <div aria-hidden className="size-10" />
       </div>
 
       {open ? (

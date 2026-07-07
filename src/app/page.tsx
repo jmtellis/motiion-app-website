@@ -11,6 +11,7 @@ import { homeHeroVideo } from "@/lib/marketing/hero-video";
 export const viewport: Viewport = {
   themeColor: MARKETING_DARK.bg,
   colorScheme: "dark",
+  viewportFit: "cover",
 };
 
 export default async function Home() {

@@ -353,7 +353,7 @@ export function HomeMarketingHeaderClient({
           : "border-transparent bg-transparent shadow-none",
       )}
     >
-      <div className="mx-auto w-full max-w-6xl md:hidden">
+      <div className="marketing-header-mobile mx-auto w-full max-w-6xl md:hidden">
         {showScrolled ? (
           <MarketingHeaderMobileScrolledBar
             open={mobileMenuOpen}

@@ -11,4 +11,5 @@ export type LegalPageSection = {
 export const legalMarketingViewport: Viewport = {
   themeColor: MARKETING_DARK.bg,
   colorScheme: "dark",
+  viewportFit: "cover",
 };

@@ -32,10 +32,10 @@ export function HomeHeroSection({ headerPullClass, background, children }: HomeH
   return (
     <section
       ref={sectionRef}
-      className={`home-hero-section relative w-full overflow-hidden ${headerPullClass}`}
+      className={`home-hero-section relative w-full overflow-x-clip ${headerPullClass}`}
     >
       {reduceMotion ? (
-        <div className="absolute inset-0" aria-hidden>
+        <div className="marketing-bg-safe-bleed" aria-hidden>
           {background}
           <div
             className="absolute inset-0"
@@ -46,11 +46,11 @@ export function HomeHeroSection({ headerPullClass, background, children }: HomeH
         </div>
       ) : (
         <>
-          <motion.div className="absolute inset-0" style={{ opacity: headshotOpacity }} aria-hidden>
+          <motion.div className="marketing-bg-safe-bleed" style={{ opacity: headshotOpacity }} aria-hidden>
             {background}
           </motion.div>
           <motion.div
-            className="pointer-events-none absolute inset-0"
+            className="marketing-bg-safe-bleed pointer-events-none"
             style={{ opacity: scrimOpacity }}
             aria-hidden
           >
@@ -64,7 +64,7 @@ export function HomeHeroSection({ headerPullClass, background, children }: HomeH
         </>
       )}
 
-      <div className="home-hero-section__foreground">
+      <div className="home-hero-section__foreground marketing-content-safe-area">
         <HeroScrollDepth background={null} scrollProgress={reduceMotion ? undefined : motionProgress}>
           <motion.div
             className="relative z-[2] w-full px-0"

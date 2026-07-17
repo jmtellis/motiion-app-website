@@ -8,17 +8,34 @@ import { parseOAuthSignupIntent } from "@/lib/auth/oauth-shared";
 import { trackServerEvent } from "@/lib/analytics/track-server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-function resolveRedirectOrigin(request: NextRequest) {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
-  if (configured) return configured;
+function isLocalhostOrigin(origin: string) {
+  try {
+    const host = new URL(origin).hostname;
+    return host === "localhost" || host === "127.0.0.1";
+  } catch {
+    return /localhost|127\.0\.0\.1/i.test(origin);
+  }
+}
 
+function resolveRedirectOrigin(request: NextRequest) {
   const forwardedHost = request.headers.get("x-forwarded-host");
   const forwardedProto = request.headers.get("x-forwarded-proto") ?? "https";
   if (forwardedHost) {
-    return `${forwardedProto}://${forwardedHost}`;
+    return `${forwardedProto}://${forwardedHost}`.replace(/\/$/, "");
   }
 
-  return request.nextUrl.origin;
+  const requestOrigin = request.nextUrl.origin.replace(/\/$/, "");
+  if (!isLocalhostOrigin(requestOrigin)) {
+    return requestOrigin;
+  }
+
+  // Localhost request: allow an explicit non-localhost site URL override.
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
+  if (configured && !isLocalhostOrigin(configured)) {
+    return configured;
+  }
+
+  return requestOrigin;
 }
 
 export async function GET(request: NextRequest) {

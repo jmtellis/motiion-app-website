@@ -43,6 +43,7 @@ export function TalentBuyerSignupForm() {
       email,
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?flow=signup&account_type=lookingForTalent`,
         data: {
           full_name: fullName,
         },

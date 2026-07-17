@@ -8,10 +8,23 @@ export type OAuthSignupIntent = {
   companyName?: string;
 };
 
-export function buildOAuthRedirectUrl(intent: OAuthSignupIntent): string {
+function resolveBrowserOrigin(): string {
+  // Prefer the origin the user is actually on so OAuth always returns to the
+  // current host (prod ↔ local), even if NEXT_PUBLIC_SITE_URL is mis-set.
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return window.location.origin.replace(/\/$/, "");
+  }
+
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
-  const origin =
-    configured ?? (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
+  if (configured && !/localhost|127\.0\.0\.1/i.test(configured)) {
+    return configured;
+  }
+
+  return "https://www.motiion.app";
+}
+
+export function buildOAuthRedirectUrl(intent: OAuthSignupIntent): string {
+  const origin = resolveBrowserOrigin();
 
   const params = new URLSearchParams({
     flow: intent.flow,

@@ -43,6 +43,7 @@ export function SignupForm() {
       email,
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?flow=signup&account_type=talent`,
         data: {
           full_name: fullName,
         },

@@ -4,6 +4,7 @@ import { Check } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { AuthSplitLink, AuthSplitTransitionProvider } from "@/components/auth/AuthSplitTransition";
+import { SignupSplitReturnButton } from "@/components/auth/SignupSplitReturnButton";
 
 import { HeroShaderVideoBackground } from "@/components/landing/HeroShaderVideoBackground";
 import { ScrollMarquee } from "@/components/landing/ScrollMarquee";
@@ -38,26 +39,22 @@ export type SignupSplitMarquee = {
 };
 
 type SignupSplitShellProps = {
-  audienceLabel: string;
   headline: string;
   subtext: string;
   steps: SignupSplitStep[];
   showSteps?: boolean;
   marquee?: SignupSplitMarquee;
   coverAltLinks?: readonly SignupSplitCoverLink[];
-  showReturnHome?: boolean;
   children: ReactNode;
 };
 
 export function SignupSplitShell({
-  audienceLabel,
   headline,
   subtext,
   steps,
   showSteps = true,
   marquee,
   coverAltLinks,
-  showReturnHome = false,
   children,
 }: SignupSplitShellProps) {
   return (
@@ -75,12 +72,7 @@ export function SignupSplitShell({
             <div className="signup-split-cover__content">
               <div className="signup-split-cover__intro">
                 <div className="signup-split-cover__header">
-                  <p className="signup-split-cover__eyebrow">{audienceLabel}</p>
-                  {showReturnHome ? (
-                    <AuthSplitLink href="/" className="signup-split-cover__home-link">
-                      Return to home
-                    </AuthSplitLink>
-                  ) : null}
+                  <SignupSplitReturnButton />
                 </div>
                 <p className="signup-split-cover__headline">{headline}</p>
                 <p className="signup-split-cover__subtext">{subtext}</p>

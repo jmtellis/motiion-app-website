@@ -13,7 +13,9 @@ import {
 
 type TalentChromeSlots = {
   start?: ReactNode;
-  end?: ReactNode;
+  /** Pass `null` to hide the default center logo. */
+  center?: ReactNode | null;
+  end?: ReactNode | null;
 };
 
 type TalentChromeContextValue = {
@@ -64,7 +66,7 @@ export function useRegisterTalentChrome(slots: TalentChromeSlots) {
   useEffect(() => {
     setChrome(slots);
     return () => clearChrome();
-  }, [slots.start, slots.end, setChrome, clearChrome]);
+  }, [slots.start, slots.center, slots.end, setChrome, clearChrome]);
 }
 
 export function useRegisterProfileBackHandler(handler: (() => void) | null) {

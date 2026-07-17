@@ -1,20 +1,51 @@
+import type { ReactNode } from "react";
+
 import { AudienceBenefitsShowcase } from "@/components/landing/AudienceBenefitsShowcase";
-import { BetaForm } from "@/components/landing/BetaForm";
+import { AudiencePricingSection } from "@/components/landing/AudiencePricingSection";
 import { FAQAccordion } from "@/components/landing/FAQAccordion";
 import { Reveal } from "@/components/landing/Reveal";
-import { SectionHeader } from "@/components/landing/SectionHeader";
 import type { AudiencePageContent } from "@/lib/marketing/marketing-pages";
+
+import "./audience-landing-sections.css";
 
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-function audienceSectionClass(altBackground: boolean, dark: boolean) {
-  const base = "ui-section-narrative border-t";
+function audienceSectionSurface(altBackground: boolean, dark: boolean) {
   if (dark) {
-    return cn(base, altBackground ? "border-[#262626] bg-[var(--graphite)]" : "border-[#262626] bg-[var(--stage-black)]");
+    return altBackground
+      ? "border-[#262626] bg-[var(--graphite)]"
+      : "border-[#262626] bg-[var(--stage-black)]";
   }
-  return cn(base, altBackground ? "border-[var(--line)] bg-[var(--tone)]" : "border-[var(--line)] bg-[var(--paper)]");
+  return altBackground ? "border-[var(--line)] bg-[var(--tone)]" : "border-[var(--line)] bg-[var(--paper)]";
+}
+
+function AudienceSection({
+  id,
+  altBackground,
+  dark,
+  children,
+  innerClassName,
+}: {
+  id: string;
+  altBackground: boolean;
+  dark: boolean;
+  children: ReactNode;
+  innerClassName?: string;
+}) {
+  return (
+    <section id={id} className={cn("w-full border-t", audienceSectionSurface(altBackground, dark))}>
+      <div
+        className={cn(
+          "mx-auto w-full max-w-6xl px-6 py-16 lg:px-10 lg:py-20",
+          innerClassName,
+        )}
+      >
+        {children}
+      </div>
+    </section>
+  );
 }
 
 export function AudienceLandingSections({
@@ -26,19 +57,18 @@ export function AudienceLandingSections({
 }) {
   return (
     <>
-      <section id="benefits" className={audienceSectionClass(false, dark)}>
-        <Reveal amount={0.18} distance={24} className="w-full max-w-6xl">
+      <AudienceSection id="benefits" altBackground={false} dark={dark}>
+        <Reveal amount={0.18} distance={24} className="w-full">
           <AudienceBenefitsShowcase
             title={content.benefitsTitle}
-            intro={content.summary}
             benefits={content.benefits}
             dark={dark}
           />
         </Reveal>
-      </section>
+      </AudienceSection>
 
-      <section id="workflow" className={audienceSectionClass(true, dark)}>
-        <Reveal amount={0.16} distance={22} className="w-full max-w-6xl">
+      <AudienceSection id="workflow" altBackground={true} dark={dark}>
+        <Reveal amount={0.16} distance={22} className="w-full">
           <div className="ui-split-scroll ui-split-scroll--sticky-left">
             <div>
               <h2
@@ -74,40 +104,42 @@ export function AudienceLandingSections({
                 ))}
               </ul>
             </div>
-            <div
-              className={cn(
-                "ui-panel p-5",
-                dark && "ui-panel-dark",
-              )}
-            >
-              <h3
-                className={cn(
-                  "text-lg font-semibold",
-                  dark ? "text-on-dark-primary" : "text-[var(--ink)]",
-                )}
-              >
-                {content.trustTitle}
-              </h3>
-              <ul className="mt-4 space-y-3">
-                {content.trustPoints.map((point) => (
-                  <li
-                    key={point}
-                    className={cn(
-                      "border-l-2 border-[var(--accent)] pl-4 text-sm leading-relaxed",
-                      dark ? "text-on-dark-secondary" : "text-[var(--ink-soft)]",
-                    )}
-                  >
-                    {point}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {content.workflowAside === "blank" ? (
+              <div
+                className={cn("audience-workflow__visual", dark && "audience-workflow__visual--dark")}
+                aria-hidden
+              />
+            ) : (
+              <div className={cn("ui-panel p-5", dark && "ui-panel-dark")}>
+                <h3
+                  className={cn(
+                    "text-lg font-semibold",
+                    dark ? "text-on-dark-primary" : "text-[var(--ink)]",
+                  )}
+                >
+                  {content.trustTitle}
+                </h3>
+                <ul className="mt-4 space-y-3">
+                  {content.trustPoints.map((point) => (
+                    <li
+                      key={point}
+                      className={cn(
+                        "border-l-2 border-[var(--accent)] pl-4 text-sm leading-relaxed",
+                        dark ? "text-on-dark-secondary" : "text-[var(--ink-soft)]",
+                      )}
+                    >
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </Reveal>
-      </section>
+      </AudienceSection>
 
-      <section id="faq" className={audienceSectionClass(false, dark)}>
-        <Reveal amount={0.14} distance={20} className="w-full max-w-3xl">
+      <AudienceSection id="faq" altBackground={false} dark={dark} innerClassName="max-w-3xl">
+        <Reveal amount={0.14} distance={20} className="w-full">
           <h2
             className={cn(
               "text-center text-balance text-2xl font-semibold tracking-tight md:text-3xl lg:text-4xl",
@@ -120,26 +152,13 @@ export function AudienceLandingSections({
             <FAQAccordion items={content.faq} dark={dark} />
           </div>
         </Reveal>
-      </section>
+      </AudienceSection>
 
-      <section id="signup" className={audienceSectionClass(true, dark)}>
-        <Reveal
-          amount={0.16}
-          distance={28}
-          className="mx-auto flex w-full max-w-lg flex-col items-center"
-        >
-          <SectionHeader
-            align="center"
-            eyebrow={content.betaSignup.eyebrow}
-            title={content.betaSignup.title}
-            description={content.betaSignup.description}
-            dark={dark}
-          />
-          <div className="mt-8 w-full">
-            <BetaForm compact dark={dark} />
-          </div>
+      <AudienceSection id="pricing" altBackground={true} dark={dark}>
+        <Reveal amount={0.16} distance={28} className="w-full">
+          <AudiencePricingSection content={content.pricing} dark={dark} />
         </Reveal>
-      </section>
+      </AudienceSection>
     </>
   );
 }

@@ -20,6 +20,7 @@ export default function robots(): MetadataRoute.Robots {
           "/projects",
           "/library",
           "/messages",
+          "/calendar",
           "/events",
           "/payments/",
           "/shortlist/",

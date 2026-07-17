@@ -3,6 +3,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Montserrat } from "next/font/google";
 
+import { ArrowNavigationFocusCleanup } from "@/components/layout/ArrowNavigationFocusCleanup";
 import { AutoHideScrollbars } from "@/components/layout/AutoHideScrollbars";
 import "./globals.css";
 
@@ -85,6 +86,7 @@ export default function RootLayout({
         ) : null}
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable} font-sans antialiased`}>
+        <ArrowNavigationFocusCleanup />
         <AutoHideScrollbars />
         {children}
       </body>

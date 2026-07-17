@@ -5,6 +5,54 @@ function normalizeText(value?: string | null) {
   return value?.trim().toLowerCase() ?? "";
 }
 
+const GENDER_GROUPS: string[][] = [
+  ["male", "man", "m"],
+  ["female", "woman", "f"],
+  ["non-binary", "nonbinary", "non binary", "enby"],
+];
+
+export function genderFilterVariants(gender: string): string[] {
+  const normalized = normalizeText(gender);
+  if (!normalized) return [];
+
+  const group = GENDER_GROUPS.find((variants) =>
+    variants.some((variant) => variant === normalized),
+  );
+  if (group) return [...new Set([...group, gender.trim()])];
+
+  return [...new Set([gender.trim(), normalized, normalized.toUpperCase(), capitalizeGender(normalized)])];
+}
+
+function capitalizeGender(value: string) {
+  if (!value) return value;
+  return value
+    .split(/[\s-]+/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(value.includes("-") ? "-" : " ");
+}
+
+export function matchesGenderFilter(
+  profileGender: string | null | undefined,
+  filterGender: string | null | undefined,
+): boolean {
+  const filter = filterGender?.trim() ?? "";
+  if (!filter) return true;
+
+  const profile = profileGender?.trim() ?? "";
+  if (!profile) return false;
+
+  const filterNorm = normalizeText(filter);
+  const profileNorm = normalizeText(profile);
+  if (filterNorm === profileNorm) return true;
+
+  const filterGroup = GENDER_GROUPS.find((variants) =>
+    variants.some((variant) => variant === filterNorm),
+  );
+  if (!filterGroup) return filterNorm === profileNorm;
+
+  return filterGroup.some((variant) => variant === profileNorm);
+}
+
 function parseStringArray(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -104,7 +152,11 @@ export function ethnicityKeys(raw: string): Set<string> {
 }
 
 function normalizedStyleToken(value: string) {
-  return value.trim().toLowerCase().replace(/\s+/g, " ");
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[-_/]+/g, " ")
+    .replace(/\s+/g, " ");
 }
 
 function profileStyleTokens(profile: SearchProfileRecord): Set<string> {
@@ -140,6 +192,32 @@ function matchesHeightBucket(profile: SearchProfileRecord, heightFilter: string)
 
   const parsed = parseHeight(heightFilter);
   return totalInches === parsed.feet * 12 + parsed.inches;
+}
+
+function matchesUnionFilter(
+  profileUnion: string | null | undefined,
+  filterUnion: string | null | undefined,
+): boolean {
+  const filter = filterUnion?.trim() ?? "";
+  if (!filter) return true;
+
+  const profile = profileUnion?.trim() ?? "";
+  if (!profile) return false;
+
+  const filterNorm = normalizeText(filter).replace(/\s+/g, " ");
+  const profileNorm = normalizeText(profile).replace(/\s+/g, " ");
+
+  if (filterNorm === profileNorm) return true;
+
+  if (filterNorm.includes("non-union") || filterNorm.includes("nonunion")) {
+    return profileNorm.includes("non-union") || profileNorm.includes("nonunion");
+  }
+
+  if (filterNorm.includes("sag")) {
+    return profileNorm.includes("sag");
+  }
+
+  return false;
 }
 
 function matchesSubtype(profile: SearchProfileRecord, subtype: string) {
@@ -197,7 +275,11 @@ export function filterSearchProfiles(
 
     if (location) {
       const profileLocation = normalizeText(profile.location);
-      if (!profileLocation || (!profileLocation.includes(location) && !location.includes(profileLocation))) {
+      if (
+        profileLocation &&
+        !profileLocation.includes(location) &&
+        !location.includes(profileLocation)
+      ) {
         return false;
       }
     }
@@ -206,11 +288,11 @@ export function filterSearchProfiles(
 
     if (filters.subtype && !matchesSubtype(profile, filters.subtype)) return false;
 
-    if (filters.gender && normalizeText(profile.gender) !== normalizeText(filters.gender)) {
+    if (filters.gender && !matchesGenderFilter(profile.gender, filters.gender)) {
       return false;
     }
 
-    if (filters.unionStatus && normalizeText(profile.union_status) !== normalizeText(filters.unionStatus)) {
+    if (filters.unionStatus && !matchesUnionFilter(profile.union_status, filters.unionStatus)) {
       return false;
     }
 

@@ -1,0 +1,11 @@
+.audience-workflow__visual {
+  min-height: clamp(14rem, 28vw, 18.5rem);
+  border-radius: 1rem;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: #111111;
+}
+
+.audience-workflow__visual--dark {
+  border-color: #262626;
+  background: #111111;
+}

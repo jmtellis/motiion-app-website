@@ -94,7 +94,7 @@ export function DiscoverView({
           </select>
           <button
             type="submit"
-            className="h-10 rounded-[8px] bg-[#fafafa] px-5 text-sm font-medium text-[#0a0a0a] transition-colors hover:bg-[#e6e6e6]"
+            className="h-10 rounded-full bg-[#fafafa] px-5 text-sm font-medium text-[#0a0a0a] transition-colors hover:bg-[#e6e6e6]"
           >
             Search
           </button>
@@ -120,7 +120,7 @@ export function DiscoverView({
             </p>
             <Link
               href="/discover"
-              className="mt-6 inline-flex h-10 items-center rounded-[8px] border border-[#262626] bg-[#1e1e1e] px-5 text-sm font-medium text-[#eaeaea] transition-colors hover:bg-[#2a2a2a]"
+              className="mt-6 inline-flex h-10 items-center rounded-full border border-[#262626] bg-[#1e1e1e] px-5 text-sm font-medium text-[#eaeaea] transition-colors hover:bg-[#2a2a2a]"
             >
               Clear filters
             </Link>
@@ -132,7 +132,7 @@ export function DiscoverView({
             {result.page > 1 ? (
               <Link
                 href={buildSearchHref(filters, result.page - 1)}
-                className="inline-flex h-9 items-center rounded-[8px] border border-[#262626] bg-[#1e1e1e] px-4 text-sm font-medium text-[#eaeaea] transition-colors hover:bg-[#2a2a2a]"
+                className="inline-flex h-9 items-center rounded-full border border-[#262626] bg-[#1e1e1e] px-4 text-sm font-medium text-[#eaeaea] transition-colors hover:bg-[#2a2a2a]"
               >
                 Previous
               </Link>
@@ -143,7 +143,7 @@ export function DiscoverView({
             {result.page < totalPages ? (
               <Link
                 href={buildSearchHref(filters, result.page + 1)}
-                className="inline-flex h-9 items-center rounded-[8px] border border-[#262626] bg-[#1e1e1e] px-4 text-sm font-medium text-[#eaeaea] transition-colors hover:bg-[#2a2a2a]"
+                className="inline-flex h-9 items-center rounded-full border border-[#262626] bg-[#1e1e1e] px-4 text-sm font-medium text-[#eaeaea] transition-colors hover:bg-[#2a2a2a]"
               >
                 Next
               </Link>

@@ -57,7 +57,7 @@ function LocationSelector({
       setError(null);
 
       try {
-        const response = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(query.trim())}`, {
+        const response = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(query.trim())}&mode=cities`, {
           signal: controller.signal,
         });
         const payload = (await response.json()) as {

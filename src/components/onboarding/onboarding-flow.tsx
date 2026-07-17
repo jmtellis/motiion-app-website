@@ -16,6 +16,7 @@ import {
   AuthInput,
   AuthTextArea,
 } from "@/components/auth/ui";
+import { SetupFlowCancelButton } from "@/components/auth/SetupFlowCancelButton";
 import { SetupFlowFormPanel } from "@/components/auth/SetupFlowFormPanel";
 import { SignupSplitShell } from "@/components/auth/SignupSplitShell";
 import { HeadshotUploadGrid } from "@/components/onboarding/HeadshotUploadGrid";
@@ -100,7 +101,8 @@ function getInitialRole(profile: DashboardProfile): OnboardingRole | null {
 
 function createInitialDraft(profile: DashboardProfile): OnboardingDraft {
   const { firstName, lastName } = splitName(profile.fullName);
-  const role = getInitialRole(profile);
+  const initialRole = getInitialRole(profile);
+  const role = initialRole === "hiring" ? null : initialRole;
 
   return {
     version: 1,
@@ -112,8 +114,8 @@ function createInitialDraft(profile: DashboardProfile): OnboardingDraft {
     dateOfBirth: "",
     notificationsEnabled: false,
     role,
-    accountType: role === "hiring" ? "lookingForTalent" : role ? "talent" : null,
-    talentTypes: role && role !== "hiring" ? [role] : [],
+    accountType: role ? "talent" : null,
+    talentTypes: role ? [role] : [],
     displayName: profile.fullName === "Motiion User" ? "" : profile.fullName,
     username: "",
     headshotUrls: [],
@@ -318,9 +320,14 @@ export function OnboardingFlow({
   agencies: TalentAgency[];
 }) {
   const router = useRouter();
-  const [draft, setDraft] = useState(
-    () => loadOnboardingDraft(profile.id) ?? createInitialDraft(profile),
-  );
+  const [draft, setDraft] = useState(() => {
+    const loaded = loadOnboardingDraft(profile.id);
+    const base = loaded ?? createInitialDraft(profile);
+    if (base.role === "hiring") {
+      return { ...base, role: null, accountType: null, talentTypes: [] };
+    }
+    return base;
+  });
   const [error, setError] = useState<string | null>(null);
   const [usernameMessage, setUsernameMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -516,12 +523,11 @@ export function OnboardingFlow({
         </SectionBlock>
 
         <SectionBlock title="How you use Motiion">
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2">
             {(
               [
                 ["dancer", "Dancer", "Build a performer profile for discovery and opportunities."],
                 ["choreographer", "Choreographer", "Show creative work and manage casting workflows."],
-                ["hiring", "Looking for talent", "Search, organize, and manage talent for projects."],
               ] as const
             ).map(([role, title, description]) => (
               <button
@@ -791,20 +797,26 @@ export function OnboardingFlow({
         progressTotal={flowProgress.totalSteps}
         footer={
           <>
-            {!isFirstStep ? (
-              <button
-                type="button"
-                className="signup-split-nav-btn signup-split-nav-btn--ghost"
-                onClick={goBack}
+            <div className="signup-split-form__footer-start">
+              <SetupFlowCancelButton
+                userId={profile.id}
                 disabled={isPending}
-                aria-label="Previous step"
-              >
-                <ChevronLeft className="size-4" />
-                Back
-              </button>
-            ) : (
-              <span />
-            )}
+                onCanceled={() => clearOnboardingDraft(profile.id)}
+                onError={setError}
+              />
+              {!isFirstStep ? (
+                <button
+                  type="button"
+                  className="signup-split-nav-btn signup-split-nav-btn--ghost"
+                  onClick={goBack}
+                  disabled={isPending}
+                  aria-label="Previous step"
+                >
+                  <ChevronLeft className="size-4" />
+                  Back
+                </button>
+              ) : null}
+            </div>
 
             {isReviewStep ? (
               <button

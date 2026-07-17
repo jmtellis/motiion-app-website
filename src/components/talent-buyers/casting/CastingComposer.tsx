@@ -11,11 +11,14 @@ import {
   updatePublishedCasting,
 } from "@/app/(buyer-app)/projects/actions";
 import {
+  publishProjectCasting,
+  saveProjectCastingDraft,
+} from "@/app/(buyer-app)/projects/[id]/castings/actions";
+import {
   AuthButton,
   AuthCard,
   AuthCardContent,
   AuthCardHeader,
-  AuthCardTitle,
   AuthError,
   AuthField,
   AuthInput,
@@ -24,17 +27,23 @@ import {
   authChoiceCard,
   authPill,
 } from "@/components/auth/ui";
+import { CastingTagSelector } from "@/components/talent-buyers/casting/wizard-steps/casting-wizard-shared";
 import {
   CARD_COLOR_OPTIONS,
   CASTING_COMPOSER_STEPS,
   CASTING_KIND_OPTIONS,
   COMPENSATION_CATEGORY_OPTIONS,
+  createDefaultCastingComposerForm,
   createDefaultRole,
   LOCATION_MODE_OPTIONS,
   RATE_TYPE_OPTIONS,
   SUBMISSION_MATERIAL_OPTIONS,
   SUBMISSION_METHOD_OPTIONS,
+  SUBMITTER_POLICY_OPTIONS,
   VISIBILITY_OPTIONS,
+  VISIBILITY_PRESENTATION_OPTIONS,
+  COMPENSATION_COVERAGE_OPTIONS,
+  ELIGIBILITY_OPTIONS,
 } from "@/lib/talent-buyers/casting-composer-defaults";
 import { validateCastingStep } from "@/lib/talent-buyers/casting-schema";
 import { ETHNICITY_OPTIONS, GENDER_OPTIONS, GENRE_OPTIONS, UNION_STATUS_OPTIONS } from "@/lib/talent-navigator/filter-options";
@@ -77,26 +86,7 @@ function TagSelector({
   selected: string[];
   onChange: (values: string[]) => void;
 }) {
-  function toggle(value: string) {
-    onChange(selected.includes(value) ? selected.filter((item) => item !== value) : [...selected, value]);
-  }
-
-  return (
-    <AuthField label={label}>
-      <div className="flex flex-wrap gap-2">
-        {options.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => toggle(option)}
-            className={authPill(selected.includes(option))}
-          >
-            {option}
-          </button>
-        ))}
-      </div>
-    </AuthField>
-  );
+  return <CastingTagSelector label={label} options={options} selected={selected} onChange={onChange} />;
 }
 
 function RoleEditor({
@@ -201,6 +191,10 @@ function RoleEditor({
         onChange={(values) => onChange({ ...role, specialSkills: values })}
       />
 
+      <AuthMuted>
+        Talent browse filters for profile matching are built from these role requirements when you publish.
+      </AuthMuted>
+
       <div className="grid gap-4 md:grid-cols-2">
         <AuthField label="Height min">
           <AuthInput
@@ -268,13 +262,40 @@ function RoleEditor({
 
 export function CastingComposer({
   initialForm,
+  form: controlledForm,
+  onFormChange,
   mode = "create",
+  presentation = "page",
+  onComplete,
+  onCancel,
+  ensureProjectId,
+  scopedLabelVariant,
 }: {
-  initialForm: CastingComposerForm;
+  initialForm?: CastingComposerForm;
+  form?: CastingComposerForm;
+  onFormChange?: (form: CastingComposerForm) => void;
   mode?: "create" | "edit";
+  presentation?: "page" | "overlay" | "split" | "scoped";
+  onComplete?: (projectId: string) => void;
+  onCancel?: () => void;
+  ensureProjectId?: () => Promise<string | null>;
+  scopedLabelVariant?: "casting";
 }) {
   const router = useRouter();
-  const [form, setForm] = useState<CastingComposerForm>(initialForm);
+  const [internalForm, setInternalForm] = useState<CastingComposerForm>(
+    () => initialForm ?? createDefaultCastingComposerForm(),
+  );
+  const form = controlledForm ?? internalForm;
+
+  function setForm(updater: CastingComposerForm | ((current: CastingComposerForm) => CastingComposerForm)) {
+    const next = typeof updater === "function" ? updater(form) : updater;
+    if (onFormChange) {
+      onFormChange(next);
+      return;
+    }
+    setInternalForm(next);
+  }
+
   const [currentStep, setCurrentStep] = useState<CastingComposerStep>("basics");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -282,8 +303,21 @@ export function CastingComposer({
 
   const stepIndex = CASTING_COMPOSER_STEPS.findIndex((step) => step.id === currentStep);
   const isEditingPublished = mode === "edit" && !form.configuration.composer_draft;
+  const isOverlay = presentation === "overlay";
+  const isSplit = presentation === "split";
+  const isScoped = presentation === "scoped";
+  const isCastingScoped = isScoped && scopedLabelVariant === "casting";
 
   const parsedForm = useMemo(() => form, [form]);
+
+  async function resolveScopedProjectId() {
+    if (form.projectId) return form.projectId;
+    if (!isScoped || !ensureProjectId) return form.projectId ?? null;
+    const projectId = await ensureProjectId();
+    if (!projectId) return null;
+    setForm((current) => ({ ...current, projectId }));
+    return projectId;
+  }
 
   function updateConfiguration(patch: Partial<CastingComposerForm["configuration"]>) {
     setForm((current) => ({
@@ -330,15 +364,26 @@ export function CastingComposer({
     startTransition(async () => {
       setError(null);
       setNotice(null);
-      const result = await saveCastingDraft(form);
+      const projectId = isScoped ? await resolveScopedProjectId() : form.projectId;
+      if (isScoped && !projectId) return;
+
+      const payload = projectId ? { ...form, projectId } : form;
+      const result =
+        isScoped && projectId
+          ? await saveProjectCastingDraft(projectId, payload)
+          : await saveCastingDraft(form);
       if (!result.ok) {
         setError(result.error);
         return;
       }
 
-      setForm((current) => ({ ...current, projectId: result.projectId }));
-      setNotice("Draft saved.");
-      router.push(`/projects/${result.projectId}`);
+      setForm((current) => ({
+        ...current,
+        projectId: result.projectId,
+        castingId: result.castingId ?? current.castingId,
+      }));
+      setNotice(isCastingScoped ? "Draft saved." : "Draft saved.");
+      router.push(`/projects/${result.projectId}/overview`);
     });
   }
 
@@ -354,39 +399,61 @@ export function CastingComposer({
         return;
       }
 
+      const projectId = isScoped ? await resolveScopedProjectId() : form.projectId;
+      if (isScoped && !projectId) return;
+
       const payload = {
-        ...form,
+        ...(projectId ? { ...form, projectId } : form),
         configuration: { ...form.configuration, composer_draft: false },
       };
 
-      const result = isEditingPublished
-        ? await updatePublishedCasting(payload)
-        : await publishCasting(payload);
+      const result =
+        isScoped && projectId
+          ? await publishProjectCasting(projectId, payload)
+          : isEditingPublished
+            ? await updatePublishedCasting(payload)
+            : await publishCasting(payload);
 
       if (!result.ok) {
         setError(result.error);
         return;
       }
 
-      router.push(`/projects/${result.projectId}`);
+      if (onComplete) {
+        onComplete(result.projectId);
+        return;
+      }
+
+      router.push(`/projects/${result.projectId}/overview`);
     });
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <Link href="/projects" className="inline-flex items-center gap-1 text-sm font-medium text-[var(--ink-soft)] hover:text-[var(--ink)]">
-          <ChevronLeft className="size-4" />
-          Back to projects
-        </Link>
-        <AuthMuted>{mode === "edit" ? "Edit casting" : "Create casting"}</AuthMuted>
-      </div>
+    <div
+      className={
+        isOverlay || isSplit || isScoped ? "w-full space-y-4" : "mx-auto w-full max-w-4xl space-y-6"
+      }
+    >
+      {!isOverlay && !isSplit && !isScoped ? (
+        <div className="flex items-center justify-between gap-4">
+          <Link href="/projects" className="inline-flex items-center gap-1 text-sm font-medium text-[var(--ink-soft)] hover:text-[var(--ink)]">
+            <ChevronLeft className="size-4" />
+            Back to projects
+          </Link>
+          <AuthMuted>{mode === "edit" ? "Edit project" : "Create project"}</AuthMuted>
+        </div>
+      ) : null}
 
       <AuthCard>
         <AuthCardHeader>
-          <AuthCardTitle>{mode === "edit" ? "Edit casting" : "Create a casting"}</AuthCardTitle>
           <AuthMuted>
-            Build a casting that matches the Motiion app structure, then save a draft or publish when ready.
+            {isOverlay
+              ? "Set up your project, add roles, and choose how talent can submit."
+              : isSplit
+                ? "Add project details, roles, and submission settings."
+                : isScoped
+                  ? "Configure this casting, add roles, and choose how talent can submit."
+                  : "Build a project that matches the Motiion app structure, then save a draft or publish when ready."}
           </AuthMuted>
           <StepNav currentStep={currentStep} onSelect={goToStep} />
         </AuthCardHeader>
@@ -401,7 +468,7 @@ export function CastingComposer({
 
           {currentStep === "basics" ? (
             <div className="space-y-4">
-              <AuthField label="Project title">
+              <AuthField label={isScoped ? "Casting title" : "Project title"}>
                 <AuthInput
                   value={form.title}
                   onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
@@ -417,8 +484,9 @@ export function CastingComposer({
                 />
               </AuthField>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <AuthField label="Production company">
+              {!isScoped ? (
+              <div className={isSplit ? "space-y-4" : "grid gap-4 md:grid-cols-2"}>
+                <AuthField label="Client">
                   <AuthInput
                     value={form.productionCompany}
                     onChange={(event) =>
@@ -426,36 +494,67 @@ export function CastingComposer({
                     }
                   />
                 </AuthField>
-                <AuthField label="Cover image URL">
-                  <AuthInput
-                    value={form.coverImageUrl}
-                    onChange={(event) => setForm((current) => ({ ...current, coverImageUrl: event.target.value }))}
-                    placeholder="https://..."
-                  />
-                </AuthField>
+                {!isSplit ? (
+                  <AuthField label="Cover image URL">
+                    <AuthInput
+                      value={form.coverImageUrl}
+                      onChange={(event) => setForm((current) => ({ ...current, coverImageUrl: event.target.value }))}
+                      placeholder="https://..."
+                    />
+                  </AuthField>
+                ) : null}
               </div>
+              ) : null}
+
+              <AuthField label="Project type">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className={authChoiceCard(form.isUnion === true)}
+                    aria-pressed={form.isUnion === true}
+                    onClick={() => setForm((current) => ({ ...current, isUnion: true }))}
+                  >
+                    <span className="font-semibold text-[var(--ink)]">Union</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={authChoiceCard(form.isUnion === false)}
+                    aria-pressed={form.isUnion === false}
+                    onClick={() =>
+                      setForm((current) => ({
+                        ...current,
+                        isUnion: false,
+                        rateType: current.rateType === "union" ? "fixed" : current.rateType,
+                      }))
+                    }
+                  >
+                    <span className="font-semibold text-[var(--ink)]">Non-union</span>
+                  </button>
+                </div>
+              </AuthField>
 
               <AuthField label="Casting type">
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid gap-3 md:grid-cols-2" role="radiogroup" aria-label="Casting type">
                   {CASTING_KIND_OPTIONS.map((option) => {
-                    const selected =
-                      form.configuration.casting_kind === option.value ||
-                      form.configuration.casting_kinds.includes(option.value);
+                    const selectedKind =
+                      form.configuration.casting_kind ?? form.configuration.casting_kinds[0] ?? null;
+                    const selected = selectedKind === option.value;
                     return (
                       <button
                         key={option.value}
                         type="button"
+                        role="radio"
                         className={authChoiceCard(selected)}
+                        aria-checked={selected}
                         onClick={() =>
                           updateConfiguration({
                             casting_kind: option.value,
-                            casting_kinds: selected
-                              ? form.configuration.casting_kinds.filter((kind) => kind !== option.value)
-                              : [...form.configuration.casting_kinds, option.value],
+                            casting_kinds: [option.value],
                           })
                         }
                       >
                         <span className="font-semibold text-[var(--ink)]">{option.label}</span>
+                        <p className="mt-1 text-sm text-[var(--ink-soft)]">{option.description}</p>
                       </button>
                     );
                   })}
@@ -478,15 +577,6 @@ export function CastingComposer({
                 </div>
               </AuthField>
 
-              {form.visibility === "private" ? (
-                <AuthField label="Project password">
-                  <AuthInput
-                    type="password"
-                    value={form.password}
-                    onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
-                  />
-                </AuthField>
-              ) : null}
             </div>
           ) : null}
 
@@ -522,6 +612,21 @@ export function CastingComposer({
                 </AuthField>
               </div>
 
+              <div className="grid gap-4 md:grid-cols-2">
+                <AuthField label="Country">
+                  <AuthInput
+                    value={form.configuration.location_country ?? ""}
+                    onChange={(event) => updateConfiguration({ location_country: event.target.value })}
+                  />
+                </AuthField>
+                <AuthField label="Venue">
+                  <AuthInput
+                    value={form.configuration.location_venue ?? ""}
+                    onChange={(event) => updateConfiguration({ location_venue: event.target.value })}
+                  />
+                </AuthField>
+              </div>
+
               <AuthField label="Primary location label">
                 <AuthInput
                   value={form.location}
@@ -536,6 +641,36 @@ export function CastingComposer({
                   onChange={(event) => updateConfiguration({ location_notes: event.target.value })}
                 />
               </AuthField>
+
+              <label className="flex items-center gap-3 text-sm text-[var(--ink)]">
+                <input
+                  type="checkbox"
+                  checked={form.configuration.travel_required_for_locations}
+                  onChange={(event) =>
+                    updateConfiguration({ travel_required_for_locations: event.target.checked })
+                  }
+                  className="size-4 rounded border-[var(--line)]"
+                />
+                Travel required for this production
+              </label>
+
+              <AuthField label="Travel expense policy">
+                <AuthInput
+                  value={form.configuration.travel_expense_policy_raw ?? ""}
+                  onChange={(event) => updateConfiguration({ travel_expense_policy_raw: event.target.value })}
+                  placeholder="Flights covered, per diem provided, etc."
+                />
+              </AuthField>
+
+              <label className="flex items-center gap-3 text-sm text-[var(--ink)]">
+                <input
+                  type="checkbox"
+                  checked={form.configuration.local_hire_only}
+                  onChange={(event) => updateConfiguration({ local_hire_only: event.target.checked })}
+                  className="size-4 rounded border-[var(--line)]"
+                />
+                Local hire only
+              </label>
 
               <div className="grid gap-4 md:grid-cols-3">
                 <AuthField label="Start date">
@@ -562,6 +697,131 @@ export function CastingComposer({
                   />
                 </AuthField>
               </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <AuthField label="Audition date">
+                  <AuthInput
+                    type="datetime-local"
+                    value={form.configuration.audition_date_iso8601 ?? ""}
+                    onChange={(event) =>
+                      updateConfiguration({ audition_date_iso8601: event.target.value || null })
+                    }
+                  />
+                </AuthField>
+                <AuthField label="Callback date">
+                  <AuthInput
+                    type="datetime-local"
+                    value={form.configuration.callback_date_iso8601 ?? ""}
+                    onChange={(event) =>
+                      updateConfiguration({ callback_date_iso8601: event.target.value || null })
+                    }
+                  />
+                </AuthField>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <AuthField label="Production start">
+                  <AuthInput
+                    type="date"
+                    value={
+                      form.configuration.production_date_ranges?.[0]?.start_yyyymmdd
+                        ? `${form.configuration.production_date_ranges[0].start_yyyymmdd.slice(0, 4)}-${form.configuration.production_date_ranges[0].start_yyyymmdd.slice(4, 6)}-${form.configuration.production_date_ranges[0].start_yyyymmdd.slice(6, 8)}`
+                        : ""
+                    }
+                    onChange={(event) => {
+                      const start = event.target.value.replace(/-/g, "");
+                      const end = form.configuration.production_date_ranges?.[0]?.end_yyyymmdd ?? null;
+                      updateConfiguration({
+                        production_date_ranges: start
+                          ? [{ start_yyyymmdd: start, end_yyyymmdd: end }]
+                          : [],
+                      });
+                    }}
+                  />
+                </AuthField>
+                <AuthField label="Production end">
+                  <AuthInput
+                    type="date"
+                    value={
+                      form.configuration.production_date_ranges?.[0]?.end_yyyymmdd
+                        ? `${form.configuration.production_date_ranges[0].end_yyyymmdd!.slice(0, 4)}-${form.configuration.production_date_ranges[0].end_yyyymmdd!.slice(4, 6)}-${form.configuration.production_date_ranges[0].end_yyyymmdd!.slice(6, 8)}`
+                        : ""
+                    }
+                    onChange={(event) => {
+                      const end = event.target.value ? event.target.value.replace(/-/g, "") : null;
+                      const start = form.configuration.production_date_ranges?.[0]?.start_yyyymmdd;
+                      updateConfiguration({
+                        production_date_ranges: start
+                          ? [{ start_yyyymmdd: start, end_yyyymmdd: end }]
+                          : [],
+                      });
+                    }}
+                  />
+                </AuthField>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <AuthField label="Rehearsal start">
+                  <AuthInput
+                    type="date"
+                    value={
+                      form.configuration.rehearsal_date_ranges?.[0]?.start_yyyymmdd
+                        ? `${form.configuration.rehearsal_date_ranges[0].start_yyyymmdd.slice(0, 4)}-${form.configuration.rehearsal_date_ranges[0].start_yyyymmdd.slice(4, 6)}-${form.configuration.rehearsal_date_ranges[0].start_yyyymmdd.slice(6, 8)}`
+                        : ""
+                    }
+                    onChange={(event) => {
+                      const start = event.target.value.replace(/-/g, "");
+                      const end = form.configuration.rehearsal_date_ranges?.[0]?.end_yyyymmdd ?? null;
+                      updateConfiguration({
+                        rehearsal_date_ranges: start
+                          ? [{ start_yyyymmdd: start, end_yyyymmdd: end }]
+                          : [],
+                      });
+                    }}
+                  />
+                </AuthField>
+                <AuthField label="Rehearsal end">
+                  <AuthInput
+                    type="date"
+                    value={
+                      form.configuration.rehearsal_date_ranges?.[0]?.end_yyyymmdd
+                        ? `${form.configuration.rehearsal_date_ranges[0].end_yyyymmdd!.slice(0, 4)}-${form.configuration.rehearsal_date_ranges[0].end_yyyymmdd!.slice(4, 6)}-${form.configuration.rehearsal_date_ranges[0].end_yyyymmdd!.slice(6, 8)}`
+                        : ""
+                    }
+                    onChange={(event) => {
+                      const end = event.target.value ? event.target.value.replace(/-/g, "") : null;
+                      const start = form.configuration.rehearsal_date_ranges?.[0]?.start_yyyymmdd;
+                      updateConfiguration({
+                        rehearsal_date_ranges: start
+                          ? [{ start_yyyymmdd: start, end_yyyymmdd: end }]
+                          : [],
+                      });
+                    }}
+                  />
+                </AuthField>
+              </div>
+
+              <AuthField label="Schedule notes">
+                <AuthTextArea
+                  value={(form.configuration.schedule_categories?.[0]?.custom_schedule_title as string | undefined) ?? ""}
+                  onChange={(event) =>
+                    updateConfiguration({
+                      schedule_categories: event.target.value
+                        ? [
+                            {
+                              id_key: form.configuration.schedule_categories?.[0]?.id_key ?? crypto.randomUUID(),
+                              activity_type_raw: "production",
+                              custom_schedule_title: event.target.value,
+                              selected_days_yyyymmdd:
+                                form.configuration.schedule_categories?.[0]?.selected_days_yyyymmdd ?? [],
+                            },
+                          ]
+                        : [],
+                    })
+                  }
+                  placeholder="Rehearsal week, shoot days, or other schedule details."
+                />
+              </AuthField>
             </div>
           ) : null}
 
@@ -637,15 +897,19 @@ export function CastingComposer({
                 />
               </AuthField>
 
-              <label className="flex items-center gap-3 text-sm text-[var(--ink)]">
-                <input
-                  type="checkbox"
-                  checked={form.isUnion}
-                  onChange={(event) => setForm((current) => ({ ...current, isUnion: event.target.checked }))}
-                  className="size-4 rounded border-[var(--line)]"
+              <TagSelector
+                label="Coverage included"
+                options={COMPENSATION_COVERAGE_OPTIONS}
+                selected={form.configuration.compensation_coverage_raws ?? []}
+                onChange={(values) => updateConfiguration({ compensation_coverage_raws: values })}
+              />
+
+              <AuthField label="Compensation story notes">
+                <AuthTextArea
+                  value={form.configuration.compensation_story_notes ?? ""}
+                  onChange={(event) => updateConfiguration({ compensation_story_notes: event.target.value })}
                 />
-                Union contract
-              </label>
+              </AuthField>
             </div>
           ) : null}
 
@@ -673,6 +937,67 @@ export function CastingComposer({
                 onChange={(values) => updateConfiguration({ submission_required_material_raws: values })}
               />
 
+              <AuthField label="Listing presentation">
+                <div className="grid gap-3 md:grid-cols-2">
+                  {VISIBILITY_PRESENTATION_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={authChoiceCard(form.configuration.visibility_presentation_raw === option.value)}
+                      onClick={() => updateConfiguration({ visibility_presentation_raw: option.value })}
+                    >
+                      <span className="font-semibold text-[var(--ink)]">{option.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </AuthField>
+
+              <AuthField label="Who can submit">
+                <div className="grid gap-3 md:grid-cols-2">
+                  {SUBMITTER_POLICY_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={authChoiceCard(form.configuration.submitter_policy_raw === option.value)}
+                      onClick={() => updateConfiguration({ submitter_policy_raw: option.value })}
+                    >
+                      <span className="font-semibold text-[var(--ink)]">{option.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </AuthField>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <AuthField label="Submission limit">
+                  <AuthInput
+                    inputMode="numeric"
+                    value={form.configuration.submission_limit?.toString() ?? ""}
+                    onChange={(event) =>
+                      updateConfiguration({
+                        submission_limit: event.target.value ? Number(event.target.value) : null,
+                      })
+                    }
+                    placeholder="Uncapped"
+                  />
+                </AuthField>
+              </div>
+
+              <TagSelector
+                label="Eligibility requirements"
+                options={ELIGIBILITY_OPTIONS.map((option) => option.label)}
+                selected={(form.configuration.eligibility_raws ?? []).map(
+                  (raw) => ELIGIBILITY_OPTIONS.find((option) => option.value === raw)?.label ?? raw,
+                )}
+                onChange={(labels) =>
+                  updateConfiguration({
+                    eligibility_raws: labels.map(
+                      (label) =>
+                        ELIGIBILITY_OPTIONS.find((option) => option.label === label)?.value ?? label,
+                    ),
+                  })
+                }
+              />
+
               {form.configuration.submission_method_raw === "external_link" ? (
                 <AuthField label="External submission link">
                   <AuthInput
@@ -697,6 +1022,98 @@ export function CastingComposer({
                     })
                   }
                 />
+              </AuthField>
+
+              <AuthField label="Slate instructions">
+                <AuthTextArea
+                  value={form.configuration.self_tape?.slate_instructions ?? ""}
+                  onChange={(event) =>
+                    updateConfiguration({
+                      self_tape: {
+                        ...(form.configuration.self_tape ?? {}),
+                        slate_instructions: event.target.value,
+                      },
+                    })
+                  }
+                />
+              </AuthField>
+
+              <AuthField label="Video length notes">
+                <AuthInput
+                  value={form.configuration.self_tape?.video_length_notes ?? ""}
+                  onChange={(event) =>
+                    updateConfiguration({
+                      self_tape: {
+                        ...(form.configuration.self_tape ?? {}),
+                        video_length_notes: event.target.value,
+                      },
+                    })
+                  }
+                />
+              </AuthField>
+
+              <AuthField label="Supplemental questions">
+                <div className="space-y-3">
+                  {(form.configuration.additional_submission_questions ?? []).map((question, index) => (
+                    <div key={question.id_key} className="grid gap-2 md:grid-cols-[1fr_auto_auto]">
+                      <AuthInput
+                        value={question.prompt}
+                        onChange={(event) => {
+                          const next = [...form.configuration.additional_submission_questions];
+                          next[index] = { ...question, prompt: event.target.value };
+                          updateConfiguration({ additional_submission_questions: next });
+                        }}
+                        placeholder="Question for applicants"
+                      />
+                      <label className="flex items-center gap-2 text-sm text-[var(--ink)]">
+                        <input
+                          type="checkbox"
+                          checked={question.requires_answer}
+                          onChange={(event) => {
+                            const next = [...form.configuration.additional_submission_questions];
+                            next[index] = { ...question, requires_answer: event.target.checked };
+                            updateConfiguration({ additional_submission_questions: next });
+                          }}
+                          className="size-4 rounded border-[var(--line)]"
+                        />
+                        Required
+                      </label>
+                      <button
+                        type="button"
+                        className="text-sm font-medium text-rose-700"
+                        onClick={() =>
+                          updateConfiguration({
+                            additional_submission_questions:
+                              form.configuration.additional_submission_questions.filter(
+                                (_, itemIndex) => itemIndex !== index,
+                              ),
+                          })
+                        }
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                  <AuthButton
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      updateConfiguration({
+                        additional_submission_questions: [
+                          ...form.configuration.additional_submission_questions,
+                          {
+                            id_key: crypto.randomUUID(),
+                            prompt: "",
+                            requires_answer: false,
+                          },
+                        ],
+                      })
+                    }
+                  >
+                    <Plus className="size-4" />
+                    Add question
+                  </AuthButton>
+                </div>
               </AuthField>
 
               <label className="flex items-center gap-3 text-sm text-[var(--ink)]">
@@ -795,11 +1212,20 @@ export function CastingComposer({
 
             <div className="flex flex-wrap gap-2">
               <AuthButton variant="secondary" onClick={handleSaveDraft} disabled={isPending}>
-                Save draft
+                {isCastingScoped ? "Save draft" : "Save draft"}
               </AuthButton>
               {currentStep === "review" ? (
                 <AuthButton onClick={handlePublish} disabled={isPending}>
-                  {isEditingPublished ? "Save changes" : "Publish casting"}
+                  {isEditingPublished
+                    ? "Save changes"
+                    : isCastingScoped
+                      ? "Publish casting"
+                      : "Publish project"}
+                </AuthButton>
+              ) : null}
+              {onCancel ? (
+                <AuthButton variant="secondary" onClick={onCancel} disabled={isPending}>
+                  Cancel
                 </AuthButton>
               ) : null}
             </div>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, FileText, Link2, Users } from "lucide-react";
 
 import { formatBuyerRelativeDate, labelFromSnake } from "@/lib/talent-buyers/dashboard-data";
+import { getProjectTypeLabel } from "@/lib/talent-buyers/project-types";
 import type { BuyerProjectStatus, BuyerProjectSummary } from "@/types/talent-buyer-dashboard";
 
 function statusStyles(status: BuyerProjectStatus, dashboard = false) {
@@ -39,7 +40,7 @@ function ProjectRow({ project, dashboard = false }: { project: BuyerProjectSumma
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className={`text-xs font-semibold tracking-[0.12em] uppercase ${dashboard ? "text-white/42" : "text-[var(--accent)]"}`}>
-            {labelFromSnake(project.projectType)}
+            {getProjectTypeLabel(project.projectType)}
           </p>
           <p className={`mt-1 text-base font-semibold ${dashboard ? "text-white/92" : "text-[var(--ink)]"}`}>{project.title}</p>
         </div>
@@ -109,7 +110,7 @@ export function ProjectTable({
                     </p>
                   </Link>
                 </td>
-                <td className={`px-4 py-4 ${dashboard ? "text-white/50" : "text-[var(--ink-soft)]"}`}>{labelFromSnake(project.projectType)}</td>
+                <td className={`px-4 py-4 ${dashboard ? "text-white/50" : "text-[var(--ink-soft)]"}`}>{getProjectTypeLabel(project.projectType)}</td>
                 <td className="px-4 py-4">
                   <span className={`inline-flex px-2.5 py-1 text-xs font-semibold ${chipClass} ${statusStyles(project.status, dashboard)}`}>
                     {labelFromSnake(project.status)}

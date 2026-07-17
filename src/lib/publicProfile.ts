@@ -56,6 +56,7 @@ function normalizeTalentRow(row: TalentRow): PublicTalentProfile {
 
   return {
     ...row,
+    user_id: row.id,
     full_name: row.full_name?.trim() || null,
     username: row.username?.trim() || null,
     headshot_url: row.headshot_url?.trim() || row.headshot_urls?.[0]?.trim() || null,

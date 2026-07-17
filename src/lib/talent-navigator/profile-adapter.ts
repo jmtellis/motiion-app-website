@@ -1,3 +1,4 @@
+import { getProfileInitials } from "@/lib/auth/avatar";
 import { portraitWallImages } from "@/lib/mock-data";
 import { isRepresented } from "@/lib/search/talent-filter-logic";
 import type { SearchProfileRecord, SearchResult } from "@/types/search";
@@ -17,7 +18,19 @@ function parseStringArray(raw: unknown): string[] {
     .filter(Boolean);
 }
 
-export function searchProfileToTalent(profile: SearchProfileRecord, index: number): Talent {
+function headshotPlaceholderDataUrl(name: string): string {
+  const initials = getProfileInitials(name || "?");
+  const hue =
+    Math.abs(name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0)) % 360;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="533" viewBox="0 0 400 533"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:hsl(${hue},35%,28%)"/><stop offset="100%" style="stop-color:hsl(${hue},45%,18%)"/></linearGradient></defs><rect width="400" height="533" fill="url(#g)"/><text x="200" y="280" text-anchor="middle" font-family="system-ui,sans-serif" font-size="96" font-weight="600" fill="rgba(255,255,255,0.35)">${initials}</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+export function searchProfileToTalent(
+  profile: SearchProfileRecord,
+  index: number,
+  options?: { useMockImages?: boolean },
+): Talent {
   const name = profile.display_name || profile.full_name || "Talent";
   const styles = parseStringArray(profile.styles);
   const skills = parseStringArray(profile.skills);
@@ -26,10 +39,13 @@ export function searchProfileToTalent(profile: SearchProfileRecord, index: numbe
   const image =
     profile.headshot_url?.trim() ||
     profile.headshot_urls?.[0]?.trim() ||
-    portraitWallImages[index % portraitWallImages.length];
+    (options?.useMockImages
+      ? portraitWallImages[index % portraitWallImages.length]
+      : headshotPlaceholderDataUrl(name));
 
   return {
     id: profile.id,
+    professionalProfileId: profile.professional_profile_id ?? undefined,
     slug: slugFromProfile(profile),
     name,
     imageUrl: image,
@@ -57,8 +73,9 @@ export function buildNavigatorInitialData(
   filters?: TalentNavigatorFilters,
 ): TalentNavigatorInitialData {
   const source = mapSource(result);
+  const useMockImages = result.usingFallbackData || result.source === "mock";
 
-  if (result.usingFallbackData || source === "mock") {
+  if (useMockImages) {
     const talent = filters ? filterTalentPool(mockNavigatorTalent, filters) : mockNavigatorTalent;
     return {
       talent,
@@ -75,7 +92,9 @@ export function buildNavigatorInitialData(
     };
   }
 
-  const talent = result.items.map((profile, index) => searchProfileToTalent(profile, index));
+  const talent = result.items.map((profile, index) =>
+    searchProfileToTalent(profile, index, { useMockImages }),
+  );
 
   return {
     talent,

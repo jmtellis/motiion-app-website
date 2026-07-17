@@ -1,4 +1,11 @@
+import {
+  fetchTalentProfileBundles,
+  isGenericApplicantName,
+} from "@/lib/talent-buyers/casting/submission-talent";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { isProjectDraft } from "@/lib/talent-buyers/project-payload";
+import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
+import { normalizeSubmissionStatus, type SubmissionStatus } from "@/lib/talent-buyers/submission-status";
 import type {
   CastingProjectDetail,
   CastingProjectRecord,
@@ -7,8 +14,7 @@ import type {
 import type { BuyerProjectSummary } from "@/types/talent-buyer-dashboard";
 
 function isDraftProject(project: CastingProjectRecord) {
-  if (project.is_active === false) return true;
-  return project.casting_configuration?.composer_draft === true;
+  return isProjectDraft(project);
 }
 
 function projectStatus(project: CastingProjectRecord): BuyerProjectSummary["status"] {
@@ -24,7 +30,7 @@ export async function fetchPosterCastingSummaries(posterId: string): Promise<Buy
   const { data: projects, error } = await supabase
     .from("projects")
     .select(
-      "id, title, is_active, updated_at, created_at, casting_configuration, poster_id",
+      "id, title, is_active, updated_at, created_at, casting_configuration, project_configuration, poster_id, cover_image_url, project_type, enabled_modules",
     )
     .eq("poster_id", posterId)
     .order("updated_at", { ascending: false });
@@ -52,11 +58,12 @@ export async function fetchPosterCastingSummaries(posterId: string): Promise<Buy
 
     return {
       id: project.id as string,
-      title: (project.title as string) || "Untitled casting",
-      projectType: "casting",
-      status: projectStatus(project as CastingProjectRecord),
+      title: (project.title as string) || "Untitled project",
+      projectType: getNormalizedProjectType(project.project_type as string | null),
+      status: projectStatus(project as unknown as CastingProjectRecord),
       lastUpdated: (project.updated_at as string) ?? (project.created_at as string) ?? new Date().toISOString(),
       talentCount,
+      coverImageUrl: (project.cover_image_url as string | null) ?? null,
     };
   });
 }
@@ -129,14 +136,78 @@ export type ProjectSubmissionRow = {
   id: string;
   roleId: string;
   roleTitle: string;
+  talentId: string | null;
+  talentProfileId?: string | null;
+  talentSlug?: string | null;
   fullName: string;
   email: string | null;
   agency: string | null;
-  status: string;
+  status: SubmissionStatus;
   submittedAt: string | null;
   headshotUrl: string | null;
   linkUrl: string | null;
 };
+
+/** Fetch submissions for a casting, including roles still linked by casting_id. */
+export async function fetchCastingSubmissions(
+  supabase: NonNullable<Awaited<ReturnType<typeof createServerSupabaseClient>>>,
+  castingId: string,
+  activeRoles: { id: string; title: string }[],
+): Promise<ProjectSubmissionRow[]> {
+  const { data, error } = await supabase
+    .from("submissions")
+    .select(
+      "id, role_id, talent_id, status, submitted_at, full_name, email, agency, headshot_url, link_url, roles!inner(id, title, casting_id)",
+    )
+    .eq("roles.casting_id", castingId)
+    .order("submitted_at", { ascending: false })
+    .limit(200);
+
+  if (error) {
+    console.debug("fetchCastingSubmissions:", error.message);
+    return fetchProjectSubmissions(activeRoles);
+  }
+
+  const roleTitles = new Map(activeRoles.map((role) => [role.id, role.title]));
+
+  const talentIds = (data ?? [])
+    .map((row) => row.talent_id as string | null)
+    .filter((id): id is string => Boolean(id));
+  const talentBundles = await fetchTalentProfileBundles(supabase, talentIds);
+
+  return (data ?? []).map((row) => {
+    const roleJoin = Array.isArray(row.roles) ? row.roles[0] : row.roles;
+    const roleId = (row.role_id as string) ?? (roleJoin as { id?: string } | null)?.id ?? "";
+    const roleTitle =
+      roleTitles.get(roleId) ??
+      ((roleJoin as { title?: string } | null)?.title ?? "Role");
+    const talentId = (row.talent_id as string | null) ?? null;
+    const bundle = talentId ? talentBundles.get(talentId) : undefined;
+    const rawName = (row.full_name as string | null)?.trim();
+
+    return {
+      id: row.id as string,
+      roleId,
+      roleTitle,
+      talentId,
+      fullName:
+        rawName && !isGenericApplicantName(rawName)
+          ? rawName
+          : bundle?.fullName ?? rawName ?? "Unnamed applicant",
+      email: (row.email as string | null) ?? bundle?.email ?? null,
+      agency:
+        (row.agency as string | null)?.trim() ||
+        bundle?.agency ||
+        null,
+      status: normalizeSubmissionStatus(row.status as string),
+      submittedAt: (row.submitted_at as string | null) ?? null,
+      headshotUrl: (row.headshot_url as string | null) ?? bundle?.headshotUrl ?? null,
+      linkUrl: (row.link_url as string | null) ?? null,
+      talentProfileId: bundle?.professionalProfileId ?? null,
+      talentSlug: bundle?.slug ?? null,
+    };
+  });
+}
 
 /** Fetch submissions across all roles in a project (buyer view of the talent board). */
 export async function fetchProjectSubmissions(
@@ -150,7 +221,7 @@ export async function fetchProjectSubmissions(
   const roleTitles = new Map(roleIdsWithTitles.map((role) => [role.id, role.title]));
   const { data, error } = await supabase
     .from("submissions")
-    .select("id, role_id, status, submitted_at, full_name, email, agency, headshot_url, link_url")
+    .select("id, role_id, talent_id, status, submitted_at, full_name, email, agency, headshot_url, link_url")
     .in(
       "role_id",
       roleIdsWithTitles.map((role) => role.id),
@@ -163,18 +234,38 @@ export async function fetchProjectSubmissions(
     return [];
   }
 
-  return (data ?? []).map((row) => ({
-    id: row.id as string,
-    roleId: row.role_id as string,
-    roleTitle: roleTitles.get(row.role_id as string) ?? "Role",
-    fullName: (row.full_name as string) || "Unnamed applicant",
-    email: (row.email as string | null) ?? null,
-    agency: (row.agency as string | null) ?? null,
-    status: (row.status as string) || "submitted",
-    submittedAt: (row.submitted_at as string | null) ?? null,
-    headshotUrl: (row.headshot_url as string | null) ?? null,
-    linkUrl: (row.link_url as string | null) ?? null,
-  }));
+  const talentIds = (data ?? [])
+    .map((row) => row.talent_id as string | null)
+    .filter((id): id is string => Boolean(id));
+  const talentBundles = await fetchTalentProfileBundles(supabase, talentIds);
+
+  return (data ?? []).map((row) => {
+    const talentId = (row.talent_id as string | null) ?? null;
+    const bundle = talentId ? talentBundles.get(talentId) : undefined;
+    const rawName = (row.full_name as string | null)?.trim();
+
+    return {
+      id: row.id as string,
+      roleId: row.role_id as string,
+      roleTitle: roleTitles.get(row.role_id as string) ?? "Role",
+      talentId,
+      fullName:
+        rawName && !isGenericApplicantName(rawName)
+          ? rawName
+          : bundle?.fullName ?? rawName ?? "Unnamed applicant",
+      email: (row.email as string | null) ?? bundle?.email ?? null,
+      agency:
+        (row.agency as string | null)?.trim() ||
+        bundle?.agency ||
+        null,
+      status: normalizeSubmissionStatus(row.status as string),
+      submittedAt: (row.submitted_at as string | null) ?? null,
+      headshotUrl: (row.headshot_url as string | null) ?? bundle?.headshotUrl ?? null,
+      linkUrl: (row.link_url as string | null) ?? null,
+      talentProfileId: bundle?.professionalProfileId ?? null,
+      talentSlug: bundle?.slug ?? null,
+    };
+  });
 }
 
 export function mapCastingDetailToSummary(detail: CastingProjectDetail): BuyerProjectSummary {
@@ -185,12 +276,13 @@ export function mapCastingDetailToSummary(detail: CastingProjectDetail): BuyerPr
 
   return {
     id: detail.project.id,
-    title: detail.project.title || "Untitled casting",
-    projectType: "casting",
+    title: detail.project.title || "Untitled project",
+    projectType: getNormalizedProjectType(detail.project.project_type),
     status: projectStatus(detail.project),
     lastUpdated:
       detail.project.updated_at ?? detail.project.created_at ?? new Date().toISOString(),
     talentCount,
+    coverImageUrl: detail.project.cover_image_url ?? null,
   };
 }
 

@@ -49,16 +49,16 @@
   --btn-surface-tint: rgb(66 66 66 / 0.13);
   --btn-text-on-fill: #ffffff;
   --btn-border-default: #9f9f9f;
-  --btn-radius: 8px;
+  --btn-radius: 9999px;
   --btn-height: 2.25rem;
   --btn-font-size: 0.875rem;
   --btn-shadow: none;
   --btn-shadow-accent: none;
 
   /* Shared product surface language */
-  --radius-button: 10px;
+  --radius-button: 9999px;
   --radius-field: 12px;
-  --radius-chip: 10px;
+  --radius-chip: 9999px;
   --radius-card: 14px;
   --radius-panel: 18px;
   --surface-card: #ffffff;
@@ -528,18 +528,35 @@ h3 {
 
 /* Landing sections — one viewport band below the sticky marketing header */
 :root {
-  --marketing-header-height: 5.75rem;
+  --marketing-header-bar: 5.75rem;
+  --marketing-header-height: calc(var(--marketing-header-bar) + var(--safe-area-top));
+  --marketing-viewport-height: calc(100svh - var(--marketing-header-height));
 }
 
 @media (width >= 48rem) {
   :root {
-    --marketing-header-height: 4.5rem;
+    --marketing-header-bar: 4.5rem;
+    --marketing-header-height: var(--marketing-header-bar);
+    --marketing-viewport-height: calc(100dvh - var(--marketing-header-height));
+  }
+}
+
+.marketing-header-pull {
+  margin-top: calc(-1 * var(--marketing-header-height));
+}
+
+.marketing-header-pull--audience {
+  margin-top: calc(-1 * (var(--marketing-header-bar) + 0.5rem + var(--safe-area-top)));
+}
+
+@media (width >= 48rem) {
+  .marketing-header-pull--audience {
+    margin-top: calc(-1 * (var(--marketing-header-bar) + 0.5rem));
   }
 }
 
 .marketing-viewport-section {
-  min-height: calc(100svh - var(--marketing-header-height));
-  min-height: calc(100dvh - var(--marketing-header-height));
+  min-height: var(--marketing-viewport-height);
   scroll-margin-top: var(--marketing-header-height);
   box-sizing: border-box;
 }
@@ -557,8 +574,7 @@ h3 {
 /* Home hero — full viewport bleed under sticky header (negative margin pull) */
 .home-hero-section {
   display: flex;
-  min-height: 100svh;
-  min-height: 100dvh;
+  min-height: calc(var(--marketing-viewport-height) + var(--marketing-header-height));
   flex-direction: column;
   box-sizing: border-box;
   overflow-x: clip;
@@ -591,6 +607,11 @@ h3 {
   .marketing-content-safe-area {
     padding: 0;
   }
+}
+
+/* Hero content sits under the header — top inset handled by the header bar */
+.marketing-content-safe-area--hero {
+  padding-top: 0;
 }
 
 .home-hero-section__foreground {
@@ -658,8 +679,7 @@ h3 {
   position: relative;
   min-height: 100%;
   isolation: isolate;
-  --footer-reveal-height: calc(100svh - var(--marketing-header-height));
-  --footer-reveal-height: calc(100dvh - var(--marketing-header-height));
+  --footer-reveal-height: var(--marketing-viewport-height);
 }
 
 .marketing-footer-reveal__content {
@@ -1284,6 +1304,10 @@ html.is-scrolling::-webkit-scrollbar-thumb,
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+:where(a, button, input, textarea, select, summary, [tabindex]):focus:not(:focus-visible) {
+  outline: none;
 }
 
 :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {

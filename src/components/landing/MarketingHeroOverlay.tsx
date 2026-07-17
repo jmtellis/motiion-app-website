@@ -51,8 +51,9 @@ export function MarketingHeroOverlay({
           <Link
             href={content.heroCtas.primary.href}
             className={cn(
-              "btn-primary w-full text-center sm:w-auto sm:min-w-[10rem]",
-              dark && "btn-on-dark",
+              dark
+                ? "btn-hero-pill btn-hero-pill-accent w-full text-center sm:w-auto sm:min-w-[11rem]"
+                : "btn-primary w-full text-center sm:w-auto sm:min-w-[10rem]",
             )}
           >
             {content.heroCtas.primary.label}
@@ -61,8 +62,9 @@ export function MarketingHeroOverlay({
             <Link
               href={content.heroCtas.secondary.href}
               className={cn(
-                "btn-outline w-full text-center sm:w-auto sm:min-w-[10rem]",
-                dark && "btn-outline-on-dark",
+                dark
+                  ? "btn-hero-pill btn-hero-pill-ghost w-full text-center sm:w-auto sm:min-w-[11rem]"
+                  : "btn-outline w-full text-center sm:w-auto sm:min-w-[10rem]",
               )}
             >
               {content.heroCtas.secondary.label}

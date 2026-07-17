@@ -1,9 +1,12 @@
 import { cache } from "react";
 
+import { getProfileAvatarUrl } from "@/lib/auth/avatar";
 import { mockTalentProfiles, portraitWallImages } from "@/lib/mock-data";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getSupabaseConfig, supabaseRestGet } from "@/lib/supabaseRest";
 import {
   filterSearchProfiles,
+  genderFilterVariants,
   normalizeSearchProfile,
 } from "@/lib/search/talent-filter-logic";
 import type { SearchFilters, SearchProfileRecord, SearchResult } from "@/types/search";
@@ -11,6 +14,102 @@ import type { SearchFilters, SearchProfileRecord, SearchResult } from "@/types/s
 const PAGE_SIZE = 12;
 const DISCOVER_FETCH_LIMIT = 120;
 const NAVIGATOR_FETCH_LIMIT = 240;
+const SIGNED_URL_TTL = 60 * 60;
+
+type ProfessionalProfileRow = {
+  id: string;
+  user_id: string;
+  slug: string;
+  styles: string[] | null;
+  skills: string[] | null;
+  gender: string | null;
+  ethnicity: string[] | null;
+  union_status: string | null;
+  location_city: string | null;
+  location_region: string | null;
+  is_verified: boolean;
+  agency_name: string | null;
+};
+
+function titleCaseSlug(slug: string): string {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function resolveDisplayName(
+  profile:
+    | {
+        display_name: string | null;
+        first_name: string | null;
+        last_name: string | null;
+      }
+    | undefined,
+  slug: string,
+): string {
+  const fromProfile =
+    profile?.display_name?.trim() ||
+    [profile?.first_name, profile?.last_name].filter(Boolean).join(" ").trim();
+  return fromProfile || titleCaseSlug(slug);
+}
+
+function resolveProfileHeadshotUrl(
+  headshotUrls: string[] | null | undefined,
+  signedMediaUrl: string | null,
+  mediaUrl: string | null,
+): string | null {
+  const fromOnboarding = getProfileAvatarUrl(headshotUrls);
+  if (fromOnboarding) return fromOnboarding;
+  if (signedMediaUrl?.trim()) return signedMediaUrl.trim();
+  if (mediaUrl?.trim()) return mediaUrl.trim();
+  return null;
+}
+
+function mapProfessionalProfileRow(
+  row: ProfessionalProfileRow,
+  userProfile:
+    | {
+        display_name: string | null;
+        first_name: string | null;
+        last_name: string | null;
+        headshot_urls: string[] | null;
+      }
+    | undefined,
+  signedMediaUrl: string | null,
+  mediaUrl: string | null,
+): SearchProfileRecord {
+  const displayName = resolveDisplayName(userProfile, row.slug);
+  const headshotUrl = resolveProfileHeadshotUrl(
+    userProfile?.headshot_urls ?? null,
+    signedMediaUrl,
+    mediaUrl,
+  );
+  const location = row.location_city
+    ? row.location_region?.trim()
+      ? `${row.location_city}, ${row.location_region.trim()}`
+      : row.location_city
+    : null;
+
+  return normalizeSearchProfile({
+    id: row.user_id,
+    professional_profile_id: row.id,
+    username: row.slug,
+    full_name: displayName,
+    display_name: displayName,
+    headshot_url: headshotUrl,
+    headshot_urls: headshotUrl ? [headshotUrl] : null,
+    location,
+    styles: row.styles ?? [],
+    skills: row.skills ?? [],
+    gender: row.gender,
+    ethnicity: row.ethnicity?.join(", ") ?? null,
+    union_status: row.union_status,
+    is_verified: row.is_verified,
+    representation: row.agency_name,
+  });
+}
 
 const TALENT_SELECT = [
   "id",
@@ -58,13 +157,7 @@ function encodeIlike(value: string) {
 }
 
 function genderVariants(gender: string) {
-  const trimmed = gender.trim();
-  return [...new Set([trimmed, trimmed.toLowerCase(), trimmed.toUpperCase(), capitalize(trimmed)])];
-}
-
-function capitalize(value: string) {
-  if (!value) return value;
-  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+  return genderFilterVariants(gender);
 }
 
 const KEYSET_BATCH_SIZE = 100;
@@ -202,50 +295,177 @@ async function querySupabaseView(
   };
 }
 
-async function queryProfessionalProfiles(filters: SearchFilters): Promise<SearchProfileRecord[] | null> {
-  if (!getSupabaseConfig() || !filters.navigator) return null;
+const PROFESSIONAL_PROFILE_SELECT =
+  "id,user_id,slug,styles,skills,gender,ethnicity,union_status,location_city,location_region,is_verified,agency_name";
 
+function buildProfessionalProfilesQueryPath(filters: SearchFilters, cursor: string | null): string {
   const params = [
-    "select=id,user_id,slug,styles,skills,gender,ethnicity,union_status,location_city,is_verified",
+    `select=${PROFESSIONAL_PROFILE_SELECT}`,
     "is_verified=eq.true",
-    "order=location_city.asc",
-    `limit=${NAVIGATOR_FETCH_LIMIT}`,
+    "order=id.asc",
+    `limit=${KEYSET_BATCH_SIZE}`,
   ];
 
-  const rows = await supabaseRestGet<
-    Array<{
-      id: string;
-      user_id: string;
-      slug: string;
-      styles: string[] | null;
-      skills: string[] | null;
-      gender: string | null;
-      ethnicity: string[] | null;
-      union_status: string | null;
-      location_city: string | null;
-      is_verified: boolean;
-    }>
-  >(`professional_profiles?${params.join("&")}`, { revalidate: 0 });
+  if (cursor) {
+    params.push(`id=gt.${encodeURIComponent(cursor)}`);
+  }
 
-  if (!rows?.length) return null;
+  if (filters.gender?.trim()) {
+    const variants = genderVariants(filters.gender).map((value) => `"${value.replace(/"/g, '\\"')}"`);
+    params.push(`gender=in.(${variants.join(",")})`);
+  }
 
-  const mapped: SearchProfileRecord[] = rows.map((row) =>
-    normalizeSearchProfile({
-      id: row.user_id,
-      username: row.slug,
-      full_name: row.slug.replace(/-/g, " "),
-      display_name: row.slug,
-      location: row.location_city,
-      styles: row.styles ?? [],
-      skills: row.skills ?? [],
-      gender: row.gender,
-      ethnicity: row.ethnicity?.join(", ") ?? null,
-      union_status: row.union_status,
-      is_verified: row.is_verified,
-    }),
+  return `professional_profiles?${params.join("&")}`;
+}
+
+async function enrichProfessionalProfileRows(
+  admin: NonNullable<ReturnType<typeof createAdminSupabaseClient>>,
+  rows: ProfessionalProfileRow[],
+): Promise<SearchProfileRecord[]> {
+  const userIds = rows.map((row) => row.user_id);
+  const profileIds = rows.map((row) => row.id);
+
+  const [{ data: profiles }, { data: headshots }] = await Promise.all([
+    userIds.length
+      ? admin
+          .from("profiles")
+          .select("user_id, display_name, first_name, last_name, headshot_urls")
+          .in("user_id", userIds)
+      : Promise.resolve({ data: [] as never[] }),
+    profileIds.length
+      ? admin
+          .from("media_assets")
+          .select("profile_id, storage_path, url, position")
+          .in("profile_id", profileIds)
+          .eq("kind", "headshot")
+          .order("position")
+      : Promise.resolve({ data: [] as never[] }),
+  ]);
+
+  const profileByUserId = new Map((profiles ?? []).map((profile) => [profile.user_id, profile]));
+
+  const primaryHeadshot = new Map<string, { storage_path: string; url: string | null }>();
+  for (const asset of headshots ?? []) {
+    if (!primaryHeadshot.has(asset.profile_id)) {
+      primaryHeadshot.set(asset.profile_id, {
+        storage_path: asset.storage_path,
+        url: asset.url,
+      });
+    }
+  }
+
+  const paths = [...primaryHeadshot.values()]
+    .map((asset) => asset.storage_path)
+    .filter(Boolean);
+  const signedByPath = new Map<string, string>();
+  if (paths.length > 0) {
+    const { data: signed } = await admin.storage.from("media").createSignedUrls(paths, SIGNED_URL_TTL);
+    signed?.forEach((entry, index) => {
+      if (entry.signedUrl) signedByPath.set(paths[index], entry.signedUrl);
+    });
+  }
+
+  return rows.map((row) => {
+    const userProfile = profileByUserId.get(row.user_id);
+    const media = primaryHeadshot.get(row.id);
+    const signedMediaUrl = media?.storage_path
+      ? (signedByPath.get(media.storage_path) ?? null)
+      : null;
+
+    return mapProfessionalProfileRow(row, userProfile, signedMediaUrl, media?.url ?? null);
+  });
+}
+
+async function fetchProfessionalProfileBatchAdmin(
+  admin: NonNullable<ReturnType<typeof createAdminSupabaseClient>>,
+  filters: SearchFilters,
+  cursor: string | null,
+): Promise<ProfessionalProfileRow[] | null> {
+  let query = admin
+    .from("professional_profiles")
+    .select(PROFESSIONAL_PROFILE_SELECT)
+    .eq("is_verified", true)
+    .order("id", { ascending: true })
+    .limit(KEYSET_BATCH_SIZE);
+
+  if (cursor) {
+    query = query.gt("id", cursor);
+  }
+
+  if (filters.gender?.trim()) {
+    query = query.in("gender", genderFilterVariants(filters.gender));
+  }
+
+  const { data, error } = await query;
+  if (error || !data?.length) return null;
+  return data as ProfessionalProfileRow[];
+}
+
+async function fetchProfessionalProfileBatchRest(
+  filters: SearchFilters,
+  cursor: string | null,
+): Promise<ProfessionalProfileRow[] | null> {
+  if (!getSupabaseConfig()) return null;
+
+  const rows = await supabaseRestGet<ProfessionalProfileRow[]>(
+    buildProfessionalProfilesQueryPath(filters, cursor),
+    { revalidate: 0 },
   );
 
-  return filterSearchProfiles(mapped, filters);
+  return rows?.length ? rows : null;
+}
+
+/**
+ * Fetch verified professional profiles in keyset-paginated batches with SQL gender
+ * filtering, applying in-memory refinement between batches until enough matches or exhausted.
+ */
+async function queryProfessionalProfiles(filters: SearchFilters): Promise<SearchProfileRecord[] | null> {
+  if (!filters.navigator) return null;
+
+  const admin = createAdminSupabaseClient();
+  const collected: SearchProfileRecord[] = [];
+  const rawByUserId = new Map<string, ProfessionalProfileRow>();
+  let filteredCount = 0;
+  let cursor: string | null = null;
+  let batchWasNull = true;
+
+  while (collected.length < NAVIGATOR_FETCH_LIMIT && filteredCount < NAVIGATOR_FETCH_LIMIT) {
+    const batch: ProfessionalProfileRow[] | null = admin
+      ? await fetchProfessionalProfileBatchAdmin(admin, filters, cursor)
+      : await fetchProfessionalProfileBatchRest(filters, cursor);
+    if (!batch) break;
+    batchWasNull = false;
+    if (!batch.length) break;
+
+    for (const row of batch) {
+      rawByUserId.set(row.user_id, row);
+    }
+
+    const normalized = batch.map((row) => mapProfessionalProfileRow(row, undefined, null, null));
+    collected.push(...normalized);
+    filteredCount = filterSearchProfiles(collected, filters).length;
+
+    cursor = batch[batch.length - 1]?.id ?? null;
+    if (batch.length < KEYSET_BATCH_SIZE || !cursor) break;
+  }
+
+  if (batchWasNull && !collected.length) return null;
+
+  const filtered = filterSearchProfiles(sortByName(collected), filters);
+  if (!filtered.length) return [];
+
+  if (!admin) return filtered;
+
+  const rowsToEnrich = filtered
+    .map((profile) => rawByUserId.get(profile.id))
+    .filter((row): row is ProfessionalProfileRow => Boolean(row));
+
+  if (!rowsToEnrich.length) return filtered;
+
+  const enriched = await enrichProfessionalProfileRows(admin, rowsToEnrich);
+  const enrichedByUserId = new Map(enriched.map((profile) => [profile.id, profile]));
+
+  return filtered.map((profile) => enrichedByUserId.get(profile.id) ?? profile);
 }
 
 /** Verified professional profiles rank first; general talent pool fills in after (deduped). */

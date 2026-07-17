@@ -20,6 +20,16 @@ import type {
   PublishCastingResult,
   SaveCastingDraftResult,
 } from "@/types/casting";
+import {
+  buildContainerProjectInsertRow,
+  buildContainerProjectUpdateRow,
+} from "@/lib/talent-buyers/project-payload";
+import {
+  parseProjectComposerForm,
+  parseProjectDraftForm,
+  validateProjectForm,
+} from "@/lib/talent-buyers/project-schema";
+import type { CreateProjectResult, DeleteProjectResult, UpdateProjectResult } from "@/types/project";
 
 type RpcCastingResponse = {
   ok?: boolean;
@@ -278,7 +288,246 @@ export async function updatePublishedCasting(payload: unknown): Promise<PublishC
 function revalidateCastingPaths(projectId: string) {
   revalidatePath("/dashboard");
   revalidatePath("/projects");
+  revalidatePath("/calendar");
   revalidatePath("/events");
   revalidatePath(`/projects/${projectId}`);
   revalidatePath(`/projects/${projectId}/edit`);
 }
+
+export async function createProject(payload: unknown, isDraft = false): Promise<CreateProjectResult> {
+  const parsed = isDraft ? parseProjectDraftForm(payload) : parseProjectComposerForm(payload);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Check your project details.",
+    };
+  }
+
+  const validation = validateProjectForm(parsed.data);
+  if (validation) {
+    return { ok: false, error: validation };
+  }
+
+  const session = await requirePosterSession();
+  if (!session.ok) {
+    return { ok: false, error: session.error };
+  }
+
+  const { supabase, userId } = session;
+  const { data, error } = await supabase
+    .from("projects")
+    .insert(buildContainerProjectInsertRow(userId, parsed.data, isDraft))
+    .select("id")
+    .single();
+
+  if (error || !data?.id) {
+    return { ok: false, error: error?.message ?? "Failed to create project." };
+  }
+
+  const projectId = data.id as string;
+  revalidateProjectPaths(projectId);
+  return { ok: true, projectId };
+}
+
+export async function saveProjectDraft(payload: unknown): Promise<CreateProjectResult> {
+  const parsed = parseProjectDraftForm(payload);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Check your project details.",
+    };
+  }
+
+  const session = await requirePosterSession();
+  if (!session.ok) {
+    return { ok: false, error: session.error };
+  }
+
+  const { supabase, userId } = session;
+  const form = parsed.data;
+
+  if (!form.projectId) {
+    return createProject(form, true);
+  }
+
+  const { data: existing, error: existingError } = await supabase
+    .from("projects")
+    .select("id, project_type")
+    .eq("id", form.projectId)
+    .eq("poster_id", userId)
+    .maybeSingle<{ id: string; project_type: string | null }>();
+
+  if (existingError || !existing) {
+    return { ok: false, error: "Project not found." };
+  }
+
+  const { error } = await supabase
+    .from("projects")
+    .update(buildContainerProjectUpdateRow(userId, form, true, existing.project_type))
+    .eq("id", form.projectId);
+
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  revalidateProjectPaths(form.projectId);
+  return { ok: true, projectId: form.projectId };
+}
+
+export async function updateProject(payload: unknown): Promise<UpdateProjectResult> {
+  const parsed = parseProjectComposerForm(payload);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Check your project details.",
+    };
+  }
+
+  const validation = validateProjectForm(parsed.data);
+  if (validation) {
+    return { ok: false, error: validation };
+  }
+
+  if (!parsed.data.projectId) {
+    return createProject(parsed.data, false);
+  }
+
+  const session = await requirePosterSession();
+  if (!session.ok) {
+    return { ok: false, error: session.error };
+  }
+
+  const { supabase, userId } = session;
+  const projectId = parsed.data.projectId;
+
+  const { data: existing, error: existingError } = await supabase
+    .from("projects")
+    .select("id, project_type")
+    .eq("id", projectId)
+    .eq("poster_id", userId)
+    .maybeSingle<{ id: string; project_type: string | null }>();
+
+  if (existingError || !existing) {
+    return { ok: false, error: "Project not found." };
+  }
+
+  const { error } = await supabase
+    .from("projects")
+    .update(buildContainerProjectUpdateRow(userId, parsed.data, false, existing.project_type))
+    .eq("id", projectId);
+
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  revalidateProjectPaths(projectId);
+  return { ok: true, projectId };
+}
+
+function revalidateProjectPaths(projectId: string) {
+  revalidatePath("/dashboard");
+  revalidatePath("/projects");
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/projects/${projectId}/edit`);
+  revalidatePath(`/projects/${projectId}/castings`);
+  revalidatePath(`/projects/${projectId}/activities`);
+}
+
+function extractProjectMediaPath(url: string | null | undefined) {
+  if (!url) return null;
+  const match = url.match(/project-media\/(.+)$/);
+  return match?.[1] ?? null;
+}
+
+function extractCastingDocumentPath(url: string | null | undefined) {
+  if (!url) return null;
+  const match = url.match(/casting-project-documents\/(.+)$/);
+  return match?.[1] ?? null;
+}
+
+export async function deleteProject(projectId: string): Promise<DeleteProjectResult> {
+  const session = await requirePosterSession();
+  if (!session.ok) {
+    return { ok: false, error: session.error };
+  }
+
+  const { supabase, userId } = session;
+  const normalizedId = projectId.trim();
+
+  if (!normalizedId) {
+    return { ok: false, error: "Project not found." };
+  }
+
+  const { data: project, error: fetchError } = await supabase
+    .from("projects")
+    .select("id, cover_image_url, project_configuration, casting_configuration")
+    .eq("id", normalizedId)
+    .eq("poster_id", userId)
+    .maybeSingle<{
+      id: string;
+      cover_image_url: string | null;
+      project_configuration: { attachments?: Array<{ file_url_string?: string | null }> } | null;
+      casting_configuration: { attachments?: Array<{ file_url_string?: string | null }> } | null;
+    }>();
+
+  if (fetchError || !project) {
+    return { ok: false, error: "Project not found." };
+  }
+
+  const storagePaths = new Set<string>();
+  const castingDocumentPaths = new Set<string>();
+  const coverPath = extractProjectMediaPath(project.cover_image_url);
+  if (coverPath) storagePaths.add(coverPath);
+
+  for (const attachment of project.project_configuration?.attachments ?? []) {
+    const attachmentPath = extractProjectMediaPath(attachment.file_url_string);
+    if (attachmentPath) storagePaths.add(attachmentPath);
+  }
+
+  for (const attachment of project.casting_configuration?.attachments ?? []) {
+    const castingPath = extractCastingDocumentPath(attachment.file_url_string);
+    if (castingPath) {
+      castingDocumentPaths.add(castingPath);
+      continue;
+    }
+    const legacyPath = extractProjectMediaPath(attachment.file_url_string);
+    if (legacyPath) storagePaths.add(legacyPath);
+  }
+
+  if (storagePaths.size) {
+    const { error: storageError } = await supabase.storage
+      .from("project-media")
+      .remove([...storagePaths]);
+
+    if (storageError) {
+      console.warn("Failed to remove some project media during delete:", storageError.message);
+    }
+  }
+
+  if (castingDocumentPaths.size) {
+    const { error: castingStorageError } = await supabase.storage
+      .from("casting-project-documents")
+      .remove([...castingDocumentPaths]);
+
+    if (castingStorageError) {
+      console.warn(
+        "Failed to remove some casting documents during delete:",
+        castingStorageError.message,
+      );
+    }
+  }
+
+  const { error: deleteError } = await supabase.from("projects").delete().eq("id", normalizedId);
+
+  if (deleteError) {
+    return { ok: false, error: deleteError.message };
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/projects");
+  revalidatePath(`/projects/${normalizedId}`);
+  revalidatePath(`/projects/${normalizedId}/edit`);
+
+  return { ok: true };
+}
+

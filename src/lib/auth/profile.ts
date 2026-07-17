@@ -1,5 +1,5 @@
 import { getProfileAvatarUrl } from "@/lib/auth/avatar";
-import { BUYER_DASHBOARD_PATH } from "@/lib/talent-buyers/dashboard-data";
+import { BUYER_HOME_PATH } from "@/lib/talent-buyers/dashboard-data";
 import type {
   AccountType,
   DashboardProfile,
@@ -41,7 +41,7 @@ export function getOnboardingPath(profile: Pick<DashboardProfile, "accountType">
 export function getProfileDestination(profile: DashboardProfile | null) {
   if (!profile) return "/login";
   if (!isOnboardingComplete(profile)) return getOnboardingPath(profile);
-  if (isHiringAccount(profile.accountType)) return BUYER_DASHBOARD_PATH;
+  if (isHiringAccount(profile.accountType)) return BUYER_HOME_PATH;
   if (isTalentAccount(profile.accountType)) return "/home";
   return "/onboarding";
 }

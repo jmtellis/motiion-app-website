@@ -136,25 +136,21 @@ export function getSetupFlowShellProps({
   const phase = resolveSetupFlowPhase({ surface, microStep, isSuccess });
 
   return {
-    audienceLabel: config.audienceLabel,
     headline: config.headlines[phase],
     subtext: config.subtexts[phase],
     steps: buildMacroSteps(audience, phase),
-    showSteps: true,
+    showSteps: surface !== "signup",
     marquee: signupSplitMarquees[audience],
-    showReturnHome: surface === "signup",
   };
 }
 
 export function getLoginShellProps() {
   return {
-    audienceLabel: "Motiion",
     headline: "Welcome back",
     subtext:
       "Sign in to your talent profile or industry workspace to pick up where you left off.",
     steps: [] as SignupSplitStep[],
     showSteps: false,
     marquee: loginSplitMarquee,
-    showReturnHome: true,
   };
 }

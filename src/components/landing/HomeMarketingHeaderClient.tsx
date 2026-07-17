@@ -92,7 +92,7 @@ function MarketingHeaderMobileScrolledBar({
 
   const menuLinkClass = (active: boolean) =>
     cn(
-      "block rounded-[10px] px-3 py-3 text-sm font-medium transition-colors",
+      "block rounded-full px-3 py-3 text-sm font-medium transition-colors",
       darkTheme
         ? active
           ? "bg-[#151515] text-[#fafafa]"
@@ -232,8 +232,8 @@ export function HomeMarketingHeaderClient({
   const tabClass = (active: boolean) =>
     darkTheme
       ? active
-        ? "rounded-[8px] bg-[#151515] px-3 py-1.5 text-center text-xs font-medium whitespace-nowrap text-[#fafafa] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:text-sm"
-        : "rounded-[8px] px-3 py-1.5 text-center text-xs font-medium whitespace-nowrap text-[#8a8a8a] transition-colors hover:bg-[#151515] hover:text-[#eaeaea] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:text-sm"
+        ? "rounded-full bg-[#151515] px-3 py-1.5 text-center text-xs font-medium whitespace-nowrap text-[#fafafa] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:text-sm"
+        : "rounded-full px-3 py-1.5 text-center text-xs font-medium whitespace-nowrap text-[#8a8a8a] transition-colors hover:bg-[#151515] hover:text-[#eaeaea] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:text-sm"
       : active
         ? "border-b-2 border-[var(--accent-dark)] pb-0.5 text-center text-xs font-semibold whitespace-nowrap text-[var(--ink)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:text-sm"
         : "border-b-2 border-transparent pb-0.5 text-center text-xs font-semibold whitespace-nowrap text-[var(--ink-soft)] transition-colors hover:border-[var(--line)] hover:text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:text-sm";

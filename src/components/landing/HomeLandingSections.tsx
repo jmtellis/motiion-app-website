@@ -33,6 +33,7 @@ export function HomeLandingSections({ dark = true }: { dark?: boolean }) {
         title={homePillarsSection.title}
         slides={homeHero.pillars.map((pillar, index) => ({
           id: `solution-${index + 1}`,
+          title: pillar.title,
           titleParts: pillar.titleParts ?? [{ text: pillar.title, emphasis: true }],
           description: pillar.description,
           image: pillar.image,

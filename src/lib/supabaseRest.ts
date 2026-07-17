@@ -31,14 +31,20 @@ export async function supabaseRestGet<T>(
   }
 }
 
-export async function callSupabaseFunction<T>(
+async function invokeSupabaseFunction<T>(
   slug: string,
   body: Record<string, unknown>,
+  accessToken?: string,
 ): Promise<T> {
   const config = getSupabaseConfig();
   if (!config) {
     throw new Error("Supabase is not configured.");
   }
+
+  const bearer = accessToken?.trim() || config.anon;
+  const payload = accessToken?.trim()
+    ? { ...body, accessToken: accessToken.trim() }
+    : body;
 
   let response: Response;
   try {
@@ -47,9 +53,9 @@ export async function callSupabaseFunction<T>(
       headers: {
         "Content-Type": "application/json",
         apikey: config.anon,
-        Authorization: `Bearer ${config.anon}`,
+        Authorization: `Bearer ${bearer}`,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(payload),
     });
   } catch {
     throw new Error("Could not reach the booking server. Please try again in a moment.");
@@ -66,4 +72,24 @@ export async function callSupabaseFunction<T>(
     throw err;
   }
   return data as T;
+}
+
+export async function callSupabaseFunction<T>(
+  slug: string,
+  body: Record<string, unknown>,
+): Promise<T> {
+  return invokeSupabaseFunction<T>(slug, body);
+}
+
+/** Authenticated Edge Function invoke (user JWT in Authorization + body.accessToken). */
+export async function callSupabaseFunctionAsUser<T>(
+  slug: string,
+  body: Record<string, unknown>,
+  accessToken: string,
+): Promise<T> {
+  const token = accessToken.trim();
+  if (!token) {
+    throw new Error("You need to be signed in.");
+  }
+  return invokeSupabaseFunction<T>(slug, body, token);
 }

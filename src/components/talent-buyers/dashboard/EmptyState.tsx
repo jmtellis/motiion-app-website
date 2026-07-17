@@ -6,6 +6,7 @@ export function EmptyState({
   description,
   actionLabel,
   actionHref,
+  onAction,
   children,
   variant = "default",
 }: {
@@ -13,6 +14,7 @@ export function EmptyState({
   description: string;
   actionLabel?: string;
   actionHref?: string;
+  onAction?: () => void;
   children?: ReactNode;
   variant?: "default" | "dashboard";
 }) {
@@ -33,7 +35,17 @@ export function EmptyState({
         {description}
       </p>
       {children}
-      {actionLabel && actionHref ? (
+      {actionLabel && onAction ? (
+        isDashboard ? (
+          <button type="button" className="bd-btn-accent mt-6 inline-flex" onClick={onAction}>
+            {actionLabel}
+          </button>
+        ) : (
+          <button type="button" className="btn-primary mt-6 inline-flex text-sm" onClick={onAction}>
+            {actionLabel}
+          </button>
+        )
+      ) : actionLabel && actionHref ? (
         isDashboard ? (
           <Link href={actionHref} className="bd-btn mt-6 inline-flex">
             {actionLabel}

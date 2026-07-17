@@ -226,3 +226,68 @@ export function getTalentBuyerDashboardSections(
     "Recent Activity",
   ];
 }
+
+export type BuyerRecommendation = {
+  id: string;
+  title: string;
+  description: string;
+  href: string;
+};
+
+export function buildBuyerRecommendations(profile: {
+  styleFocus?: TalentBuyerStyleFocus[] | null;
+  markets?: string[] | null;
+  primaryGoal?: TalentBuyerPrimaryGoal | null;
+}): BuyerRecommendation[] {
+  const styleFocus = profile.styleFocus ?? [];
+  const markets = profile.markets ?? [];
+  const primaryGoal = profile.primaryGoal;
+
+  const items: BuyerRecommendation[] = [];
+
+  if (styleFocus.length) {
+    const style = styleFocus[0]!;
+    items.push({
+      id: "style-search",
+      title: `Browse ${style.replace(/_/g, " ")} talent`,
+      description: "Jump into Talent Navigator with your style focus pre-filtered.",
+      href: `/talent?style=${encodeURIComponent(style)}`,
+    });
+  }
+
+  if (markets.length) {
+    items.push({
+      id: "market-search",
+      title: `Talent in ${markets[0]}`,
+      description: "Search performers in one of your primary markets.",
+      href: `/talent?location=${encodeURIComponent(markets[0]!)}`,
+    });
+  }
+
+  if (primaryGoal === "post_opportunities" || primaryGoal === "everything") {
+    items.push({
+      id: "create-casting",
+      title: "Create a new casting",
+      description: "Publish roles and start collecting submissions.",
+      href: "/projects?create=1",
+    });
+  }
+
+  if (primaryGoal === "manage_talent" || primaryGoal === "find_talent") {
+    items.push({
+      id: "library",
+      title: "Organize your rosters",
+      description: "Group saved talent for projects and client reviews.",
+      href: "/library",
+    });
+  }
+
+  items.push({
+    id: "navigator",
+    title: "Explore Talent Navigator",
+    description: "Keyboard-first search across the Motiion database.",
+    href: "/talent",
+  });
+
+  return items.slice(0, 4);
+}

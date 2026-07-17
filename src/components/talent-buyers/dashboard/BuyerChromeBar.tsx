@@ -31,7 +31,9 @@ export function BuyerChromeBar({
   return (
     <Tag className={`buyer-chrome-bar buyer-chrome-bar--${position} ${className}`.trim()}>
       <div className="buyer-chrome-bar__start">{start}</div>
-      <div className="buyer-chrome-bar__center">{center ?? <BuyerChromeLogo />}</div>
+      <div className="buyer-chrome-bar__center">
+        {center !== undefined ? center : <BuyerChromeLogo />}
+      </div>
       <div className="buyer-chrome-bar__end">{end}</div>
     </Tag>
   );

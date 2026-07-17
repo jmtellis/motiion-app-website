@@ -64,7 +64,7 @@ export function HomeHeroSection({ headerPullClass, background, children }: HomeH
         </>
       )}
 
-      <div className="home-hero-section__foreground marketing-content-safe-area">
+      <div className="home-hero-section__foreground marketing-content-safe-area marketing-content-safe-area--hero">
         <HeroScrollDepth background={null} scrollProgress={reduceMotion ? undefined : motionProgress}>
           <motion.div
             className="relative z-[2] w-full px-0"

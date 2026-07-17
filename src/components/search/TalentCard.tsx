@@ -44,7 +44,7 @@ export function TalentCard({ profile }: { profile: SearchProfileRecord }) {
                 {profile.location || "Location TBD"}
               </p>
             </div>
-            <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-[8px] border border-[#3a3a3a] bg-[#0a0a0a]/60 text-[#8a8a8a] backdrop-blur-sm transition-colors group-hover:border-[#fafafa] group-hover:text-[#fafafa]">
+            <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-[#3a3a3a] bg-[#0a0a0a]/60 text-[#8a8a8a] backdrop-blur-sm transition-colors group-hover:border-[#fafafa] group-hover:text-[#fafafa]">
               <ArrowUpRight className="size-4" aria-hidden />
             </span>
           </div>

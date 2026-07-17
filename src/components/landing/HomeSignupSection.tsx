@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 
 import { homeSignupSection } from "@/lib/marketing/homepage-content";
+
+import type { MarketingHeaderTab } from "@/lib/marketing/marketing-pages";
 
 import "./feature-carousel.css";
 
@@ -8,8 +11,25 @@ function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-export function HomeSignupSection({ variant = "page" }: { variant?: "page" | "footer-reveal" }) {
+function signupPathsForAudience(audience: MarketingHeaderTab) {
+  if (audience === "talent") {
+    return homeSignupSection.paths.filter((path) => path.id === "talent");
+  }
+  if (audience === "casting") {
+    return homeSignupSection.paths.filter((path) => path.id === "industry");
+  }
+  return homeSignupSection.paths;
+}
+
+export function HomeSignupSection({
+  variant = "page",
+  audience = null,
+}: {
+  variant?: "page" | "footer-reveal";
+  audience?: MarketingHeaderTab;
+}) {
   const isFooterReveal = variant === "footer-reveal";
+  const paths = signupPathsForAudience(audience);
 
   return (
     <section
@@ -37,14 +57,22 @@ export function HomeSignupSection({ variant = "page" }: { variant?: "page" | "fo
               <p className="type-lead text-pretty text-on-dark-secondary">{homeSignupSection.description}</p>
             </div>
 
-            <div className="home-signup-section__options">
-              {homeSignupSection.paths.map((path) => (
+            <div
+              className={cn(
+                "home-signup-section__options",
+                paths.length === 1 && "home-signup-section__options--single",
+              )}
+            >
+              {paths.map((path) => (
                 <Link key={path.id} href={path.href} className="home-signup-section__option">
                   <span className="home-signup-section__option-copy">
                     <span className="home-signup-section__option-label">{path.label}</span>
                     <span className="home-signup-section__option-description">{path.description}</span>
                   </span>
-                  <span className="home-signup-section__option-cta">{path.cta}</span>
+                  <span className="home-signup-section__option-cta">
+                    {path.cta}
+                    <ChevronRight className="size-4 shrink-0" aria-hidden />
+                  </span>
                 </Link>
               ))}
             </div>
@@ -59,7 +87,7 @@ export function HomeSignupSection({ variant = "page" }: { variant?: "page" | "fo
             </div>
 
             <div className="home-signup-section__grid">
-              {homeSignupSection.paths.map((path) => (
+              {paths.map((path) => (
                 <Link key={path.id} href={path.href} className="home-signup-section__card group">
                   <span className="home-signup-section__card-label">{path.label}</span>
                   <span className="home-signup-section__card-description">{path.description}</span>

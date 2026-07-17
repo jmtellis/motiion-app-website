@@ -1,7 +1,20 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { ChevronDown, Search, X } from "lucide-react";
+import type { ReactNode } from "react";
+import {
+  BadgeCheck,
+  Bookmark,
+  Building2,
+  Globe,
+  MapPin,
+  Music,
+  Ruler,
+  Search,
+  User,
+  Users,
+  Briefcase,
+  X,
+} from "lucide-react";
 
 import {
   ETHNICITY_OPTIONS,
@@ -30,73 +43,59 @@ type TalentFilterPanelProps = {
   onClear: () => void;
   onSaveSearch?: () => void;
   open?: boolean;
-  onClose?: () => void;
 };
 
-function FilterSelect({
-  label,
-  value,
-  options,
-  placeholder = "Any",
-  onChange,
+function FilterSection({
+  icon,
+  title,
+  hint,
+  children,
 }: {
-  label: string;
-  value: string;
-  options: readonly string[];
-  placeholder?: string;
-  onChange: (value: string) => void;
+  icon: ReactNode;
+  title: string;
+  hint?: string;
+  children: ReactNode;
 }) {
   return (
-    <div className="space-y-1">
-      <span className="talent-navigator__filter-row-label">{label}</span>
-      <select
-        className="talent-navigator__field talent-navigator__select"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        <option value="">{placeholder}</option>
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-    </div>
+    <section className="talent-navigator__filter-section">
+      <header className="talent-navigator__filter-section-header">
+        <span className="talent-navigator__filter-section-icon" aria-hidden>
+          {icon}
+        </span>
+        <h3 className="talent-navigator__filter-section-title">{title}</h3>
+        {hint ? <span className="talent-navigator__filter-section-hint">{hint}</span> : null}
+      </header>
+      {children}
+    </section>
   );
 }
 
-function FilterAccordionSection({
-  title,
-  summary,
-  children,
+function OptionChips({
+  options,
+  value,
+  onChange,
 }: {
-  title: string;
-  summary?: string;
-  children: ReactNode;
+  options: readonly string[];
+  value: string;
+  onChange: (value: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-
   return (
-    <section className="talent-navigator__accordion">
-      <button
-        type="button"
-        className="talent-navigator__accordion-trigger"
-        aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
-      >
-        <span className="talent-navigator__accordion-title">{title}</span>
-        <span className="talent-navigator__accordion-meta">
-          {!open && summary ? (
-            <span className="talent-navigator__accordion-summary">{summary}</span>
-          ) : null}
-          <ChevronDown
-            className={`talent-navigator__accordion-chevron size-3.5${open ? " talent-navigator__accordion-chevron--open" : ""}`}
-            aria-hidden
-          />
-        </span>
-      </button>
-      {open ? <div className="talent-navigator__accordion-body">{children}</div> : null}
-    </section>
+    <div className="talent-navigator__filter-options" role="group">
+      {options.map((option) => {
+        const selected = value === option;
+        return (
+          <button
+            key={option}
+            type="button"
+            className={`talent-navigator__filter-option${selected ? " talent-navigator__filter-option--selected" : ""}`}
+            aria-pressed={selected}
+            onClick={() => onChange(selected ? "" : option)}
+          >
+            {option}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -110,119 +109,125 @@ export function TalentFilterPanel({
   onClear,
   onSaveSearch,
   open = false,
-  onClose,
 }: TalentFilterPanelProps) {
   const activeChips = Object.entries(filters).filter(
     ([key, value]) => Boolean(value) && key !== "keyword",
   );
 
+  if (!open) return null;
+
   return (
     <aside
-      className={`talent-navigator__filter-panel talent-navigator__panel${open ? " talent-navigator__filter-panel--open" : ""}`}
+      className="talent-navigator__filter-panel"
       aria-label="Talent filters"
-      aria-hidden={!open}
+      role="dialog"
+      aria-modal="true"
     >
-      {open && onClose ? (
-        <div className="flex items-center justify-end border-b border-white/6 px-3 py-2 lg:hidden">
-          <button
-            type="button"
-            className="inline-flex size-7 items-center justify-center rounded-lg text-white/60 hover:bg-white/6"
-            onClick={onClose}
-            aria-label="Close filters"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-      ) : null}
+      <div className="talent-navigator__filter-backdrop" aria-hidden />
 
-      <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3">
-        <div className="space-y-1">
-          <span className="talent-navigator__filter-row-label">Saved Searches</span>
-          <select
-            className="talent-navigator__field talent-navigator__select"
-            value={savedSearchId}
-            onChange={(event) => onSavedSearchChange(event.target.value)}
-          >
-            <option value="">Select a saved search</option>
-            {savedSearches.map((search) => (
-              <option key={search.id} value={search.id}>
-                {search.label}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="talent-navigator__filter-content">
+        <div className="talent-navigator__filter-body">
+        <div className="talent-navigator__filter-inner">
+          <div className="talent-navigator__filter-toprow">
+            <label className="talent-navigator__filter-search">
+              <span className="talent-navigator__filter-row-label">Search</span>
+              <div className="talent-navigator__search-wrap">
+                <Search className="talent-navigator__search-icon size-3.5" aria-hidden />
+                <input
+                  className="talent-navigator__field"
+                  value={filters.keyword}
+                  onChange={(event) => onChange({ keyword: event.target.value })}
+                  placeholder="Search by name, keyword, etc."
+                />
+              </div>
+            </label>
 
-        <label className="block space-y-1">
-          <span className="talent-navigator__filter-row-label">Search</span>
-          <div className="talent-navigator__search-wrap">
-            <Search className="talent-navigator__search-icon size-3.5" aria-hidden />
-            <input
-              className="talent-navigator__field"
-              value={filters.keyword}
-              onChange={(event) => onChange({ keyword: event.target.value })}
-              placeholder="Search by name, keyword, etc."
-            />
-          </div>
-        </label>
-
-        {activeChips.length ? (
-          <div className="flex flex-wrap gap-1.5">
-            {activeChips.map(([key, value]) => (
-              <button
-                key={key}
-                type="button"
-                className="talent-navigator__chip talent-navigator__chip--filter"
-                onClick={() => onChange({ [key]: "" } as Partial<TalentNavigatorFilters>)}
+            <label className="talent-navigator__filter-saved">
+              <span className="talent-navigator__filter-row-label">
+                <Bookmark className="size-3 -translate-y-px" aria-hidden /> Saved Searches
+              </span>
+              <select
+                className="talent-navigator__field talent-navigator__select"
+                value={savedSearchId}
+                onChange={(event) => onSavedSearchChange(event.target.value)}
               >
-                {value}
-                <X className="size-3" aria-hidden />
-              </button>
-            ))}
+                <option value="">Select a saved search</option>
+                {savedSearches.map((search) => (
+                  <option key={search.id} value={search.id}>
+                    {search.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
-        ) : null}
 
-        <div className="talent-navigator__accordion-group">
-          <FilterAccordionSection title="Profile Type" summary={filters.subtype || undefined}>
-            <FilterSelect
-              label="Profile Type"
-              value={filters.subtype}
-              options={PROFILE_TYPE_OPTIONS}
-              placeholder="Any"
-              onChange={(value) => onChange({ subtype: value })}
-            />
-          </FilterAccordionSection>
+          {activeChips.length ? (
+            <div className="talent-navigator__filter-active-row">
+              <span className="talent-navigator__filter-active-label">Active:</span>
+              {activeChips.map(([key, value]) => (
+                <button
+                  key={key}
+                  type="button"
+                  className="talent-navigator__chip talent-navigator__chip--filter"
+                  onClick={() => onChange({ [key]: "" } as Partial<TalentNavigatorFilters>)}
+                >
+                  {value}
+                  <X className="size-3" aria-hidden />
+                </button>
+              ))}
+            </div>
+          ) : null}
 
-          <FilterAccordionSection title="Genres" summary={filters.style || undefined}>
-            <FilterSelect
-              label="Genre"
-              value={filters.style}
-              options={GENRE_OPTIONS}
-              placeholder="All Genres"
-              onChange={(value) => onChange({ style: value })}
-            />
-          </FilterAccordionSection>
+          <div className="talent-navigator__filter-grid">
+            <FilterSection icon={<Music className="size-3.5" />} title="Genres" hint="Pick one">
+              <OptionChips
+                options={GENRE_OPTIONS}
+                value={filters.style}
+                onChange={(value) => onChange({ style: value })}
+              />
+            </FilterSection>
 
-          <FilterAccordionSection title="Gender" summary={filters.gender || undefined}>
-            <FilterSelect
-              label="Gender"
-              value={filters.gender}
-              options={GENDER_OPTIONS}
-              onChange={(value) => onChange({ gender: value })}
-            />
-          </FilterAccordionSection>
+            <FilterSection icon={<User className="size-3.5" />} title="Profile Type">
+              <OptionChips
+                options={PROFILE_TYPE_OPTIONS}
+                value={filters.subtype}
+                onChange={(value) => onChange({ subtype: value })}
+              />
+            </FilterSection>
 
-          <FilterAccordionSection title="Height" summary={filters.height || undefined}>
-            <FilterSelect
-              label="Height"
-              value={filters.height}
-              options={HEIGHT_OPTIONS}
-              onChange={(value) => onChange({ height: value })}
-            />
-          </FilterAccordionSection>
+            <FilterSection icon={<Users className="size-3.5" />} title="Gender">
+              <OptionChips
+                options={GENDER_OPTIONS}
+                value={filters.gender}
+                onChange={(value) => onChange({ gender: value })}
+              />
+            </FilterSection>
 
-          <FilterAccordionSection title="Location" summary={filters.location || undefined}>
-            <label className="block space-y-1">
-              <span className="talent-navigator__filter-row-label">City</span>
+            <FilterSection icon={<Ruler className="size-3.5" />} title="Height">
+              <OptionChips
+                options={HEIGHT_OPTIONS}
+                value={filters.height}
+                onChange={(value) => onChange({ height: value })}
+              />
+            </FilterSection>
+
+            <FilterSection icon={<BadgeCheck className="size-3.5" />} title="Union Status">
+              <OptionChips
+                options={UNION_STATUS_OPTIONS}
+                value={filters.unionStatus}
+                onChange={(value) => onChange({ unionStatus: value })}
+              />
+            </FilterSection>
+
+            <FilterSection icon={<Briefcase className="size-3.5" />} title="Representation">
+              <OptionChips
+                options={REPRESENTATION_OPTIONS}
+                value={filters.representation}
+                onChange={(value) => onChange({ representation: value })}
+              />
+            </FilterSection>
+
+            <FilterSection icon={<MapPin className="size-3.5" />} title="Location">
               <input
                 className="talent-navigator__field"
                 list="talent-navigator-location-options"
@@ -235,62 +240,50 @@ export function TalentFilterPanel({
                   <option key={location} value={location} />
                 ))}
               </datalist>
-            </label>
-          </FilterAccordionSection>
+            </FilterSection>
 
-          <FilterAccordionSection title="Representation" summary={filters.representation || undefined}>
-            <FilterSelect
-              label="Representation"
-              value={filters.representation}
-              options={REPRESENTATION_OPTIONS}
-              onChange={(value) => onChange({ representation: value })}
-            />
-          </FilterAccordionSection>
+            <FilterSection icon={<Building2 className="size-3.5" />} title="Agency">
+              <select
+                className="talent-navigator__field talent-navigator__select"
+                value={filters.agency}
+                onChange={(event) => onChange({ agency: event.target.value })}
+              >
+                <option value="">Any agency</option>
+                {filterOptions.agencies.map((agency) => (
+                  <option key={agency} value={agency}>
+                    {agency}
+                  </option>
+                ))}
+              </select>
+            </FilterSection>
 
-          <FilterAccordionSection title="Agency" summary={filters.agency || undefined}>
-            <FilterSelect
-              label="Agency"
-              value={filters.agency}
-              options={filterOptions.agencies}
-              onChange={(value) => onChange({ agency: value })}
-            />
-          </FilterAccordionSection>
-
-          <FilterAccordionSection title="Union Status" summary={filters.unionStatus || undefined}>
-            <FilterSelect
-              label="Union Status"
-              value={filters.unionStatus}
-              options={UNION_STATUS_OPTIONS}
-              onChange={(value) => onChange({ unionStatus: value })}
-            />
-          </FilterAccordionSection>
-
-          <FilterAccordionSection title="Ethnicity" summary={filters.ethnicity || undefined}>
-            <FilterSelect
-              label="Ethnicity"
-              value={filters.ethnicity}
-              options={ETHNICITY_OPTIONS}
-              onChange={(value) => onChange({ ethnicity: value })}
-            />
-          </FilterAccordionSection>
+            <FilterSection icon={<Globe className="size-3.5" />} title="Ethnicity">
+              <OptionChips
+                options={ETHNICITY_OPTIONS}
+                value={filters.ethnicity}
+                onChange={(value) => onChange({ ethnicity: value })}
+              />
+            </FilterSection>
+          </div>
         </div>
-      </div>
+        </div>
 
-      <div className="space-y-2 border-t border-white/6 p-3">
-        <button
-          type="button"
-          className="talent-navigator__action-btn talent-navigator__action-btn--block"
-          onClick={onSaveSearch}
-        >
-          Save Search
-        </button>
-        <button
-          type="button"
-          className="talent-navigator__action-btn talent-navigator__action-btn--ghost talent-navigator__action-btn--block text-white/45"
-          onClick={onClear}
-        >
-          Clear All
-        </button>
+        <div className="talent-navigator__filter-footer">
+          <button
+            type="button"
+            className="talent-navigator__action-btn talent-navigator__action-btn--block"
+            onClick={onSaveSearch}
+          >
+            Save Search
+          </button>
+          <button
+            type="button"
+            className="talent-navigator__action-btn talent-navigator__action-btn--ghost talent-navigator__action-btn--block text-white/45"
+            onClick={onClear}
+          >
+            Clear All
+          </button>
+        </div>
       </div>
     </aside>
   );

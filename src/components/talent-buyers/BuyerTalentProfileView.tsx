@@ -3,21 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BadgeCheck,
-  Bookmark,
   Building2,
-  CalendarClock,
-  CalendarPlus,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  ClipboardList,
-  Download,
   Instagram,
-  Mail,
   MoreHorizontal,
   Music,
-  Send,
 } from "lucide-react";
 
 import { buildAttributeStrip, type AttributeStripItem } from "@/lib/profile/attribute-strip";
@@ -40,6 +33,7 @@ import type {
   PublicTalentProfile,
 } from "@/types/public";
 
+import { TalentProfileActions } from "./TalentProfileActions";
 import "./buyer-talent-profile.css";
 
 type ProfileTab = "about" | "resume" | "visuals";
@@ -52,10 +46,25 @@ const TABS: { id: ProfileTab; label: string }[] = [
 
 type BuyerTalentProfileViewProps = {
   profile: PublicTalentProfile;
+  hideActions?: boolean;
+  defaultTab?: ProfileTab;
 };
 
-export function BuyerTalentProfileView({ profile }: BuyerTalentProfileViewProps) {
-  const [tab, setTab] = useState<ProfileTab>("about");
+export function BuyerTalentProfileView({
+  profile,
+  hideActions = false,
+  defaultTab = "about",
+}: BuyerTalentProfileViewProps) {
+  const [tab, setTab] = useState<ProfileTab>(defaultTab);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setTab(defaultTab);
+  }, [defaultTab, profile.id]);
+
+  useEffect(() => {
+    scrollContainerRef.current?.scrollTo({ top: 0 });
+  }, [tab]);
 
   const displayName = profile.full_name?.trim() || "Talent profile";
   const headshots = collectHeadshots(profile);
@@ -75,7 +84,7 @@ export function BuyerTalentProfileView({ profile }: BuyerTalentProfileViewProps)
       .join("") || "?";
 
   return (
-    <div className="buyer-talent-profile">
+    <div className={`buyer-talent-profile${hideActions ? " buyer-talent-profile--no-actions" : ""}`}>
       <div className="buyer-talent-profile__layout">
         <div className="buyer-talent-profile__content">
           <div className="buyer-talent-profile__content-header">
@@ -103,6 +112,7 @@ export function BuyerTalentProfileView({ profile }: BuyerTalentProfileViewProps)
           </div>
 
           <div
+            ref={scrollContainerRef}
             className={`buyer-talent-profile__content-scroll${
               tab === "visuals" ? " buyer-talent-profile__content-scroll--visuals" : ""
             }`}
@@ -137,71 +147,9 @@ export function BuyerTalentProfileView({ profile }: BuyerTalentProfileViewProps)
           initials={initials}
         />
 
-        <TalentSidebarPanel profile={profile} />
+        {hideActions ? null : <TalentProfileActions profile={profile} />}
       </div>
     </div>
-  );
-}
-
-function TalentSidebarPanel({ profile }: { profile: PublicTalentProfile }) {
-  const resumeUrl = profile.resume_url?.trim() || null;
-
-  return (
-    <aside className="buyer-talent-profile__sidebar" aria-label="Talent actions">
-      <div className="buyer-talent-profile__sidebar-inner">
-        <section className="buyer-talent-profile__sidebar-section">
-          <h2 className="buyer-talent-profile__sidebar-title">Actions</h2>
-          <div className="buyer-talent-profile__sidebar-actions">
-            <button type="button" className="btp-action-btn btp-action-btn--block">
-              <Bookmark className="size-3.5" aria-hidden />
-              Save to Roster
-            </button>
-            <button type="button" className="btp-action-btn btp-action-btn--block">
-              <CalendarPlus className="size-3.5" aria-hidden />
-              Add to Project
-            </button>
-            <button type="button" className="btp-action-btn btp-action-btn--block">
-              <Send className="size-3.5" aria-hidden />
-              Just Invite
-            </button>
-            <button type="button" className="btp-action-btn btp-action-btn--block">
-              <CalendarClock className="size-3.5" aria-hidden />
-              Ask Availability
-            </button>
-            <button type="button" className="btp-action-btn btp-action-btn--block">
-              <ClipboardList className="size-3.5" aria-hidden />
-              Request Size Sheet
-            </button>
-            {resumeUrl ? (
-              <a
-                href={resumeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btp-action-btn btp-action-btn--block btp-action-btn--accent"
-                download
-              >
-                <Download className="size-3.5" aria-hidden />
-                Download Resume
-              </a>
-            ) : (
-              <button
-                type="button"
-                className="btp-action-btn btp-action-btn--block"
-                disabled
-                aria-disabled="true"
-              >
-                <Download className="size-3.5" aria-hidden />
-                Download Resume
-              </button>
-            )}
-            <button type="button" className="btp-action-btn btp-action-btn--block">
-              <Mail className="size-3.5" aria-hidden />
-              Contact
-            </button>
-          </div>
-        </section>
-      </div>
-    </aside>
   );
 }
 
@@ -427,7 +375,7 @@ function AboutTab({
       {highlights.length > 0 ? (
         <section>
           <h2 className="buyer-talent-profile__section-title">Highlights</h2>
-          <div className="buyer-talent-profile__highlights">
+          <div className="buyer-talent-profile__highlights" data-lenis-prevent>
             {highlights.map((highlight) => (
               <HighlightCard
                 key={highlight.id}
@@ -574,7 +522,7 @@ function CreditPillChip({ item }: { item: CreditChipItem }) {
 function AttributeStrip({ items }: { items: AttributeStripItem[] }) {
   return (
     <section className="buyer-talent-profile__attribute-strip">
-      <dl className="buyer-talent-profile__attribute-strip-track">
+      <dl className="buyer-talent-profile__attribute-strip-track" data-lenis-prevent>
         {items.map((stat) => (
           <div key={stat.label} className="buyer-talent-profile__attribute">
             <dd>{stat.value}</dd>
@@ -766,7 +714,7 @@ function VisualsTab({ visuals }: { visuals: ProfileVisual[] }) {
 
   return (
     <div className="buyer-talent-profile__visuals-panel">
-      <div className="buyer-talent-profile__visuals-row">
+      <div className="buyer-talent-profile__visuals-row" data-lenis-prevent>
         {visuals.map((visual) => (
           <article key={visual.id} className="buyer-talent-profile__video-card">
             <div className="buyer-talent-profile__video-wrap">

@@ -1,0 +1,332 @@
+/* Shared buyer UI primitives — toast, modal, skeleton, command palette */
+
+.buyer-skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.04) 100%);
+  background-size: 200% 100%;
+  animation: buyer-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes buyer-skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .buyer-skeleton {
+    animation: none;
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+/* Toast */
+.buyer-toast-stack {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  z-index: 200;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.5rem;
+  width: min(24rem, calc(100vw - 2rem));
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.buyer-toast {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(16, 16, 20, 0.94);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+  pointer-events: auto;
+}
+
+.buyer-toast--success {
+  border-color: rgba(45, 212, 191, 0.35);
+}
+
+.buyer-toast--error {
+  border-color: rgba(251, 113, 133, 0.35);
+}
+
+/* Modal */
+.buyer-modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.buyer-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+
+.buyer-modal-panel {
+  position: relative;
+  width: 100%;
+  max-height: min(90vh, 720px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #141414;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+
+.buyer-modal-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.25rem 1.25rem 0;
+}
+
+.buyer-modal-title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.buyer-modal-description {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.buyer-modal-close {
+  display: inline-flex;
+  size: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  color: rgba(255, 255, 255, 0.55);
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.buyer-modal-close:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.buyer-modal-body {
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+
+.buyer-modal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding: 0 1.25rem 1.25rem;
+}
+
+/* Full-page project creation overlay */
+.buyer-project-overlay-root {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.buyer-project-overlay-backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+}
+
+.buyer-project-overlay-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 56rem);
+  max-height: min(94vh, 900px);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #f7f7f5;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+
+.buyer-project-overlay-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+}
+
+.buyer-project-overlay-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111;
+}
+
+.buyer-project-overlay-description {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.buyer-project-overlay-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem;
+}
+
+/* Command palette */
+.buyer-command-palette {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: min(18vh, 8rem);
+  padding-inline: 1rem;
+}
+
+.buyer-command-backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+}
+
+.buyer-command-panel {
+  position: relative;
+  width: min(32rem, 100%);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #101014;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.buyer-command-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.buyer-command-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.92);
+  outline: none;
+}
+
+.buyer-command-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.buyer-command-kbd {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.375rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.buyer-command-list {
+  max-height: 18rem;
+  overflow-y: auto;
+  padding: 0.375rem;
+}
+
+.buyer-command-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.625rem;
+  text-align: left;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.82);
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.buyer-command-item:hover,
+.buyer-command-item[data-active="true"] {
+  background: rgba(45, 212, 191, 0.1);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.buyer-command-item-icon {
+  display: inline-flex;
+  size: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.buyer-command-item[data-active="true"] .buyer-command-item-icon {
+  background: rgba(45, 212, 191, 0.15);
+  color: #2dd4bf;
+}
+
+.buyer-command-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+/* Interactive card lift */
+.bd-interactive-card {
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.bd-interactive-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(45, 212, 191, 0.28);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bd-interactive-card:hover {
+    transform: none;
+  }
+}

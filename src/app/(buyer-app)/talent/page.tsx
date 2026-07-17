@@ -65,6 +65,7 @@ export default async function BuyerTalentPage({
         filterOptions={filterOptions}
         initialFilters={initialFilters}
         initialSavedSearches={savedSearchResult.searches}
+        initialOpenRoleId={readParam(params, "roleId")}
       />
     </div>
   );

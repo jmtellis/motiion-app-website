@@ -167,7 +167,7 @@ function DiscoveryPreview() {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={src} alt="" />
-            <span className="app-preview-roster__label">{index === 2 ? "Your profile" : `Talent ${index + 1}`}</span>
+            <span className="app-preview-roster__label">Talent {index + 1}</span>
           </div>
         ))}
       </div>

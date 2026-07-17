@@ -61,7 +61,7 @@ export function InvitationList({ invitations }: { invitations: InvitationRow[] }
                     type="button"
                     disabled={isPending}
                     onClick={() => respond(row.id, "accepted")}
-                    className="rounded-[8px] bg-[#fafafa] px-4 py-2 text-sm font-medium text-[#0a0a0a] transition-colors hover:bg-[#e6e6e6] disabled:bg-[#151515] disabled:text-[#5a5a5a]"
+                    className="rounded-full bg-[#fafafa] px-4 py-2 text-sm font-medium text-[#0a0a0a] transition-colors hover:bg-[#e6e6e6] disabled:bg-[#151515] disabled:text-[#5a5a5a]"
                   >
                     Accept
                   </button>
@@ -69,7 +69,7 @@ export function InvitationList({ invitations }: { invitations: InvitationRow[] }
                     type="button"
                     disabled={isPending}
                     onClick={() => respond(row.id, "declined")}
-                    className="rounded-[8px] border border-[#262626] bg-[#1e1e1e] px-4 py-2 text-sm font-medium text-[#eaeaea] transition-colors hover:bg-[#2a2a2a] disabled:opacity-50"
+                    className="rounded-full border border-[#262626] bg-[#1e1e1e] px-4 py-2 text-sm font-medium text-[#eaeaea] transition-colors hover:bg-[#2a2a2a] disabled:opacity-50"
                   >
                     Decline
                   </button>

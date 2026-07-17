@@ -11,7 +11,11 @@ export function KeyboardShortcutsHint({ className }: { className?: string }) {
       <span className="mx-2 text-white/20">·</span>
       <span>
         <kbd>↑</kbd>
-        <kbd>↓</kbd> Change Category
+        <kbd>↓</kbd> Category
+      </span>
+      <span className="mx-2 text-white/20">·</span>
+      <span>
+        <kbd>S</kbd> Save · <kbd>I</kbd> Invite · <kbd>C</kbd> Contact
       </span>
     </div>
   );

@@ -18,11 +18,11 @@ type GridMetrics = {
 };
 
 const DEFAULT_METRICS: GridMetrics = {
-  cellW: 188,
-  cellH: 250,
-  gap: 12,
-  stepX: 200,
-  stepY: 262,
+  cellW: 226,
+  cellH: 300,
+  gap: 14,
+  stepX: 240,
+  stepY: 314,
   colRadius: 4,
   rowRadius: 3,
 };
@@ -94,6 +94,7 @@ type TalentNavigatorGridProps = {
   preview?: boolean;
   previewViewport?: { width: number; height: number };
   showControls?: boolean;
+  categoryLabel?: string;
   onSlideComplete?: () => void;
   onFocusCell: (rowIndex: number, colIndex: number) => void;
   onOpenProfile: (talent: Talent) => void;
@@ -157,6 +158,7 @@ export function TalentNavigatorGrid({
   preview = false,
   previewViewport,
   showControls = true,
+  categoryLabel,
   onSlideComplete,
   onFocusCell,
   onOpenProfile,
@@ -180,7 +182,16 @@ export function TalentNavigatorGrid({
 
   return (
     <div
-      className={`talent-navigator__grid-shell${compact ? " talent-navigator__grid-shell--compact" : ""}${preview ? " talent-navigator__grid-shell--preview" : ""}`}
+      className={`talent-navigator__grid-shell${compact ? " talent-navigator__grid-shell--compact" : ""}${preview ? " talent-navigator__grid-shell--preview" : ""}${categoryLabel ? " talent-navigator__grid-shell--labeled" : ""}`}
+      style={
+        {
+          "--tn-cell-w": `${metrics.cellW}px`,
+          "--tn-cell-h": `${metrics.cellH}px`,
+          "--tn-gap": `${metrics.gap}px`,
+          "--tn-step-x": `${metrics.stepX}px`,
+          "--tn-step-y": `${metrics.stepY}px`,
+        } as React.CSSProperties
+      }
       role="grid"
       aria-rowcount={rows.length}
       aria-colcount={rows[activeRowIndex]?.talent.length ?? 0}
@@ -256,6 +267,16 @@ export function TalentNavigatorGrid({
             );
           })}
         </div>
+
+        {categoryLabel ? (
+          <p
+            key={categoryLabel}
+            className="talent-navigator__category-overlay"
+            aria-live="polite"
+          >
+            {categoryLabel}
+          </p>
+        ) : null}
 
         <div className="talent-navigator__grid-vignette" aria-hidden />
         <div className="talent-navigator__grid-edge-fade talent-navigator__grid-edge-fade--left" aria-hidden />

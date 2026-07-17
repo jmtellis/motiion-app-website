@@ -25,7 +25,7 @@ const castingSubmissionQuestionSchema = z.object({
 });
 
 const castingConfigurationSchema = z.object({
-  schema_version: z.number().int().default(7),
+  schema_version: z.number().int().default(8),
   casting_kind: z.string().nullable().optional(),
   casting_kinds: z.array(z.string()).default([]),
   confidential_project_client: z.boolean().default(false),
@@ -57,6 +57,48 @@ const castingConfigurationSchema = z.object({
       }),
     )
     .default([]),
+  production_dates_yyyymmdd: z.array(z.string()).default([]),
+  production_location_scope_raw: z.string().nullable().optional().default("single"),
+  production_day_locations: z
+    .array(
+      z.object({
+        date_yyyymmdd: z.string(),
+        location_label: z.string().nullable().optional(),
+        location_venue: z.string().nullable().optional(),
+        location_city: z.string().nullable().optional(),
+        location_region: z.string().nullable().optional(),
+        location_country: z.string().nullable().optional(),
+        location_address: z.string().nullable().optional(),
+      }),
+    )
+    .default([]),
+  schedule_location_groups: z
+    .array(
+      z.object({
+        category_id_key: z.string(),
+        location_scope_raw: z.string().nullable().optional().default("single"),
+        location_label: z.string().nullable().optional(),
+        location_venue: z.string().nullable().optional(),
+        location_city: z.string().nullable().optional(),
+        location_region: z.string().nullable().optional(),
+        location_country: z.string().nullable().optional(),
+        location_address: z.string().nullable().optional(),
+        day_locations: z
+          .array(
+            z.object({
+              date_yyyymmdd: z.string(),
+              location_label: z.string().nullable().optional(),
+              location_venue: z.string().nullable().optional(),
+              location_city: z.string().nullable().optional(),
+              location_region: z.string().nullable().optional(),
+              location_country: z.string().nullable().optional(),
+              location_address: z.string().nullable().optional(),
+            }),
+          )
+          .default([]),
+      }),
+    )
+    .default([]),
   schedule_categories: z
     .array(
       z.object({
@@ -70,6 +112,24 @@ const castingConfigurationSchema = z.object({
   submission_deadline_iso8601: z.string().nullable().optional(),
   audition_date_iso8601: z.string().nullable().optional(),
   callback_date_iso8601: z.string().nullable().optional(),
+  audition_sessions: z
+    .array(
+      z.object({
+        id_key: z.string(),
+        title: z.string().default(""),
+        datetime_iso8601: z.string(),
+        has_callback: z.boolean().default(false),
+        callback_datetime_iso8601: z.string().nullable().optional(),
+        location_mode_raw: z.string().nullable().optional().default("in_person"),
+        remote_url: z.string().nullable().optional(),
+        location_label: z.string().nullable().optional(),
+        location_city: z.string().nullable().optional(),
+        location_region: z.string().nullable().optional(),
+        location_notes: z.string().nullable().optional(),
+        location_same_as_production: z.boolean().default(false),
+      }),
+    )
+    .default([]),
   production_dates_not_known_confirmed: z.boolean().default(false),
   compensation_category_raw: z.string().nullable().optional(),
   paid_rate_presentation_raw: z.string().nullable().optional(),
@@ -104,6 +164,7 @@ const castingConfigurationSchema = z.object({
         id: z.string().uuid(),
         title: z.string(),
         file_url_string: z.string().nullable().optional(),
+        file_name: z.string().nullable().optional(),
         content_type: z.string().nullable().optional(),
         uploaded_at_iso8601: z.string().nullable().optional(),
       }),
@@ -133,19 +194,21 @@ const castingRoleSchema = z.object({
     .enum(["midnight", "ocean", "sunset", "forest", "lavender", "slate", "rose", "amber"])
     .default("midnight"),
   coverImageUrl: optionalTrimmedString,
-  clientMatchFilters: z.record(z.string(), z.unknown()).nullable().optional(),
+  clientMatchFilters: z.record(z.string(), z.unknown()).nullable().default(null),
 });
 
 export const castingComposerFormSchema = z.object({
   projectId: z.string().uuid().nullable().optional(),
+  castingId: z.string().uuid().nullable().optional(),
   title: z.string().trim().min(1, "Project title is required."),
   description: optionalTrimmedString,
   productionCompany: optionalTrimmedString,
   productionCompanyLogoUrl: optionalTrimmedString,
+  clientEntityKind: z.enum(["artist", "project", "company"]).nullable().optional(),
   rateType: z.enum(["fixed", "segmented", "union", "tbd"]).default("fixed"),
   rateDetails: rateDetailsSchema,
-  isUnion: z.boolean().default(false),
-  visibility: z.enum(["public", "unlisted", "private"]).default("public"),
+  isUnion: z.boolean().nullable().default(null),
+  visibility: z.enum(["public", "unlisted", "private"]).nullable().default(null),
   password: optionalTrimmedString,
   coverImageUrl: optionalTrimmedString,
   coverThumbnailAlignment: z.enum(["top", "center", "bottom"]).default("top"),
@@ -158,6 +221,8 @@ export const castingComposerFormSchema = z.object({
 
 export const castingDraftFormSchema = castingComposerFormSchema.extend({
   title: z.string().trim().optional().default(""),
+  isUnion: z.boolean().nullable().optional().default(null),
+  visibility: z.enum(["public", "unlisted", "private"]).nullable().optional().default(null),
 });
 
 export type ParsedCastingComposerForm = z.infer<typeof castingComposerFormSchema>;

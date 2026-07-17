@@ -1,5 +1,7 @@
 export type Talent = {
   id: string;
+  /** professional_profiles.id when known — preferred for Library memberships */
+  professionalProfileId?: string;
   slug: string;
   name: string;
   isVerified?: boolean;
@@ -19,6 +21,8 @@ export type Talent = {
   recentlyActive?: boolean;
   newToMotiion?: boolean;
   recommended?: boolean;
+  /** Optional secondary line (e.g. "By …") */
+  caption?: string;
 };
 
 export type TalentRow = {
@@ -41,6 +45,7 @@ export type TalentNavigatorFilters = {
   unionStatus: string;
   experience: string;
   subtype: string;
+  openRoleId: string;
 };
 
 export const EMPTY_NAVIGATOR_FILTERS: TalentNavigatorFilters = {
@@ -56,6 +61,7 @@ export const EMPTY_NAVIGATOR_FILTERS: TalentNavigatorFilters = {
   unionStatus: "",
   experience: "",
   subtype: "",
+  openRoleId: "",
 };
 
 export type NavigatorDataSource = "live" | "mock" | "unavailable";

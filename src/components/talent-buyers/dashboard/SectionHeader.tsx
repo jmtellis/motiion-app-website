@@ -7,6 +7,7 @@ export function SectionHeader({
   count,
   tone = "light",
   size = "default",
+  className = "",
 }: {
   title: string;
   description?: string;
@@ -14,13 +15,14 @@ export function SectionHeader({
   count?: number;
   tone?: "light" | "dark";
   size?: "default" | "dashboard";
+  className?: string;
 }) {
   const isDashboard = size === "dashboard";
   const isDark = tone === "dark" || isDashboard;
 
   if (isDashboard) {
     return (
-      <div className="flex flex-col gap-2 pr-10 sm:flex-row sm:items-baseline sm:justify-between">
+      <div className={`flex flex-col gap-2 pr-10 sm:flex-row sm:items-baseline sm:justify-between ${className}`.trim()}>
         <div className="space-y-1">
           <h2 className="font-mono text-xs font-medium tracking-[0.08em] text-[#8a8a8a] uppercase">
             {title}
@@ -34,7 +36,7 @@ export function SectionHeader({
   }
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+    <div className={`flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between ${className}`.trim()}>
       <div className="space-y-0.5">
         <div className="flex items-center gap-2">
           <h2 className={`text-xl font-semibold ${isDark ? "text-white/92" : "text-[var(--ink)]"}`}>

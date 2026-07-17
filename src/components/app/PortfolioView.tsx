@@ -54,7 +54,7 @@ export function PortfolioView({ profile }: { profile: PublicTalentProfile }) {
         {profile.username ? (
           <Link
             href={`/profile/${profile.username}`}
-            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-[8px] border border-[#262626] bg-[#1e1e1e] px-4 text-sm font-medium text-[#eaeaea] transition-colors hover:bg-[#2a2a2a]"
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-[#262626] bg-[#1e1e1e] px-4 text-sm font-medium text-[#eaeaea] transition-colors hover:bg-[#2a2a2a]"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -70,7 +70,7 @@ export function PortfolioView({ profile }: { profile: PublicTalentProfile }) {
             key={item.id}
             type="button"
             onClick={() => setTab(item.id)}
-            className={`rounded-[8px] px-3.5 py-1.5 text-sm font-medium transition-colors ${
+            className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
               tab === item.id
                 ? "bg-[#1e1e1e] text-[#fafafa]"
                 : "text-[#8a8a8a] hover:bg-[#151515] hover:text-[#eaeaea]"
@@ -214,7 +214,7 @@ function ResumePanel({
           href={resumeUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-10 items-center gap-1.5 rounded-[8px] border border-[#262626] bg-[#1e1e1e] px-4 text-sm font-medium text-[#eaeaea] transition-colors hover:bg-[#2a2a2a]"
+          className="inline-flex h-10 items-center gap-1.5 rounded-full border border-[#262626] bg-[#1e1e1e] px-4 text-sm font-medium text-[#eaeaea] transition-colors hover:bg-[#2a2a2a]"
         >
           Open resume PDF
           <ArrowUpRight className="size-3.5 text-[#8a8a8a]" aria-hidden />

@@ -16,7 +16,7 @@
   --spacing-md: 12px;
   --spacing-lg: 16px;
   --spacing-xl: 24px;
-  --product-radius-button: 8px;
+  --product-radius-button: 9999px;
   --product-radius-field: 8px;
   --product-radius-card: 14px;
   --product-radius-panel: 20px;
@@ -27,6 +27,7 @@
   background: var(--background-default);
   color: var(--text-default);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+  overscroll-behavior: none;
 }
 
 .product-shell {
@@ -44,7 +45,7 @@
 
 .product-tab {
   border: 0;
-  border-radius: 8px;
+  border-radius: 9999px;
   background: transparent;
   color: #8a8a8a;
   font-size: 14px;

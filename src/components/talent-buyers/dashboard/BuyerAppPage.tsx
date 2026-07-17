@@ -5,9 +5,19 @@ import "./buyer-dashboard.css";
 export function BuyerAppPage({
   children,
   className = "",
+  fullWidth = false,
 }: {
   children: ReactNode;
   className?: string;
+  fullWidth?: boolean;
 }) {
-  return <div className={`buyer-dashboard mx-auto w-full max-w-6xl space-y-10 ${className}`}>{children}</div>;
+  const widthClass = fullWidth ? "max-w-none" : className || "max-w-6xl";
+
+  return (
+    <div
+      className={`buyer-dashboard mx-auto w-full ${fullWidth ? "" : "space-y-10 "} ${widthClass} ${fullWidth ? className : ""}`.trim()}
+    >
+      {children}
+    </div>
+  );
 }

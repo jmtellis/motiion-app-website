@@ -6,12 +6,14 @@ export function PageHeader({
   description,
   actions,
   variant = "default",
+  showTitle = true,
 }: {
   eyebrow?: string;
   title: string;
   description?: string;
   actions?: ReactNode;
   variant?: "default" | "dashboard";
+  showTitle?: boolean;
 }) {
   const isDashboard = variant === "dashboard";
 
@@ -27,13 +29,15 @@ export function PageHeader({
             {eyebrow}
           </p>
         ) : null}
-        <h1
-          className={`text-3xl font-semibold tracking-tight md:text-4xl ${
-            isDashboard ? "text-white/92" : "text-[var(--ink)]"
-          }`}
-        >
-          {title}
-        </h1>
+        {showTitle ? (
+          <h1
+            className={`text-3xl font-semibold tracking-tight md:text-4xl ${
+              isDashboard ? "text-white/92" : "text-[var(--ink)]"
+            }`}
+          >
+            {title}
+          </h1>
+        ) : null}
         {description ? (
           <p
             className={`max-w-2xl text-base leading-relaxed ${

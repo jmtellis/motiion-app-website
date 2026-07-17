@@ -48,8 +48,8 @@ export async function MarketingHeader({
   const tabClass = (active: boolean) =>
     darkTheme
       ? active
-        ? "border-transparent rounded-[8px] bg-[#151515] px-3 py-1.5 text-[#fafafa]"
-        : "border-transparent rounded-[8px] px-3 py-1.5 text-[#8a8a8a] hover:bg-[#151515] hover:text-[#eaeaea]"
+        ? "border-transparent rounded-full bg-[#151515] px-3 py-1.5 text-[#fafafa]"
+        : "border-transparent rounded-full px-3 py-1.5 text-[#8a8a8a] hover:bg-[#151515] hover:text-[#eaeaea]"
       : active
         ? "border-[var(--accent-dark)] text-[var(--ink)]"
         : "border-transparent text-[var(--ink-soft)] hover:border-[var(--line)] hover:text-[var(--ink)]";

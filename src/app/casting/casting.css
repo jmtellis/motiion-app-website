@@ -351,6 +351,42 @@
   cursor: pointer;
 }
 
+.casting-submit-note-label {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.casting-submit-note {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  padding: 12px;
+  resize: vertical;
+}
+
+.casting-submit-error {
+  color: #ffb4b4;
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+
+.casting-submit-success {
+  margin: 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 15px;
+}
+
+.casting-submit-success-link {
+  color: #fff;
+  text-decoration: underline;
+}
+
 .casting-btn-primary {
   display: inline-flex;
   align-items: center;

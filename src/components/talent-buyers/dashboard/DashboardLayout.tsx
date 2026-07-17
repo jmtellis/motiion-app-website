@@ -1,6 +1,9 @@
 import { AppAnalytics } from "@/components/analytics/AppAnalytics";
 
+import { BuyerProviders } from "./BuyerProviders";
 import { BuyerDashboardShell } from "./BuyerDashboardShell";
+import "./buyer-dashboard.css";
+import "./buyer-ui.css";
 
 import type { DashboardProfile } from "@/types/database";
 
@@ -14,7 +17,9 @@ export function DashboardLayout({
   return (
     <div className="theme-dark min-h-screen bg-[#0a0a0a]">
       <AppAnalytics />
-      <BuyerDashboardShell profile={profile}>{children}</BuyerDashboardShell>
+      <BuyerProviders>
+        <BuyerDashboardShell profile={profile}>{children}</BuyerDashboardShell>
+      </BuyerProviders>
     </div>
   );
 }

@@ -1,235 +1,181 @@
+"use client";
+
 import Link from "next/link";
-import { CalendarPlus, FolderPlus, ListPlus, Search } from "lucide-react";
+import {
+  ArrowUpRight,
+  CalendarDays,
+  CalendarPlus,
+  FolderPlus,
+  ListPlus,
+  Search,
+} from "lucide-react";
 
-import { getTalentBuyerDashboardSections, primaryGoalOptions } from "@/lib/talent-buyers/onboarding";
-import { getBuyerDashboardData } from "@/lib/talent-buyers/dashboard-data";
+import type { BuyerDashboardLiveData } from "@/lib/talent-buyers/dashboard-live";
 import type { DashboardProfile } from "@/types/database";
-import type { TalentBuyerPrimaryGoal } from "@/types/talent-buyers";
-import type { BuyerProjectSummary } from "@/types/talent-buyer-dashboard";
 
-import { ActionCard } from "./ActionCard";
 import { ActivityFeedItem } from "./ActivityFeedItem";
 import { BuyerAppPage } from "./BuyerAppPage";
-import { BuyerTalentCard } from "./BuyerTalentCard";
-import { DashboardHero } from "./DashboardHero";
-import { DashboardSection } from "./DashboardSection";
+import { useRegisterBuyerChrome } from "./BuyerPageChromeContext";
 import { EmptyState } from "./EmptyState";
-import { EventCard } from "./EventCard";
-import { EventSpotlight } from "./EventSpotlight";
-import { ProjectTable } from "./ProjectTable";
+import { FadeInSection } from "./FadeInSection";
 import { SectionHeader } from "./SectionHeader";
 
-function subtitleForGoal(primaryGoal: TalentBuyerPrimaryGoal | null | undefined) {
-  const match = primaryGoalOptions.find((option) => option.value === primaryGoal);
-  if (!match) return "Pick up where you left off.";
-  if (primaryGoal === "find_talent") return "Discover talent and build your next shortlist.";
-  if (primaryGoal === "post_opportunities") return "Manage castings, classes, and sessions.";
-  if (primaryGoal === "manage_talent") return "Organize rosters and client-ready selections.";
-  return "Search talent, manage projects, and share with clients.";
+const QUICK_ACTIONS = [
+  { href: "/talent", title: "Search Talent", description: "Explore verified profiles", icon: Search },
+  {
+    href: "/projects?create=1",
+    title: "Create project",
+    description: "Start a new workspace",
+    icon: FolderPlus,
+  },
+  { href: "/calendar", title: "Create Event", description: "Schedule your next session", icon: CalendarPlus },
+  { href: "/library", title: "New Roster", description: "Organize talent selections", icon: ListPlus },
+] as const;
+
+function timeOfDayGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
 }
 
 export function BuyerDashboardView({
   profile,
-  castingProjects = [],
+  liveData,
 }: {
   profile: DashboardProfile;
-  castingProjects?: BuyerProjectSummary[];
+  liveData: BuyerDashboardLiveData;
 }) {
-  const data = getBuyerDashboardData();
+  useRegisterBuyerChrome({ title: "Dashboard" });
+
   const firstName = profile.fullName.split(" ")[0];
-  const sections = getTalentBuyerDashboardSections(profile.buyerRole, profile.primaryGoal);
-  const continueWorking = castingProjects.length
-    ? castingProjects.slice(0, 4)
-    : data.continueWorking;
+  const recentActivity = liveData.activityFeed;
 
   return (
-    <BuyerAppPage className="max-w-7xl space-y-0">
-      <DashboardHero
-        firstName={firstName}
-        subtitle={subtitleForGoal(profile.primaryGoal)}
-        stats={{
-          activeProjects: continueWorking.length,
-          upcomingEvents: data.upcomingEvents.length,
-          recentTalent: data.recentTalent.length,
-        }}
-      />
+    <BuyerAppPage fullWidth className="buyer-home-dashboard">
+      <div className="bd-home-top">
+        <div className="bd-home-top__backdrop" aria-hidden />
+        <div className="bd-home-inner">
+          <div className="bd-home-action-canvas">
+            <div className="bd-home-greeting-group">
+              <h1 className="bd-home-greeting" suppressHydrationWarning>
+                {timeOfDayGreeting()}, {firstName}.
+              </h1>
+              <p className="bd-home-greeting-subtext">
+                Pick up where you left off, or start something new.
+              </p>
+            </div>
 
-      <div className="grid gap-0 xl:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.75fr)] xl:gap-10">
-        <div className="space-y-0 xl:pr-6">
-          <DashboardSection className="bd-section relative space-y-4 pt-6" cornerHref="/projects" cornerLabel="View all projects">
-            <SectionHeader
-              title="Continue Working"
-              count={continueWorking.length}
-              size="dashboard"
-              action={
-                <Link href="/projects" className="bd-link">
-                  View all
-                </Link>
-              }
-            />
-            {continueWorking.length ? (
-              <ProjectTable projects={continueWorking} variant="dashboard" />
-            ) : (
-              <EmptyState
-                variant="dashboard"
-                title="No active projects"
-                description="Create a casting to start collecting submissions from talent."
-                actionLabel="Create Casting"
-                actionHref="/projects/new"
-              />
-            )}
-          </DashboardSection>
-
-          <DashboardSection className="bd-section space-y-4 pt-6">
-            <SectionHeader title="Activity Feed" count={data.activityFeed.length} size="dashboard" />
-            {data.activityFeed.length ? (
-              <div className="border-t border-white/8 pt-4">
-                {data.activityFeed.map((item, index) => (
-                  <ActivityFeedItem
-                    key={item.id}
-                    item={item}
-                    isLast={index === data.activityFeed.length - 1}
-                    variant="dashboard"
-                  />
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                variant="dashboard"
-                title="No recent activity"
-                description="Updates from projects, rosters, and events will show here."
-              />
-            )}
-          </DashboardSection>
-
-          {sections.length ? (
-            <section className="bd-section space-y-4 pt-6">
-              <SectionHeader
-                title="Recommended for you"
-                description="Based on your onboarding goals."
-                size="dashboard"
-              />
-              <div className="grid gap-3 sm:grid-cols-2">
-                {sections.map((section) => (
-                  <div key={section} className="bd-muted-panel px-4 py-5 text-sm">
-                    <p className="font-semibold text-white/92">{section}</p>
-                    <p className="mt-1 text-white/50">Coming soon.</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ) : null}
+            <div className="bd-home-actions" aria-label="Quick actions">
+              {QUICK_ACTIONS.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Link key={action.href} href={action.href} className="bd-home-action-card">
+                    <span className="bd-home-action-card__icon" aria-hidden>
+                      <Icon className="size-5" />
+                    </span>
+                    <span className="bd-home-action-card__copy">
+                      <span className="bd-home-action-card__title">{action.title}</span>
+                      <span className="bd-home-action-card__description">{action.description}</span>
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
         </div>
+      </div>
 
-        <aside className="space-y-0 xl:border-l xl:border-white/6 xl:pl-6">
-          <DashboardSection className="bd-section space-y-3 pt-6 xl:pt-6">
-            <SectionHeader title="Quick Actions" size="dashboard" />
-            <div className="space-y-1">
-              <ActionCard
-                href="/talent"
-                title="Search Talent"
-                description="Explore the Motiion talent database."
-                icon={Search}
-                compact
-                variant="dashboard"
-              />
-              <ActionCard
-                href="/projects/new"
-                title="Create Casting"
-                description="Publish a casting with roles and submission rules."
-                icon={FolderPlus}
-                compact
-                variant="dashboard"
-              />
-              <ActionCard
-                href="/events"
-                title="Create Event"
-                description="Schedule auditions, classes, and sessions."
-                icon={CalendarPlus}
-                compact
-                variant="dashboard"
-              />
-              <ActionCard
-                href="/library"
-                title="New Roster"
-                description="Build and manage talent rosters."
-                icon={ListPlus}
-                compact
-                variant="dashboard"
-              />
-            </div>
-          </DashboardSection>
+      <div className="bd-home-bottom">
+        <div className="bd-home-inner bd-home-bottom__grid">
+          <div className="bd-home-workspace">
+            <FadeInSection delay={0.08} className="bd-home-scroll-column">
+              <section className="bd-home-activity bd-home-activity--main" aria-label="Recent activity">
+                <SectionHeader
+                  title="Activity"
+                  count={liveData.activityFeed.length}
+                  size="dashboard"
+                  className="bd-home-section-header"
+                />
+                {recentActivity.length ? (
+                  <div className="bd-home-activity__list">
+                    {recentActivity.map((item, index) => (
+                      <ActivityFeedItem
+                        key={item.id}
+                        item={item}
+                        isLast={index === recentActivity.length - 1}
+                        variant="dashboard"
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    variant="dashboard"
+                    title="No recent activity"
+                    description="Actions like shortlists, avail checks, sizing requests, and casting updates will show here."
+                  />
+                )}
+              </section>
+            </FadeInSection>
+          </div>
 
-          {data.upcomingEvents[0] ? (
-            <EventSpotlight event={data.upcomingEvents[0]} />
-          ) : (
-            <div className="bd-section pt-6">
-              <EmptyState
-                variant="dashboard"
-                title="No upcoming events"
-                description="Create an event to schedule auditions, classes, or sessions."
-                actionLabel="Create Event"
-                actionHref="/events"
-              />
-            </div>
-          )}
-
-          <section className="bd-section space-y-4 pt-6">
-            <SectionHeader
-              title="Recent Talent"
-              count={data.recentTalent.length}
-              size="dashboard"
-              action={
-                <Link href="/talent" className="bd-link">
-                  Browse all
-                </Link>
-              }
-            />
-            {data.recentTalent.length ? (
-              <div className="space-y-1">
-                {data.recentTalent.slice(0, 3).map((talent) => (
-                  <BuyerTalentCard key={talent.id} talent={talent} variant="dashboard" />
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                variant="dashboard"
-                title="No recent talent"
-                description="Profiles you view or save will appear here."
-                actionLabel="Search Talent"
-                actionHref="/talent"
-              />
-            )}
-          </section>
-
-          <section className="bd-section space-y-4 pt-6">
-            <SectionHeader
-              title="Upcoming Events"
-              count={data.upcomingEvents.length}
-              size="dashboard"
-              action={
-                <Link href="/events" className="bd-link">
-                  View all
-                </Link>
-              }
-            />
-            {data.upcomingEvents.length ? (
-              <div className="space-y-1">
-                {data.upcomingEvents.slice(1).map((event) => (
-                  <EventCard key={event.id} event={event} variant="dark" />
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                variant="dashboard"
-                title="No upcoming events"
-                description="Create an event to schedule auditions, classes, or sessions."
-                actionLabel="Create Event"
-                actionHref="/events"
-              />
-            )}
-          </section>
-        </aside>
+          <aside className="bd-home-rail" aria-label="Recently viewed">
+            <FadeInSection delay={0.08} className="bd-home-scroll-column">
+              <section className="bd-home-panel bd-home-recently-viewed space-y-4">
+                <SectionHeader
+                  title="Recently Viewed"
+                  count={liveData.recentlyViewed.length}
+                  size="dashboard"
+                  className="bd-home-section-header"
+                />
+                {liveData.recentlyViewed.length ? (
+                  <ul className="bd-home-talent-list">
+                    {liveData.recentlyViewed.map((item) => {
+                      const initial = item.title.charAt(0).toUpperCase();
+                      return (
+                        <li key={item.id}>
+                          <Link href={item.href} className="bd-home-talent-row">
+                            {item.type === "profile" ? (
+                              <span className="bd-home-talent-row__avatar">
+                                {item.imageUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={item.imageUrl} alt="" />
+                                ) : (
+                                  <span aria-hidden>{initial}</span>
+                                )}
+                              </span>
+                            ) : (
+                              <span className="bd-home-project-row__icon" aria-hidden>
+                                {item.type === "project" ? (
+                                  <FolderPlus className="size-4" />
+                                ) : (
+                                  <CalendarDays className="size-4" />
+                                )}
+                              </span>
+                            )}
+                            <span className="min-w-0 flex-1">
+                              <span className="bd-home-talent-row__name">{item.title}</span>
+                              <span className="bd-home-talent-row__meta">{item.meta}</span>
+                            </span>
+                            <ArrowUpRight className="bd-home-talent-row__arrow size-4" aria-hidden />
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <EmptyState
+                    variant="dashboard"
+                    title="Nothing viewed yet"
+                    description="Profiles, projects, and events you open will appear here."
+                    actionLabel="Search Talent"
+                    actionHref="/talent"
+                  />
+                )}
+              </section>
+            </FadeInSection>
+          </aside>
+        </div>
       </div>
     </BuyerAppPage>
   );

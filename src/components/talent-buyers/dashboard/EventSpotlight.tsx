@@ -2,7 +2,10 @@ import Link from "next/link";
 import { ArrowUpRight, CalendarDays, MapPin } from "lucide-react";
 
 import { formatBuyerDateTime, labelFromSnake } from "@/lib/talent-buyers/dashboard-data";
+import { resolveBuyerCoverImage } from "@/lib/talent-buyers/stock-images";
 import type { BuyerEventSummary } from "@/types/talent-buyer-dashboard";
+
+import { BuyerCoverImage } from "./BuyerCoverImage";
 
 function eventDateParts(dateTime: string) {
   const date = new Date(dateTime);
@@ -12,33 +15,27 @@ function eventDateParts(dateTime: string) {
   };
 }
 
-function WireframeDecoration() {
-  return (
-    <svg
-      className="bd-wireframe"
-      viewBox="0 0 200 200"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-    >
-      <path d="M20 140 L80 60 L140 100 L180 40" stroke="white" strokeWidth="1" />
-      <path d="M40 180 L100 120 L160 160" stroke="white" strokeWidth="1" />
-      <rect x="60" y="80" width="48" height="48" stroke="white" strokeWidth="1" transform="rotate(12 84 104)" />
-      <rect x="110" y="50" width="36" height="36" stroke="white" strokeWidth="1" transform="rotate(-8 128 68)" />
-      <circle cx="150" cy="130" r="24" stroke="white" strokeWidth="1" />
-    </svg>
-  );
-}
-
 export function EventSpotlight({ event }: { event: BuyerEventSummary }) {
   const { month, day } = eventDateParts(event.dateTime);
+  const coverSrc = resolveBuyerCoverImage(event.id, event.coverImageUrl, "event");
 
   return (
-    <Link href="/events" className="bd-feature group relative block overflow-hidden py-6 text-white">
-      <WireframeDecoration />
-      <div className="relative flex min-h-[200px] flex-col justify-between gap-6">
+    <Link
+      href="/calendar"
+      className="group relative block min-h-[280px] overflow-hidden rounded-xl text-white"
+    >
+      <BuyerCoverImage
+        src={coverSrc}
+        alt=""
+        fill
+        overlay
+        fallbackId={event.id}
+        fallbackCategory="event"
+      />
+
+      <div className="relative z-10 flex min-h-[280px] flex-col justify-between gap-6 px-1 py-6">
         <div className="flex items-start justify-between gap-3">
-          <span className="bd-chip gap-2 px-3 py-1.5 text-xs font-semibold text-white/80">
+          <span className="bd-chip gap-2 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-sm">
             <CalendarDays className="size-3.5" aria-hidden />
             Next up
           </span>
@@ -57,7 +54,7 @@ export function EventSpotlight({ event }: { event: BuyerEventSummary }) {
           <p className="mt-2 max-w-sm text-sm leading-relaxed text-white/50">
             {formatBuyerDateTime(event.dateTime)} · {event.location}
           </p>
-          <div className="mt-5 inline-flex items-center gap-3 rounded-xl border border-white/10 bg-white/4 px-4 py-3">
+          <div className="mt-5 inline-flex items-center gap-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3 backdrop-blur-sm">
             <div>
               <p className="text-xs text-white/42">{month}</p>
               <p className="text-2xl font-semibold leading-none text-white/92">{day}</p>

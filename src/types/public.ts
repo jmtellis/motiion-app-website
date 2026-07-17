@@ -49,6 +49,7 @@ export type ProfileVisual = {
 
 export type PublicTalentProfile = {
   id: string;
+  user_id?: string | null;
   full_name: string | null;
   username: string | null;
   headshot_url: string | null;
@@ -85,6 +86,27 @@ export type PublicPricingTier = {
   amountCents: number;
 };
 
+export type PublicEventDay = {
+  id: string;
+  dayDate: string;
+  label: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  maxAttendees: number | null;
+  spotsRemaining: number | null;
+};
+
+export type PublicTicketOption = {
+  id: string;
+  label: string;
+  amountCents: number;
+  currency: string;
+  accessMode: "all_days" | "select_days" | "fixed_days";
+  minDays: number | null;
+  maxDays: number | null;
+  includedEventDayIds: string[];
+};
+
 export type PublicActivity = {
   id: string;
   title: string;
@@ -102,6 +124,8 @@ export type PublicActivity = {
   priceAmountCents: number | null;
   priceCurrency: string | null;
   pricingTiers: PublicPricingTier[] | null;
+  eventDays?: PublicEventDay[] | null;
+  ticketOptions?: PublicTicketOption[] | null;
   organizerDisplayName: string | null;
   organizerHeadshotURL: string | null;
   isEligibleForBooking: boolean;

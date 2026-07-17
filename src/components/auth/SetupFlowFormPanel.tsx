@@ -7,6 +7,7 @@ type SetupFlowFormPanelProps = {
   progressPercent?: number;
   progressCurrent?: number;
   progressTotal?: number;
+  showProgressMeta?: boolean;
   children: ReactNode;
   footer: ReactNode;
   error?: string | null;
@@ -19,6 +20,7 @@ export function SetupFlowFormPanel({
   progressPercent,
   progressCurrent,
   progressTotal,
+  showProgressMeta = true,
   children,
   footer,
   error,
@@ -30,26 +32,36 @@ export function SetupFlowFormPanel({
 
   return (
     <div className="signup-split-form signup-split-form--onboarding">
-      <div>
-        <h1 className="signup-split-form__title">{title}</h1>
-        {subtitle ? <p className="signup-split-form__subtitle">{subtitle}</p> : null}
-      </div>
+      {title || subtitle ? (
+        <div>
+          {title ? <h1 className="signup-split-form__title">{title}</h1> : null}
+          {subtitle ? <p className="signup-split-form__subtitle">{subtitle}</p> : null}
+        </div>
+      ) : null}
 
       {showProgress ? (
         <div className="signup-split-form__progress" aria-hidden={false}>
-          <div className="signup-split-form__progress-meta">
-            <span className="signup-split-form__progress-label">{progressLabel}</span>
-            <span className="signup-split-form__progress-count">
-              {progressCurrent} of {progressTotal}
-            </span>
-          </div>
+          {showProgressMeta ? (
+            <div className="signup-split-form__progress-meta">
+              <span className="signup-split-form__progress-label">{progressLabel}</span>
+              <span className="signup-split-form__progress-count">
+                {progressCurrent} of {progressTotal}
+              </span>
+            </div>
+          ) : null}
           <div
             className="signup-split-form__progress-track"
             role="progressbar"
             aria-valuenow={progressCurrent}
             aria-valuemin={1}
             aria-valuemax={progressTotal}
-            aria-label={progressLabel ? `${progressLabel}: step ${progressCurrent} of ${progressTotal}` : undefined}
+            aria-label={
+              progressLabel
+                ? showProgressMeta
+                  ? `${progressLabel}: step ${progressCurrent} of ${progressTotal}`
+                  : progressLabel
+                : undefined
+            }
           >
             <div
               className="signup-split-form__progress-bar"

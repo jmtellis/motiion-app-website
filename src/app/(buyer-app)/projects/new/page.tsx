@@ -1,9 +1,9 @@
-import { CastingComposer } from "@/components/talent-buyers/casting/CastingComposer";
-import { createDefaultCastingComposerForm } from "@/lib/talent-buyers/casting-composer-defaults";
+import { redirect } from "next/navigation";
+
 import { requireHiringAccount } from "@/lib/auth/session";
+import { projectsCreateHref } from "@/lib/talent-buyers/projects-hub-constants";
 
-export default async function NewCastingPage() {
+export default async function NewProjectPage() {
   await requireHiringAccount();
-
-  return <CastingComposer initialForm={createDefaultCastingComposerForm()} mode="create" />;
+  redirect(projectsCreateHref());
 }

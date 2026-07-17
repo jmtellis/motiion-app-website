@@ -3,12 +3,18 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 
+import { MessageAttachmentBubble } from "@/components/messaging/MessageAttachmentBubble";
+import { MessageLinkBubble } from "@/components/messaging/MessageLinkBubble";
 import {
   fetchConversationMessages,
   markConversationRead,
   sendConversationMessage,
   type ConversationMessage,
 } from "@/lib/app/conversations";
+import {
+  parseMessagingAttachmentPayload,
+  parseMessagingLinkPayload,
+} from "@/lib/messaging/attachment-payload";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 import type { InboxConversation } from "@/types/app";
 
@@ -125,7 +131,7 @@ export function ConversationPane({
         </div>
       </header>
 
-      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+      <div ref={scrollRef} className="min-w-0 flex-1 space-y-3 overflow-x-hidden overflow-y-auto px-4 py-4">
         {loading ? (
           <p className={`text-sm ${isDashboard ? "text-white/45" : "text-[var(--ink-soft)]"}`}>Loading messages…</p>
         ) : null}
@@ -136,10 +142,49 @@ export function ConversationPane({
         ) : null}
         {messages.map((message) => {
           const isMine = message.sender_id === currentUserId;
+          const linkPayload =
+            !message.deleted_at && message.message_type === "attachment"
+              ? parseMessagingLinkPayload(message.body)
+              : null;
+          const attachmentPayload =
+            !message.deleted_at && message.message_type === "attachment" && !linkPayload
+              ? parseMessagingAttachmentPayload(message.body)
+              : null;
+
+          if (linkPayload) {
+            return (
+              <div key={message.id} className={`flex min-w-0 ${isMine ? "justify-end" : "justify-start"}`}>
+                <div className={`flex min-w-0 max-w-full flex-col ${isMine ? "items-end" : "items-start"}`}>
+                  <MessageLinkBubble payload={linkPayload} isMine={isMine} variant={variant} />
+                  <p
+                    className={`mt-1 text-[10px] ${isMine ? "text-white/40" : isDashboard ? "text-white/40" : "text-[var(--ink-soft)]"}`}
+                  >
+                    {formatTime(message.created_at)}
+                  </p>
+                </div>
+              </div>
+            );
+          }
+
+          if (attachmentPayload) {
+            return (
+              <div key={message.id} className={`flex min-w-0 ${isMine ? "justify-end" : "justify-start"}`}>
+                <div className={`flex min-w-0 max-w-full flex-col ${isMine ? "items-end" : "items-start"}`}>
+                  <MessageAttachmentBubble payload={attachmentPayload} isMine={isMine} variant={variant} />
+                  <p
+                    className={`mt-1 text-[10px] ${isMine ? "text-white/40" : isDashboard ? "text-white/40" : "text-[var(--ink-soft)]"}`}
+                  >
+                    {formatTime(message.created_at)}
+                  </p>
+                </div>
+              </div>
+            );
+          }
+
           return (
-            <div key={message.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+            <div key={message.id} className={`flex min-w-0 ${isMine ? "justify-end" : "justify-start"}`}>
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                className={`max-w-[min(75%,100%)] min-w-0 overflow-hidden break-words rounded-2xl px-4 py-2.5 text-sm leading-relaxed [overflow-wrap:anywhere] ${
                   isMine
                     ? "bg-[#fafafa] text-[#0a0a0a]"
                     : isDashboard
@@ -149,6 +194,8 @@ export function ConversationPane({
               >
                 {message.deleted_at ? (
                   <em className="opacity-60">Message deleted</em>
+                ) : message.message_type === "attachment" ? (
+                  <span className="opacity-80">Attachment unavailable</span>
                 ) : (
                   message.body
                 )}
@@ -193,7 +240,7 @@ export function ConversationPane({
           <button
             type="submit"
             disabled={isSending || !draft.trim()}
-            className="rounded-[8px] bg-[#fafafa] px-4 py-2.5 text-sm font-medium text-[#0a0a0a] transition-colors hover:bg-[#e6e6e6] disabled:opacity-40"
+            className="rounded-full bg-[#fafafa] px-4 py-2.5 text-sm font-medium text-[#0a0a0a] transition-colors hover:bg-[#e6e6e6] disabled:opacity-40"
           >
             {isSending ? "Sending…" : "Send"}
           </button>

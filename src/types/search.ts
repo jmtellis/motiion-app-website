@@ -7,6 +7,8 @@ export type ProfileHighlight = {
 
 export type SearchProfileRecord = {
   id: string;
+  /** professional_profiles.id when the record originated from that table */
+  professional_profile_id?: string | null;
   username?: string | null;
   full_name?: string | null;
   display_name?: string | null;

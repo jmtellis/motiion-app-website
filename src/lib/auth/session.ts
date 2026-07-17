@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 
@@ -14,7 +15,8 @@ import type { DashboardProfile, NonTalentProfileRecord, ProfileRecord } from "@/
 
 export { getOnboardingPath, getProfileDestination } from "@/lib/auth/profile";
 
-export async function getCurrentUserProfile(): Promise<DashboardProfile | null> {
+/** Deduped per RSC request so layout + page + helpers share one auth/profile round-trip. */
+export const getCurrentUserProfile = cache(async (): Promise<DashboardProfile | null> => {
   const supabase = await createServerSupabaseClient();
   if (!supabase) return null;
 
@@ -51,7 +53,7 @@ export async function getCurrentUserProfile(): Promise<DashboardProfile | null> 
     .maybeSingle<NonTalentProfileRecord>();
 
   return toDashboardProfile(profile, nonTalentProfile);
-}
+});
 
 export async function requireAuth() {
   const profile = await getCurrentUserProfile();

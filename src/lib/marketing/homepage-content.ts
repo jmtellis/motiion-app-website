@@ -163,7 +163,7 @@ export const homeSignupScrollCta = {
 
 export const homeSignupSection = {
   eyebrow: "Get started",
-  title: "Sign up for free",
+  title: "Sign up",
   description: "Create a talent profile or set up an industry workspace.",
   paths: [
     {

@@ -9,16 +9,19 @@ import {
   Send,
   X,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { getTalentProfileHref } from "@/lib/talent-navigator/profile-adapter";
 import type { Talent } from "@/lib/talent-navigator/types";
 
+import { SaveToCollectionPopover } from "../library/SaveToCollectionPopover";
 import { StyleChips } from "./StyleChips";
 
 type ActiveTalentPanelProps = {
   talent: Talent | null;
   open?: boolean;
-  onSave?: () => void;
+  saveOpen?: boolean;
+  onSaveOpenChange?: (open: boolean) => void;
   onInvite?: () => void;
   onContact?: () => void;
   onAddToProject?: () => void;
@@ -26,6 +29,10 @@ type ActiveTalentPanelProps = {
   compact?: boolean;
   variant?: "sidebar" | "sheet";
 };
+
+function talentSaveKeys(talent: Talent) {
+  return [talent.professionalProfileId, talent.id, talent.slug].filter(Boolean) as string[];
+}
 
 function MetaRow({
   label,
@@ -75,7 +82,7 @@ function TalentIdentityHeader({
       {onClose ? (
         <button
           type="button"
-          className="inline-flex size-7 shrink-0 items-center justify-center rounded-lg text-white/45 hover:bg-white/6 hover:text-white/80"
+          className="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-white/45 hover:bg-white/6 hover:text-white/80"
           onClick={onClose}
           aria-label="Close details"
         >
@@ -89,7 +96,8 @@ function TalentIdentityHeader({
 export function ActiveTalentPanel({
   talent,
   open = false,
-  onSave,
+  saveOpen: saveOpenControlled,
+  onSaveOpenChange,
   onInvite,
   onContact,
   onAddToProject,
@@ -97,7 +105,14 @@ export function ActiveTalentPanel({
   compact = false,
   variant = "sidebar",
 }: ActiveTalentPanelProps) {
+  const [saveOpenInternal, setSaveOpenInternal] = useState(false);
+  const saveOpen = saveOpenControlled ?? saveOpenInternal;
+  const setSaveOpen = onSaveOpenChange ?? setSaveOpenInternal;
   const useCompactHeader = variant === "sidebar" || compact;
+
+  useEffect(() => {
+    setSaveOpenInternal(false);
+  }, [talent?.id]);
 
   const inner = !talent ? (
     <div className="flex flex-1 items-center justify-center p-6">
@@ -149,10 +164,24 @@ export function ActiveTalentPanel({
               View Profile
               <ArrowRight className="size-3.5" aria-hidden />
             </Link>
-            <button type="button" className="talent-navigator__action-btn talent-navigator__action-btn--block" onClick={onSave}>
-              <Bookmark className="size-3.5" aria-hidden />
-              Save to Roster
-            </button>
+            <SaveToCollectionPopover
+              open={saveOpen}
+              onClose={() => setSaveOpen(false)}
+              talentIdOrSlug={talentSaveKeys(talent)}
+              displayName={talent.name}
+              align="left"
+              anchorClassName="w-full"
+              trigger={
+                <button
+                  type="button"
+                  className="talent-navigator__action-btn talent-navigator__action-btn--block w-full"
+                  onClick={() => setSaveOpen(!saveOpen)}
+                >
+                  <Bookmark className="size-3.5" aria-hidden />
+                  Save
+                </button>
+              }
+            />
             <button type="button" className="talent-navigator__action-btn talent-navigator__action-btn--block" onClick={onAddToProject}>
               <CalendarPlus className="size-3.5" aria-hidden />
               Add to Project

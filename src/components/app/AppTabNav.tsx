@@ -29,7 +29,7 @@ export function AppTabNav({ inboxUnread = 0 }: { inboxUnread?: number }) {
             onClick={() => {
               trackClientEvent("app_tab_viewed", { tab: tab.label.toLowerCase() }, tab.href);
             }}
-            className={`relative shrink-0 rounded-[8px] px-3 py-1.5 text-sm font-medium transition-colors ${
+            className={`relative shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
               active
                 ? "bg-[#1e1e1e] text-[#fafafa]"
                 : "text-[#8a8a8a] hover:bg-[#151515] hover:text-[#eaeaea]"

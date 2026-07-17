@@ -6,6 +6,7 @@ import { MarketingHeroOverlay } from "@/components/landing/MarketingHeroOverlay"
 import { MarketingPageLayout } from "@/components/landing/MarketingPageLayout";
 import { getProfileDestination, isOnboardingComplete } from "@/lib/auth/profile";
 import { castingPageContent } from "@/lib/marketing/marketing-pages";
+import { homeHeroVideo } from "@/lib/marketing/hero-video";
 import { getCurrentUserProfile } from "@/lib/auth/session";
 import { MARKETING_DARK } from "@/lib/marketing/dark-theme";
 
@@ -26,6 +27,7 @@ export default async function ForCastingPage() {
       activeTab="casting"
       cleanHero
       darkTheme
+      heroVideo={homeHeroVideo}
       hero={<MarketingHeroOverlay content={castingPageContent} dark />}
     >
       <AudienceLandingSections content={castingPageContent} dark />

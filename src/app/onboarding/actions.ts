@@ -9,6 +9,7 @@ import { upsertProfessionalProfileDraft, type ProfessionalProfileDraftInput } fr
 import { syncProfessionalProfile } from "@/lib/professional-profile/sync";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type {
+  CancelOnboardingResult,
   CompleteOnboardingPayload,
   CompleteOnboardingResult,
   UsernameAvailabilityResult,
@@ -90,6 +91,39 @@ function compactObject<T extends Record<string, unknown>>(value: T) {
   return Object.fromEntries(
     Object.entries(value).filter(([, item]) => item !== undefined),
   ) as Partial<T>;
+}
+
+async function resolveAvailableUsername(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  desired: string,
+) {
+  if (!supabase) return desired;
+
+  const base = desired.trim().toLowerCase();
+  if (!usernameRegex.test(base)) return base;
+
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const suffix = attempt === 0 ? "" : `_${attempt}`;
+    const candidate = `${base.slice(0, Math.max(3, 30 - suffix.length))}${suffix}`;
+
+    const { data, error } = await supabase.rpc("is_username_available", {
+      candidate,
+    });
+
+    if (!error && data) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+function formatProfileWriteError(message: string) {
+  if (message.includes("profiles_username_lower_unique")) {
+    return "That username is already taken. Go back and choose a different username.";
+  }
+
+  return message;
 }
 
 function getBirthDateAge(dateOfBirth: string) {
@@ -202,6 +236,14 @@ export async function completeOnboarding(
       ? []
       : [data.role === "choreographer" ? "choreographer" : "dancer"];
   const completedAt = new Date().toISOString();
+  const resolvedUsername = await resolveAvailableUsername(supabase, data.username);
+
+  if (!resolvedUsername) {
+    return {
+      ok: false,
+      error: "That username is already taken. Go back and choose a different username.",
+    };
+  }
 
   const { error: profileError } = await supabase.from("profiles").upsert(
     compactObject({
@@ -216,7 +258,7 @@ export async function completeOnboarding(
       resume_url: data.resumeUrl || null,
       headshot_urls: data.headshotUrls,
       headshot_original_urls: data.headshotOriginalUrls,
-      username: data.username,
+      username: resolvedUsername,
       height: data.height || null,
       ethnicity: data.ethnicity || null,
       hair_color: data.hairColor || null,
@@ -247,7 +289,7 @@ export async function completeOnboarding(
   );
 
   if (profileError) {
-    return { ok: false, error: profileError.message };
+    return { ok: false, error: formatProfileWriteError(profileError.message) };
   }
 
   if (data.role === "hiring") {
@@ -300,4 +342,47 @@ export async function completeOnboarding(
       nonTalentType: null,
     }),
   };
+}
+
+export async function cancelIncompleteSignup(): Promise<CancelOnboardingResult> {
+  const supabase = await createServerSupabaseClient();
+
+  if (!supabase) {
+    return { ok: false, error: "Supabase is not configured." };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, error: "You must be signed in." };
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("onboarding_completed_at")
+    .eq("user_id", user.id)
+    .maybeSingle<{ onboarding_completed_at: string | null }>();
+
+  if (profileError) {
+    return { ok: false, error: profileError.message };
+  }
+
+  if (profile?.onboarding_completed_at) {
+    return { ok: false, error: "Your profile is already complete." };
+  }
+
+  const { error: deleteError } = await supabase.rpc("delete_my_account");
+
+  if (deleteError) {
+    return { ok: false, error: deleteError.message };
+  }
+
+  await supabase.auth.signOut();
+
+  revalidatePath("/onboarding");
+  revalidatePath("/signup");
+
+  return { ok: true };
 }

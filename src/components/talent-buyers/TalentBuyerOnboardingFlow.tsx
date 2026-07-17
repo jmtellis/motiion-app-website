@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Check, ChevronLeft, ChevronRight, MapPin, X } from "lucide-react";
 
 import { completeTalentBuyerOnboarding } from "@/app/talent-buyers/onboarding/actions";
+import { SetupFlowCancelButton } from "@/components/auth/SetupFlowCancelButton";
 import { SetupFlowFormPanel } from "@/components/auth/SetupFlowFormPanel";
 import { SignupSplitShell } from "@/components/auth/SignupSplitShell";
 import {
@@ -511,16 +512,26 @@ export function TalentBuyerOnboardingFlow({ profile }: { profile: DashboardProfi
         progressTotal={isSuccessStep ? undefined : progress.totalSteps}
         footer={
           <>
-            {!isSuccessStep && draft.currentStep !== "dateOfBirth" ? (
-              <button
-                type="button"
-                className="signup-split-nav-btn signup-split-nav-btn--ghost"
-                onClick={() => goToStep(getPreviousTalentBuyerStep(draft.currentStep))}
-                disabled={isPending}
-              >
-                <ChevronLeft className="size-4" />
-                Back
-              </button>
+            {!isSuccessStep ? (
+              <div className="signup-split-form__footer-start">
+                <SetupFlowCancelButton
+                  userId={profile.id}
+                  disabled={isPending}
+                  onCanceled={() => clearTalentBuyerDraft(profile.id)}
+                  onError={setError}
+                />
+                {draft.currentStep !== "dateOfBirth" ? (
+                  <button
+                    type="button"
+                    className="signup-split-nav-btn signup-split-nav-btn--ghost"
+                    onClick={() => goToStep(getPreviousTalentBuyerStep(draft.currentStep))}
+                    disabled={isPending}
+                  >
+                    <ChevronLeft className="size-4" />
+                    Back
+                  </button>
+                ) : null}
+              </div>
             ) : (
               <span />
             )}

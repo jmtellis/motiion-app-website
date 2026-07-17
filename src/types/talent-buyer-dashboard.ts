@@ -1,11 +1,5 @@
-export type BuyerProjectType =
-  | "casting"
-  | "event"
-  | "tour"
-  | "production"
-  | "agency_submission"
-  | "client_presentation"
-  | "internal_planning";
+export type { BuyerProjectType, ProjectType } from "@/lib/talent-buyers/project-types";
+import type { BuyerProjectType } from "@/lib/talent-buyers/project-types";
 
 export type BuyerProjectStatus = "active" | "draft" | "shared" | "archived";
 
@@ -19,7 +13,18 @@ export type BuyerActivityType =
   | "event_created"
   | "talent_profile_updated"
   | "note_added"
-  | "shortlist_shared";
+  | "shortlist_shared"
+  | "submission_received"
+  | "submission_reviewed"
+  | "invitation_response"
+  | "invite_sent"
+  | "size_sheet_requested"
+  | "size_sheet_responded"
+  | "availability_requested"
+  | "availability_responded"
+  | "talent_shortlisted"
+  | "casting_closed"
+  | "casting_published";
 
 export type BuyerProjectSummary = {
   id: string;
@@ -30,6 +35,7 @@ export type BuyerProjectSummary = {
   talentCount: number;
   notesCount?: number;
   sharedLinksCount?: number;
+  coverImageUrl?: string | null;
 };
 
 export type BuyerEventSummary = {
@@ -39,6 +45,7 @@ export type BuyerEventSummary = {
   dateTime: string;
   location: string;
   status: BuyerEventStatus;
+  coverImageUrl?: string | null;
 };
 
 export type BuyerTalentSummary = {
@@ -64,6 +71,7 @@ export type BuyerSharedPresentation = {
   projectTitle: string;
   sharedAt: string;
   viewCount?: number;
+  token?: string;
 };
 
 export type BuyerActivityItem = {

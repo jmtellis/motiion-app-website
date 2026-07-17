@@ -7,6 +7,7 @@ import { TalentHeroCtas } from "@/components/landing/TalentHeroCtas";
 import { MarketingPageLayout } from "@/components/landing/MarketingPageLayout";
 import { getProfileDestination, isOnboardingComplete } from "@/lib/auth/profile";
 import { talentPageContent } from "@/lib/marketing/marketing-pages";
+import { homeHeroVideo } from "@/lib/marketing/hero-video";
 import { getCurrentUserProfile } from "@/lib/auth/session";
 import { MARKETING_DARK } from "@/lib/marketing/dark-theme";
 
@@ -27,6 +28,7 @@ export default async function ForTalentPage() {
       activeTab="talent"
       cleanHero
       darkTheme
+      heroVideo={homeHeroVideo}
       hero={
         <MarketingHeroOverlay content={talentPageContent} dark>
           <TalentHeroCtas dark />

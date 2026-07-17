@@ -60,8 +60,11 @@ export default function ActivityPageClient({
 
   const isClass = kind === "class";
   const isSession = kind === "session";
-  const canBookClass = isClass && activity.isEligibleForBooking && !enrolledTitle && !soldOut;
-  const showClassActionBar = isClass && activity.isEligibleForBooking && !enrolledTitle;
+  const isEvent = kind === "event";
+  const canBookGuest =
+    (isClass || isEvent) && activity.isEligibleForBooking && !enrolledTitle && !soldOut;
+  const showGuestBookingBar =
+    (isClass || isEvent) && activity.isEligibleForBooking && !enrolledTitle;
   const showSessionActionBar = isSession && activity.isEligibleForBooking;
 
   const analyticsPath = sharePath.startsWith("/") ? sharePath : `/${sharePath}`;
@@ -77,7 +80,9 @@ export default function ActivityPageClient({
       : !activity.isEligibleForBooking
         ? "Booking closed"
         : activity.requirePayment
-          ? "Book"
+          ? isEvent
+            ? "Get tickets"
+            : "Book"
           : "Reserve spot";
 
   return (
@@ -97,7 +102,7 @@ export default function ActivityPageClient({
       />
       <article
         className="casting-page"
-        style={{ paddingBottom: showClassActionBar || showSessionActionBar ? 88 : 24 }}
+        style={{ paddingBottom: showGuestBookingBar || showSessionActionBar ? 88 : 24 }}
       >
         <header className="casting-page-header">
           <p className="casting-section-title">{activityKindLabel(kind)}</p>
@@ -137,8 +142,29 @@ export default function ActivityPageClient({
                 value={soldOut ? "Sold out" : `${activity.spotsRemaining} spots remaining`}
               />
             ) : null}
+            {isEvent && (activity.eventDays?.length ?? 0) > 0 ? (
+              <BreakdownRow
+                label="Days"
+                value={String(activity.eventDays?.length ?? 0)}
+              />
+            ) : null}
           </dl>
         </section>
+
+        {isEvent && (activity.ticketOptions?.length ?? 0) > 0 ? (
+          <section className="casting-glass-card">
+            <h2 className="casting-section-title">Tickets</h2>
+            <ul className="casting-body-copy" style={{ display: "grid", gap: 8, marginTop: 10 }}>
+              {activity.ticketOptions?.map((ticket) => (
+                <li key={ticket.id}>
+                  <strong>{ticket.label}</strong>
+                  {" — "}
+                  {formatMoney(ticket.amountCents, ticket.currency || activity.priceCurrency || "usd")}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {experiencePills.length > 0 ? (
           <section className="casting-glass-card">
@@ -233,14 +259,14 @@ export default function ActivityPageClient({
 
       <OpenInAppBar href={sharePath} label="Open in the Motiion app" />
 
-      {showClassActionBar ? (
+      {showGuestBookingBar ? (
         <div className="casting-submit-bar">
           <button
             type="button"
             className="casting-submit-button"
-            disabled={!canBookClass}
+            disabled={!canBookGuest}
             onClick={() => {
-              if (canBookClass) setShowBookingModal(true);
+              if (canBookGuest) setShowBookingModal(true);
             }}
           >
             {bookButtonLabel}
@@ -347,7 +373,11 @@ function BookingModal({
     >
       <div className="casting-modal-card" onClick={(event) => event.stopPropagation()}>
         <h2 id="class-booking-title" className="casting-modal-title">
-          Book this class
+          {activity.kind === "event"
+            ? "Get tickets"
+            : activity.kind === "session"
+              ? "Book this session"
+              : "Book this class"}
         </h2>
         <ClassGuestBookingForm activity={activity} onEnrolled={onEnrolled} variant="modal" />
         <button type="button" onClick={onClose} className="casting-modal-dismiss">

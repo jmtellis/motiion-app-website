@@ -85,6 +85,8 @@ export type CompleteOnboardingResult =
   | { ok: true; redirectTo: string }
   | { ok: false; error: string };
 
+export type CancelOnboardingResult = { ok: true } | { ok: false; error: string };
+
 export type UsernameAvailabilityResult =
   | { ok: true; available: boolean; message?: string }
   | { ok: false; available: false; message: string };

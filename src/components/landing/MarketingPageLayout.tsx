@@ -43,8 +43,8 @@ export function MarketingPageLayout({
   heroSize?: "full" | "compact";
 }) {
   const headerPullClass = homeHeader
-    ? "-mt-[5.75rem] md:-mt-[4.5rem]"
-    : "-mt-[6.25rem] md:-mt-[4.5rem]";
+    ? "marketing-header-pull"
+    : "marketing-header-pull marketing-header-pull--audience";
   const cleanHeroLayoutClass =
     heroSize === "compact"
       ? "relative flex w-full items-start justify-center px-0 pb-10 pt-28 md:pb-12 md:pt-28"
@@ -64,14 +64,32 @@ export function MarketingPageLayout({
 
         {cleanHero ? (
           <section
-            className={`relative w-full border-b ${headerPullClass} ${
-              darkTheme ? "border-[#262626] bg-[#0a0a0a]" : "border-[var(--line)] bg-[var(--paper)]"
+            className={`relative w-full overflow-hidden border-b ${headerPullClass} ${
+              darkTheme && !heroVideo ? "border-[#262626] bg-[#0a0a0a]" : darkTheme ? "border-[#262626]" : "border-[var(--line)] bg-[var(--paper)]"
             }`}
           >
-            {darkTheme ? <div className="marketing-hero-glow" aria-hidden /> : null}
-            <div className={cleanHeroLayoutClass}>
-              {hero}
-            </div>
+            {heroVideo ? (
+              <>
+                <div className="marketing-bg-safe-bleed" aria-hidden>
+                  <HeroShaderVideoBackground
+                    src={heroVideo.src}
+                    poster={heroVideo.poster}
+                    alt={heroVideo.alt}
+                  />
+                </div>
+                <div className="marketing-bg-safe-bleed pointer-events-none" aria-hidden>
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      background: `linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.35) 50%, ${MARKETING_DARK.bg} 92%)`,
+                    }}
+                  />
+                </div>
+              </>
+            ) : darkTheme ? (
+              <div className="marketing-hero-glow" aria-hidden />
+            ) : null}
+            <div className={`relative z-[1] ${cleanHeroLayoutClass}`}>{hero}</div>
           </section>
         ) : homeHeader ? (
           <HomeHeroSection
@@ -125,7 +143,14 @@ export function MarketingPageLayout({
   const page = (
     <FooterRevealShell
       surfaceClass={darkTheme ? "bg-[#0a0a0a]" : "bg-[var(--paper)]"}
-      footerBand={darkTheme ? <HomeSignupSection variant="footer-reveal" /> : undefined}
+      footerBand={
+        darkTheme ? (
+          <HomeSignupSection
+            variant="footer-reveal"
+            audience={homeHeader ? null : activeTab}
+          />
+        ) : undefined
+      }
     >
       {homeHeader && darkTheme ? (
         <HomeEnterTransition>{scrollContent}</HomeEnterTransition>

@@ -59,7 +59,7 @@ export function MarketingDialog({
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 inline-flex h-9 w-9 items-center justify-center rounded-[8px] text-[#8a8a8a] transition hover:bg-[#1e1e1e] hover:text-[#eaeaea] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+          className="absolute top-4 right-4 inline-flex h-9 w-9 items-center justify-center rounded-full text-[#8a8a8a] transition hover:bg-[#1e1e1e] hover:text-[#eaeaea] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
           aria-label="Close"
         >
           <span aria-hidden className="text-xl leading-none">

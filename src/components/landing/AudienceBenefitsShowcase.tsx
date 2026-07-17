@@ -47,14 +47,28 @@ function BenefitIcon({ icon }: { icon: BenefitIconKey }) {
 function FeaturedBenefitCard({
   benefit,
   dark,
+  showDivider = false,
+  insetStart = false,
 }: {
   benefit: AudienceBenefit;
   dark: boolean;
+  showDivider?: boolean;
+  insetStart?: boolean;
 }) {
-  const isNavigator = benefit.preview === "industry-navigator";
+  const isBlankPreview =
+    benefit.preview === "talent-portfolio" ||
+    benefit.preview === "talent-discovery" ||
+    benefit.preview === "industry-navigator" ||
+    benefit.preview === "industry-projects";
 
   return (
-    <article className="audience-benefits__featured-card">
+    <article
+      className={cn(
+        "audience-benefits__featured-card",
+        showDivider && "audience-benefits__featured-card--divider",
+        insetStart && "audience-benefits__featured-card--inset",
+      )}
+    >
       <div className="audience-benefits__featured-copy">
         <BenefitIcon icon={benefit.icon} />
         <h3 className={cn("audience-benefits__featured-title", !dark && "text-[var(--ink)]")}>
@@ -66,15 +80,18 @@ function FeaturedBenefitCard({
       </div>
 
       {benefit.preview ? (
-        <div className="audience-benefits__preview">
-          <div
-            className={cn(
-              "audience-benefits__preview-inner",
-              isNavigator && "audience-benefits__preview-inner--navigator",
-            )}
-          >
-            <AppPreviewMock kind={benefit.preview} />
-          </div>
+        <div
+          className={cn(
+            "audience-benefits__preview",
+            isBlankPreview && "audience-benefits__preview--blank",
+          )}
+          aria-hidden={isBlankPreview ? true : undefined}
+        >
+          {!isBlankPreview ? (
+            <div className="audience-benefits__preview-inner">
+              <AppPreviewMock kind={benefit.preview} />
+            </div>
+          ) : null}
         </div>
       ) : null}
     </article>
@@ -103,12 +120,10 @@ function CompactBenefitCard({
 
 export function AudienceBenefitsShowcase({
   title,
-  intro,
   benefits,
   dark = false,
 }: {
   title: string;
-  intro: string;
   benefits: AudienceBenefit[];
   dark?: boolean;
 }) {
@@ -120,27 +135,24 @@ export function AudienceBenefitsShowcase({
       <div className="audience-benefits__header">
         <h2
           className={cn(
-            "type-heading-1 max-w-3xl text-balance",
+            "type-heading-1 mx-auto max-w-3xl text-center text-balance",
             dark ? "text-on-dark-primary" : "text-[var(--ink)]",
           )}
         >
           {title}
         </h2>
-        <p
-          className={cn(
-            "type-body max-w-md text-pretty lg:justify-self-end lg:text-right",
-            dark ? "text-on-dark-secondary" : "text-[var(--ink-soft)]",
-          )}
-        >
-          {intro}
-        </p>
       </div>
 
       {featured.length > 0 ? (
         <div className="audience-benefits__featured">
           {featured.map((benefit, index) => (
             <Reveal key={benefit.title} delay={index * 0.06} amount={0.12} distance={20}>
-              <FeaturedBenefitCard benefit={benefit} dark={dark} />
+              <FeaturedBenefitCard
+                benefit={benefit}
+                dark={dark}
+                showDivider={index === 0 && featured.length > 1}
+                insetStart={index === 1}
+              />
             </Reveal>
           ))}
         </div>

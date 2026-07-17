@@ -67,7 +67,7 @@ export function AccountPill({ user }: { user: AccountPillUser }) {
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        className="inline-flex h-10 items-center gap-2.5 rounded-[8px] border border-[#262626] bg-[#1e1e1e] py-1 pl-3 pr-1.5 text-white transition hover:bg-[#2a2a2a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+        className="inline-flex h-10 items-center gap-2.5 rounded-full border border-[#262626] bg-[#1e1e1e] py-1 pl-3 pr-1.5 text-white transition hover:bg-[#2a2a2a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
         aria-expanded={open}
         aria-haspopup="menu"
         aria-controls={menuId}

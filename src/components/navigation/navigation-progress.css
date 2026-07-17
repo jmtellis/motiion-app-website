@@ -1,0 +1,36 @@
+.nav-progress {
+  pointer-events: none;
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: 60;
+  height: 2px;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.nav-progress--active {
+  opacity: 1;
+}
+
+.nav-progress__bar {
+  height: 100%;
+  width: 40%;
+  border-radius: 999px;
+  background: var(--accent, #2dd4bf);
+  transform: translateX(-120%);
+}
+
+.nav-progress--active .nav-progress__bar {
+  animation: nav-progress-slide 1.05s ease-in-out infinite;
+}
+
+@keyframes nav-progress-slide {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}

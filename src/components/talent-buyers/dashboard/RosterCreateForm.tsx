@@ -36,7 +36,7 @@ export function RosterCreateForm() {
       <button
         type="submit"
         disabled={pending || !name.trim()}
-        className="rounded-lg bg-[var(--ds-primary)] px-4 py-2 text-sm font-semibold text-[var(--ds-on-primary)] disabled:opacity-50"
+        className="rounded-full bg-[var(--ds-primary)] px-4 py-2 text-sm font-semibold text-[var(--ds-on-primary)] disabled:opacity-50"
       >
         {pending ? "Creating…" : "Create roster"}
       </button>

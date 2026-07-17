@@ -162,8 +162,6 @@
 .signup-split-cover__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
   width: 100%;
   margin-bottom: 2rem;
 }
@@ -184,8 +182,7 @@
   color: rgb(255 255 255 / 0.9);
 }
 
-.signup-split-cover__home-link {
-  flex-shrink: 0;
+.signup-split-cover__return-link {
   border: 0;
   background: transparent;
   padding: 0;
@@ -193,10 +190,11 @@
   font-weight: 500;
   color: rgb(255 255 255 / 0.65);
   text-decoration: none;
+  cursor: pointer;
   transition: color 0.15s ease;
 }
 
-.signup-split-cover__home-link:hover {
+.signup-split-cover__return-link:hover {
   color: #fff;
   text-decoration: underline;
 }
@@ -613,6 +611,97 @@
   margin-top: 1.5rem;
   padding-top: 1.25rem;
   border-top: 1px solid rgb(255 255 255 / 0.1);
+}
+
+.signup-split-form__footer-start {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.setup-flow-cancel-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.setup-flow-cancel-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgb(0 0 0 / 0.72);
+  cursor: pointer;
+}
+
+.setup-flow-cancel-dialog__panel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 24rem);
+  border-radius: 1.125rem;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  background: #151515;
+  padding: 1.5rem;
+  box-shadow: 0 24px 48px rgb(0 0 0 / 0.45);
+}
+
+.setup-flow-cancel-dialog__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #fafafa;
+}
+
+.setup-flow-cancel-dialog__description {
+  margin-top: 0.625rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: rgb(255 255 255 / 0.62);
+}
+
+.setup-flow-cancel-dialog__error {
+  margin-top: 0.875rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(248 113 113 / 0.35);
+  background: rgb(248 113 113 / 0.1);
+  padding: 0.75rem 0.875rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #fecaca;
+}
+
+.setup-flow-cancel-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.625rem;
+  margin-top: 1.25rem;
+}
+
+.setup-flow-cancel-dialog__confirm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 9999px;
+  background: #fafafa;
+  padding: 0.55rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.setup-flow-cancel-dialog__confirm:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.setup-flow-cancel-dialog__confirm:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .signup-split-nav-btn {

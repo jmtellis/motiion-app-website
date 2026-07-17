@@ -1,4 +1,5 @@
 import { digestCastingPassword } from "@/lib/talent-buyers/casting-password";
+import { createDefaultCastingConfiguration } from "@/lib/talent-buyers/casting-composer-defaults";
 import type { ParsedCastingComposerForm } from "@/lib/talent-buyers/casting-schema";
 import type {
   CastingComposerForm,
@@ -54,8 +55,8 @@ export function buildRpcProjectPayload(form: ParsedCastingComposerForm, isDraft:
     production_company_logo_url: nullableTrim(form.productionCompanyLogoUrl),
     rate_type: form.rateType,
     rate_details: cleanRateDetails(form.rateDetails),
-    is_union: form.isUnion,
-    visibility: form.visibility,
+    is_union: form.isUnion ?? false,
+    visibility: form.visibility ?? "public",
     password_hash: projectPasswordHash(form),
     cover_image_url: nullableTrim(form.coverImageUrl),
     location: nullableTrim(form.location),
@@ -103,8 +104,8 @@ export function buildProjectInsertRow(
     production_company_logo_url: nullableTrim(form.productionCompanyLogoUrl),
     rate_type: form.rateType,
     rate_details: cleanRateDetails(form.rateDetails),
-    is_union: form.isUnion,
-    visibility: form.visibility,
+    is_union: form.isUnion ?? false,
+    visibility: form.visibility ?? "public",
     password_hash: projectPasswordHash(form),
     cover_image_url: nullableTrim(form.coverImageUrl),
     cover_thumbnail_alignment: form.coverThumbnailAlignment,
@@ -168,26 +169,15 @@ export function castingRecordToComposerForm(
   project: CastingProjectRecord,
   roles: CastingRoleRecord[],
 ): CastingComposerForm {
-  const configuration = project.casting_configuration ?? {
-    schema_version: 7,
-    casting_kinds: [],
-    confidential_project_client: false,
-    local_hire_only: false,
-    location_cities: [],
-    travel_required_for_locations: false,
-    rehearsal_date_ranges: [],
-    production_date_ranges: [],
-    schedule_categories: [],
-    production_dates_not_known_confirmed: false,
-    compensation_coverage_raws: [],
-    submission_required_material_raws: [],
-    additional_submission_questions: [],
-    close_submissions_automatically_at_deadline: true,
-    eligibility_raws: [],
-    visibility_agency_names: [],
-    allow_external_invites: false,
-    attachments: [],
-    composer_draft: true,
+  const configuration = {
+    ...createDefaultCastingConfiguration(true),
+    ...(project.casting_configuration ?? {}),
+    production_dates_yyyymmdd: project.casting_configuration?.production_dates_yyyymmdd ?? [],
+    production_day_locations: project.casting_configuration?.production_day_locations ?? [],
+    schedule_location_groups: project.casting_configuration?.schedule_location_groups ?? [],
+    production_location_scope_raw:
+      project.casting_configuration?.production_location_scope_raw ?? "single",
+    audition_sessions: project.casting_configuration?.audition_sessions ?? [],
   };
 
   return {

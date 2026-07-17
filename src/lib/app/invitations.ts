@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { bridgeWebInviteToMobile } from "@/lib/talent-buyers/casting/bridge-mobile-invite";
 import { trackServerEvent } from "@/lib/analytics/track-server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -168,9 +169,20 @@ export async function inviteTalentToCasting(input: {
       status: "sent",
       message: input.message ?? null,
     });
-    if (insertError?.code === "23505") return { ok: true };
+    if (insertError?.code === "23505") {
+      await bridgeWebInviteToMobile(supabase, {
+        invitedProfileId: input.profileId,
+        castingId: input.castingId,
+      });
+      return { ok: true };
+    }
     if (insertError) return { ok: false, error: insertError.message };
   }
+
+  await bridgeWebInviteToMobile(supabase, {
+    invitedProfileId: input.profileId,
+    castingId: input.castingId,
+  });
 
   await trackServerEvent("booking_request_sent", {
     project_id: input.projectId,

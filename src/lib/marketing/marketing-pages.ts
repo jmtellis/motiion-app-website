@@ -1,8 +1,10 @@
 import type { FaqItem } from "@/lib/marketing/homepage-content";
+import type { AudiencePricingContent } from "@/lib/marketing/audience-pricing";
+import { industryPricingContent, talentPricingContent } from "@/lib/marketing/audience-pricing";
 
 export type MarketingTab = "talent" | "casting";
 
-export const JOIN_BETA_CTA = { label: "Join Beta", href: "#signup" } as const;
+export const JOIN_BETA_CTA = { label: "Sign up", href: "/signup" } as const;
 export const INDUSTRY_PRO_SIGNUP_CTA = { label: "Sign up", href: "/talent-buyers/signup" } as const;
 
 /** Root landing and other pages where no audience tab is selected. */
@@ -47,14 +49,11 @@ export type AudiencePageContent = {
   benefits: AudienceBenefit[];
   workflowTitle: string;
   workflowSteps: string[];
+  workflowAside?: "blank" | "trust";
   trustTitle: string;
   trustPoints: string[];
   faq: FaqItem[];
-  betaSignup: {
-    eyebrow: string;
-    title: string;
-    description: string;
-  };
+  pricing: AudiencePricingContent;
 };
 
 export const talentPageContent: AudiencePageContent = {
@@ -65,7 +64,7 @@ export const talentPageContent: AudiencePageContent = {
   heroCtas: {
     primary: JOIN_BETA_CTA,
   },
-  benefitsTitle: "Why dancers and choreographers join Motiion",
+  benefitsTitle: "Why join Motiion?",
   benefits: [
     {
       title: "Living portfolio",
@@ -115,6 +114,7 @@ export const talentPageContent: AudiencePageContent = {
     "Get discovered in search and receive targeted invites.",
     "Manage messages, schedule, and opportunities from one home base.",
   ],
+  workflowAside: "blank",
   trustTitle: "Designed for working artists",
   trustPoints: [
     "Search-safe profiles that protect personal details while staying discoverable.",
@@ -139,15 +139,10 @@ export const talentPageContent: AudiencePageContent = {
     {
       question: "Is there a cost to join?",
       answer:
-        "You can sign up and build your profile during our early access period. Reach out if you have questions about upcoming plans.",
+        "You can start on the Free plan and upgrade to Pro when you need more visibility, media, and workflow tools. See pricing below for dancer and choreographer plans.",
     },
   ],
-  betaSignup: {
-    eyebrow: "Join Beta",
-    title: "Request beta access",
-    description:
-      "Tell us you're joining as talent. We'll invite you during our early access wave and reach out as spots open.",
-  },
+  pricing: talentPricingContent,
 };
 
 export const castingPageContent: AudiencePageContent = {
@@ -208,6 +203,7 @@ export const castingPageContent: AudiencePageContent = {
     "Create projects and publish castings with roles, requirements, and submission details.",
     "Build shortlists, collaborate with stakeholders, and move from discovery to confirmation.",
   ],
+  workflowAside: "blank",
   trustTitle: "Built for production timelines",
   trustPoints: [
     "Reduces time-to-shortlist on fast-moving projects.",
@@ -231,10 +227,5 @@ export const castingPageContent: AudiencePageContent = {
         "Yes. You can browse public talent profiles, then create an account when you are ready to build rosters, create projects, and collaborate.",
     },
   ],
-  betaSignup: {
-    eyebrow: "Join Beta",
-    title: "Request beta access",
-    description:
-      "Tell us how your team discovers talent and manages projects. We'll follow up with early access details for industry professional accounts.",
-  },
+  pricing: industryPricingContent,
 };

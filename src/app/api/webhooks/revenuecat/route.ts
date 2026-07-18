@@ -42,6 +42,7 @@ export async function POST(request: Request) {
     {
       user_id: userId,
       provider: "revenuecat",
+      billing_source: "revenuecat",
       status: active ? "active" : "canceled",
       tier: active ? "pro" : "free",
       current_period_end: periodEnd,

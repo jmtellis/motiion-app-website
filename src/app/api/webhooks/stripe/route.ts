@@ -70,10 +70,11 @@ async function upsertSubscriptionFromStripe(
   const status = mapStripeSubscriptionStatus(subscription.status);
   const periodEnd = subscriptionPeriodEndIso(subscription);
 
-  await supabase.from("subscriptions").upsert(
+  const { error } = await supabase.from("subscriptions").upsert(
     {
       user_id: input.userId,
       provider: "stripe",
+      billing_source: "stripe",
       external_id: subscription.id,
       customer_id: input.customerId,
       status,
@@ -83,6 +84,10 @@ async function upsertSubscriptionFromStripe(
     },
     { onConflict: "user_id,provider" },
   );
+
+  if (error) {
+    throw new Error(`Subscription upsert failed for ${input.userId}: ${error.message}`);
+  }
 
   return { status, subscription };
 }
@@ -168,6 +173,7 @@ export async function POST(request: Request) {
         {
           user_id: userId,
           provider: "stripe",
+          billing_source: "stripe",
           external_id: sub.id,
           customer_id: customerId,
           status,

@@ -77,7 +77,7 @@ const stepCopy: Record<TalentBuyerOnboardingStep, { title: string; subtitle?: st
   markets: { title: "Where do you typically work?" },
   verification: {
     title: "Verify your identity",
-    subtitle: "Confirm your details and complete Stripe Identity verification to finish setup.",
+    subtitle: "Confirm your details, then verify your photo ID and face with Stripe.",
   },
   success: {
     title: "You're all set.",
@@ -446,6 +446,12 @@ export function TalentBuyerOnboardingFlow({ profile }: { profile: DashboardProfi
                   <p className="mt-1 text-sm text-[var(--ink-soft)]">
                     {identityStatusLabel(identityStatus)}
                   </p>
+                  {!identityVerified ? (
+                    <p className="mt-1 text-xs text-[var(--ink-soft)]">
+                      Have a government-issued photo ID ready. Stripe will photograph your ID and
+                      capture a live selfie to confirm they match.
+                    </p>
+                  ) : null}
                 </div>
                 {identityVerified ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--accent),white_84%)] px-3 py-1 text-sm font-medium text-[var(--accent-dark)]">

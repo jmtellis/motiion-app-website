@@ -3,7 +3,7 @@
 import { Bookmark, FolderPlus, Plus } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 
-import { saveTalentForBuyer } from "@/app/(buyer-app)/talent/actions";
+import { saveTalentForBuyer } from "@/app/(buyer-app)/(paid)/talent/actions";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
 import {
   addTalentToCollections,

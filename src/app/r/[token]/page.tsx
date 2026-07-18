@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { validateReferralToken } from "@/app/(buyer-app)/projects/[id]/casting-workflow/actions";
+import { validateReferralToken } from "@/app/(buyer-app)/(paid)/projects/[id]/casting-workflow/actions";
 import { AnonymousCastingReferralForm } from "@/components/talent-buyers/casting/AnonymousCastingReferralForm";
 import { ToastProvider } from "@/components/talent-buyers/dashboard/ToastProvider";
 

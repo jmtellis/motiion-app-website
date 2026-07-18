@@ -3,7 +3,7 @@
 import { useCallback, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { updateProject } from "@/app/(buyer-app)/projects/actions";
+import { updateProject } from "@/app/(buyer-app)/(paid)/projects/actions";
 import { castingWorkspaceHref } from "@/lib/talent-buyers/casting/casting-routes";
 import { createDefaultCastingComposerForm } from "@/lib/talent-buyers/casting-composer-defaults";
 import { createDefaultProjectComposerForm } from "@/lib/talent-buyers/project-composer-defaults";

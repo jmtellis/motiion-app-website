@@ -7,7 +7,7 @@ import {
   askTalentAvailability,
   contactTalentUser,
   requestTalentSizeSheet,
-} from "@/app/(buyer-app)/talent/actions";
+} from "@/app/(buyer-app)/(paid)/talent/actions";
 
 type UseTalentOutreachActionsOptions = {
   talentUserId: string | undefined;

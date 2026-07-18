@@ -5,12 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { X } from "lucide-react";
 
-import { fetchNavigatorTalent } from "@/app/(buyer-app)/talent/actions";
+import { fetchNavigatorTalent } from "@/app/(buyer-app)/(paid)/talent/actions";
 import {
   getCastingReferralShareUrls,
   inviteCandidatesFromSearch,
   withdrawInvitationFromSearch,
-} from "@/app/(buyer-app)/projects/[id]/casting-workflow/actions";
+} from "@/app/(buyer-app)/(paid)/projects/[id]/casting-workflow/actions";
 import { getProfileInitials } from "@/lib/auth/avatar";
 import {
   deriveCastingWorkflowState,

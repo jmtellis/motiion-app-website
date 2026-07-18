@@ -6,7 +6,7 @@ import { Loader2, Search, X } from "lucide-react";
 import {
   createAnonymousCastingReferral,
   searchTalentForReferralToken,
-} from "@/app/(buyer-app)/projects/[id]/casting-workflow/actions";
+} from "@/app/(buyer-app)/(paid)/projects/[id]/casting-workflow/actions";
 import type { Talent } from "@/lib/talent-navigator/types";
 
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";

@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { MapPin, Users, X } from "lucide-react";
 
-import type { CalendarEvent } from "@/app/(buyer-app)/events/actions";
+import type { CalendarEvent } from "@/app/(buyer-app)/(paid)/events/actions";
 import { labelFromSnake } from "@/lib/talent-buyers/dashboard-data";
 import { recordBuyerContentView } from "@/lib/talent-buyers/dashboard-live";
 

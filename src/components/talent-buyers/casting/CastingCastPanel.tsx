@@ -9,7 +9,7 @@ import {
   finalizeCastingRole,
   reopenCastingFromWorkflow,
   updateCastingCandidateStatus,
-} from "@/app/(buyer-app)/projects/[id]/casting-workflow/actions";
+} from "@/app/(buyer-app)/(paid)/projects/[id]/casting-workflow/actions";
 import {
   getCastingPanelHeader,
   getCastingPrimaryAction,

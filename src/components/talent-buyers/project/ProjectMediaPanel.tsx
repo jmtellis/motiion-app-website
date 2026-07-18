@@ -7,7 +7,7 @@ import {
   removeProjectMedia,
   uploadProjectAttachment,
   uploadProjectCover,
-} from "@/app/(buyer-app)/projects/project-media-actions";
+} from "@/app/(buyer-app)/(paid)/projects/project-media-actions";
 import { resizeImageFile } from "@/lib/onboarding/client-media";
 import type { ProjectAttachment } from "@/types/project";
 

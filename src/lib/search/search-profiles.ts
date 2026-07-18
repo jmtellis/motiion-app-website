@@ -20,6 +20,7 @@ type ProfessionalProfileRow = {
   id: string;
   user_id: string;
   slug: string;
+  subtype: string | null;
   styles: string[] | null;
   skills: string[] | null;
   gender: string | null;
@@ -30,6 +31,8 @@ type ProfessionalProfileRow = {
   is_verified: boolean;
   agency_name: string | null;
 };
+
+const TALENT_SUBTYPES = ["dancer", "choreographer"] as const;
 
 function titleCaseSlug(slug: string): string {
   return slug
@@ -92,6 +95,10 @@ function mapProfessionalProfileRow(
       : row.location_city
     : null;
 
+  const subtype = row.subtype?.trim().toLowerCase() ?? "";
+  const talentTypes =
+    subtype === "dancer" || subtype === "choreographer" ? [subtype] : [];
+
   return normalizeSearchProfile({
     id: row.user_id,
     professional_profile_id: row.id,
@@ -103,6 +110,7 @@ function mapProfessionalProfileRow(
     location,
     styles: row.styles ?? [],
     skills: row.skills ?? [],
+    talent_types: talentTypes,
     gender: row.gender,
     ethnicity: row.ethnicity?.join(", ") ?? null,
     union_status: row.union_status,
@@ -296,12 +304,15 @@ async function querySupabaseView(
 }
 
 const PROFESSIONAL_PROFILE_SELECT =
-  "id,user_id,slug,styles,skills,gender,ethnicity,union_status,location_city,location_region,is_verified,agency_name";
+  "id,user_id,slug,subtype,styles,skills,gender,ethnicity,union_status,location_city,location_region,is_verified,agency_name";
 
-function buildProfessionalProfilesQueryPath(filters: SearchFilters, cursor: string | null): string {
+/** Talent-only verified profile source (excludes industry professionals). */
+export function buildProfessionalProfilesQueryPath(filters: SearchFilters, cursor: string | null): string {
+  const subtypeFilter = TALENT_SUBTYPES.map((value) => `"${value}"`).join(",");
   const params = [
     `select=${PROFESSIONAL_PROFILE_SELECT}`,
     "is_verified=eq.true",
+    `subtype=in.(${subtypeFilter})`,
     "order=id.asc",
     `limit=${KEYSET_BATCH_SIZE}`,
   ];
@@ -315,7 +326,7 @@ function buildProfessionalProfilesQueryPath(filters: SearchFilters, cursor: stri
     params.push(`gender=in.(${variants.join(",")})`);
   }
 
-  return `professional_profiles?${params.join("&")}`;
+  return `talent_professional_profiles?${params.join("&")}`;
 }
 
 async function enrichProfessionalProfileRows(
@@ -382,9 +393,10 @@ async function fetchProfessionalProfileBatchAdmin(
   cursor: string | null,
 ): Promise<ProfessionalProfileRow[] | null> {
   let query = admin
-    .from("professional_profiles")
+    .from("talent_professional_profiles")
     .select(PROFESSIONAL_PROFILE_SELECT)
     .eq("is_verified", true)
+    .in("subtype", [...TALENT_SUBTYPES])
     .order("id", { ascending: true })
     .limit(KEYSET_BATCH_SIZE);
 
@@ -503,9 +515,6 @@ export const searchTalentProfiles = cache(async (filters: SearchFilters): Promis
       source: "talent",
     };
   }
-
-  const publicProfiles = await querySupabaseView("public_search_profiles", filters);
-  if (publicProfiles) return publicProfiles;
 
   if (!getSupabaseConfig()) {
     return emptySearchResult(filters);

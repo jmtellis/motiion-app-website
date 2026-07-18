@@ -8,7 +8,7 @@ import {
   getCastingReferralShareUrls,
   searchPlatformUsers,
   type PlatformUserResult,
-} from "@/app/(buyer-app)/projects/[id]/casting-workflow/actions";
+} from "@/app/(buyer-app)/(paid)/projects/[id]/casting-workflow/actions";
 import { startConversationWith } from "@/lib/app/conversations";
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";

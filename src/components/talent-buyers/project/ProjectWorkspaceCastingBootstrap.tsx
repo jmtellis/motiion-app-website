@@ -1,4 +1,4 @@
-import { migrateLegacyCastingAttachmentsIfNeeded } from "@/app/(buyer-app)/projects/project-media-actions";
+import { migrateLegacyCastingAttachmentsIfNeeded } from "@/app/(buyer-app)/(paid)/projects/project-media-actions";
 import { fetchCastingWorkflowData } from "@/lib/talent-buyers/casting/casting-workflow-data";
 import type { ProjectAttachment } from "@/types/project";
 

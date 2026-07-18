@@ -9,11 +9,11 @@ import {
   publishCasting,
   saveCastingDraft,
   updatePublishedCasting,
-} from "@/app/(buyer-app)/projects/actions";
+} from "@/app/(buyer-app)/(paid)/projects/actions";
 import {
   publishProjectCasting,
   saveProjectCastingDraft,
-} from "@/app/(buyer-app)/projects/[id]/castings/actions";
+} from "@/app/(buyer-app)/(paid)/projects/[id]/castings/actions";
 import {
   AuthButton,
   AuthCard,

@@ -11,7 +11,7 @@ import {
   Share2,
 } from "lucide-react";
 
-import { getCastingReferralShareUrls } from "@/app/(buyer-app)/projects/[id]/casting-workflow/actions";
+import { getCastingReferralShareUrls } from "@/app/(buyer-app)/(paid)/projects/[id]/casting-workflow/actions";
 import { projectWorkspacePath } from "@/lib/talent-buyers/project-routes";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
 

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Briefcase, ChevronDown, Filter, Loader2 } from "lucide-react";
 
-import { parseNlTalentQuery } from "@/app/(buyer-app)/talent/actions";
+import { parseNlTalentQuery } from "@/app/(buyer-app)/(paid)/talent/actions";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
 import type { BuyerOpenRole } from "@/lib/talent-navigator/open-roles";
 import type { TalentNavigatorFilters } from "@/lib/talent-navigator/types";

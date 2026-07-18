@@ -5,7 +5,9 @@
 - [ ] `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` (server only)
 - [ ] `NEXT_PUBLIC_SITE_URL` = production domain
-- [ ] `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+- [ ] `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_INDUSTRY_PRICE_ID`
+- [ ] `ENFORCE_INDUSTRY_PAYWALL=true` (enable only after Checkout trial + founder promo are verified)
+- [ ] Founder promo code `MOTIIONFOUNDER` (100% off forever, max 50 redemptions)
 - [ ] `REVENUECAT_WEBHOOK_SECRET`
 - [ ] `RESEND_API_KEY`
 - [ ] `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`
@@ -13,7 +15,7 @@
 
 ## Supabase
 
-- [ ] All migrations through `0011_subscriptions.sql` applied
+- [ ] All migrations through `0035_talent_professional_profiles_view.sql` applied
 - [ ] RLS enabled on all public tables
 - [ ] OAuth redirect URLs include production `/auth/callback`
 - [ ] Storage buckets + policies for headshots

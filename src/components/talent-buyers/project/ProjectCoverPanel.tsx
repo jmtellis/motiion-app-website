@@ -3,7 +3,7 @@
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
 
-import { removeProjectMedia, uploadProjectCover } from "@/app/(buyer-app)/projects/project-media-actions";
+import { removeProjectMedia, uploadProjectCover } from "@/app/(buyer-app)/(paid)/projects/project-media-actions";
 import { resizeImageFile } from "@/lib/onboarding/client-media";
 
 import "./project-create.css";

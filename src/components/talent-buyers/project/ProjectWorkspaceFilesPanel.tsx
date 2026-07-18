@@ -8,7 +8,7 @@ import {
   removeAttachmentMedia,
   updateProjectAttachments,
   uploadProjectAttachment,
-} from "@/app/(buyer-app)/projects/project-media-actions";
+} from "@/app/(buyer-app)/(paid)/projects/project-media-actions";
 import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
 import type { ProjectAttachment } from "@/types/project";
 

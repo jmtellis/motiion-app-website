@@ -19,7 +19,7 @@ import {
   listBuyerCastingTargets,
   requestTalentSizeSheet,
   type CastingInviteTarget,
-} from "@/app/(buyer-app)/talent/actions";
+} from "@/app/(buyer-app)/(paid)/talent/actions";
 import type { PublicTalentProfile } from "@/types/public";
 
 import { Modal } from "./dashboard/Modal";

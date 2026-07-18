@@ -123,7 +123,13 @@ export async function createIndustryCheckoutSession(input: {
       customer_email: input.email,
       client_reference_id: input.userId,
       line_items: [{ price: input.priceId, quantity: 1 }],
-      success_url: `${appUrl}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
+      // Card collected up front; first charge occurs after the trial.
+      subscription_data: {
+        trial_period_days: 60,
+        metadata: { user_id: input.userId },
+      },
+      allow_promotion_codes: true,
+      success_url: `${appUrl}/payments/industry-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/payments/cancelled`,
       metadata: { user_id: input.userId },
     });
@@ -131,6 +137,29 @@ export async function createIndustryCheckoutSession(input: {
   } catch (err) {
     return { url: null, error: err instanceof Error ? err.message : "Checkout failed" };
   }
+}
+
+/** Maps Stripe subscription statuses into the values we persist for entitlement checks. */
+export function mapStripeSubscriptionStatus(
+  status: Stripe.Subscription.Status,
+): "active" | "trialing" | "canceled" {
+  if (status === "active") return "active";
+  if (status === "trialing") return "trialing";
+  return "canceled";
+}
+
+export function subscriptionPeriodEndIso(subscription: Stripe.Subscription): string | null {
+  const sub = subscription as Stripe.Subscription & {
+    current_period_end?: number;
+    trial_end?: number | null;
+  };
+  const unix =
+    typeof sub.current_period_end === "number"
+      ? sub.current_period_end
+      : typeof sub.trial_end === "number"
+        ? sub.trial_end
+        : null;
+  return unix ? new Date(unix * 1000).toISOString() : null;
 }
 
 export async function createBillingPortalSession(customerId: string): Promise<{ url: string | null; error?: string }> {

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { publishCastingFromBreakdown } from "@/app/(buyer-app)/projects/[id]/casting-workflow/actions";
+import { publishCastingFromBreakdown } from "@/app/(buyer-app)/(paid)/projects/[id]/casting-workflow/actions";
 import {
   deriveCastingWorkflowState,
   getCastingPanelHeader,

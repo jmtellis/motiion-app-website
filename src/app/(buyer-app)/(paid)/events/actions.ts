@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { fetchConnectAccountStatus } from "@/app/(buyer-app)/calendar/connect-actions";
+import { fetchConnectAccountStatus } from "@/app/(buyer-app)/(paid)/calendar/connect-actions";
 import { trackServerEvent } from "@/lib/analytics/track-server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createDefaultActivityDraft } from "@/lib/talent-buyers/activities/defaults";

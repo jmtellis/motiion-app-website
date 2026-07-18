@@ -6,7 +6,12 @@ import {
   updateIndustryIdentityVerificationBySessionId,
   upsertIndustryIdentityVerification,
 } from "@/lib/billing/identity";
-import { getStripeClient, mapStripeIdentityStatus } from "@/lib/billing/stripe";
+import {
+  getStripeClient,
+  mapStripeIdentityStatus,
+  mapStripeSubscriptionStatus,
+  subscriptionPeriodEndIso,
+} from "@/lib/billing/stripe";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 type AdminClient = NonNullable<ReturnType<typeof createAdminSupabaseClient>>;
@@ -52,6 +57,36 @@ async function handleIdentitySessionEvent(session: Stripe.Identity.VerificationS
   });
 }
 
+async function upsertSubscriptionFromStripe(
+  supabase: AdminClient,
+  stripe: Stripe,
+  input: {
+    userId: string;
+    subscriptionId: string;
+    customerId: string | null;
+  },
+) {
+  const subscription = await stripe.subscriptions.retrieve(input.subscriptionId);
+  const status = mapStripeSubscriptionStatus(subscription.status);
+  const periodEnd = subscriptionPeriodEndIso(subscription);
+
+  await supabase.from("subscriptions").upsert(
+    {
+      user_id: input.userId,
+      provider: "stripe",
+      external_id: subscription.id,
+      customer_id: input.customerId,
+      status,
+      tier: status === "canceled" ? "free" : "pro",
+      current_period_end: periodEnd,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,provider" },
+  );
+
+  return { status, subscription };
+}
+
 export async function POST(request: Request) {
   const stripe = getStripeClient();
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -83,23 +118,18 @@ export async function POST(request: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const userId = session.client_reference_id ?? session.metadata?.user_id;
-    if (userId) {
-      await supabase.from("subscriptions").upsert(
-        {
-          user_id: userId,
-          provider: "stripe",
-          external_id: String(session.subscription ?? session.id),
-          customer_id: typeof session.customer === "string" ? session.customer : null,
-          status: "active",
-          tier: "pro",
-          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,provider" },
-      );
+    const subscriptionId =
+      typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
+    if (userId && subscriptionId) {
+      const customerId = typeof session.customer === "string" ? session.customer : null;
+      await upsertSubscriptionFromStripe(supabase, stripe, {
+        userId,
+        subscriptionId,
+        customerId,
+      });
       await trackSubscriptionEvent(supabase, "subscription_started", userId, {
         provider: "stripe",
-        subscription_id: session.subscription ?? session.id,
+        subscription_id: subscriptionId,
       });
     }
   }
@@ -120,26 +150,47 @@ export async function POST(request: Request) {
   }
 
   if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
-    const sub = event.data.object as Stripe.Subscription & { current_period_end?: number };
-    const status = sub.status === "active" || sub.status === "trialing" ? sub.status : "canceled";
-    const periodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null;
-    await supabase
+    const sub = event.data.object as Stripe.Subscription;
+    const status = mapStripeSubscriptionStatus(sub.status);
+    const periodEnd = subscriptionPeriodEndIso(sub);
+    const customerId = typeof sub.customer === "string" ? sub.customer : null;
+
+    const { data: existing } = await supabase
       .from("subscriptions")
-      .update({
-        status,
-        tier: status === "canceled" ? "free" : "pro",
-        current_period_end: periodEnd,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("external_id", sub.id);
+      .select("user_id")
+      .eq("external_id", sub.id)
+      .maybeSingle<{ user_id: string }>();
+
+    const userId = existing?.user_id ?? sub.metadata?.user_id ?? null;
+
+    if (userId) {
+      await supabase.from("subscriptions").upsert(
+        {
+          user_id: userId,
+          provider: "stripe",
+          external_id: sub.id,
+          customer_id: customerId,
+          status,
+          tier: status === "canceled" ? "free" : "pro",
+          current_period_end: periodEnd,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,provider" },
+      );
+    } else {
+      await supabase
+        .from("subscriptions")
+        .update({
+          status,
+          tier: status === "canceled" ? "free" : "pro",
+          current_period_end: periodEnd,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("external_id", sub.id);
+    }
 
     if (status === "canceled") {
-      const { data: subRow } = await supabase
-        .from("subscriptions")
-        .select("user_id")
-        .eq("external_id", sub.id)
-        .maybeSingle<{ user_id: string }>();
-      await trackSubscriptionEvent(supabase, "subscription_canceled", subRow?.user_id ?? null, {
+      await trackSubscriptionEvent(supabase, "subscription_canceled", userId, {
         provider: "stripe",
         subscription_id: sub.id,
       });

@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Loader2, Search } from "lucide-react";
 
-import { createCastingReferral } from "@/app/(buyer-app)/projects/[id]/casting-workflow/actions";
-import { fetchNavigatorTalent } from "@/app/(buyer-app)/talent/actions";
+import { createCastingReferral } from "@/app/(buyer-app)/(paid)/projects/[id]/casting-workflow/actions";
+import { fetchNavigatorTalent } from "@/app/(buyer-app)/(paid)/talent/actions";
 import {
   fetchReferrerDiscoverListMembers,
   fetchReferrerDiscoverLists,

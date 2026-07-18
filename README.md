@@ -39,6 +39,8 @@ Copy `.env.example` to `.env.local`. Required keys depend on what you're testing
 | `STRIPE_SECRET_KEY` | Checkout, portal | Test mode for local dev |
 | `STRIPE_WEBHOOK_SECRET` | Subscription + Identity sync | Point Stripe CLI or dashboard to `/api/webhooks/stripe` (include `identity.verification_session.verified` and `identity.verification_session.requires_input`) |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Checkout + Identity modal | |
+| `STRIPE_INDUSTRY_PRICE_ID` | Industry Pro Checkout | Monthly Industry Professional price |
+| `ENFORCE_INDUSTRY_PAYWALL` | Gate industry app | `true` to require trial/subscription (settings stay reachable). Checkout is 60-day trial + optional promo codes (e.g. `MOTIIONFOUNDER`) |
 | `REVENUECAT_WEBHOOK_SECRET` | iOS entitlement sync | `/api/webhooks/revenuecat` |
 | `RESEND_API_KEY` | Invitation / message email | Graceful fail if unset |
 | `NEXT_PUBLIC_POSTHOG_KEY` | Product analytics | |

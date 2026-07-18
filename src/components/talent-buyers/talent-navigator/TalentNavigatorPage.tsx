@@ -12,7 +12,7 @@ import {
   listBuyerOpenRoles,
   saveTalentToRoster,
   type CastingInviteTarget,
-} from "@/app/(buyer-app)/talent/actions";
+} from "@/app/(buyer-app)/(paid)/talent/actions";
 import type { BuyerOpenRole } from "@/lib/talent-navigator/open-roles";
 import type { NavigatorFilterOptions } from "@/lib/talent-navigator/filter-options";
 import type { SavedSearchRow } from "@/lib/talent-buyers/saved-searches";

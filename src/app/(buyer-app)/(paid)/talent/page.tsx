@@ -1,7 +1,5 @@
-import { PaywallCard } from "@/components/talent-buyers/PaywallCard";
 import { TalentNavigatorPage } from "@/components/talent-buyers/talent-navigator/TalentNavigatorPage";
 import { requireHiringAccount } from "@/lib/auth/session";
-import { isIndustryLocked } from "@/lib/billing/gate";
 import { listSavedSearches } from "@/lib/talent-buyers/saved-searches";
 import { buildNavigatorInitialData } from "@/lib/talent-navigator/profile-adapter";
 import { fetchNavigatorFilterOptions } from "@/lib/talent-navigator/fetch-filter-options";
@@ -20,15 +18,6 @@ export default async function BuyerTalentPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const profile = await requireHiringAccount();
-
-  if (await isIndustryLocked(profile.id)) {
-    return (
-      <div className="talent-navigator-route flex min-h-screen items-center justify-center">
-        <PaywallCard feature="Advanced talent search" />
-      </div>
-    );
-  }
-
   const params = await searchParams;
 
   const filters: SearchFilters = {

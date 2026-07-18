@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import type { CalendarEvent } from "@/app/(buyer-app)/events/actions";
+import type { CalendarEvent } from "@/app/(buyer-app)/(paid)/events/actions";
 
 import {
   formatMonthYear,

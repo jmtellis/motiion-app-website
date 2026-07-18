@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   updateCastingCandidateStatus,
   upsertCastingEvaluation,
-} from "@/app/(buyer-app)/projects/[id]/casting-workflow/actions";
+} from "@/app/(buyer-app)/(paid)/projects/[id]/casting-workflow/actions";
 import { filterCastingCandidates } from "@/lib/talent-buyers/casting/casting-filters";
 import {
   castingSourceLabel,

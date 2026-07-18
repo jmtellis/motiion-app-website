@@ -3,7 +3,7 @@
 import { FileUp, Loader2 } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
 
-import { processProjectBreakdown } from "@/app/(buyer-app)/projects/project-breakdown-actions";
+import { processProjectBreakdown } from "@/app/(buyer-app)/(paid)/projects/project-breakdown-actions";
 import { renderPdfPagesToJpegBlobs } from "@/lib/onboarding/client-media";
 import type { ExtractedBreakdownData } from "@/lib/talent-buyers/breakdown-types";
 import type { ProjectAttachment, ProjectComposerForm } from "@/types/project";

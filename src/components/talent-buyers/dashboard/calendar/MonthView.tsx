@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import type { CalendarEvent } from "@/app/(buyer-app)/events/actions";
+import type { CalendarEvent } from "@/app/(buyer-app)/(paid)/events/actions";
 
 import {
   eventTypeColor,

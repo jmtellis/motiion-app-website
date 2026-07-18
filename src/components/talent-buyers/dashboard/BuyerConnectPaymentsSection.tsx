@@ -5,7 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 import {
   fetchConnectAccountStatus,
   startStripeConnectOnboarding,
-} from "@/app/(buyer-app)/calendar/connect-actions";
+} from "@/app/(buyer-app)/(paid)/calendar/connect-actions";
 import type { ConnectAccountStatus } from "@/lib/talent-buyers/activities/types";
 
 export function BuyerConnectPaymentsSection({

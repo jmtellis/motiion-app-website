@@ -8,11 +8,11 @@ import { useMemo, useState, useTransition } from "react";
 import {
   createActivityFromDraft,
   updateActivityFromDraft,
-} from "@/app/(buyer-app)/events/actions";
+} from "@/app/(buyer-app)/(paid)/events/actions";
 import {
   fetchConnectAccountStatus,
   startStripeConnectOnboarding,
-} from "@/app/(buyer-app)/calendar/connect-actions";
+} from "@/app/(buyer-app)/(paid)/calendar/connect-actions";
 import { AuthButton } from "@/components/auth/ui";
 import { SetupFlowFormPanel } from "@/components/auth/SetupFlowFormPanel";
 import {

@@ -1,4 +1,4 @@
-import { listHostedActivities } from "@/app/(buyer-app)/events/actions";
+import { listHostedActivities } from "@/app/(buyer-app)/(paid)/events/actions";
 import { BuyerAppPage } from "@/components/talent-buyers/dashboard/BuyerAppPage";
 import { BuyerPageChromeRegistrar } from "@/components/talent-buyers/dashboard/BuyerPageChromeRegistrar";
 import { CreateActivityButton } from "@/components/talent-buyers/dashboard/CreateActivityButton";

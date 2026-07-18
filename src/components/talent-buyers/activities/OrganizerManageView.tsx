@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState, useTransition } from "react";
 import { Camera, CheckCircle2, ExternalLink, MapPin, Users } from "lucide-react";
 
-import { recordOrganizerCheckIn } from "@/app/(buyer-app)/calendar/organizer-actions";
+import { recordOrganizerCheckIn } from "@/app/(buyer-app)/(paid)/calendar/organizer-actions";
 import type { OrganizerActivityDetail } from "@/lib/talent-buyers/activities/organizer-data";
 import type {
   OrganizerAttendee,

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { transcribeNavigatorVoiceAudio } from "@/app/(buyer-app)/talent/actions";
+import { transcribeNavigatorVoiceAudio } from "@/app/(buyer-app)/(paid)/talent/actions";
 
 const BAR_COUNT = 52;
 

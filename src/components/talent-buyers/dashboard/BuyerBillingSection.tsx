@@ -49,9 +49,9 @@ export function BuyerBillingSection({
           <p className="mt-1 text-sm text-white/50">
             {isPro
               ? renewal
-                ? `Renews ${renewal}.`
+                ? `Access through ${renewal}.`
                 : "Your subscription is active."
-              : "Upgrade to unlock advanced search, rosters, and projects."}
+              : "Start a 60-day free trial ($200/month after). Enter a founder code at checkout for free access."}
           </p>
         </div>
         {isPro ? (
@@ -70,7 +70,7 @@ export function BuyerBillingSection({
             onClick={() => go(startIndustryCheckout)}
             className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#0a0a0a] hover:bg-white/90 disabled:opacity-50"
           >
-            {isPending ? "Redirecting…" : "Upgrade to Pro"}
+            {isPending ? "Redirecting…" : "Start 60-day free trial"}
           </button>
         )}
       </div>

@@ -9,11 +9,11 @@ import {
   deleteProject,
   saveProjectDraft,
   updateProject,
-} from "@/app/(buyer-app)/projects/actions";
+} from "@/app/(buyer-app)/(paid)/projects/actions";
 import {
   removeProjectMedia,
   uploadProjectAttachment,
-} from "@/app/(buyer-app)/projects/project-media-actions";
+} from "@/app/(buyer-app)/(paid)/projects/project-media-actions";
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 import type { ProjectCreateConfig } from "@/lib/talent-buyers/project-create-registry";
 import { projectCreateLandingPath } from "@/lib/talent-buyers/project-routes";

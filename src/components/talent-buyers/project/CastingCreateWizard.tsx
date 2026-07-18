@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
-import { publishProjectCasting, saveProjectCastingDraft } from "@/app/(buyer-app)/projects/[id]/castings/actions";
+import { publishProjectCasting, saveProjectCastingDraft } from "@/app/(buyer-app)/(paid)/projects/[id]/castings/actions";
 import { SetupFlowFormPanel } from "@/components/auth/SetupFlowFormPanel";
 import { AuthButton } from "@/components/auth/ui";
 import { CastingBasicsStep } from "@/components/talent-buyers/casting/wizard-steps/CastingBasicsStep";

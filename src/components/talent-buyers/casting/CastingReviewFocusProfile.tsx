@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
-import { fetchReviewTalentProfile } from "@/app/(buyer-app)/talent/actions";
+import { fetchReviewTalentProfile } from "@/app/(buyer-app)/(paid)/talent/actions";
 import type { CastingCandidate } from "@/lib/talent-buyers/casting/casting-types";
 import type { PublicTalentProfile } from "@/types/public";
 

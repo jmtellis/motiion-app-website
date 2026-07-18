@@ -237,6 +237,18 @@ function matchesSubtype(profile: SearchProfileRecord, subtype: string) {
   return false;
 }
 
+/** Defensive guard: only dancer/choreographer talent rows belong in the talent database. */
+export function isTalentSearchProfile(profile: SearchProfileRecord): boolean {
+  const types = parseStringArray(profile.talent_types).map(normalizeText);
+  if (!types.length) {
+    // Views like `talent` may omit types; still allow when no non-talent markers exist.
+    return true;
+  }
+  return types.some(
+    (type) => type.includes("dancer") || type.includes("choreographer"),
+  );
+}
+
 export function isRepresented(representation?: string | null): boolean {
   const rep = representation?.trim().toLowerCase() ?? "";
   if (!rep) return false;
@@ -254,6 +266,8 @@ export function filterSearchProfiles(
   const height = filters.height?.trim() ?? "";
 
   return profiles.filter((profile) => {
+    if (!isTalentSearchProfile(profile)) return false;
+
     if (keyword) {
       const haystack = [
         profile.full_name,

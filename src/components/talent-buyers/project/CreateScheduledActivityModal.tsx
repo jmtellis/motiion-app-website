@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-import { createBuyerActivity } from "@/app/(buyer-app)/events/actions";
+import { createBuyerActivity } from "@/app/(buyer-app)/(paid)/events/actions";
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
 import type { ScheduledActivityType } from "@/lib/talent-buyers/project-add-options";

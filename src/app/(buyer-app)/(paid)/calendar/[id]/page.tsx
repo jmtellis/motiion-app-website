@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { getOrganizerPageData } from "@/app/(buyer-app)/calendar/organizer-actions";
+import { getOrganizerPageData } from "@/app/(buyer-app)/(paid)/calendar/organizer-actions";
 import { OrganizerManageView } from "@/components/talent-buyers/activities/OrganizerManageView";
 import { BuyerAppPage } from "@/components/talent-buyers/dashboard/BuyerAppPage";
 import { BuyerPageChromeRegistrar } from "@/components/talent-buyers/dashboard/BuyerPageChromeRegistrar";

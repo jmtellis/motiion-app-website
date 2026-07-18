@@ -9,7 +9,7 @@ import {
   bulkInviteRosterToCasting,
   listBuyerCastingTargets,
   type CastingInviteTarget,
-} from "@/app/(buyer-app)/talent/actions";
+} from "@/app/(buyer-app)/(paid)/talent/actions";
 import {
   deleteRoster,
   removeTalentFromRoster,

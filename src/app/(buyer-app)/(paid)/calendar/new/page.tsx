@@ -1,4 +1,4 @@
-import { fetchConnectAccountStatus } from "@/app/(buyer-app)/calendar/connect-actions";
+import { fetchConnectAccountStatus } from "@/app/(buyer-app)/(paid)/calendar/connect-actions";
 import { ActivityCreateWizard } from "@/components/talent-buyers/activities/ActivityCreateWizard";
 import { BuyerAppPage } from "@/components/talent-buyers/dashboard/BuyerAppPage";
 import { requireHiringAccount } from "@/lib/auth/session";

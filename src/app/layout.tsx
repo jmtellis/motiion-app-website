@@ -24,25 +24,25 @@ const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.motiion.app")
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Motiion — Search professional dance talent",
+    default: "Motiion | Dance Industry Operating System",
     template: "%s · Motiion",
   },
   description:
-    "Search verified dance talent profiles, discover creatives and casting teams, and join the Motiion beta for modern casting workflows.",
+    "Motiion is the professional platform connecting dancers, choreographers, agencies, casting teams, creative directors, and entertainment companies. Discover verified talent, manage projects and castings, build professional profiles, and create meaningful opportunities—all in one connected ecosystem.",
   openGraph: {
     siteName: "Motiion",
     type: "website",
     url: SITE_URL,
-    title: "Motiion — Search professional dance talent",
+    title: "Motiion | Dance Industry Operating System",
     description:
-      "Search verified dance talent profiles, discover creatives and casting teams, and join the Motiion beta for modern casting workflows.",
+      "Motiion is the professional platform connecting dancers, choreographers, agencies, casting teams, creative directors, and entertainment companies. Discover verified talent, manage projects and castings, build professional profiles, and create meaningful opportunities—all in one connected ecosystem.",
     images: [{ url: "/motiion-icon-512.png", width: 512, height: 512, alt: "Motiion" }],
   },
   twitter: {
     card: "summary",
-    title: "Motiion — Search professional dance talent",
+    title: "Motiion | Dance Industry Operating System",
     description:
-      "Search verified dance talent profiles, discover creatives and casting teams, and join the Motiion beta.",
+      "Motiion is the professional platform connecting dancers, choreographers, agencies, casting teams, creative directors, and entertainment companies. Discover verified talent, manage projects and castings, build professional profiles, and create meaningful opportunities—all in one connected ecosystem.",
   },
   icons: {
     icon: [

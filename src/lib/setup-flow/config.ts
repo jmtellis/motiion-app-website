@@ -93,7 +93,12 @@ export function resolveSetupFlowPhase({
   if (surface === "signup") return "signup";
   if (isSuccess) return "complete";
 
-  if (microStep === "review" || microStep === "notifications" || microStep === "success") {
+  if (
+    microStep === "review" ||
+    microStep === "notifications" ||
+    microStep === "verification" ||
+    microStep === "success"
+  ) {
     return microStep === "success" ? "complete" : "finishing";
   }
 
@@ -139,7 +144,9 @@ export function getSetupFlowShellProps({
     headline: config.headlines[phase],
     subtext: config.subtexts[phase],
     steps: buildMacroSteps(audience, phase),
-    showSteps: surface !== "signup",
+    // Industry signup/onboarding: left-panel macro steps stay hidden.
+    // Talent onboarding still shows Create account → Build profile → Get discovered.
+    showSteps: audience === "talent" && surface !== "signup",
     marquee: signupSplitMarquees[audience],
   };
 }

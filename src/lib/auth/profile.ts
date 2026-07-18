@@ -75,6 +75,7 @@ export function toDashboardProfile(
     buyerTalentTypes: nonTalentProfile?.talent_types ?? null,
     styleFocus: nonTalentProfile?.style_focus ?? null,
     markets: nonTalentProfile?.markets ?? null,
+    marketPlaces: nonTalentProfile?.market_places ?? null,
     verificationLinks: nonTalentProfile?.verification_links ?? null,
     notificationPreferences: nonTalentProfile?.notification_preferences ?? null,
     buyerOnboardingCompleted: nonTalentProfile?.onboarding_completed ?? null,

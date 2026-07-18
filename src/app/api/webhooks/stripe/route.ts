@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-import { getStripeClient } from "@/lib/billing/stripe";
+import {
+  getIndustryIdentityVerificationBySessionId,
+  updateIndustryIdentityVerificationBySessionId,
+  upsertIndustryIdentityVerification,
+} from "@/lib/billing/identity";
+import { getStripeClient, mapStripeIdentityStatus } from "@/lib/billing/stripe";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 type AdminClient = NonNullable<ReturnType<typeof createAdminSupabaseClient>>;
@@ -19,6 +24,31 @@ async function trackSubscriptionEvent(
     event_name: eventName,
     properties,
     path: "/api/webhooks/stripe",
+  });
+}
+
+async function handleIdentitySessionEvent(session: Stripe.Identity.VerificationSession) {
+  const status = mapStripeIdentityStatus(session.status);
+  const lastErrorCode = session.last_error?.code ?? null;
+  const existing = await getIndustryIdentityVerificationBySessionId(session.id);
+
+  if (existing) {
+    await updateIndustryIdentityVerificationBySessionId({
+      stripeSessionId: session.id,
+      status,
+      lastErrorCode,
+    });
+    return;
+  }
+
+  const userId = session.metadata?.user_id;
+  if (!userId) return;
+
+  await upsertIndustryIdentityVerification({
+    userId,
+    stripeSessionId: session.id,
+    status,
+    lastErrorCode,
   });
 }
 
@@ -114,6 +144,13 @@ export async function POST(request: Request) {
         subscription_id: sub.id,
       });
     }
+  }
+
+  if (
+    event.type === "identity.verification_session.verified" ||
+    event.type === "identity.verification_session.requires_input"
+  ) {
+    await handleIdentitySessionEvent(event.data.object as Stripe.Identity.VerificationSession);
   }
 
   await supabase.from("stripe_webhook_events").insert({ id: event.id });

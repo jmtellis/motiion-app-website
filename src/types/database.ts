@@ -1,4 +1,5 @@
 import type {
+  TalentBuyerMarketPlace,
   TalentBuyerNotificationPreferences,
   TalentBuyerPrimaryGoal,
   TalentBuyerRole,
@@ -47,6 +48,7 @@ export type NonTalentProfileRecord = {
   talent_types?: TalentBuyerTalentType[] | null;
   style_focus?: TalentBuyerStyleFocus[] | null;
   markets?: string[] | null;
+  market_places?: TalentBuyerMarketPlace[] | null;
   verification_links?: TalentBuyerVerificationLinks | null;
   notification_preferences?: TalentBuyerNotificationPreferences | null;
   onboarding_completed?: boolean | null;
@@ -72,6 +74,7 @@ export type DashboardProfile = {
   buyerTalentTypes?: TalentBuyerTalentType[] | null;
   styleFocus?: TalentBuyerStyleFocus[] | null;
   markets?: string[] | null;
+  marketPlaces?: TalentBuyerMarketPlace[] | null;
   verificationLinks?: TalentBuyerVerificationLinks | null;
   notificationPreferences?: TalentBuyerNotificationPreferences | null;
   buyerOnboardingCompleted?: boolean | null;

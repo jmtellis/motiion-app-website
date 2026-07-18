@@ -1,6 +1,7 @@
 import { isAtLeast18 } from "@/lib/auth/age";
 import type {
   TalentBuyerCompanySize,
+  TalentBuyerMarketPlace,
   TalentBuyerOnboardingStep,
   TalentBuyerPrimaryGoal,
   TalentBuyerRole,
@@ -9,28 +10,20 @@ import type {
 } from "@/types/talent-buyers";
 
 export const talentBuyerSteps: TalentBuyerOnboardingStep[] = [
-  "dateOfBirth",
   "primaryGoal",
   "role",
   "organization",
-  "talentNeeds",
-  "styleFocus",
   "markets",
   "verification",
-  "notifications",
   "success",
 ];
 
 export const talentBuyerStepLabels: Record<TalentBuyerOnboardingStep, string> = {
-  dateOfBirth: "Date of birth",
   primaryGoal: "Primary goal",
   role: "Role",
   organization: "Organization",
-  talentNeeds: "Talent needs",
-  styleFocus: "Style focus",
   markets: "Markets",
   verification: "Verification",
-  notifications: "Notifications",
   success: "Complete",
 };
 
@@ -83,6 +76,7 @@ export const companySizeOptions: Array<{ value: TalentBuyerCompanySize; label: s
   { value: "200_plus", label: "200+" },
 ];
 
+/** Kept for recommendation helpers and legacy data; no longer collected in onboarding. */
 export const talentNeedOptions: Array<{ value: TalentBuyerTalentType; label: string }> = [
   { value: "dancers", label: "Dancers" },
   { value: "choreographers", label: "Choreographers" },
@@ -91,6 +85,7 @@ export const talentNeedOptions: Array<{ value: TalentBuyerTalentType; label: str
   { value: "creative_talent", label: "Creative Talent" },
 ];
 
+/** Kept for recommendation helpers and legacy data; no longer collected in onboarding. */
 export const styleFocusOptions: Array<{ value: TalentBuyerStyleFocus; label: string }> = [
   { value: "commercial", label: "Commercial" },
   { value: "hip_hop", label: "Hip Hop" },
@@ -105,14 +100,34 @@ export const styleFocusOptions: Array<{ value: TalentBuyerStyleFocus; label: str
   { value: "open_style", label: "Open Style" },
 ];
 
+/** Suggested chips must resolve through Google Places (city query). */
 export const suggestedMarkets = [
   "Los Angeles",
-  "New York",
+  "New York City",
   "Atlanta",
   "Nashville",
   "Dallas",
   "London",
-];
+] as const;
+
+export const defaultBuyerNotificationPreferences = {
+  newTalentMatches: true,
+  opportunityUpdates: true,
+  industryAnnouncements: false,
+} as const;
+
+export function marketLabelFromPlace(place: TalentBuyerMarketPlace): string {
+  const city = place.city?.trim() || place.displayLabel.trim();
+  const region = place.region?.trim();
+  if (city && region && !city.includes(region)) {
+    return `${city}, ${region}`;
+  }
+  return city || place.displayLabel;
+}
+
+export function marketsFromPlaces(places: TalentBuyerMarketPlace[]): string[] {
+  return places.map(marketLabelFromPlace).filter(Boolean);
+}
 
 export function getTalentBuyerStepIndex(step: TalentBuyerOnboardingStep) {
   return Math.max(0, talentBuyerSteps.indexOf(step));
@@ -137,7 +152,7 @@ export function getTalentBuyerFlowProgress(step: TalentBuyerOnboardingStep) {
     currentStep: Math.min(index + 1, actionableSteps.length),
     totalSteps: actionableSteps.length,
     percent: actionableSteps.length
-      ? Math.round(((Math.min(index + 1, actionableSteps.length)) / actionableSteps.length) * 100)
+      ? Math.round((Math.min(index + 1, actionableSteps.length) / actionableSteps.length) * 100)
       : 0,
   };
 }
@@ -146,20 +161,19 @@ export function validateTalentBuyerStep(
   step: TalentBuyerOnboardingStep,
   draft: {
     dateOfBirth: string;
+    fullName: string;
+    contactEmail: string;
+    avatarUrl: string;
     primaryGoal: string;
     role: string;
     organizationName: string;
     companySize: string;
-    talentTypes: string[];
-    styleFocus: string[];
     markets: string[];
+    marketPlaces: TalentBuyerMarketPlace[];
+    identityVerified?: boolean;
   },
 ): string | null {
   switch (step) {
-    case "dateOfBirth":
-      if (!draft.dateOfBirth.trim()) return "Date of birth is required.";
-      if (!isAtLeast18(draft.dateOfBirth)) return "You must be at least 18 to join Motiion.";
-      return null;
     case "primaryGoal":
       return draft.primaryGoal ? null : "Select your primary goal to continue.";
     case "role":
@@ -168,14 +182,25 @@ export function validateTalentBuyerStep(
       if (!draft.organizationName.trim()) return "Organization name is required.";
       if (!draft.companySize) return "Select your company size.";
       return null;
-    case "talentNeeds":
-      return draft.talentTypes.length ? null : "Select at least one talent type.";
-    case "styleFocus":
-      return draft.styleFocus.length ? null : "Select at least one style.";
     case "markets":
-      return draft.markets.length ? null : "Add at least one market.";
-    case "verification":
-    case "notifications":
+      if (!draft.marketPlaces.length && !draft.markets.length) {
+        return "Add at least one market.";
+      }
+      return null;
+    case "verification": {
+      if (!draft.fullName.trim()) return "Confirm your name to continue.";
+      if (!draft.contactEmail.trim()) return "Contact email is required.";
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.contactEmail.trim())) {
+        return "Enter a valid contact email.";
+      }
+      if (!draft.dateOfBirth.trim()) return "Date of birth is required.";
+      if (!isAtLeast18(draft.dateOfBirth)) return "You must be at least 18 to join Motiion.";
+      if (!draft.avatarUrl.trim()) return "Add a profile photo to continue.";
+      if (!draft.identityVerified) {
+        return "Complete identity verification to finish setup.";
+      }
+      return null;
+    }
     case "success":
       return null;
     default:
@@ -219,12 +244,7 @@ export function getTalentBuyerDashboardSections(
     return ["Discover Talent", "Create Session", "Create Job", "Saved Talent"];
   }
 
-  return [
-    "Discover Talent",
-    "Saved Talent",
-    "Open Opportunities",
-    "Recent Activity",
-  ];
+  return ["Discover Talent", "Saved Talent", "Open Opportunities", "Recent Activity"];
 }
 
 export type BuyerRecommendation = {

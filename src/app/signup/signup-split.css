@@ -569,6 +569,11 @@
   margin-top: 1.5rem;
 }
 
+.signup-split-form__progress--first {
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+}
+
 .signup-split-form__progress-meta {
   display: flex;
   align-items: center;

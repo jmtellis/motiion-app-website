@@ -2,6 +2,7 @@ import { BrandStatementSection } from "@/components/landing/BrandStatementSectio
 import { EditorialHeadline } from "@/components/landing/EditorialHeadline";
 import { FeatureCarousel } from "@/components/landing/FeatureCarousel";
 import { HomeHeroCtas } from "@/components/landing/HomeHeroCtas";
+import { LandingHeroMarquee } from "@/components/landing/LandingHeroMarquee";
 import {
   homeBrandStatementSection,
   homeHero,
@@ -29,6 +30,8 @@ export function HomeLandingHero({ dark = true }: { dark?: boolean }) {
 export function HomeLandingSections({ dark = true }: { dark?: boolean }) {
   return (
     <>
+      <LandingHeroMarquee />
+
       <FeatureCarousel
         title={homePillarsSection.title}
         slides={homeHero.pillars.map((pillar, index) => ({

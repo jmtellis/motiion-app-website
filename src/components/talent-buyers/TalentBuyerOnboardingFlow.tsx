@@ -1,18 +1,25 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { ReactNode } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Check, ChevronLeft, ChevronRight, MapPin, X } from "lucide-react";
+import { loadStripe } from "@stripe/stripe-js";
+import { Camera, Check, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { completeTalentBuyerOnboarding } from "@/app/talent-buyers/onboarding/actions";
+import {
+  getIndustryIdentityStatus,
+  refreshIndustryIdentityVerification,
+  startIndustryIdentityVerification,
+} from "@/app/talent-buyers/onboarding/identity-actions";
+import { updateBuyerAvatar } from "@/app/(buyer-app)/dashboard/settings/actions";
 import { SetupFlowCancelButton } from "@/components/auth/SetupFlowCancelButton";
 import { SetupFlowFormPanel } from "@/components/auth/SetupFlowFormPanel";
 import { SignupSplitShell } from "@/components/auth/SignupSplitShell";
-import {
-  AuthField,
-  AuthInput,
-} from "@/components/auth/ui";
+import { AuthField, AuthInput } from "@/components/auth/ui";
+import { MarketPlacesSelector } from "@/components/talent-buyers/MarketPlacesSelector";
+import { resizeImageFile } from "@/lib/onboarding/client-media";
 import { getSetupFlowShellProps } from "@/lib/setup-flow/config";
 import { setupChoiceCard, setupPill } from "@/lib/setup-flow/form-styles";
 import {
@@ -22,69 +29,55 @@ import {
 } from "@/lib/talent-buyers/draft-storage";
 import {
   companySizeOptions,
+  defaultBuyerNotificationPreferences,
   getNextTalentBuyerStep,
   getPreviousTalentBuyerStep,
   getTalentBuyerFlowProgress,
+  marketsFromPlaces,
   primaryGoalOptions,
   roleOptions,
-  styleFocusOptions,
-  suggestedMarkets,
-  talentNeedOptions,
   validateTalentBuyerStep,
 } from "@/lib/talent-buyers/onboarding";
 import type { DashboardProfile } from "@/types/database";
 import type {
+  IndustryIdentityStatus,
+  TalentBuyerMarketPlace,
   TalentBuyerOnboardingDraft,
   TalentBuyerOnboardingStep,
 } from "@/types/talent-buyers";
 
 function createInitialDraft(profile: DashboardProfile): TalentBuyerOnboardingDraft {
   return {
-    version: 1,
+    version: 2,
     userId: profile.id,
-    currentStep: "dateOfBirth",
+    currentStep: "primaryGoal",
     dateOfBirth: "",
+    fullName: profile.fullName ?? "",
+    contactEmail: profile.email ?? "",
+    avatarUrl: profile.avatarUrl ?? "",
     primaryGoal: profile.primaryGoal ?? "",
     role: profile.buyerRole ?? "",
     organizationName: profile.organizationName ?? profile.companyName ?? "",
     organizationWebsite: profile.organizationWebsite ?? "",
     companySize: (profile.companySize as TalentBuyerOnboardingDraft["companySize"]) ?? "",
-    talentTypes: profile.buyerTalentTypes ?? [],
-    styleFocus: profile.styleFocus ?? [],
-    markets: profile.markets ?? [],
-    verificationLinks: profile.verificationLinks ?? {},
-    notificationPreferences: profile.notificationPreferences ?? {
-      newTalentMatches: true,
-      opportunityUpdates: true,
-      industryAnnouncements: false,
-    },
+    markets: [],
+    marketPlaces: [],
+    verificationLinks: {},
+    notificationPreferences: { ...defaultBuyerNotificationPreferences },
   };
 }
 
-const stepCopy: Record<
-  TalentBuyerOnboardingStep,
-  { title: string; subtitle?: string }
-> = {
-  dateOfBirth: {
-    title: "Confirm your date of birth",
-    subtitle: "We use this to verify account eligibility before you finish setup.",
-  },
+const stepCopy: Record<TalentBuyerOnboardingStep, { title: string; subtitle?: string }> = {
   primaryGoal: {
     title: "What are you here to do?",
     subtitle: "We'll tailor your dashboard around how you work.",
   },
   role: { title: "Which best describes you?" },
   organization: { title: "Tell us about your organization" },
-  talentNeeds: { title: "Who are you looking for?" },
-  styleFocus: { title: "What styles matter most?" },
   markets: { title: "Where do you typically work?" },
   verification: {
     title: "Verify your identity",
-    subtitle: "Verified accounts receive greater trust and visibility.",
-  },
-  notifications: {
-    title: "Stay informed",
-    subtitle: "Choose what you'd like to hear about.",
+    subtitle: "Confirm your details and complete Stripe Identity verification to finish setup.",
   },
   success: {
     title: "You're all set.",
@@ -92,106 +85,70 @@ const stepCopy: Record<
   },
 };
 
-function ChoiceGrid({
-  children,
-}: {
-  children: ReactNode;
-}) {
+function ChoiceGrid({ children }: { children: ReactNode }) {
   return <div className="grid gap-3 md:grid-cols-2">{children}</div>;
 }
 
-function MarketSelector({
-  markets,
-  onChange,
-}: {
-  markets: string[];
-  onChange: (markets: string[]) => void;
-}) {
-  const [query, setQuery] = useState("");
-
-  function addMarket(value: string) {
-    const trimmed = value.trim();
-    if (!trimmed || markets.includes(trimmed)) return;
-    onChange([...markets, trimmed]);
-    setQuery("");
+function identityStatusLabel(status: IndustryIdentityStatus | null) {
+  switch (status) {
+    case "verified":
+      return "Identity verified";
+    case "processing":
+      return "Verification processing…";
+    case "requires_input":
+      return "Verification needs another attempt";
+    case "canceled":
+      return "Verification canceled";
+    default:
+      return "Not verified yet";
   }
-
-  return (
-    <div className="space-y-4">
-      <AuthField label="Primary market">
-        <div className="relative">
-          <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--ink-soft)]" />
-          <AuthInput
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                addMarket(query);
-              }
-            }}
-            placeholder="Search or enter a market"
-            className="pl-10"
-          />
-        </div>
-      </AuthField>
-
-      <div className="flex flex-wrap gap-2">
-        {suggestedMarkets.map((market) => (
-          <button
-            key={market}
-            type="button"
-            onClick={() => addMarket(market)}
-            className={setupPill(markets.includes(market))}
-          >
-            {market}
-          </button>
-        ))}
-      </div>
-
-      {markets.length ? (
-        <div className="flex flex-wrap gap-2">
-          {markets.map((market) => (
-            <span
-              key={market}
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-white px-3 py-1.5 text-sm text-[var(--ink)]"
-            >
-              {market}
-              <button
-                type="button"
-                aria-label={`Remove ${market}`}
-                onClick={() => onChange(markets.filter((item) => item !== market))}
-                className="text-[var(--ink-soft)] transition hover:text-[var(--ink)]"
-              >
-                <X className="size-3.5" />
-              </button>
-            </span>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
 }
 
 export function TalentBuyerOnboardingFlow({ profile }: { profile: DashboardProfile }) {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState<TalentBuyerOnboardingDraft>(() => {
     const initial = createInitialDraft(profile);
     const saved = loadTalentBuyerDraft(profile.id);
-    return saved ? { ...initial, ...saved, dateOfBirth: saved.dateOfBirth ?? "" } : initial;
+    return saved ? { ...initial, ...saved, version: 2, userId: profile.id } : initial;
   });
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [identityStatus, setIdentityStatus] = useState<IndustryIdentityStatus | null>(null);
+  const [identityVerified, setIdentityVerified] = useState(false);
+  const [identityBusy, setIdentityBusy] = useState(false);
 
   const progress = useMemo(() => getTalentBuyerFlowProgress(draft.currentStep), [draft.currentStep]);
   const isSuccessStep = draft.currentStep === "success";
+  const firstStep = talentBuyerFirstStep();
 
   useEffect(() => {
     saveTalentBuyerDraft(draft);
   }, [draft]);
 
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const result = await getIndustryIdentityStatus();
+      if (cancelled || !result.ok) return;
+      setIdentityStatus(result.status);
+      setIdentityVerified(result.verified);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   function updateDraft(partial: Partial<TalentBuyerOnboardingDraft>) {
     setDraft((current) => ({ ...current, ...partial }));
+  }
+
+  function setMarketPlaces(marketPlaces: TalentBuyerMarketPlace[]) {
+    updateDraft({
+      marketPlaces,
+      markets: marketsFromPlaces(marketPlaces),
+    });
   }
 
   function goToStep(step: TalentBuyerOnboardingStep) {
@@ -200,19 +157,29 @@ export function TalentBuyerOnboardingFlow({ profile }: { profile: DashboardProfi
   }
 
   function handleContinue() {
-    const validationError = validateTalentBuyerStep(draft.currentStep, draft);
+    const validationError = validateTalentBuyerStep(draft.currentStep, {
+      ...draft,
+      identityVerified,
+    });
     if (validationError) {
       setError(validationError);
       return;
     }
 
-    if (draft.currentStep === "notifications") {
+    if (draft.currentStep === "verification") {
       startTransition(async () => {
         const result = await completeTalentBuyerOnboarding({
           ...draft,
+          version: 2,
+          markets: marketsFromPlaces(draft.marketPlaces),
           primaryGoal: draft.primaryGoal as NonNullable<typeof draft.primaryGoal>,
           role: draft.role as NonNullable<typeof draft.role>,
           companySize: draft.companySize as NonNullable<typeof draft.companySize>,
+          notificationPreferences: {
+            ...defaultBuyerNotificationPreferences,
+            ...draft.notificationPreferences,
+          },
+          verificationLinks: {},
         });
 
         if (!result.ok) {
@@ -229,8 +196,81 @@ export function TalentBuyerOnboardingFlow({ profile }: { profile: DashboardProfi
     goToStep(getNextTalentBuyerStep(draft.currentStep));
   }
 
-  function handleSkipVerification() {
-    goToStep("notifications");
+  async function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setIsUploadingAvatar(true);
+    setError(null);
+    try {
+      const blob = await resizeImageFile(file);
+      const prepared = new File([blob], file.name.replace(/\.\w+$/, ".jpg") || "avatar.jpg", {
+        type: "image/jpeg",
+      });
+      const formData = new FormData();
+      formData.set("file", prepared);
+      const result = await updateBuyerAvatar(formData);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      updateDraft({ avatarUrl: result.avatarUrl });
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "Could not update photo.");
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }
+
+  async function pollIdentityUntilSettled() {
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const result = await refreshIndustryIdentityVerification();
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setIdentityStatus(result.status);
+      setIdentityVerified(result.verified);
+      if (result.status === "verified" || result.status === "requires_input" || result.status === "canceled") {
+        return;
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, 1500));
+    }
+  }
+
+  async function handleStartIdentity() {
+    setIdentityBusy(true);
+    setError(null);
+    try {
+      const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+      if (!publishableKey) {
+        setError("Stripe publishable key is not configured.");
+        return;
+      }
+
+      const started = await startIndustryIdentityVerification();
+      if (!started.ok) {
+        setError(started.error);
+        return;
+      }
+
+      setIdentityStatus(started.status);
+      const stripe = await loadStripe(publishableKey);
+      if (!stripe) {
+        setError("Could not load Stripe Identity.");
+        return;
+      }
+
+      const { error: stripeError } = await stripe.verifyIdentity(started.clientSecret);
+      if (stripeError) {
+        setError(stripeError.message ?? "Identity verification was not completed.");
+      }
+
+      await pollIdentityUntilSettled();
+    } finally {
+      setIdentityBusy(false);
+    }
   }
 
   function handleDashboard() {
@@ -245,21 +285,16 @@ export function TalentBuyerOnboardingFlow({ profile }: { profile: DashboardProfi
     isSuccess: isSuccessStep,
   });
   const currentCopy = stepCopy[draft.currentStep];
+  const initials = draft.fullName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
 
   function renderStepFields() {
     return (
       <>
-        {draft.currentStep === "dateOfBirth" ? (
-          <AuthField label="Date of birth">
-            <AuthInput
-              type="date"
-              value={draft.dateOfBirth}
-              onChange={(event) => updateDraft({ dateOfBirth: event.target.value })}
-              required
-            />
-          </AuthField>
-        ) : null}
-
         {draft.currentStep === "primaryGoal" ? (
           <ChoiceGrid>
             {primaryGoalOptions.map((option) => (
@@ -330,162 +365,111 @@ export function TalentBuyerOnboardingFlow({ profile }: { profile: DashboardProfi
           </div>
         ) : null}
 
-        {draft.currentStep === "talentNeeds" ? (
-          <div className="flex flex-wrap gap-2">
-            {talentNeedOptions.map((option) => {
-              const selected = draft.talentTypes.includes(option.value);
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() =>
-                    updateDraft({
-                      talentTypes: selected
-                        ? draft.talentTypes.filter((item) => item !== option.value)
-                        : [...draft.talentTypes, option.value],
-                    })
-                  }
-                  className={setupPill(selected)}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
-
-        {draft.currentStep === "styleFocus" ? (
-          <div className="flex flex-wrap gap-2">
-            {styleFocusOptions.map((option) => {
-              const selected = draft.styleFocus.includes(option.value);
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() =>
-                    updateDraft({
-                      styleFocus: selected
-                        ? draft.styleFocus.filter((item) => item !== option.value)
-                        : [...draft.styleFocus, option.value],
-                    })
-                  }
-                  className={setupPill(selected)}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
-
         {draft.currentStep === "markets" ? (
-          <MarketSelector
-            markets={draft.markets}
-            onChange={(markets) => updateDraft({ markets })}
-          />
+          <MarketPlacesSelector places={draft.marketPlaces} onChange={setMarketPlaces} />
         ) : null}
 
         {draft.currentStep === "verification" ? (
-          <div className="grid gap-4">
-            <AuthField label="Company website">
-              <AuthInput
-                value={draft.verificationLinks.companyWebsite ?? ""}
-                onChange={(event) =>
-                  updateDraft({
-                    verificationLinks: {
-                      ...draft.verificationLinks,
-                      companyWebsite: event.target.value,
-                    },
-                  })
-                }
-                placeholder="https://"
-              />
-            </AuthField>
-            <AuthField label="LinkedIn">
-              <AuthInput
-                value={draft.verificationLinks.linkedin ?? ""}
-                onChange={(event) =>
-                  updateDraft({
-                    verificationLinks: {
-                      ...draft.verificationLinks,
-                      linkedin: event.target.value,
-                    },
-                  })
-                }
-                placeholder="https://linkedin.com/in/..."
-              />
-            </AuthField>
-            <AuthField label="Instagram">
-              <AuthInput
-                value={draft.verificationLinks.instagram ?? ""}
-                onChange={(event) =>
-                  updateDraft({
-                    verificationLinks: {
-                      ...draft.verificationLinks,
-                      instagram: event.target.value,
-                    },
-                  })
-                }
-                placeholder="https://instagram.com/..."
-              />
-            </AuthField>
-          </div>
-        ) : null}
-
-        {draft.currentStep === "notifications" ? (
-          <div className="space-y-3">
-            {[
-              {
-                key: "newTalentMatches" as const,
-                title: "New Talent Matches",
-                description: "Profiles that fit your preferences.",
-              },
-              {
-                key: "opportunityUpdates" as const,
-                title: "Opportunity Updates",
-                description: "Castings, classes, and sessions you follow.",
-              },
-              {
-                key: "industryAnnouncements" as const,
-                title: "Industry Announcements",
-                description: "Product updates and Motiion news.",
-              },
-            ].map((item) => {
-              const enabled = draft.notificationPreferences[item.key];
-              return (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={() =>
-                    updateDraft({
-                      notificationPreferences: {
-                        ...draft.notificationPreferences,
-                        [item.key]: !enabled,
-                      },
-                    })
-                  }
-                  className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition ${
-                    enabled
-                      ? "border-[var(--accent-dark)] bg-[color-mix(in_oklab,var(--accent),white_88%)]"
-                      : "border-[var(--line)] bg-white"
-                  }`}
-                >
-                  <div>
-                    <p className="font-medium text-[var(--ink)]">{item.title}</p>
-                    <p className="mt-1 text-sm text-[var(--ink-soft)]">{item.description}</p>
-                  </div>
-                  <span
-                    className={`inline-flex size-6 items-center justify-center rounded-full border ${
-                      enabled
-                        ? "border-[var(--accent-dark)] bg-[var(--accent-dark)] text-white"
-                        : "border-[var(--line)] bg-white"
-                    }`}
-                  >
-                    {enabled ? <Check className="size-3.5" /> : null}
+          <div className="grid gap-5">
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                className="relative size-20 shrink-0 overflow-hidden rounded-full bg-[#0c2a26] ring-1 ring-[var(--line)] transition hover:ring-[var(--accent)]"
+                onClick={() => fileInputRef.current?.click()}
+                aria-label="Upload profile photo"
+                disabled={isUploadingAvatar}
+              >
+                {draft.avatarUrl ? (
+                  <Image
+                    src={draft.avatarUrl}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="80px"
+                    unoptimized
+                  />
+                ) : (
+                  <span className="flex size-full items-center justify-center text-lg font-semibold tracking-wide text-white/90">
+                    {initials || "?"}
                   </span>
-                </button>
-              );
-            })}
+                )}
+                <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-black/55 py-1 text-[10px] font-medium uppercase tracking-wide text-white/90">
+                  <Camera className="size-3" aria-hidden />
+                  {isUploadingAvatar ? "…" : "Edit"}
+                </span>
+              </button>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-[var(--ink)]">Profile photo</p>
+                <p className="text-sm text-[var(--ink-soft)]">Required for a verified industry account.</p>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
+            </div>
+
+            <AuthField label="Full name">
+              <AuthInput
+                value={draft.fullName}
+                onChange={(event) => updateDraft({ fullName: event.target.value })}
+                placeholder="First and last name"
+                autoComplete="name"
+              />
+            </AuthField>
+
+            <AuthField label="Contact email">
+              <AuthInput
+                type="email"
+                value={draft.contactEmail}
+                onChange={(event) => updateDraft({ contactEmail: event.target.value })}
+                placeholder="you@company.com"
+                autoComplete="email"
+              />
+            </AuthField>
+
+            <AuthField label="Date of birth">
+              <AuthInput
+                type="date"
+                value={draft.dateOfBirth}
+                onChange={(event) => updateDraft({ dateOfBirth: event.target.value })}
+                required
+              />
+            </AuthField>
+
+            <div className="rounded-2xl border border-[var(--line)] px-4 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-medium text-[var(--ink)]">Stripe Identity</p>
+                  <p className="mt-1 text-sm text-[var(--ink-soft)]">
+                    {identityStatusLabel(identityStatus)}
+                  </p>
+                </div>
+                {identityVerified ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--accent),white_84%)] px-3 py-1 text-sm font-medium text-[var(--accent-dark)]">
+                    <Check className="size-3.5" />
+                    Verified
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    className="signup-split-nav-btn"
+                    onClick={() => {
+                      void handleStartIdentity();
+                    }}
+                    disabled={identityBusy || isPending}
+                  >
+                    {identityBusy
+                      ? "Opening…"
+                      : identityStatus === "requires_input"
+                        ? "Retry verification"
+                        : "Verify with Stripe"}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         ) : null}
 
@@ -506,6 +490,7 @@ export function TalentBuyerOnboardingFlow({ profile }: { profile: DashboardProfi
         title={currentCopy.title}
         subtitle={currentCopy.subtitle}
         error={error}
+        progressFirst
         progressLabel={isSuccessStep ? undefined : progress.sectionTitle}
         progressPercent={isSuccessStep ? undefined : progress.percent}
         progressCurrent={isSuccessStep ? undefined : progress.currentStep}
@@ -516,16 +501,16 @@ export function TalentBuyerOnboardingFlow({ profile }: { profile: DashboardProfi
               <div className="signup-split-form__footer-start">
                 <SetupFlowCancelButton
                   userId={profile.id}
-                  disabled={isPending}
+                  disabled={isPending || identityBusy || isUploadingAvatar}
                   onCanceled={() => clearTalentBuyerDraft(profile.id)}
                   onError={setError}
                 />
-                {draft.currentStep !== "dateOfBirth" ? (
+                {draft.currentStep !== firstStep ? (
                   <button
                     type="button"
                     className="signup-split-nav-btn signup-split-nav-btn--ghost"
                     onClick={() => goToStep(getPreviousTalentBuyerStep(draft.currentStep))}
-                    disabled={isPending}
+                    disabled={isPending || identityBusy}
                   >
                     <ChevronLeft className="size-4" />
                     Back
@@ -536,27 +521,7 @@ export function TalentBuyerOnboardingFlow({ profile }: { profile: DashboardProfi
               <span />
             )}
 
-            {draft.currentStep === "verification" ? (
-              <div className="ml-auto flex items-center gap-3">
-                <button
-                  type="button"
-                  className="signup-split-nav-btn"
-                  onClick={handleSkipVerification}
-                  disabled={isPending}
-                >
-                  Skip for now
-                </button>
-                <button
-                  type="button"
-                  className="signup-split-submit !w-auto px-5"
-                  onClick={handleContinue}
-                  disabled={isPending}
-                >
-                  Continue
-                  <ChevronRight className="ml-1 inline size-4" />
-                </button>
-              </div>
-            ) : isSuccessStep ? (
+            {isSuccessStep ? (
               <button type="button" className="signup-split-submit ml-auto !w-auto px-5" onClick={handleDashboard}>
                 Go to Dashboard
               </button>
@@ -565,11 +530,11 @@ export function TalentBuyerOnboardingFlow({ profile }: { profile: DashboardProfi
                 type="button"
                 className="signup-split-submit ml-auto !w-auto px-5"
                 onClick={handleContinue}
-                disabled={isPending}
+                disabled={isPending || identityBusy || isUploadingAvatar}
               >
                 {isPending
                   ? "Saving…"
-                  : draft.currentStep === "notifications"
+                  : draft.currentStep === "verification"
                     ? "Finish setup"
                     : "Continue"}
                 {!isPending ? <ChevronRight className="ml-1 inline size-4" /> : null}
@@ -582,4 +547,8 @@ export function TalentBuyerOnboardingFlow({ profile }: { profile: DashboardProfi
       </SetupFlowFormPanel>
     </SignupSplitShell>
   );
+}
+
+function talentBuyerFirstStep(): TalentBuyerOnboardingStep {
+  return "primaryGoal";
 }

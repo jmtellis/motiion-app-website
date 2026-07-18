@@ -47,7 +47,7 @@ export const getCurrentUserProfile = cache(async (): Promise<DashboardProfile | 
   const { data: nonTalentProfile } = await supabase
     .from("non_talent_profiles")
     .select(
-      "id, company_name, non_talent_type, work_email, user_type, primary_goal, role, organization_name, organization_website, company_size, talent_types, style_focus, markets, verification_links, notification_preferences, onboarding_completed",
+      "id, company_name, non_talent_type, work_email, user_type, primary_goal, role, organization_name, organization_website, company_size, talent_types, style_focus, markets, market_places, verification_links, notification_preferences, onboarding_completed",
     )
     .eq("id", user.id)
     .maybeSingle<NonTalentProfileRecord>();

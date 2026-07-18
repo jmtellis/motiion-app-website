@@ -45,15 +45,11 @@ export type TalentBuyerStyleFocus =
   | "open_style";
 
 export type TalentBuyerOnboardingStep =
-  | "dateOfBirth"
   | "primaryGoal"
   | "role"
   | "organization"
-  | "talentNeeds"
-  | "styleFocus"
   | "markets"
   | "verification"
-  | "notifications"
   | "success";
 
 export type TalentBuyerVerificationLinks = {
@@ -68,19 +64,30 @@ export type TalentBuyerNotificationPreferences = {
   industryAnnouncements: boolean;
 };
 
+export type TalentBuyerMarketPlace = {
+  placeId: string;
+  city: string | null;
+  region: string | null;
+  country: string | null;
+  displayLabel: string;
+};
+
 export type TalentBuyerOnboardingDraft = {
-  version: 1;
+  version: 2;
   userId: string;
   currentStep: TalentBuyerOnboardingStep;
   dateOfBirth: string;
+  fullName: string;
+  contactEmail: string;
+  avatarUrl: string;
   primaryGoal: TalentBuyerPrimaryGoal | "";
   role: TalentBuyerRole | "";
   organizationName: string;
   organizationWebsite: string;
   companySize: TalentBuyerCompanySize | "";
-  talentTypes: TalentBuyerTalentType[];
-  styleFocus: TalentBuyerStyleFocus[];
+  /** Canonical display labels derived from `marketPlaces` for search/compat. */
   markets: string[];
+  marketPlaces: TalentBuyerMarketPlace[];
   verificationLinks: TalentBuyerVerificationLinks;
   notificationPreferences: TalentBuyerNotificationPreferences;
 };
@@ -90,3 +97,11 @@ export type CompleteTalentBuyerOnboardingPayload = TalentBuyerOnboardingDraft;
 export type CompleteTalentBuyerOnboardingResult =
   | { ok: true; redirectTo: string }
   | { ok: false; error: string };
+
+export type IndustryIdentityStatus =
+  | "requires_input"
+  | "processing"
+  | "verified"
+  | "canceled"
+  | "expired"
+  | "redacted";

@@ -91,39 +91,53 @@ export const homeHero = {
   subtext: "Reshaping how professional dancers are discovered, booked, and managed.",
   pillars: [
     {
-      title: "Discover smarter",
-      titleParts: [
-        { text: "Discover", emphasis: true },
-        " smarter",
-      ] as EditorialPart[],
-      description: "Auditions, castings, and gigs in one unified stream.",
+      title: "Casting",
+      titleParts: [{ text: "Casting", emphasis: true }] as EditorialPart[],
+      description:
+        "Define roles, collect submissions, and shortlist talent in one casting workflow.",
       image: {
         src: "/images/pillars/discover-smarter.png",
         alt: "Two dancers in silhouette against a warm orange backdrop",
       },
     },
     {
-      title: "Verify instantly",
-      titleParts: [
-        { text: "Verify", emphasis: true },
-        " instantly",
-      ] as EditorialPart[],
-      description: "Headshots, sizing, and credits kept current in one profile.",
+      title: "Events",
+      titleParts: [{ text: "Events", emphasis: true }] as EditorialPart[],
+      description:
+        "Plan activations, launches, and live appearances with dates, venue, and talent in one place.",
       image: {
         src: "/images/pillars/verify-instantly.png",
         alt: "Dancer in a dynamic pose against a white studio background",
       },
     },
     {
-      title: "Decide faster",
-      titleParts: [
-        { text: "Decide", emphasis: true },
-        " faster",
-      ] as EditorialPart[],
-      description: "Collaborate on shortlists and lock casting in one place.",
+      title: "Training Programs",
+      titleParts: [{ text: "Training Programs", emphasis: true }] as EditorialPart[],
+      description:
+        "Run intensives, workshops, and development programs with enrollments and schedules together.",
       image: {
         src: "/images/pillars/decide-faster.png",
         alt: "Dancer in black velvet on a terracotta studio set",
+      },
+    },
+    {
+      title: "Jobs",
+      titleParts: [{ text: "Jobs", emphasis: true }] as EditorialPart[],
+      description:
+        "Coordinate booked talent, rehearsals, fittings, and deliverables after the cast is locked.",
+      image: {
+        src: "/images/pillars/discover-smarter.png",
+        alt: "Two dancers in silhouette against a warm orange backdrop",
+      },
+    },
+    {
+      title: "Campaigns",
+      titleParts: [{ text: "Campaigns", emphasis: true }] as EditorialPart[],
+      description:
+        "Connect castings, events, deliverables, and approvals across a full campaign.",
+      image: {
+        src: "/images/pillars/verify-instantly.png",
+        alt: "Dancer in a dynamic pose against a white studio background",
       },
     },
   ],
@@ -141,7 +155,7 @@ export const homeHero = {
   ],
 };
 
-/** Outline scroll marquees — anchored to the bottom of the brand statement section. */
+/** Outline scroll marquees — `belowHero` sits directly under the home hero. */
 export const landingMarquees = {
   belowHero: {
     segments: ["Discover", "Motiion", "Talent", "Database"],
@@ -154,7 +168,7 @@ export const landingMarquees = {
 } as const;
 
 export const homePillarsSection = {
-  title: "A workflow more creative than ever.",
+  title: "Project workflows, streamlined.",
 } as const;
 
 export const homeSignupScrollCta = {

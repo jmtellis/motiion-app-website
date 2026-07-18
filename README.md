@@ -37,8 +37,8 @@ Copy `.env.example` to `.env.local`. Required keys depend on what you're testing
 | `SUPABASE_SERVICE_ROLE_KEY` | Admin analytics, webhooks | **Server only** — never `NEXT_PUBLIC_*` |
 | `NEXT_PUBLIC_SITE_URL` | OG metadata, share links | e.g. `https://www.motiion.app` |
 | `STRIPE_SECRET_KEY` | Checkout, portal | Test mode for local dev |
-| `STRIPE_WEBHOOK_SECRET` | Subscription sync | Point Stripe CLI or dashboard to `/api/webhooks/stripe` |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Checkout redirect | |
+| `STRIPE_WEBHOOK_SECRET` | Subscription + Identity sync | Point Stripe CLI or dashboard to `/api/webhooks/stripe` (include `identity.verification_session.verified` and `identity.verification_session.requires_input`) |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Checkout + Identity modal | |
 | `REVENUECAT_WEBHOOK_SECRET` | iOS entitlement sync | `/api/webhooks/revenuecat` |
 | `RESEND_API_KEY` | Invitation / message email | Graceful fail if unset |
 | `NEXT_PUBLIC_POSTHOG_KEY` | Product analytics | |

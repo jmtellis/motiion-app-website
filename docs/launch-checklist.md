@@ -22,6 +22,7 @@
 ## Webhooks
 
 - [ ] Stripe → `https://<domain>/api/webhooks/stripe`
+- [ ] Stripe webhook events include: `checkout.session.completed`, `invoice.paid`, `customer.subscription.updated`, `customer.subscription.deleted`, `identity.verification_session.verified`, `identity.verification_session.requires_input`
 - [ ] RevenueCat → `https://<domain>/api/webhooks/revenuecat`
 
 ## Data

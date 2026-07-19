@@ -30,7 +30,7 @@ export function RosterCreateForm() {
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder="e.g. Commercial LA shortlist"
-          className="rounded-lg border border-white/12 bg-white/5 px-3 py-2 text-sm text-white/92 outline-none focus:border-[var(--ds-accent)]"
+          className="rounded-full border border-white/12 bg-white/5 px-3 py-2 text-sm text-white/92 outline-none focus:border-white/30 focus:outline-none"
         />
       </label>
       <button

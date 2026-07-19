@@ -159,7 +159,7 @@ export function MessengerShell({
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search conversations"
-                className={`w-full rounded-xl border py-2 pr-3 pl-9 text-sm outline-none ${
+                className={`w-full rounded-full border py-2 pr-3 pl-9 text-sm outline-none focus:border-white/30 ${
                   isDashboard
                     ? "border-white/10 bg-black/30 text-white placeholder:text-white/35"
                     : "border-[#262626] bg-[#0f0f0f] text-white"

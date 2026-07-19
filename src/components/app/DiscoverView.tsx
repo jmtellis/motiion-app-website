@@ -17,7 +17,7 @@ function buildSearchHref(filters: SearchFilters, page: number) {
 }
 
 const inputClass =
-  "h-10 w-full rounded-[8px] border border-[#262626] bg-[#0a0a0a] px-3.5 text-sm text-[#eaeaea] outline-none transition placeholder:text-[#5a5a5a] focus:border-[rgb(45_212_191_/_0.55)] focus:bg-[#151515] focus:shadow-[0_0_0_3px_rgb(45_212_191_/_0.15)]";
+  "h-10 w-full rounded-full border border-[#262626] bg-[#0a0a0a] px-3.5 text-sm text-[#eaeaea] outline-none transition placeholder:text-[#5a5a5a] focus:border-white/30 focus:bg-[#151515] focus:outline-none focus:shadow-none";
 
 export function DiscoverView({
   filters,

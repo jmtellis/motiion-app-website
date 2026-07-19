@@ -22,7 +22,10 @@ type CastingCandidateRowActionsProps = {
 };
 
 const INPUT_CLASS =
-  "w-full rounded-xl border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-[#2dd4bf]/50";
+  "w-full rounded-full border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-white/30 focus:outline-none";
+
+const TEXTAREA_CLASS =
+  "w-full rounded-[var(--radius-field)] border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-white/30 focus:outline-none";
 
 const MOTION_ACCOUNT_TOOLTIP = "Requires a Motiion account";
 
@@ -193,7 +196,7 @@ export function CastingCandidateRowActions({
             placeholder="Project name (optional)"
           />
           <textarea
-            className={`${INPUT_CLASS} min-h-24 resize-y`}
+            className={`${TEXTAREA_CLASS} min-h-24 resize-y`}
             value={availabilityMessage}
             onChange={(event) => setAvailabilityMessage(event.target.value)}
             placeholder="Dates, notes, or context (optional)"
@@ -218,7 +221,7 @@ export function CastingCandidateRowActions({
         }
       >
         <textarea
-          className={`${INPUT_CLASS} min-h-24 resize-y`}
+          className={`${TEXTAREA_CLASS} min-h-24 resize-y`}
           value={sizeSheetMessage}
           onChange={(event) => setSizeSheetMessage(event.target.value)}
           placeholder="Optional note for the talent"

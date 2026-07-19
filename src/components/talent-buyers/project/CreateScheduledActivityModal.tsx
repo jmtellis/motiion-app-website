@@ -10,7 +10,10 @@ import type { ScheduledActivityType } from "@/lib/talent-buyers/project-add-opti
 import { labelFromSnake } from "@/lib/talent-buyers/dashboard-data";
 
 const inputClass =
-  "w-full rounded-xl border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-[#2dd4bf]/50";
+  "w-full rounded-full border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-white/30 focus:outline-none";
+
+const textareaClass =
+  "w-full rounded-[var(--radius-field)] border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-white/30 focus:outline-none";
 
 export function CreateScheduledActivityModal({
   projectId,
@@ -107,7 +110,7 @@ export function CreateScheduledActivityModal({
           onChange={(event) => setDescription(event.target.value)}
           placeholder="Description (optional)"
           rows={3}
-          className={inputClass}
+          className={textareaClass}
         />
         <input
           value={location}

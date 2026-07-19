@@ -63,7 +63,7 @@ export function AuthTextArea({
 }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
-      className={`min-h-28 w-full rounded-[var(--radius-field)] border border-[var(--line)] bg-[var(--surface-card)] px-3 py-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[#5a5a5a] focus:border-[rgb(45_212_191_/_0.55)] focus:shadow-[0_0_0_3px_rgb(45_212_191_/_0.15)] ${className}`}
+      className={`min-h-28 w-full rounded-[var(--radius-field)] border border-[var(--line)] bg-[var(--surface-card)] px-3 py-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[#5a5a5a] focus:border-white/30 focus:shadow-none ${className}`}
       {...props}
     />
   );

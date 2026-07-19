@@ -244,7 +244,7 @@ export function OrganizerManageView({
             <label className="block space-y-1 text-sm text-white/60">
               Check-in day
               <select
-                className="mt-1 w-full rounded-xl border border-white/12 bg-black/30 px-3 py-2.5 text-white"
+                className="mt-1 w-full rounded-full border border-white/12 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-white/30"
                 value={eventDayId ?? ""}
                 onChange={(event) => setEventDayId(event.target.value || null)}
               >
@@ -288,7 +288,7 @@ export function OrganizerManageView({
               value={manualRef}
               onChange={(event) => setManualRef(event.target.value)}
               placeholder="Profile URL, username, or user ID"
-              className="w-full rounded-xl border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white"
+              className="w-full rounded-full border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white outline-none focus:border-white/30"
             />
             <button
               type="button"

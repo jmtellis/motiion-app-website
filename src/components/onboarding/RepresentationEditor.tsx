@@ -69,7 +69,7 @@ function AgencySelector({
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search agencies"
-              className="w-full rounded-[var(--radius-field)] border border-[var(--line)] bg-[var(--tone)] px-4 py-2 text-sm text-[var(--ink)] outline-none"
+              className="w-full rounded-full border border-[var(--line)] bg-[var(--tone)] px-4 py-2 text-sm text-[var(--ink)] outline-none focus:border-[rgb(17_17_17_/_0.35)]"
             />
           </div>
           <div className="max-h-64 overflow-y-auto">

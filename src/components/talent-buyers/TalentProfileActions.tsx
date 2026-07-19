@@ -129,7 +129,9 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
   }
 
   const inputClass =
-    "w-full rounded-xl border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-[#2dd4bf]/50";
+    "w-full rounded-full border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-white/30 focus:outline-none";
+  const textareaClass =
+    "w-full rounded-[var(--radius-field)] border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-white/30 focus:outline-none";
 
   return (
     <>
@@ -285,7 +287,7 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
             placeholder="Project name (optional)"
           />
           <textarea
-            className={`${inputClass} min-h-24 resize-y`}
+            className={`${textareaClass} min-h-24 resize-y`}
             value={availabilityMessage}
             onChange={(event) => setAvailabilityMessage(event.target.value)}
             placeholder="Dates, notes, or context (optional)"
@@ -305,7 +307,7 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
         }
       >
         <textarea
-          className={`${inputClass} min-h-24 resize-y`}
+          className={`${textareaClass} min-h-24 resize-y`}
           value={sizeSheetMessage}
           onChange={(event) => setSizeSheetMessage(event.target.value)}
           placeholder="Optional note for the talent"

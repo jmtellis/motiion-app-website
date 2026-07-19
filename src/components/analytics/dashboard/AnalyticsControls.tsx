@@ -59,7 +59,7 @@ export function AnalyticsSearchForm({
           name="query"
           defaultValue={query ?? ""}
           placeholder="Name, email, username, or user ID"
-          className="rounded-xl border border-[var(--line)] bg-[var(--surface-card)] px-4 py-2.5 text-[var(--ink)]"
+          className="rounded-full border border-[var(--line)] bg-[var(--surface-card)] px-4 py-2.5 text-[var(--ink)] outline-none focus:border-[rgb(17_17_17_/_0.35)]"
         />
       </label>
       <button type="submit" className="btn-primary text-sm">

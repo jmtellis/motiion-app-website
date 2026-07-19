@@ -1067,11 +1067,11 @@ button.talent-navigator__chip {
 
 .talent-navigator__field {
   width: 100%;
-  border-radius: 8px;
+  border-radius: 9999px;
   border: 1px solid rgb(255 255 255 / 0.08);
   background: rgb(255 255 255 / 0.03);
   color: rgb(255 255 255 / 0.88);
-  padding: 0.4375rem 0.625rem;
+  padding: 0.4375rem 0.875rem;
   font-size: 0.8125rem;
 }
 
@@ -1083,6 +1083,7 @@ button.talent-navigator__chip {
 .talent-navigator__field:focus-visible {
   outline: none;
   outline-offset: 0;
+  border-color: rgb(255 255 255 / 0.35);
   box-shadow: none;
 }
 

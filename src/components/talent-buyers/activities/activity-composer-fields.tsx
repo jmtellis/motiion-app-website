@@ -10,7 +10,10 @@ import {
 import type { ActivityDraft } from "@/lib/talent-buyers/activities/types";
 
 export const activityFieldClass =
-  "w-full rounded-xl border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-[#2dd4bf]/50";
+  "w-full rounded-full border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-white/30 focus:outline-none";
+
+const activityTextAreaClass =
+  "w-full rounded-[var(--radius-field)] border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-white/30 focus:outline-none focus:shadow-none";
 
 export function ActivityField({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -25,7 +28,7 @@ export function ActivityTextInput(props: React.ComponentProps<typeof AuthInput>)
 }
 
 export function ActivityTextArea(props: React.ComponentProps<typeof AuthTextArea>) {
-  return <AuthTextArea {...props} className={`${activityFieldClass} ${props.className ?? ""}`} />;
+  return <AuthTextArea {...props} className={`${activityTextAreaClass} ${props.className ?? ""}`} />;
 }
 
 export function ActivityLocationField({

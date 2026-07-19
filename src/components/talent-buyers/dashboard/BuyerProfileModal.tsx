@@ -26,7 +26,7 @@ function roleLabel(role: DashboardProfile["buyerRole"]) {
 }
 
 const fieldClass =
-  "w-full rounded-xl border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none transition-colors focus:border-white/30 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none disabled:opacity-55";
+  "w-full rounded-full border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none transition-colors focus:border-white/30 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none disabled:opacity-55";
 
 export function BuyerProfileModal({
   open,

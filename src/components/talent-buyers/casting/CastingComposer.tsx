@@ -158,7 +158,7 @@ function RoleEditor({
           <select
             value={role.gender}
             onChange={(event) => onChange({ ...role, gender: event.target.value })}
-            className="w-full rounded-[0.85rem] border border-[var(--line)] bg-white px-3 py-3 text-sm text-[var(--ink)]"
+            className="w-full rounded-full border border-[var(--line)] bg-white px-3 py-3 text-sm text-[var(--ink)] outline-none focus:border-[rgb(17_17_17_/_0.35)]"
           >
             <option value="">Any</option>
             {GENDER_OPTIONS.map((option) => (
@@ -217,7 +217,7 @@ function RoleEditor({
           <select
             value={role.unionStatus}
             onChange={(event) => onChange({ ...role, unionStatus: event.target.value })}
-            className="w-full rounded-[0.85rem] border border-[var(--line)] bg-white px-3 py-3 text-sm text-[var(--ink)]"
+            className="w-full rounded-full border border-[var(--line)] bg-white px-3 py-3 text-sm text-[var(--ink)] outline-none focus:border-[rgb(17_17_17_/_0.35)]"
           >
             <option value="">Any</option>
             {UNION_STATUS_OPTIONS.map((option) => (
@@ -236,7 +236,7 @@ function RoleEditor({
                 cardColorPreset: event.target.value as CastingComposerForm["roles"][number]["cardColorPreset"],
               })
             }
-            className="w-full rounded-[0.85rem] border border-[var(--line)] bg-white px-3 py-3 text-sm text-[var(--ink)]"
+            className="w-full rounded-full border border-[var(--line)] bg-white px-3 py-3 text-sm text-[var(--ink)] outline-none focus:border-[rgb(17_17_17_/_0.35)]"
           >
             {CARD_COLOR_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>

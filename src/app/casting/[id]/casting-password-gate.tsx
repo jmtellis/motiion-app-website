@@ -49,7 +49,7 @@ export function CastingPasswordGate({ roleId, title }: { roleId: string; title: 
           onChange={(event) => setPassword(event.target.value)}
           placeholder="Casting password"
           autoFocus
-          className="w-full rounded-xl border border-white/15 bg-black/30 px-4 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-white/40"
+          className="w-full rounded-full border border-white/15 bg-black/30 px-4 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-white/35"
         />
         {error ? <p className="text-sm text-amber-300">{error}</p> : null}
         <button

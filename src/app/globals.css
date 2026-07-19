@@ -379,8 +379,8 @@ h3 {
 }
 
 .ui-command-panel:focus-within {
-  border-color: color-mix(in oklab, var(--accent), white 35%);
-  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent), white 84%);
+  border-color: rgb(255 255 255 / 0.35);
+  box-shadow: none;
 }
 
 .ui-command-panel--dark {
@@ -1169,11 +1169,16 @@ h3 {
 .field-compact > select {
   padding: 0.5rem 0.65rem;
   font-size: 0.8125rem;
-  border-radius: var(--radius-field);
+}
+
+.field-compact > input,
+.field-compact > select {
+  border-radius: 9999px;
 }
 
 .field-compact > textarea {
   min-height: 0;
+  border-radius: var(--radius-field);
 }
 
 .field > span,
@@ -1187,7 +1192,6 @@ h3 {
 .field > textarea,
 .field > select {
   width: 100%;
-  border-radius: var(--radius-field);
   border: 1px solid var(--line);
   background: #fff;
   padding: 0.72rem 0.85rem;
@@ -1196,17 +1200,44 @@ h3 {
   transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 
+.field > input,
+.field > select {
+  border-radius: 9999px;
+}
+
+.field > textarea {
+  border-radius: var(--radius-field);
+}
+
 .field > input::placeholder,
 .field > textarea::placeholder {
   color: #8b8a86;
 }
 
+.field > input:focus,
+.field > textarea:focus,
+.field > select:focus,
 .field > input:focus-visible,
 .field > textarea:focus-visible,
 .field > select:focus-visible {
   outline: none;
-  border-color: rgb(45 212 191 / 0.55);
-  box-shadow: 0 0 0 3px rgb(45 212 191 / 0.15);
+  border-color: rgb(17 17 17 / 0.35);
+  box-shadow: none;
+}
+
+.theme-dark .field > input:focus,
+.theme-dark .field > textarea:focus,
+.theme-dark .field > select:focus,
+.theme-dark .field > input:focus-visible,
+.theme-dark .field > textarea:focus-visible,
+.theme-dark .field > select:focus-visible,
+.theme-marketing-dark .field > input:focus,
+.theme-marketing-dark .field > textarea:focus,
+.theme-marketing-dark .field > select:focus,
+.theme-marketing-dark .field > input:focus-visible,
+.theme-marketing-dark .field > textarea:focus-visible,
+.theme-marketing-dark .field > select:focus-visible {
+  border-color: rgb(255 255 255 / 0.35);
 }
 
 .theme-dark .field > input::placeholder,
@@ -1310,7 +1341,11 @@ html.is-scrolling::-webkit-scrollbar-thumb,
   outline: none;
 }
 
-:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+:where(a, button, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--accent, #4f7cff);
   outline-offset: 2px;
+}
+
+:where(input, textarea, select):focus-visible {
+  outline: none;
 }

@@ -38,8 +38,8 @@ export function BuyerSettingsProfileForm({
   const isDashboard = variant === "dashboard";
   const wrapperClass = isDashboard ? "bd-muted-panel space-y-5 p-5" : "ui-card space-y-5 p-5";
   const selectClass = isDashboard
-    ? "w-full rounded-xl border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white outline-none transition-colors focus:border-white/30 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none"
-    : "w-full rounded-[var(--radius-field)] border border-[var(--line)] bg-[var(--surface-card)] px-3 py-3 text-sm text-[var(--ink)] outline-none";
+    ? "w-full rounded-full border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white outline-none transition-colors focus:border-white/30 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none"
+    : "w-full rounded-full border border-[var(--line)] bg-[var(--surface-card)] px-3 py-3 text-sm text-[var(--ink)] outline-none focus:border-[rgb(17_17_17_/_0.35)]";
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -180,7 +180,7 @@ export function BuyerSettingsWorkspaceSections({
   }
 
   const inputClass =
-    "w-full rounded-xl border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none transition-colors focus:border-white/30 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none";
+    "w-full rounded-full border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none transition-colors focus:border-white/30 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none";
 
   return (
     <div className="grid gap-3 md:grid-cols-2">

@@ -158,11 +158,14 @@
   color: rgb(255 255 255 / 0.35);
 }
 
+.casting-create-wizard .field > input:focus,
+.casting-create-wizard .field > textarea:focus,
+.casting-create-wizard .field > select:focus,
 .casting-create-wizard .field > input:focus-visible,
 .casting-create-wizard .field > textarea:focus-visible,
 .casting-create-wizard .field > select:focus-visible {
-  border-color: rgb(45 212 191 / 0.55);
-  box-shadow: 0 0 0 3px rgb(45 212 191 / 0.15);
+  border-color: rgb(255 255 255 / 0.35);
+  box-shadow: none;
 }
 
 .casting-create-wizard .casting-wizard-choice__body,
@@ -761,7 +764,7 @@
   gap: 0.65rem;
   width: 100%;
   min-height: 2.75rem;
-  border-radius: var(--radius-field, 0.75rem);
+  border-radius: 9999px;
   border: 1px solid rgb(255 255 255 / 0.1);
   background: rgb(255 255 255 / 0.06);
   padding: 0.35rem 0.75rem 0.35rem 0.45rem;
@@ -769,8 +772,8 @@
 }
 
 .casting-client-input:focus-within {
-  border-color: rgb(45 212 191 / 0.55);
-  box-shadow: 0 0 0 3px rgb(45 212 191 / 0.15);
+  border-color: rgb(255 255 255 / 0.35);
+  box-shadow: none;
 }
 
 .casting-client-input__thumb {

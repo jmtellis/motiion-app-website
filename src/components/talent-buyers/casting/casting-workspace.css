@@ -440,12 +440,22 @@
 .casting-input {
   width: 100%;
   max-width: 20rem;
-  padding: 0.5rem 0.625rem;
+  padding: 0.5rem 0.875rem;
   border: 1px solid rgb(255 255 255 / 0.1);
-  border-radius: 8px;
+  border-radius: 9999px;
   background: rgb(255 255 255 / 0.04);
   color: rgb(255 255 255 / 0.9);
   font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.casting-select:focus,
+.casting-input:focus,
+.casting-select:focus-visible,
+.casting-input:focus-visible {
+  border-color: rgb(255 255 255 / 0.35);
+  box-shadow: none;
 }
 
 .casting-form {
@@ -1798,8 +1808,12 @@
   gap: 0.5rem;
   padding-inline: 0.75rem;
   border: 1px solid rgb(255 255 255 / 0.1);
-  border-radius: 10px;
+  border-radius: 9999px;
   background: rgb(0 0 0 / 0.25);
+}
+
+.casting-find-talent-toolbar__search-input:focus-within {
+  border-color: rgb(255 255 255 / 0.35);
 }
 
 .casting-find-talent-toolbar__search-input .casting-input {
@@ -1839,8 +1853,9 @@
 }
 
 .casting-find-talent-role-pill__select:focus-visible {
-  outline: 2px solid rgb(45 212 191 / 0.45);
-  outline-offset: 2px;
+  outline: none;
+  border-color: rgb(255 255 255 / 0.35);
+  box-shadow: none;
 }
 
 .casting-find-talent-board {

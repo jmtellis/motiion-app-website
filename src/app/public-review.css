@@ -55,12 +55,18 @@
 .public-review-select {
   width: 100%;
   min-height: 46px;
-  border-radius: 12px;
+  border-radius: 9999px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   padding: 0 12px;
   background: rgba(255, 255, 255, 0.06);
   color: #fff;
   font: inherit;
+  outline: none;
+}
+
+.public-review-select:focus-visible {
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: none;
 }
 
 .public-review-submit-bar {
@@ -126,15 +132,17 @@
 .public-review-field-input {
   width: 100%;
   min-height: 46px;
-  border-radius: 12px;
+  border-radius: 9999px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   padding: 0 12px;
   background: rgba(255, 255, 255, 0.06);
   color: #fff;
   font: inherit;
+  outline: none;
 }
 
 .public-review-field-input:focus {
-  outline: 2px solid rgba(255, 255, 255, 0.35);
-  outline-offset: 1px;
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: none;
 }

@@ -23,6 +23,19 @@ export type Talent = {
   recommended?: boolean;
   /** Optional secondary line (e.g. "By …") */
   caption?: string;
+  /** Credit-search evidence when results come from structured credit query */
+  matchingCredits?: Array<{
+    id: string;
+    role: string | null;
+    productionName: string | null;
+    artistName: string | null;
+    choreographerName: string | null;
+    creditYear: number | null;
+    verificationLabel: string;
+    sourceLabel: string;
+    verificationStatus?: string;
+  }>;
+  matchingCreditCount?: number;
 };
 
 export type TalentRow = {
@@ -31,6 +44,8 @@ export type TalentRow = {
   description?: string;
   talent: Talent[];
 };
+
+export type RelationshipMatchMode = "all" | "any";
 
 export type TalentNavigatorFilters = {
   keyword: string;
@@ -46,6 +61,16 @@ export type TalentNavigatorFilters = {
   experience: string;
   subtype: string;
   openRoleId: string;
+  /** Credit search: artist names (display) */
+  artists: string[];
+  choreographers: string[];
+  productions: string[];
+  /** Resolved entity UUIDs after disambiguation */
+  resolvedArtistIds: string[];
+  resolvedChoreographerIds: string[];
+  resolvedProductionIds: string[];
+  relationshipMatchMode: RelationshipMatchMode;
+  verificationStatuses: string[];
 };
 
 export const EMPTY_NAVIGATOR_FILTERS: TalentNavigatorFilters = {
@@ -62,6 +87,14 @@ export const EMPTY_NAVIGATOR_FILTERS: TalentNavigatorFilters = {
   experience: "",
   subtype: "",
   openRoleId: "",
+  artists: [],
+  choreographers: [],
+  productions: [],
+  resolvedArtistIds: [],
+  resolvedChoreographerIds: [],
+  resolvedProductionIds: [],
+  relationshipMatchMode: "all",
+  verificationStatuses: [],
 };
 
 export type NavigatorDataSource = "live" | "mock" | "unavailable";
@@ -77,3 +110,14 @@ export type SavedSearch = {
   label: string;
   filters: Partial<TalentNavigatorFilters>;
 };
+
+export function hasCreditSearchFilters(filters: TalentNavigatorFilters): boolean {
+  return (
+    (filters.artists?.length ?? 0) > 0 ||
+    (filters.choreographers?.length ?? 0) > 0 ||
+    (filters.productions?.length ?? 0) > 0 ||
+    (filters.resolvedArtistIds?.length ?? 0) > 0 ||
+    (filters.resolvedChoreographerIds?.length ?? 0) > 0 ||
+    (filters.resolvedProductionIds?.length ?? 0) > 0
+  );
+}

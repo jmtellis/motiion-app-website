@@ -20,9 +20,70 @@ import {
 } from "@/lib/talent-buyers/casting/bridge-mobile-invite";
 import { searchTalentProfiles } from "@/lib/search/search-profiles";
 
+export type ParseNlTalentQueryResult = {
+  filters: TalentNavigatorFilters;
+  parsedDescription: string;
+  confidence: number;
+  data: TalentNavigatorInitialData;
+  reasoning: { headline: string; bullets: string[] };
+  error?: string;
+  warnings?: Array<{
+    type: string;
+    message: string;
+    resolution?: {
+      requestedName: string;
+      status: string;
+      role: string;
+      candidates?: Array<{ id: string; name: string; type: string; score: number }>;
+    };
+  }>;
+  creditEvidenceByTalentId?: Record<
+    string,
+    Array<{
+      id: string;
+      role: string | null;
+      productionName: string | null;
+      artistName: string | null;
+      choreographerName: string | null;
+      creditYear: number | null;
+      verificationLabel: string;
+      sourceLabel: string;
+    }>
+  >;
+};
+
 export async function fetchNavigatorTalent(
   filters: TalentNavigatorFilters,
 ): Promise<TalentNavigatorInitialData> {
+  const { hasCreditSearchFilters } = await import("@/lib/talent-navigator/types");
+  if (hasCreditSearchFilters(filters)) {
+    const { searchTalentByCredits } = await import("@/lib/talent-navigator/search-by-credits");
+    const creditResult = await searchTalentByCredits(
+      {
+        artists: filters.artists ?? [],
+        choreographers: filters.choreographers ?? [],
+        productions: filters.productions ?? [],
+        resolvedArtistIds: filters.resolvedArtistIds ?? [],
+        resolvedChoreographerIds: filters.resolvedChoreographerIds ?? [],
+        resolvedProductionIds: filters.resolvedProductionIds ?? [],
+        relationshipMatchMode: filters.relationshipMatchMode ?? "all",
+        verificationStatuses: (filters.verificationStatuses ?? []) as never[],
+        location: filters.location ? [filters.location] : [],
+        danceStyles: filters.style ? [filters.style] : [],
+        agencies: filters.agency ? [filters.agency] : [],
+        representedOnly: filters.representation === "Represented" ? true : undefined,
+        availableOnly: filters.availability ? true : undefined,
+        broadExperienceQuery: filters.keyword || undefined,
+      },
+      { navigatorFilters: filters },
+    );
+    return {
+      talent: creditResult.talent,
+      usingFallbackData: creditResult.usingFallbackData,
+      source: creditResult.source,
+    };
+  }
+
   const result = await searchTalentProfiles(navigatorFiltersToSearchFilters(filters));
   return buildNavigatorInitialData(result, filters);
 }
@@ -150,15 +211,6 @@ export async function listBuyerOpenRoles(): Promise<{
   return { roles };
 }
 
-export type ParseNlTalentQueryResult = {
-  filters: TalentNavigatorFilters;
-  parsedDescription: string;
-  confidence: number;
-  data: TalentNavigatorInitialData;
-  reasoning: { headline: string; bullets: string[] };
-  error?: string;
-};
-
 export async function transcribeNavigatorVoiceAudio(
   formData: FormData,
 ): Promise<{ text: string; error?: string }> {
@@ -201,21 +253,136 @@ export async function parseNlTalentQuery(
   prompt: string,
   priorFilters?: TalentNavigatorFilters,
 ): Promise<ParseNlTalentQueryResult> {
-  const { parseNlQuery, mergeNavigatorFilters, buildSearchReasoning } = await import(
+  const { parseNlQuery, mergeNavigatorFilters, creditResultsToReasoning } = await import(
     "@/lib/talent-navigator/parse-nl-query"
   );
-  const { EMPTY_NAVIGATOR_FILTERS } = await import("@/lib/talent-navigator/types");
+  const { EMPTY_NAVIGATOR_FILTERS, hasCreditSearchFilters } = await import(
+    "@/lib/talent-navigator/types"
+  );
 
   try {
+    await trackServerEvent("talent_navigator_search_submitted", {
+      promptLength: prompt.trim().length,
+    });
+
     const parsed = await parseNlQuery(prompt);
+    if (parsed.parseFailed) {
+      await trackServerEvent("talent_navigator_search_parse_failed", {});
+    } else {
+      await trackServerEvent("talent_navigator_search_parsed", {
+        artistCount: parsed.filters.artists?.length ?? 0,
+        choreographerCount: parsed.filters.choreographers?.length ?? 0,
+        productionCount: parsed.filters.productions?.length ?? 0,
+      });
+    }
+
     const merged = mergeNavigatorFilters(priorFilters ?? EMPTY_NAVIGATOR_FILTERS, parsed.filters);
+
+    if (hasCreditSearchFilters(merged)) {
+      const { searchTalentByCredits } = await import("@/lib/talent-navigator/search-by-credits");
+      const creditResult = await searchTalentByCredits(
+        {
+          artists: merged.artists,
+          choreographers: merged.choreographers,
+          productions: merged.productions,
+          resolvedArtistIds: merged.resolvedArtistIds,
+          resolvedChoreographerIds: merged.resolvedChoreographerIds,
+          resolvedProductionIds: merged.resolvedProductionIds,
+          relationshipMatchMode: merged.relationshipMatchMode,
+          verificationStatuses: merged.verificationStatuses as never[],
+          location: merged.location ? [merged.location] : [],
+          danceStyles: merged.style ? [merged.style] : [],
+          agencies: merged.agency ? [merged.agency] : [],
+          representedOnly: merged.representation === "Represented" ? true : undefined,
+          availableOnly: merged.availability ? true : undefined,
+          broadExperienceQuery: merged.keyword || undefined,
+        },
+        { navigatorFilters: merged },
+      );
+
+      const unresolvedCount = creditResult.warnings.filter((w) => w.type === "unresolved").length;
+      const ambiguousCount = creditResult.warnings.filter((w) => w.type === "ambiguous").length;
+      if (unresolvedCount) {
+        await trackServerEvent("talent_navigator_entity_unresolved", {
+          unresolvedEntityCount: unresolvedCount,
+        });
+      }
+      if (ambiguousCount) {
+        await trackServerEvent("talent_navigator_entity_ambiguous", {
+          ambiguousEntityCount: ambiguousCount,
+        });
+      }
+      await trackServerEvent(
+        creditResult.total === 0
+          ? "talent_navigator_search_zero_results"
+          : "talent_navigator_search_returned_results",
+        {
+          resultCount: creditResult.total,
+          artistCount: merged.artists.length,
+          choreographerCount: merged.choreographers.length,
+          productionCount: merged.productions.length,
+          matchMode: merged.relationshipMatchMode,
+          verificationFilterCount: merged.verificationStatuses.length,
+          unresolvedEntityCount: unresolvedCount,
+        },
+      );
+
+      const filtersWithResolved: TalentNavigatorFilters = {
+        ...merged,
+        resolvedArtistIds: creditResult.input.resolvedArtistIds,
+        resolvedChoreographerIds: creditResult.input.resolvedChoreographerIds,
+        resolvedProductionIds: creditResult.input.resolvedProductionIds,
+      };
+
+      const creditEvidenceByTalentId: ParseNlTalentQueryResult["creditEvidenceByTalentId"] = {};
+      for (const talent of creditResult.talent) {
+        creditEvidenceByTalentId[talent.id] = talent.matchingCredits.map((c) => ({
+          id: c.id,
+          role: c.role,
+          productionName: c.productionName,
+          artistName: c.artistName,
+          choreographerName: c.choreographerName,
+          creditYear: c.creditYear,
+          verificationLabel: c.verificationLabel,
+          sourceLabel: c.sourceLabel,
+        }));
+      }
+
+      return {
+        filters: filtersWithResolved,
+        parsedDescription: parsed.parsedDescription,
+        confidence: parsed.confidence,
+        data: {
+          talent: creditResult.talent,
+          usingFallbackData: creditResult.usingFallbackData,
+          source: creditResult.source,
+        },
+        reasoning: creditResultsToReasoning(
+          creditResult.talent,
+          filtersWithResolved,
+          parsed.parsedDescription,
+          creditResult.warnings.map((w) => w.message),
+        ),
+        warnings: creditResult.warnings,
+        creditEvidenceByTalentId,
+      };
+    }
+
     const data = await fetchNavigatorTalent(merged);
+    const { buildSearchReasoning } = await import("@/lib/talent-navigator/parse-nl-query");
     const reasoning = buildSearchReasoning({
       count: data.talent.length,
       parsedDescription: parsed.parsedDescription,
       topTalentNames: data.talent.slice(0, 5).map((talent) => talent.name),
       activeFilters: merged,
     });
+
+    await trackServerEvent(
+      data.talent.length === 0
+        ? "talent_navigator_search_zero_results"
+        : "talent_navigator_search_returned_results",
+      { resultCount: data.talent.length },
+    );
 
     return {
       filters: merged,
@@ -234,6 +401,79 @@ export async function parseNlTalentQuery(
       error: error instanceof Error ? error.message : "Search assistant unavailable.",
     };
   }
+}
+
+export async function resolveCreditEntityChoice(input: {
+  priorFilters: TalentNavigatorFilters;
+  role: "artist" | "choreographer" | "production";
+  entityId: string;
+  entityName: string;
+}): Promise<ParseNlTalentQueryResult> {
+  const { EMPTY_NAVIGATOR_FILTERS } = await import("@/lib/talent-navigator/types");
+  const filters: TalentNavigatorFilters = {
+    ...EMPTY_NAVIGATOR_FILTERS,
+    ...input.priorFilters,
+  };
+
+  if (input.role === "artist") {
+    filters.resolvedArtistIds = [...new Set([...filters.resolvedArtistIds, input.entityId])];
+    if (!filters.artists.includes(input.entityName)) {
+      filters.artists = [...filters.artists, input.entityName];
+    }
+  } else if (input.role === "choreographer") {
+    filters.resolvedChoreographerIds = [
+      ...new Set([...filters.resolvedChoreographerIds, input.entityId]),
+    ];
+    if (!filters.choreographers.includes(input.entityName)) {
+      filters.choreographers = [...filters.choreographers, input.entityName];
+    }
+  } else {
+    filters.resolvedProductionIds = [
+      ...new Set([...filters.resolvedProductionIds, input.entityId]),
+    ];
+    if (!filters.productions.includes(input.entityName)) {
+      filters.productions = [...filters.productions, input.entityName];
+    }
+  }
+
+  const data = await fetchNavigatorTalent(filters);
+  const evidenceTalent = data.talent as Array<{
+    id: string;
+    name: string;
+    matchingCredits?: ParseNlTalentQueryResult["creditEvidenceByTalentId"] extends Record<
+      string,
+      infer V
+    >
+      ? V
+      : never;
+  }>;
+
+  return {
+    filters,
+    parsedDescription: `Using ${input.entityName}`,
+    confidence: 1,
+    data,
+    reasoning: {
+      headline: `Searching with ${input.entityName}.`,
+      bullets: [`Resolved ${input.role}: ${input.entityName}`],
+    },
+    creditEvidenceByTalentId: Object.fromEntries(
+      evidenceTalent.map((t) => [
+        t.id,
+        ((t as { matchingCredits?: NonNullable<ParseNlTalentQueryResult["creditEvidenceByTalentId"]>[string] })
+          .matchingCredits ?? []).map((c) => ({
+          id: c.id,
+          role: c.role,
+          productionName: c.productionName,
+          artistName: c.artistName,
+          choreographerName: c.choreographerName,
+          creditYear: c.creditYear,
+          verificationLabel: c.verificationLabel,
+          sourceLabel: c.sourceLabel,
+        })),
+      ]),
+    ),
+  };
 }
 
 export async function addTalentToProjectRoster(input: {

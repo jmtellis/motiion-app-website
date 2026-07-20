@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Briefcase, ChevronDown, Filter, Loader2 } from "lucide-react";
 
-import { parseNlTalentQuery } from "@/app/(buyer-app)/(paid)/talent/actions";
+import {
+  parseNlTalentQuery,
+  resolveCreditEntityChoice,
+} from "@/app/(buyer-app)/(paid)/talent/actions";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
 import type { BuyerOpenRole } from "@/lib/talent-navigator/open-roles";
 import type { TalentNavigatorFilters } from "@/lib/talent-navigator/types";
@@ -15,6 +18,11 @@ type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   bullets?: string[];
+  ambiguousChoices?: Array<{
+    requestedName: string;
+    role: "artist" | "choreographer" | "production";
+    candidates: Array<{ id: string; name: string; type: string; score: number }>;
+  }>;
 };
 
 type TalentNlChatPanelProps = {
@@ -25,7 +33,17 @@ type TalentNlChatPanelProps = {
   selectedOpenRoleId: string;
   onOpenRoleChange: (roleId: string) => void;
   onFiltersChange: (filters: TalentNavigatorFilters, resetNavigation: boolean) => void;
+  onTalentPoolChange?: (talent: import("@/lib/talent-navigator/types").Talent[]) => void;
 };
+
+const SUGGESTED_PROMPTS = [
+  { label: "Worked with an artist", prompt: "Find dancers who have worked with Beyoncé" },
+  { label: "Worked with a choreographer", prompt: "Show me dancers who have worked with Sean Bankhead" },
+  { label: "Tour experience", prompt: "Who danced on the Renaissance World Tour?" },
+  { label: "Verified credits only", prompt: "Show only dancers with industry-confirmed credits" },
+  { label: "Available in Los Angeles", prompt: "Find LA-based dancers who are available" },
+  { label: "Worked with both", prompt: "Find dancers who have worked with both Beyoncé and Sean Bankhead" },
+];
 
 export function TalentNlChatPanel({
   filters,
@@ -35,6 +53,7 @@ export function TalentNlChatPanel({
   selectedOpenRoleId,
   onOpenRoleChange,
   onFiltersChange,
+  onTalentPoolChange,
 }: TalentNlChatPanelProps) {
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
@@ -66,9 +85,36 @@ export function TalentNlChatPanel({
     return () => window.removeEventListener("mousedown", handlePointerDown);
   }, [roleMenuOpen]);
 
-  function submitPrompt(event?: React.FormEvent) {
+  function applyResult(
+    result: Awaited<ReturnType<typeof parseNlTalentQuery>>,
+  ) {
+    onFiltersChange(result.filters, true);
+    onTalentPoolChange?.(result.data.talent);
+
+    const ambiguousChoices =
+      result.warnings
+        ?.filter((w) => w.type === "ambiguous" && w.resolution?.candidates?.length)
+        .map((w) => ({
+          requestedName: w.resolution!.requestedName,
+          role: w.resolution!.role as "artist" | "choreographer" | "production",
+          candidates: w.resolution!.candidates!,
+        })) ?? [];
+
+    setMessages((current) => [
+      ...current,
+      {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        content: result.reasoning.headline,
+        bullets: result.reasoning.bullets,
+        ambiguousChoices: ambiguousChoices.length ? ambiguousChoices : undefined,
+      },
+    ]);
+  }
+
+  function submitPrompt(event?: React.FormEvent, overridePrompt?: string) {
     event?.preventDefault();
-    const prompt = input.trim();
+    const prompt = (overridePrompt ?? input).trim();
     if (!prompt || isPending) return;
 
     const userMessage: ChatMessage = {
@@ -77,7 +123,7 @@ export function TalentNlChatPanel({
       content: prompt,
     };
     setMessages((current) => [...current, userMessage]);
-    setInput("");
+    if (!overridePrompt) setInput("");
 
     startTransition(async () => {
       try {
@@ -85,21 +131,15 @@ export function TalentNlChatPanel({
         if (result.error) {
           setMessages((current) => [
             ...current,
-            { id: `err-${Date.now()}`, role: "assistant", content: result.error ?? "Could not refine search." },
+            {
+              id: `err-${Date.now()}`,
+              role: "assistant",
+              content: result.error ?? "Could not refine search.",
+            },
           ]);
           return;
         }
-
-        onFiltersChange(result.filters, true);
-        setMessages((current) => [
-          ...current,
-          {
-            id: `assistant-${Date.now()}`,
-            role: "assistant",
-            content: result.reasoning.headline,
-            bullets: result.reasoning.bullets,
-          },
-        ]);
+        applyResult(result);
       } catch {
         setMessages((current) => [
           ...current,
@@ -110,6 +150,22 @@ export function TalentNlChatPanel({
           },
         ]);
       }
+    });
+  }
+
+  function chooseEntity(choice: {
+    role: "artist" | "choreographer" | "production";
+    entityId: string;
+    entityName: string;
+  }) {
+    startTransition(async () => {
+      const result = await resolveCreditEntityChoice({
+        priorFilters: filters,
+        role: choice.role,
+        entityId: choice.entityId,
+        entityName: choice.entityName,
+      });
+      applyResult(result);
     });
   }
 
@@ -143,6 +199,31 @@ export function TalentNlChatPanel({
                   ))}
                 </ul>
               ) : null}
+              {message.ambiguousChoices?.map((group) => (
+                <div key={`${group.role}-${group.requestedName}`} className="mt-2 space-y-1.5">
+                  <p className="text-xs text-white/55">
+                    I found multiple matches for &ldquo;{group.requestedName}&rdquo;. Which one?
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {group.candidates.map((candidate) => (
+                      <button
+                        key={candidate.id}
+                        type="button"
+                        className="talent-navigator__nl-chip"
+                        onClick={() =>
+                          chooseEntity({
+                            role: group.role,
+                            entityId: candidate.id,
+                            entityName: candidate.name,
+                          })
+                        }
+                      >
+                        {candidate.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -223,6 +304,19 @@ export function TalentNlChatPanel({
           </div>
         ) : null}
       </div>
+
+      {!hasHistory
+        ? SUGGESTED_PROMPTS.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              className="talent-navigator__nl-chip"
+              onClick={() => submitPrompt(undefined, item.prompt)}
+            >
+              {item.label}
+            </button>
+          ))
+        : null}
     </div>
   );
 

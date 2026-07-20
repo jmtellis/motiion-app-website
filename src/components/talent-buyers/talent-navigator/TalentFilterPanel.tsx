@@ -110,9 +110,40 @@ export function TalentFilterPanel({
   onSaveSearch,
   open = false,
 }: TalentFilterPanelProps) {
-  const activeChips = Object.entries(filters).filter(
-    ([key, value]) => Boolean(value) && key !== "keyword",
-  );
+  const activeChips: Array<{ key: string; label: string; clear: Partial<TalentNavigatorFilters> }> = [];
+  for (const [key, value] of Object.entries(filters) as [keyof TalentNavigatorFilters, TalentNavigatorFilters[keyof TalentNavigatorFilters]][]) {
+    if (key === "keyword" || key === "openRoleId" || key === "relationshipMatchMode") continue;
+    if (key === "resolvedArtistIds" || key === "resolvedChoreographerIds" || key === "resolvedProductionIds") {
+      continue;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((item, index) => {
+        if (!item) return;
+        const next = [...value];
+        next.splice(index, 1);
+        activeChips.push({
+          key: `${String(key)}-${item}`,
+          label: String(item),
+          clear: { [key]: next } as Partial<TalentNavigatorFilters>,
+        });
+      });
+      continue;
+    }
+    if (typeof value === "string" && value) {
+      activeChips.push({
+        key: String(key),
+        label: value,
+        clear: { [key]: "" } as Partial<TalentNavigatorFilters>,
+      });
+    }
+  }
+  if (filters.relationshipMatchMode === "any" && (filters.artists.length > 1 || filters.choreographers.length > 1)) {
+    activeChips.push({
+      key: "match-any",
+      label: "Match any",
+      clear: { relationshipMatchMode: "all" },
+    });
+  }
 
   if (!open) return null;
 
@@ -164,14 +195,14 @@ export function TalentFilterPanel({
           {activeChips.length ? (
             <div className="talent-navigator__filter-active-row">
               <span className="talent-navigator__filter-active-label">Active:</span>
-              {activeChips.map(([key, value]) => (
+              {activeChips.map((chip) => (
                 <button
-                  key={key}
+                  key={chip.key}
                   type="button"
                   className="talent-navigator__chip talent-navigator__chip--filter"
-                  onClick={() => onChange({ [key]: "" } as Partial<TalentNavigatorFilters>)}
+                  onClick={() => onChange(chip.clear)}
                 >
-                  {value}
+                  {chip.label}
                   <X className="size-3" aria-hidden />
                 </button>
               ))}
@@ -209,6 +240,43 @@ export function TalentFilterPanel({
                 value={filters.height}
                 onChange={(value) => onChange({ height: value })}
               />
+            </FilterSection>
+
+            <FilterSection icon={<BadgeCheck className="size-3.5" />} title="Credit verification">
+              <OptionChips
+                options={["Verified credits only"]}
+                value={
+                  filters.verificationStatuses.includes("motiion_verified") ||
+                  filters.verificationStatuses.includes("industry_confirmed")
+                    ? "Verified credits only"
+                    : ""
+                }
+                onChange={(value) =>
+                  onChange({
+                    verificationStatuses: value
+                      ? ["motiion_verified", "industry_confirmed"]
+                      : [],
+                  })
+                }
+              />
+              <div className="talent-navigator__filter-options" role="group" aria-label="Match mode">
+                <button
+                  type="button"
+                  className={`talent-navigator__filter-option${filters.relationshipMatchMode === "all" ? " talent-navigator__filter-option--selected" : ""}`}
+                  aria-pressed={filters.relationshipMatchMode === "all"}
+                  onClick={() => onChange({ relationshipMatchMode: "all" })}
+                >
+                  Match all
+                </button>
+                <button
+                  type="button"
+                  className={`talent-navigator__filter-option${filters.relationshipMatchMode === "any" ? " talent-navigator__filter-option--selected" : ""}`}
+                  aria-pressed={filters.relationshipMatchMode === "any"}
+                  onClick={() => onChange({ relationshipMatchMode: "any" })}
+                >
+                  Match any
+                </button>
+              </div>
             </FilterSection>
 
             <FilterSection icon={<BadgeCheck className="size-3.5" />} title="Union Status">

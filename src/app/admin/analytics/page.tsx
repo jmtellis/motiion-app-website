@@ -76,9 +76,14 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
             signals.
           </p>
         </div>
-        <Link href="/home" className="btn-secondary text-sm">
-          Back to app
-        </Link>
+        <div className="flex gap-3">
+          <Link href="/admin/entities" className="btn-secondary text-sm">
+            Industry entities
+          </Link>
+          <Link href="/home" className="btn-secondary text-sm">
+            Back to app
+          </Link>
+        </div>
       </div>
 
       {!hasAdminSupabaseEnv() ? (

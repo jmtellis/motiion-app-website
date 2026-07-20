@@ -205,6 +205,66 @@ export const ANALYTICS_EVENTS: Record<string, AnalyticsEventDefinition> = {
     category: "subscription",
     description: "User tapped subscribe on paywall",
   },
+  talent_navigator_search_submitted: {
+    name: "talent_navigator_search_submitted",
+    label: "Talent Navigator search submitted",
+    category: "marketplace",
+    description: "Industry user submitted a Talent Navigator NL search",
+  },
+  talent_navigator_search_parsed: {
+    name: "talent_navigator_search_parsed",
+    label: "Talent Navigator search parsed",
+    category: "marketplace",
+    description: "NL query parsed into structured filters",
+  },
+  talent_navigator_search_parse_failed: {
+    name: "talent_navigator_search_parse_failed",
+    label: "Talent Navigator search parse failed",
+    category: "error",
+    description: "NL query parsing failed after repair attempt",
+  },
+  talent_navigator_entity_unresolved: {
+    name: "talent_navigator_entity_unresolved",
+    label: "Talent Navigator entity unresolved",
+    category: "marketplace",
+    description: "Artist/choreographer/production name could not be resolved",
+  },
+  talent_navigator_entity_ambiguous: {
+    name: "talent_navigator_entity_ambiguous",
+    label: "Talent Navigator entity ambiguous",
+    category: "marketplace",
+    description: "Entity name matched multiple canonical records",
+  },
+  talent_navigator_search_returned_results: {
+    name: "talent_navigator_search_returned_results",
+    label: "Talent Navigator search returned results",
+    category: "marketplace",
+    description: "Credit or profile search returned one or more dancers",
+  },
+  talent_navigator_search_zero_results: {
+    name: "talent_navigator_search_zero_results",
+    label: "Talent Navigator search zero results",
+    category: "marketplace",
+    description: "Credit or profile search returned no dancers",
+  },
+  talent_credit_added: {
+    name: "talent_credit_added",
+    label: "Talent credit added",
+    category: "profile",
+    description: "Talent added a searchable credit",
+  },
+  talent_credit_extraction_accepted: {
+    name: "talent_credit_extraction_accepted",
+    label: "Talent credit extraction accepted",
+    category: "profile",
+    description: "Talent accepted an AI-extracted credit proposal",
+  },
+  talent_credit_extraction_rejected: {
+    name: "talent_credit_extraction_rejected",
+    label: "Talent credit extraction rejected",
+    category: "profile",
+    description: "Talent rejected an AI-extracted credit proposal",
+  },
 };
 
 /** Events that contribute to the North Star metric when tracked in analytics_events. */

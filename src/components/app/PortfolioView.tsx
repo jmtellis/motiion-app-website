@@ -11,12 +11,14 @@ import type {
   ProfileVisual,
   PublicTalentProfile,
 } from "@/types/public";
+import { TalentCreditsManager } from "@/components/talent/TalentCreditsManager";
 
-type ProfileTab = "about" | "resume" | "visuals";
+type ProfileTab = "about" | "resume" | "credits" | "visuals";
 
 const TABS: { id: ProfileTab; label: string }[] = [
   { id: "about", label: "About" },
   { id: "resume", label: "Resume" },
+  { id: "credits", label: "Credits" },
   { id: "visuals", label: "Visuals" },
 ];
 
@@ -101,6 +103,7 @@ export function PortfolioView({ profile }: { profile: PublicTalentProfile }) {
           resumeUrl={profile.resume_url}
         />
       ) : null}
+      {tab === "credits" ? <TalentCreditsManager /> : null}
       {tab === "visuals" ? <VisualsPanel visuals={orderVisuals(profile.profile_visuals ?? [])} /> : null}
     </div>
   );

@@ -156,6 +156,43 @@ export function ActiveTalentPanel({
             {talent.experience ? <MetaRow label="Experience" value={talent.experience} /> : null}
           </dl>
 
+          {talent.matchingCredits?.length ? (
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-white/45">Matched because</p>
+              <ul className="space-y-2">
+                {talent.matchingCredits.slice(0, 2).map((credit) => (
+                  <li
+                    key={credit.id}
+                    className="rounded-lg border border-white/8 bg-white/4 px-3 py-2 text-xs text-white/75"
+                  >
+                    <p className="font-medium text-white/90">
+                      {[credit.productionName, credit.role ? `— ${credit.role}` : null]
+                        .filter(Boolean)
+                        .join(" ")}
+                    </p>
+                    <p className="mt-1 text-white/50">
+                      {[
+                        credit.artistName ? `Artist: ${credit.artistName}` : null,
+                        credit.choreographerName
+                          ? `Choreographer: ${credit.choreographerName}`
+                          : null,
+                        credit.creditYear,
+                        credit.verificationLabel,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+              {(talent.matchingCreditCount ?? talent.matchingCredits.length) > 2 ? (
+                <p className="text-xs text-white/45">
+                  View {talent.matchingCreditCount ?? talent.matchingCredits.length} matching credits
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="talent-navigator__detail-actions">
             <Link
               href={getTalentProfileHref(talent)}

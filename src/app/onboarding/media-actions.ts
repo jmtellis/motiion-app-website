@@ -179,6 +179,21 @@ export async function processOnboardingResume(formData: FormData): Promise<Proce
     const extracted = await extractResumeWithVision(pageBuffers);
     const draftPatch = mergeResumeIntoDraft(resumeUrl, extracted);
 
+    try {
+      const { extractedResumeToCreditProposals, persistAiExtractedCredits } = await import(
+        "@/lib/talent-navigator/resume-credit-extraction"
+      );
+      const proposals = extractedResumeToCreditProposals(extracted);
+      if (proposals.length) {
+        await persistAiExtractedCredits(userId, proposals);
+      }
+    } catch (creditError) {
+      console.debug(
+        "AI credit proposal persist skipped:",
+        creditError instanceof Error ? creditError.message : creditError,
+      );
+    }
+
     return { ok: true, resumeUrl, extracted, draftPatch };
   } catch (error) {
     return {

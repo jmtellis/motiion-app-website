@@ -11,6 +11,7 @@
     "test:breakdown-prefill": "npx tsx --test scripts/breakdown-prefill.test.ts",
     "test:industry-onboarding": "npx tsx --test scripts/industry-onboarding.test.ts",
     "test:talent-search": "npx tsx --test scripts/talent-search-guard.test.ts",
+    "test:talent-credits": "npx tsx --test scripts/talent-credit-search.test.ts",
     "test:industry-billing": "npx tsx --test scripts/industry-billing.test.ts",
     "postinstall": "patch-package"
   },

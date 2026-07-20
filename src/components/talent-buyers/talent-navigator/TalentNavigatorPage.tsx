@@ -275,13 +275,13 @@ export function TalentNavigatorPage({
       setSavedSearchId("");
       setFilters(nextFilters);
       if (resetNav) resetNavigation();
-      setTalentPool([]);
-      void fetchNavigatorTalent(nextFilters).then((data) => {
-        setTalentPool(data.talent);
-      });
     },
     [resetNavigation],
   );
+
+  const applyNlTalentPool = useCallback((talent: Talent[]) => {
+    setTalentPool(talent);
+  }, []);
 
   const handleSaveSearch = useCallback(() => {
     const label = window.prompt("Name this search");
@@ -534,6 +534,7 @@ export function TalentNavigatorPage({
           selectedOpenRoleId={selectedOpenRoleId}
           onOpenRoleChange={applyOpenRole}
           onFiltersChange={applyNlFilters}
+          onTalentPoolChange={applyNlTalentPool}
         />
       </div>
 

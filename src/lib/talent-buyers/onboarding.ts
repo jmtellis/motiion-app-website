@@ -87,8 +87,18 @@ export const workTypeOptions: Array<{ value: TalentBuyerWorkType; label: string 
   { value: "other", label: "Other" },
 ];
 
-/** Current onboarding role cards. */
-export const roleOptions: Array<{ value: TalentBuyerRole; label: string }> = [
+/** Current onboarding role cards (excludes legacy role values retained on TalentBuyerRole). */
+export type TalentBuyerOnboardingRole = Extract<
+  TalentBuyerRole,
+  | "choreographer"
+  | "casting_professional"
+  | "creative_director_or_producer"
+  | "talent_representative"
+  | "brand_or_agency_professional"
+  | "other"
+>;
+
+export const roleOptions: Array<{ value: TalentBuyerOnboardingRole; label: string }> = [
   { value: "choreographer", label: "Choreographer" },
   { value: "casting_professional", label: "Casting professional" },
   { value: "creative_director_or_producer", label: "Creative director or producer" },

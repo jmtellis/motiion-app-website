@@ -49,12 +49,12 @@ export function ProjectCastingsHub({
                 {!casting.isLegacy ? (
                   <Link
                     href={`/projects/${projectId}/castings/${casting.id}/edit`}
-                    className="text-sm font-medium text-[#2dd4bf]"
+                    className="text-sm font-medium text-[var(--accent)]"
                   >
                     Edit
                   </Link>
                 ) : (
-                  <Link href={`/projects/${projectId}/edit`} className="text-sm font-medium text-[#2dd4bf]">
+                  <Link href={`/projects/${projectId}/edit`} className="text-sm font-medium text-[var(--accent)]">
                     Edit legacy
                   </Link>
                 )}

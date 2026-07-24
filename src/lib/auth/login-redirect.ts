@@ -16,7 +16,7 @@ export async function resolveClientLoginDestination(supabase: SupabaseClient): P
     .maybeSingle();
 
   if (!profile) {
-    return "/onboarding";
+    return "/talent-buyers/signup";
   }
 
   const destinationProfile = {

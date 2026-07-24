@@ -33,21 +33,15 @@ export const getCurrentUserProfile = cache(async (): Promise<DashboardProfile | 
     .eq("user_id", user.id)
     .maybeSingle<ProfileRecord>();
 
+  // Auth identity without a Motiion profile is not a signed-in app user.
   if (!profile) {
-    return {
-      id: user.id,
-      email: user.email ?? null,
-      fullName: user.user_metadata.full_name ?? user.email ?? "Motiion User",
-      accountType: null,
-      onboardingCompletedAt: null,
-      talentTypes: null,
-    };
+    return null;
   }
 
   const { data: nonTalentProfile } = await supabase
     .from("non_talent_profiles")
     .select(
-      "id, company_name, non_talent_type, work_email, user_type, primary_goal, role, organization_name, organization_website, company_size, talent_types, style_focus, markets, market_places, verification_links, notification_preferences, onboarding_completed",
+      "id, company_name, non_talent_type, work_email, user_type, primary_goal, role, custom_role, platform_goals, work_types, custom_work_type, organization_name, organization_website, organization_relationship, organization_brand_domain, company_size, talent_types, style_focus, markets, market_places, verification_links, notification_preferences, onboarding_completed, onboarding_step",
     )
     .eq("id", user.id)
     .maybeSingle<NonTalentProfileRecord>();

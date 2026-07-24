@@ -1,4 +1,4 @@
-import { parseHeight } from "@/lib/onboarding/height";
+import { profileMatchesHeightFilter } from "@/lib/talent-navigator/height-filter";
 import type { SearchFilters, SearchProfileRecord } from "@/types/search";
 
 function normalizeText(value?: string | null) {
@@ -183,15 +183,7 @@ function matchesStylePreference(profile: SearchProfileRecord, style: string) {
 }
 
 function matchesHeightBucket(profile: SearchProfileRecord, heightFilter: string) {
-  const totalInches = heightToTotalInches(profile.height);
-  if (totalInches == null) return false;
-
-  if (heightFilter === "Under 5'6\"") return totalInches <= 65;
-  if (heightFilter === "5'6\" – 5'9\"") return totalInches >= 66 && totalInches <= 69;
-  if (heightFilter === "5'10\" and above") return totalInches >= 70;
-
-  const parsed = parseHeight(heightFilter);
-  return totalInches === parsed.feet * 12 + parsed.inches;
+  return profileMatchesHeightFilter(profile.height, heightFilter);
 }
 
 function matchesUnionFilter(

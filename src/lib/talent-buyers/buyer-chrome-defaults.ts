@@ -16,21 +16,18 @@ export function defaultBuyerChromeTitle(pathname: string): string {
     if (pathname.match(/^\/projects\/[^/]+\/edit$/)) return "Edit project";
     return "Projects";
   }
-  if (pathname === "/dashboard") return "Dashboard";
-  if (pathname === "/calendar") return "Calendar";
-  if (pathname.startsWith("/library")) return "Library";
+  if (pathname === "/events") return "Events";
+  if (pathname.startsWith("/library")) return "Roster";
   if (pathname === "/messages") return "Inbox";
+  if (pathname === "/notifications") return "Notifications";
   if (pathname.startsWith("/dashboard/settings")) return "Settings";
-  if (pathname.startsWith("/talent")) return "Talent";
+  if (pathname.startsWith("/talent")) return "Find Talent";
   return "Motiion";
 }
 
 export function defaultBuyerChromeLede(pathname: string): string | undefined {
   if (pathname === "/projects") {
     return "Manage castings, classes, and sessions from one workspace.";
-  }
-  if (pathname === "/dashboard") {
-    return "Pick up where you left off across your hiring workflow.";
   }
   return undefined;
 }
@@ -63,25 +60,25 @@ export function defaultBuyerChromeBreadcrumbs(pathname: string): BuyerBreadcrumb
     ];
   }
   if (pathname.startsWith("/library/") && pathname !== "/library") {
-    return [{ label: "Library", href: "/library" }];
+    return [{ label: "Roster", href: "/library" }];
   }
-  if (pathname === "/dashboard") {
-    return [{ label: "Dashboard" }];
-  }
-  if (pathname === "/calendar") {
-    return [{ label: "Calendar" }];
+  if (pathname === "/events") {
+    return [{ label: "Events" }];
   }
   if (pathname === "/messages") {
     return [{ label: "Inbox" }];
   }
+  if (pathname === "/notifications") {
+    return [{ label: "Notifications" }];
+  }
   if (pathname.startsWith("/library")) {
-    return [{ label: "Library" }];
+    return [{ label: "Roster" }];
   }
   if (pathname.startsWith("/dashboard/settings")) {
     return [{ label: "Settings" }];
   }
   if (pathname.startsWith("/talent")) {
-    return [{ label: "Talent" }];
+    return [{ label: "Find Talent" }];
   }
   return undefined;
 }

@@ -35,10 +35,13 @@ export async function fetchNavigatorFilterOptions(): Promise<NavigatorFilterOpti
     fetchTalentAgencies(),
     fetchLiveLocations(),
   ]);
-  const agencyNames = agencies.map((agency) => agency.name).filter(Boolean);
-
   return {
-    agencies: agencyNames.length ? agencyNames : DEFAULT_NAVIGATOR_FILTER_OPTIONS.agencies,
+    agencies: agencies.length
+      ? agencies.map((agency) => ({
+          name: agency.name,
+          logoUrl: agency.logo_url?.trim() || null,
+        }))
+      : DEFAULT_NAVIGATOR_FILTER_OPTIONS.agencies,
     locations: liveLocations.length ? liveLocations : DEFAULT_NAVIGATOR_FILTER_OPTIONS.locations,
   };
 }

@@ -72,7 +72,6 @@ export type ActivityDraft = {
   // Session
   sessionType: string;
   sessionLevel: string;
-  sessionGenre: string;
   sessionVibe: string;
   sessionRules: string;
   sessionGoodToKnow: string;

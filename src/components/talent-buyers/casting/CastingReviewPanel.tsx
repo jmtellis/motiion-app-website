@@ -266,13 +266,14 @@ export function CastingReviewPanel() {
                   value={viewMode}
                   onChange={setViewMode}
                   ariaLabel="Review view mode"
-                  hug
+                  equalWidth
+                  activeTone="white"
                 />
               </div>
               {viewMode === "focus" && focusCandidate ? (
                 <button
                   type="button"
-                  className="bd-btn-accent casting-review__toolbar-shortlist"
+                  className="buyer-chrome-bar__cta casting-review__toolbar-shortlist"
                   disabled={isPending}
                   onClick={() => shortlistCandidate(focusCandidate)}
                 >

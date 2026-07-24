@@ -8,11 +8,8 @@ import { getLoginShellProps } from "@/lib/setup-flow/config";
 
 function LoginFormFallback() {
   return (
-    <div className="signup-split-form">
-      <div>
-        <h1 className="signup-split-form__title">Log in</h1>
-        <p className="signup-split-form__subtitle">Loading sign-in…</p>
-      </div>
+    <div className="signup-split-form__body">
+      <p className="signup-split-form__subtitle">Loading sign-in…</p>
     </div>
   );
 }
@@ -20,7 +17,7 @@ function LoginFormFallback() {
 export default async function LoginPage() {
   const profile = await getCurrentUserProfile();
 
-  if (profile) {
+  if (profile?.accountType) {
     redirect(getProfileDestination(profile));
   }
 

@@ -156,13 +156,18 @@ export const FALLBACK_AGENCY_OPTIONS = [
   "Independent",
 ] as const;
 
+export type NavigatorAgencyOption = {
+  name: string;
+  logoUrl: string | null;
+};
+
 export type NavigatorFilterOptions = {
-  agencies: string[];
+  agencies: NavigatorAgencyOption[];
   locations: string[];
 };
 
 export const DEFAULT_NAVIGATOR_FILTER_OPTIONS: NavigatorFilterOptions = {
-  agencies: [...FALLBACK_AGENCY_OPTIONS],
+  agencies: FALLBACK_AGENCY_OPTIONS.map((name) => ({ name, logoUrl: null })),
   locations: [
     "Los Angeles, CA",
     "New York, NY",
@@ -170,4 +175,21 @@ export const DEFAULT_NAVIGATOR_FILTER_OPTIONS: NavigatorFilterOptions = {
     "Chicago, IL",
     "Miami, FL",
   ],
+};
+
+export const HAIR_COLOR_SWATCHES: Record<(typeof HAIR_COLOR_OPTIONS)[number], string> = {
+  Black: "#1c1c1c",
+  Blonde: "#e0c36a",
+  Brown: "#6b3f24",
+  Red: "#a33a28",
+  Other: "conic-gradient(from 180deg, #1c1c1c, #e0c36a, #6b3f24, #a33a28, #1c1c1c)",
+};
+
+export const EYE_COLOR_SWATCHES: Record<(typeof EYE_COLOR_OPTIONS)[number], string> = {
+  Amber: "#c48a3a",
+  Blue: "#4a7ec7",
+  Brown: "#5c3a1e",
+  Green: "#3f8f5b",
+  Gray: "#8a9098",
+  Mixed: "conic-gradient(from 90deg, #4a7ec7, #5c3a1e, #3f8f5b, #c48a3a, #4a7ec7)",
 };

@@ -128,18 +128,8 @@ export async function uploadProjectAttachment(formData: FormData): Promise<Uploa
       return { ok: false, error: "Missing upload session." };
     }
 
-    const allowedTypes = new Set([
-      "application/pdf",
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/webp",
-      "image/heic",
-      "image/heif",
-    ]);
-
-    if (!allowedTypes.has(file.type) && !file.name.match(/\.(pdf|jpe?g|png|webp|heic|heif)$/i)) {
-      return { ok: false, error: "Upload a PDF or image attachment." };
+    if (file.size <= 0) {
+      return { ok: false, error: "File is empty." };
     }
 
     if (file.size > MAX_ATTACHMENT_BYTES) {
@@ -148,8 +138,10 @@ export async function uploadProjectAttachment(formData: FormData): Promise<Uploa
 
     const bytes = Buffer.from(await file.arrayBuffer());
     const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-    const ext = isPdf ? "pdf" : getFileExtension(file, "jpg");
-    const contentType = isPdf ? "application/pdf" : file.type || "image/jpeg";
+    const ext = isPdf ? "pdf" : getFileExtension(file, "bin");
+    const contentType = isPdf
+      ? "application/pdf"
+      : file.type || (file.type.startsWith("image/") ? "image/jpeg" : "application/octet-stream");
     const fileName = sanitizeAttachmentFileName(file.name || `attachment.${ext}`, ext);
 
     let storagePath: string;

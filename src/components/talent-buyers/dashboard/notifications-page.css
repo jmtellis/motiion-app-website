@@ -1,0 +1,114 @@
+.buyer-notifications {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.buyer-notifications__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.015);
+}
+
+.buyer-notifications__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid rgb(255 255 255 / 0.05);
+}
+
+.buyer-notifications__item:last-child {
+  border-bottom: none;
+}
+
+.buyer-notifications__item--unread {
+  background: rgb(255 255 255 / 0.025);
+}
+
+.buyer-notifications__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.45rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.12);
+}
+
+.buyer-notifications__dot--unread {
+  background: var(--accent, #2dd4bf);
+}
+
+.buyer-notifications__copy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.buyer-notifications__title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.92);
+  text-transform: capitalize;
+}
+
+.buyer-notifications__body {
+  margin: 0.3rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: rgb(255 255 255 / 0.5);
+}
+
+.buyer-notifications__time {
+  margin: 0.45rem 0 0;
+  font-size: 0.75rem;
+  color: rgb(255 255 255 / 0.35);
+}
+
+.buyer-notifications-empty__list {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.015);
+}
+
+.buyer-notifications-empty__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid rgb(255 255 255 / 0.04);
+}
+
+.buyer-notifications-empty__row:last-child {
+  border-bottom: none;
+}
+
+.buyer-notifications-empty__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.45rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.1);
+}
+
+.buyer-notifications-empty__copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.buyer-notifications-empty__time {
+  width: 4rem;
+  height: 0.45rem;
+}

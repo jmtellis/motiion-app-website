@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { MapPin, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MapPin } from "lucide-react";
 
-import { AuthField, AuthInput } from "@/components/auth/ui";
+import { SetupFieldBlock } from "@/components/auth/SetupFieldBlock";
 import { setupPill } from "@/lib/setup-flow/form-styles";
 import {
   marketLabelFromPlace,
@@ -40,6 +40,29 @@ function toMarketPlace(place: SelectedPlacePayload): TalentBuyerMarketPlace {
   };
 }
 
+function chipLabelFromPlace(place: TalentBuyerMarketPlace): string {
+  return (
+    place.city?.trim() ||
+    marketLabelFromPlace(place).split(",")[0]?.trim() ||
+    marketLabelFromPlace(place)
+  );
+}
+
+function placeMatchesSuggested(place: TalentBuyerMarketPlace, market: string): boolean {
+  const needle = market.toLowerCase();
+  const candidates = [place.city, place.displayLabel, marketLabelFromPlace(place), chipLabelFromPlace(place)]
+    .filter(Boolean)
+    .map((value) => value!.toLowerCase());
+
+  return candidates.some(
+    (value) =>
+      value === needle ||
+      value.startsWith(needle) ||
+      needle.startsWith(value) ||
+      value.includes(needle),
+  );
+}
+
 async function fetchPredictions(query: string, signal?: AbortSignal): Promise<PlacePrediction[]> {
   const response = await fetch(
     `/api/places/autocomplete?input=${encodeURIComponent(query.trim())}&mode=cities`,
@@ -70,9 +93,12 @@ async function resolvePlace(placeId: string): Promise<SelectedPlacePayload> {
 export function MarketPlacesSelector({
   places,
   onChange,
+  maxPlaces,
 }: {
   places: TalentBuyerMarketPlace[];
   onChange: (places: TalentBuyerMarketPlace[]) => void;
+  /** When set, selecting another place replaces existing selections once at capacity. */
+  maxPlaces?: number;
 }) {
   const [query, setQuery] = useState("");
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
@@ -82,6 +108,14 @@ export function MarketPlacesSelector({
   const [resolvingChip, setResolvingChip] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const customPlaces = useMemo(
+    () =>
+      places.filter(
+        (place) => !suggestedMarkets.some((market) => placeMatchesSuggested(place, market)),
+      ),
+    [places],
+  );
 
   useEffect(() => {
     function handleClick(event: MouseEvent) {
@@ -127,7 +161,13 @@ export function MarketPlacesSelector({
       setError("That market is already selected.");
       return;
     }
-    onChange([...places, place]);
+    if (typeof maxPlaces === "number" && maxPlaces <= 1) {
+      onChange([place]);
+    } else if (typeof maxPlaces === "number" && places.length >= maxPlaces) {
+      onChange([...places.slice(0, maxPlaces - 1), place]);
+    } else {
+      onChange([...places, place]);
+    }
     setQuery("");
     setPredictions([]);
     setOpen(false);
@@ -148,10 +188,9 @@ export function MarketPlacesSelector({
   }
 
   async function selectSuggestedMarket(label: string) {
-    if (places.some((item) => marketLabelFromPlace(item).startsWith(label))) {
-      onChange(
-        places.filter((item) => !marketLabelFromPlace(item).toLowerCase().startsWith(label.toLowerCase())),
-      );
+    const existing = places.find((item) => placeMatchesSuggested(item, label));
+    if (existing) {
+      onChange(places.filter((item) => item.placeId !== existing.placeId));
       return;
     }
 
@@ -177,33 +216,40 @@ export function MarketPlacesSelector({
   }
 
   return (
-    <div className="space-y-4">
-      <AuthField label="Primary market">
+    <SetupFieldBlock
+      label="Primary market"
+      hint="Used to surface relevant talent."
+    >
+      <div className="grid gap-3">
         <div ref={containerRef} className="relative">
-          <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--ink-soft)]" />
-          <AuthInput
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setOpen(true);
-            }}
-            onFocus={() => setOpen(true)}
-            onKeyDown={(event) => {
-              if (event.key === "Escape") {
-                setOpen(false);
-              }
-              if (event.key === "Enter") {
-                event.preventDefault();
-                if (predictions[0]) {
-                  void selectPrediction(predictions[0]);
+          <div className="signup-split-search-field">
+            <span className="signup-split-search-field__icon" aria-hidden>
+              <MapPin className="size-4" />
+            </span>
+            <input
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setOpen(true);
+              }}
+              onFocus={() => setOpen(true)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  setOpen(false);
                 }
-              }
-            }}
-            placeholder="Search for a city"
-            className="pl-10"
-            autoComplete="off"
-            disabled={resolving}
-          />
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  if (predictions[0]) {
+                    void selectPrediction(predictions[0]);
+                  }
+                }
+              }}
+              placeholder="Search for a city"
+              className="signup-split-search-field__input"
+              autoComplete="off"
+              disabled={resolving}
+            />
+          </div>
 
           {open && (loading || resolving || predictions.length > 0 || error) ? (
             <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-[var(--radius-field)] border border-[var(--line)] bg-[var(--surface-card)] shadow-[var(--shadow-raised)]">
@@ -233,51 +279,40 @@ export function MarketPlacesSelector({
             </div>
           ) : null}
         </div>
-      </AuthField>
 
-      <div className="flex flex-wrap gap-2">
-        {suggestedMarkets.map((market) => {
-          const selected = places.some((item) =>
-            marketLabelFromPlace(item).toLowerCase().startsWith(market.toLowerCase()),
-          );
-          return (
-            <button
-              key={market}
-              type="button"
-              onClick={() => {
-                void selectSuggestedMarket(market);
-              }}
-              disabled={resolvingChip === market}
-              className={setupPill(selected)}
-            >
-              {resolvingChip === market ? "Resolving…" : market}
-            </button>
-          );
-        })}
-      </div>
-
-      {error && !open ? <p className="text-sm text-rose-700">{error}</p> : null}
-
-      {places.length ? (
         <div className="flex flex-wrap gap-2">
-          {places.map((place) => (
-            <span
-              key={place.placeId}
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-white px-3 py-1.5 text-sm text-[var(--ink)]"
-            >
-              {marketLabelFromPlace(place)}
+          {suggestedMarkets.map((market) => {
+            const selected = places.some((item) => placeMatchesSuggested(item, market));
+            return (
               <button
+                key={market}
                 type="button"
-                aria-label={`Remove ${marketLabelFromPlace(place)}`}
-                onClick={() => onChange(places.filter((item) => item.placeId !== place.placeId))}
-                className="text-[var(--ink-soft)] transition hover:text-[var(--ink)]"
+                onClick={() => {
+                  void selectSuggestedMarket(market);
+                }}
+                disabled={resolvingChip === market}
+                className={setupPill(selected)}
+                aria-pressed={selected}
               >
-                <X className="size-3.5" />
+                {resolvingChip === market ? "Resolving…" : market}
               </button>
-            </span>
+            );
+          })}
+          {customPlaces.map((place) => (
+            <button
+              key={place.placeId}
+              type="button"
+              onClick={() => onChange(places.filter((item) => item.placeId !== place.placeId))}
+              className={setupPill(true)}
+              aria-pressed
+            >
+              {chipLabelFromPlace(place)}
+            </button>
           ))}
         </div>
-      ) : null}
-    </div>
+
+        {error && !open ? <p className="text-sm text-rose-700">{error}</p> : null}
+      </div>
+    </SetupFieldBlock>
   );
 }

@@ -53,9 +53,15 @@ export async function ensureOAuthProfile(
     return { created: false };
   }
 
+  // Login must never auto-create a Motiion profile. Callers should redirect
+  // unauthenticated Google/Apple identities to industry signup instead.
+  if (intent.flow !== "signup") {
+    return { created: false };
+  }
+
   const email = user.email ?? "";
   const { firstName, lastName, displayName } = parseNameFromUser(user);
-  const accountType = intent.flow === "signup" ? intent.accountType : "talent";
+  const accountType = intent.accountType;
 
   const { error: profileError } = await supabase.from("profiles").upsert({
     user_id: user.id,
@@ -108,13 +114,13 @@ export async function resolveOAuthRedirectPath(
     .maybeSingle<ProfileRecord>();
 
   if (!profile) {
-    return "/onboarding";
+    return "/talent-buyers/signup";
   }
 
   const { data: nonTalentProfile } = await supabase
     .from("non_talent_profiles")
     .select(
-      "id, company_name, non_talent_type, work_email, user_type, primary_goal, role, organization_name, organization_website, company_size, talent_types, style_focus, markets, verification_links, notification_preferences, onboarding_completed",
+      "id, company_name, non_talent_type, work_email, user_type, primary_goal, role, custom_role, platform_goals, work_types, custom_work_type, organization_name, organization_website, organization_relationship, organization_brand_domain, company_size, talent_types, style_focus, markets, verification_links, notification_preferences, onboarding_completed, onboarding_step",
     )
     .eq("id", userId)
     .maybeSingle<NonTalentProfileRecord>();

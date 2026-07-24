@@ -187,7 +187,7 @@ export function OrganizerManageView({
             onClick={() => setTab(item.id)}
             className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
               tab === item.id
-                ? "bg-[#2dd4bf]/15 text-[#2dd4bf]"
+                ? "bg-[color-mix(in_oklab,var(--accent)_15%,transparent)] text-[var(--accent)]"
                 : "text-white/55 hover:text-white"
             }`}
           >
@@ -301,7 +301,7 @@ export function OrganizerManageView({
           </div>
 
           {message ? (
-            <p className="inline-flex items-center gap-2 text-sm text-[#2dd4bf]">
+            <p className="inline-flex items-center gap-2 text-sm text-[var(--accent)]">
               <CheckCircle2 className="size-4" />
               {message}
             </p>
@@ -384,7 +384,7 @@ function GuestList({
               {showCheckIn ? (
                 <span
                   className={`text-xs font-medium ${
-                    row.checkedInAt ? "text-[#2dd4bf]" : "text-white/35"
+                    row.checkedInAt ? "text-[var(--accent)]" : "text-white/35"
                   }`}
                 >
                   {row.checkedInAt ? "Arrived" : "Not in"}

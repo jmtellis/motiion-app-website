@@ -1,32 +1,103 @@
-import { isAtLeast18 } from "@/lib/auth/age";
 import type {
-  TalentBuyerCompanySize,
+  IndustryPrimaryAction,
   TalentBuyerMarketPlace,
   TalentBuyerOnboardingStep,
+  TalentBuyerOrganizationRelationship,
+  TalentBuyerPlatformGoal,
   TalentBuyerPrimaryGoal,
   TalentBuyerRole,
   TalentBuyerStyleFocus,
   TalentBuyerTalentType,
+  TalentBuyerWorkType,
 } from "@/types/talent-buyers";
+import { normalizeBuyerRole } from "@/lib/talent-buyers/roles";
 
 export const talentBuyerSteps: TalentBuyerOnboardingStep[] = [
-  "primaryGoal",
-  "role",
-  "organization",
-  "markets",
-  "verification",
+  "professionalContext",
+  "goalsAndWork",
+  "organizationAndMarket",
   "success",
 ];
 
 export const talentBuyerStepLabels: Record<TalentBuyerOnboardingStep, string> = {
-  primaryGoal: "Primary goal",
-  role: "Role",
-  organization: "Organization",
-  markets: "Markets",
-  verification: "Verification",
+  professionalContext: "Your role",
+  goalsAndWork: "Goals",
+  organizationAndMarket: "How you work",
   success: "Complete",
 };
 
+export const ACTIVE_HIRING_GOALS: TalentBuyerPlatformGoal[] = [
+  "find_dancers",
+  "run_a_casting",
+  "manage_talent",
+  "build_a_roster",
+  "staff_a_project",
+  "coordinate_bookings",
+];
+
+export const platformGoalOptions: Array<{
+  value: TalentBuyerPlatformGoal;
+  title: string;
+  description: string;
+}> = [
+  {
+    value: "find_dancers",
+    title: "Find dancers",
+    description: "Discover talent for upcoming work.",
+  },
+  {
+    value: "run_a_casting",
+    title: "Run a casting",
+    description: "Publish roles and collect submissions.",
+  },
+  {
+    value: "manage_talent",
+    title: "Manage talent",
+    description: "Keep people organized in one place.",
+  },
+  {
+    value: "build_a_roster",
+    title: "Build a roster",
+    description: "Assemble a working list.",
+  },
+  {
+    value: "staff_a_project",
+    title: "Staff a project",
+    description: "Fill creative and performance needs.",
+  },
+  {
+    value: "coordinate_bookings",
+    title: "Coordinate bookings",
+    description: "Track offers and confirmations.",
+  },
+  {
+    value: "just_exploring",
+    title: "Just exploring",
+    description: "Looking around for now.",
+  },
+];
+
+export const workTypeOptions: Array<{ value: TalentBuyerWorkType; label: string }> = [
+  { value: "music_or_touring", label: "Music or touring" },
+  { value: "film_or_television", label: "Film or television" },
+  { value: "commercial_or_branded", label: "Commercial or branded content" },
+  { value: "live_events", label: "Live events" },
+  { value: "classes_or_training", label: "Classes or training" },
+  { value: "representation", label: "Representation" },
+  { value: "other", label: "Other" },
+];
+
+/** Current onboarding role cards. */
+export const roleOptions: Array<{ value: TalentBuyerRole; label: string }> = [
+  { value: "choreographer", label: "Choreographer" },
+  { value: "casting_professional", label: "Casting professional" },
+  { value: "creative_director_or_producer", label: "Creative director or producer" },
+  { value: "talent_representative", label: "Talent representative" },
+  { value: "brand_or_agency_professional", label: "Brand or agency professional" },
+  { value: "other", label: "Other" },
+];
+
+/** @deprecated Prefer platformGoalOptions. Kept for recommendation helpers and legacy data. */
 export const primaryGoalOptions: Array<{
   value: TalentBuyerPrimaryGoal;
   title: string;
@@ -52,28 +123,6 @@ export const primaryGoalOptions: Array<{
     title: "A Bit of Everything",
     description: "I wear multiple hats.",
   },
-];
-
-export const roleOptions: Array<{ value: TalentBuyerRole; label: string }> = [
-  { value: "casting_director", label: "Casting Director" },
-  { value: "choreographer", label: "Choreographer" },
-  { value: "creative_director", label: "Creative Director" },
-  { value: "producer", label: "Producer" },
-  { value: "talent_agency", label: "Talent Agency" },
-  { value: "studio_owner", label: "Studio Owner" },
-  { value: "dance_company", label: "Dance Company" },
-  { value: "brand", label: "Brand" },
-  { value: "production_company", label: "Production Company" },
-  { value: "event_organizer", label: "Event Organizer" },
-  { value: "other", label: "Other" },
-];
-
-export const companySizeOptions: Array<{ value: TalentBuyerCompanySize; label: string }> = [
-  { value: "just_me", label: "Just Me" },
-  { value: "2_10", label: "2–10" },
-  { value: "11_50", label: "11–50" },
-  { value: "51_200", label: "51–200" },
-  { value: "200_plus", label: "200+" },
 ];
 
 /** Kept for recommendation helpers and legacy data; no longer collected in onboarding. */
@@ -157,47 +206,196 @@ export function getTalentBuyerFlowProgress(step: TalentBuyerOnboardingStep) {
   };
 }
 
+export function togglePlatformGoal(
+  current: TalentBuyerPlatformGoal[],
+  value: TalentBuyerPlatformGoal,
+): TalentBuyerPlatformGoal[] {
+  if (value === "just_exploring") {
+    return current.includes("just_exploring") ? [] : ["just_exploring"];
+  }
+
+  const withoutExploring = current.filter((goal) => goal !== "just_exploring");
+  if (withoutExploring.includes(value)) {
+    return withoutExploring.filter((goal) => goal !== value);
+  }
+  return [...withoutExploring, value];
+}
+
+export function shouldShowWorkTypeFollowUp(goals: TalentBuyerPlatformGoal[]): boolean {
+  return goals.some((goal) => ACTIVE_HIRING_GOALS.includes(goal));
+}
+
+export function toggleWorkType(
+  current: TalentBuyerWorkType[],
+  value: TalentBuyerWorkType,
+): TalentBuyerWorkType[] {
+  if (current.includes(value)) {
+    return current.filter((item) => item !== value);
+  }
+  return [...current, value];
+}
+
+export function deriveLegacyPrimaryGoal(
+  goals: TalentBuyerPlatformGoal[],
+): TalentBuyerPrimaryGoal {
+  if (goals.includes("run_a_casting") || goals.includes("staff_a_project")) {
+    return "post_opportunities";
+  }
+  if (goals.includes("find_dancers")) {
+    return "find_talent";
+  }
+  if (goals.includes("manage_talent") || goals.includes("build_a_roster")) {
+    return "manage_talent";
+  }
+  if (goals.includes("coordinate_bookings")) {
+    return "post_opportunities";
+  }
+  return "everything";
+}
+
+export function mapLegacyPrimaryGoalToPlatformGoals(
+  primaryGoal: TalentBuyerPrimaryGoal | "" | null | undefined,
+): TalentBuyerPlatformGoal[] {
+  switch (primaryGoal) {
+    case "find_talent":
+      return ["find_dancers"];
+    case "post_opportunities":
+      return ["run_a_casting"];
+    case "manage_talent":
+      return ["manage_talent"];
+    case "everything":
+      return ["just_exploring"];
+    default:
+      return [];
+  }
+}
+
+export function roleLabel(role: TalentBuyerRole | "" | null | undefined, customRole?: string | null) {
+  const normalized = normalizeBuyerRole(role);
+  if (normalized === "other" && customRole?.trim()) {
+    return customRole.trim();
+  }
+  const fromOptions = roleOptions.find((option) => option.value === normalized)?.label;
+  if (fromOptions) return fromOptions;
+  return normalized || null;
+}
+
+export function workTypeLabel(
+  workTypes: TalentBuyerWorkType[] | null | undefined,
+  customWorkType?: string | null,
+): string | null {
+  if (!workTypes?.length) return null;
+  const primary = workTypes[0]!;
+  if (primary === "other" && customWorkType?.trim()) {
+    return customWorkType.trim();
+  }
+  return workTypeOptions.find((option) => option.value === primary)?.label ?? primary;
+}
+
+export function buildOnboardingSummary(parts: {
+  role: TalentBuyerRole | "";
+  customRole?: string;
+  workTypes: TalentBuyerWorkType[];
+  customWorkType?: string;
+  marketPlaces: TalentBuyerMarketPlace[];
+  markets?: string[];
+}): string {
+  const segments = [
+    roleLabel(parts.role, parts.customRole),
+    workTypeLabel(parts.workTypes, parts.customWorkType),
+    parts.marketPlaces[0]
+      ? marketLabelFromPlace(parts.marketPlaces[0])
+      : parts.markets?.[0] ?? null,
+  ].filter(Boolean);
+  return segments.join(" · ");
+}
+
+export function resolveIndustryPrimaryAction(
+  goals: TalentBuyerPlatformGoal[],
+): IndustryPrimaryAction {
+  if (goals.includes("run_a_casting")) {
+    return { id: "create_casting", label: "Create a casting", href: "/projects?create=1" };
+  }
+  if (goals.includes("staff_a_project")) {
+    return { id: "create_project", label: "Create a project", href: "/projects?create=1" };
+  }
+  if (goals.includes("find_dancers")) {
+    return { id: "find_dancers", label: "Find dancers", href: "/talent" };
+  }
+  if (goals.includes("build_a_roster") || goals.includes("manage_talent")) {
+    return { id: "start_roster", label: "Start a roster", href: "/library" };
+  }
+  if (goals.includes("coordinate_bookings")) {
+    return {
+      id: "coordinate_bookings",
+      label: "Open projects",
+      href: "/projects",
+    };
+  }
+  return { id: "explore", label: "Explore Motiion", href: "/projects" };
+}
+
+export function resolveIndustrySecondaryAction(
+  primary: IndustryPrimaryAction,
+): IndustryPrimaryAction | null {
+  if (primary.id === "explore") return null;
+  if (primary.id === "find_dancers") {
+    return { id: "explore", label: "Go to workspace", href: "/projects" };
+  }
+  return { id: "find_dancers", label: "Find dancers", href: "/talent" };
+}
+
 export function validateTalentBuyerStep(
   step: TalentBuyerOnboardingStep,
   draft: {
-    dateOfBirth: string;
     fullName: string;
     contactEmail: string;
-    avatarUrl: string;
-    primaryGoal: string;
     role: string;
+    customRole: string;
+    platformGoals: TalentBuyerPlatformGoal[];
+    workTypes: TalentBuyerWorkType[];
+    customWorkType: string;
+    organizationRelationship: TalentBuyerOrganizationRelationship | "";
     organizationName: string;
-    companySize: string;
+    organizationWebsite: string;
     markets: string[];
     marketPlaces: TalentBuyerMarketPlace[];
-    identityVerified?: boolean;
   },
 ): string | null {
   switch (step) {
-    case "primaryGoal":
-      return draft.primaryGoal ? null : "Select your primary goal to continue.";
-    case "role":
-      return draft.role ? null : "Select the role that best describes you.";
-    case "organization":
-      if (!draft.organizationName.trim()) return "Organization name is required.";
-      if (!draft.companySize) return "Select your company size.";
-      return null;
-    case "markets":
-      if (!draft.marketPlaces.length && !draft.markets.length) {
-        return "Add at least one market.";
-      }
-      return null;
-    case "verification": {
+    case "professionalContext": {
       if (!draft.fullName.trim()) return "Confirm your name to continue.";
-      if (!draft.contactEmail.trim()) return "Contact email is required.";
+      if (!draft.contactEmail.trim()) return "Work email is required.";
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.contactEmail.trim())) {
-        return "Enter a valid contact email.";
+        return "Enter a valid work email.";
       }
-      if (!draft.dateOfBirth.trim()) return "Date of birth is required.";
-      if (!isAtLeast18(draft.dateOfBirth)) return "You must be at least 18 to join Motiion.";
-      if (!draft.avatarUrl.trim()) return "Add a profile photo to continue.";
-      if (!draft.identityVerified) {
-        return "Complete identity verification to finish setup.";
+      if (!draft.role) return "Select the role that best describes you.";
+      if (draft.role === "other" && !draft.customRole.trim()) {
+        return "Tell us your role.";
+      }
+      return null;
+    }
+    case "goalsAndWork": {
+      if (!draft.platformGoals.length) return "Select at least one goal to continue.";
+      return null;
+    }
+    case "organizationAndMarket": {
+      if (!draft.organizationRelationship) {
+        return "Choose how you’re connected to an organization.";
+      }
+      if (
+        draft.organizationRelationship === "organization" ||
+        draft.organizationRelationship === "multiple"
+      ) {
+        if (!draft.organizationName.trim()) {
+          return "Select or enter your organization.";
+        }
+      }
+      if (draft.workTypes.includes("other") && !draft.customWorkType.trim()) {
+        return "Tell us what kind of work you’re hiring for.";
+      }
+      if (!draft.marketPlaces.length && !draft.markets.length) {
+        return "Add your primary market.";
       }
       return null;
     }
@@ -212,7 +410,9 @@ export function getTalentBuyerDashboardSections(
   role: TalentBuyerRole | "" | null | undefined,
   primaryGoal: TalentBuyerPrimaryGoal | "" | null | undefined,
 ) {
-  if (role === "casting_director" || primaryGoal === "find_talent") {
+  const normalized = normalizeBuyerRole(role);
+
+  if (normalized === "casting_professional" || primaryGoal === "find_talent") {
     return [
       "Recommended Talent",
       "Recently Active Talent",
@@ -222,7 +422,7 @@ export function getTalentBuyerDashboardSections(
     ];
   }
 
-  if (role === "talent_agency" || primaryGoal === "manage_talent") {
+  if (normalized === "talent_representative" || primaryGoal === "manage_talent") {
     return [
       "Talent Database",
       "Agency Shortlists",
@@ -231,7 +431,7 @@ export function getTalentBuyerDashboardSections(
     ];
   }
 
-  if (role === "studio_owner" || primaryGoal === "post_opportunities") {
+  if (primaryGoal === "post_opportunities") {
     return [
       "Create Class",
       "Upcoming Classes",
@@ -240,7 +440,7 @@ export function getTalentBuyerDashboardSections(
     ];
   }
 
-  if (role === "choreographer") {
+  if (normalized === "choreographer") {
     return ["Discover Talent", "Create Session", "Create Job", "Saved Talent"];
   }
 
@@ -258,10 +458,13 @@ export function buildBuyerRecommendations(profile: {
   styleFocus?: TalentBuyerStyleFocus[] | null;
   markets?: string[] | null;
   primaryGoal?: TalentBuyerPrimaryGoal | null;
+  platformGoals?: TalentBuyerPlatformGoal[] | null;
 }): BuyerRecommendation[] {
   const styleFocus = profile.styleFocus ?? [];
   const markets = profile.markets ?? [];
-  const primaryGoal = profile.primaryGoal;
+  const primaryGoal =
+    profile.primaryGoal ??
+    (profile.platformGoals?.length ? deriveLegacyPrimaryGoal(profile.platformGoals) : null);
 
   const items: BuyerRecommendation[] = [];
 

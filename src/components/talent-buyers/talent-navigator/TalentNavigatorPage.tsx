@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PanelRight } from "lucide-react";
-
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   addTalentToProjectRoster,
   fetchNavigatorTalent,
@@ -16,7 +15,7 @@ import {
 import type { BuyerOpenRole } from "@/lib/talent-navigator/open-roles";
 import type { NavigatorFilterOptions } from "@/lib/talent-navigator/filter-options";
 import type { SavedSearchRow } from "@/lib/talent-buyers/saved-searches";
-import { saveSearch } from "@/lib/talent-buyers/saved-searches";
+import { deleteSavedSearch, saveSearch } from "@/lib/talent-buyers/saved-searches";
 import { getTalentProfileHref } from "@/lib/talent-navigator/profile-adapter";
 import { buildTalentRows } from "@/lib/talent-navigator/rows";
 import { useNavigatorSlide } from "@/lib/talent-navigator/use-navigator-slide";
@@ -27,15 +26,21 @@ import type { DashboardProfile } from "@/types/database";
 
 import { ActiveTalentPanel } from "./ActiveTalentPanel";
 import { AnimatedGridBackground } from "./AnimatedGridBackground";
-import { useRegisterBuyerChrome } from "@/components/talent-buyers/dashboard/BuyerPageChromeContext";
 import {
   mapOpenRoleToNavigatorFilters,
 } from "@/lib/talent-navigator/open-roles";
+import { SegmentedControl } from "@/components/talent-buyers/dashboard/SegmentedControl";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
-import { TalentFilterPanel } from "./TalentFilterPanel";
 import { TalentNlChatPanel } from "./TalentNlChatPanel";
 import { TalentNavigatorGrid, NAVIGATOR_STEP_X, NAVIGATOR_STEP_Y } from "./TalentNavigatorGrid";
 import "./talent-navigator.css";
+
+type NavigatorViewMode = "chat" | "browse";
+
+const NAVIGATOR_VIEW_OPTIONS: Array<{ value: NavigatorViewMode; label: string }> = [
+  { value: "chat", label: "Discover" },
+  { value: "browse", label: "Browse" },
+];
 
 type TalentNavigatorPageProps = {
   initialData: TalentNavigatorInitialData;
@@ -61,20 +66,22 @@ export function TalentNavigatorPage({
     ...initialFilters,
   });
   const [talentPool, setTalentPool] = useState(initialData.talent);
+  // Keep the server-provided salt for the whole visit so SSR/hydration match and filters don't reshuffle.
+  const [shuffleSalt] = useState(() => initialData.shuffleSalt ?? "");
   const skipInitialFetchRef = useRef(true);
   const searchRequestRef = useRef(0);
   const [savedSearches, setSavedSearches] = useState<SavedSearchRow[]>(initialSavedSearches ?? []);
   const [savedSearchId, setSavedSearchId] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [detailsPanelOpen, setDetailsPanelOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<NavigatorViewMode>("chat");
   const [openRoles, setOpenRoles] = useState<BuyerOpenRole[]>([]);
   const [selectedOpenRoleId, setSelectedOpenRoleId] = useState(initialOpenRoleId);
   const appliedInitialOpenRoleRef = useRef(false);
   const { showToast } = useToast();
 
   const rows = useMemo(
-    () => buildTalentRows(talentPool, filters, { prefiltered: true }),
-    [talentPool, filters],
+    () => buildTalentRows(talentPool, filters, { prefiltered: true, shuffleSalt }),
+    [talentPool, filters, shuffleSalt],
   );
 
   useEffect(() => {
@@ -161,6 +168,22 @@ export function TalentNavigatorPage({
       router.push(getTalentProfileHref(talent));
     },
     [router],
+  );
+
+  const openCover = useCallback(() => {
+    setFiltersOpen(false);
+    setViewMode("browse");
+  }, []);
+
+  const handleOpenFromGrid = useCallback(
+    (talent: Talent) => {
+      if (viewMode === "chat") {
+        openCover();
+        return;
+      }
+      openProfile(talent);
+    },
+    [openCover, openProfile, viewMode],
   );
 
   const [savePickerOpen, setSavePickerOpen] = useState(false);
@@ -303,6 +326,32 @@ export function TalentNavigatorPage({
     });
   }, [filters, showToast]);
 
+  const handleDeleteSavedSearch = useCallback(() => {
+    if (!savedSearchId) return;
+    const selected = savedSearches.find((search) => search.id === savedSearchId);
+    const confirmed = window.confirm(
+      selected
+        ? `Delete saved search “${selected.label}”?`
+        : "Delete this saved search?",
+    );
+    if (!confirmed) return;
+
+    const id = savedSearchId;
+    void deleteSavedSearch(id).then((result) => {
+      if (!result.ok) {
+        showToast(result.error ?? "Could not delete search");
+        return;
+      }
+
+      setSavedSearches((current) => current.filter((search) => search.id !== id));
+      setSavedSearchId("");
+      setSelectedOpenRoleId("");
+      setFilters({ ...EMPTY_NAVIGATOR_FILTERS, ...initialFilters });
+      resetNavigation();
+      showToast("Saved search deleted");
+    });
+  }, [initialFilters, resetNavigation, savedSearchId, savedSearches, showToast]);
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
@@ -316,12 +365,6 @@ export function TalentNavigatorPage({
         if (filtersOpen) {
           setFiltersOpen(false);
           event.preventDefault();
-          return;
-        }
-        if (detailsPanelOpen) {
-          setDetailsPanelOpen(false);
-          event.preventDefault();
-          return;
         }
         return;
       }
@@ -348,14 +391,18 @@ export function TalentNavigatorPage({
         case "Enter":
           if (activeTalent) {
             event.preventDefault();
-            openProfile(activeTalent);
+            if (viewMode === "chat") {
+              openCover();
+            } else {
+              openProfile(activeTalent);
+            }
           }
           break;
         case "s":
         case "S":
           if (activeTalent) {
             event.preventDefault();
-            setDetailsPanelOpen(true);
+            setViewMode("browse");
             setSavePickerOpen(true);
           }
           break;
@@ -383,19 +430,38 @@ export function TalentNavigatorPage({
   }, [
     activeTalent,
     contactTalent,
-    detailsPanelOpen,
     filtersOpen,
     navigate,
     openInvitePicker,
+    openCover,
     openProfile,
     rows.length,
     showToast,
+    viewMode,
   ]);
 
   function updateFilters(partial: Partial<TalentNavigatorFilters>) {
     setSavedSearchId("");
     setSelectedOpenRoleId("");
-    setFilters((current) => ({ ...current, ...partial, openRoleId: "" }));
+    setFilters((current) => {
+      const next: TalentNavigatorFilters = {
+        ...current,
+        ...partial,
+        openRoleId: "",
+        genres: partial.genres ?? current.genres ?? [],
+        skills: partial.skills ?? current.skills ?? [],
+        ethnicities: partial.ethnicities ?? current.ethnicities ?? [],
+        hairColors: partial.hairColors ?? current.hairColors ?? [],
+        eyeColors: partial.eyeColors ?? current.eyeColors ?? [],
+        artists: partial.artists ?? current.artists ?? [],
+        choreographers: partial.choreographers ?? current.choreographers ?? [],
+        productions: partial.productions ?? current.productions ?? [],
+        verificationStatuses: partial.verificationStatuses ?? current.verificationStatuses ?? [],
+      };
+      if (partial.genres) next.style = partial.genres[0] ?? "";
+      if (partial.ethnicities) next.ethnicity = partial.ethnicities[0] ?? "";
+      return next;
+    });
     resetNavigation();
   }
 
@@ -424,47 +490,42 @@ export function TalentNavigatorPage({
     resetNavigation();
   }
 
-  const talentBreadcrumbs = useMemo(() => [{ label: "Talent" }], []);
-
-  const talentChromeEnd = useMemo(
-    () => (
-      <button
-        type="button"
-        className={`talent-navigator__header-icon-btn${detailsPanelOpen ? " talent-navigator__header-icon-btn--active" : ""}`}
-        onClick={() => setDetailsPanelOpen((open) => !open)}
-        aria-pressed={detailsPanelOpen}
-        aria-label={detailsPanelOpen ? "Collapse talent details" : "Expand talent details"}
-      >
-        <PanelRight className="size-4" aria-hidden />
-      </button>
-    ),
-    [detailsPanelOpen],
-  );
-
-  useRegisterBuyerChrome({
-    breadcrumbs: talentBreadcrumbs,
-    end: talentChromeEnd,
-    revision: `${filtersOpen ? "filters-open" : "filters-closed"}:${detailsPanelOpen ? "details-open" : "details-closed"}`,
-  });
+  const browseCategoryLabel = currentRow?.label ?? (rows.length ? "Browse" : undefined);
 
   return (
     <div
       ref={rootRef}
-      className="talent-navigator"
+      className={`talent-navigator talent-navigator--${viewMode}${
+        viewMode === "browse" ? " talent-navigator--focus-lifted" : ""
+      }`}
       tabIndex={-1}
     >
-      {detailsPanelOpen ? (
-        <button
-          type="button"
-          className="talent-navigator__detail-scrim lg:hidden"
-          aria-label="Close details panel"
-          onClick={() => setDetailsPanelOpen(false)}
-        />
-      ) : null}
-
       <div
         className={`talent-navigator__stage${filtersOpen ? " talent-navigator__stage--filters-open" : ""}`}
       >
+        <div className="talent-navigator__stage-toolbar">
+          <div className="talent-navigator__stage-toolbar-side" />
+
+          <div className="talent-navigator__stage-toolbar-center">
+            {filtersOpen ? (
+              <div className="talent-navigator__filter-mode-label" role="status" aria-live="polite">
+                Filter
+              </div>
+            ) : (
+              <SegmentedControl
+                options={NAVIGATOR_VIEW_OPTIONS}
+                value={viewMode}
+                onChange={setViewMode}
+                ariaLabel="Find talent view"
+                equalWidth
+                activeTone="white"
+              />
+            )}
+          </div>
+
+          <div className="talent-navigator__stage-toolbar-side talent-navigator__stage-toolbar-side--end" />
+        </div>
+
         {rows.length > 0 ? (
           <div className="talent-navigator__grid-canvas" aria-hidden={false}>
             <AnimatedGridBackground />
@@ -475,29 +536,16 @@ export function TalentNavigatorPage({
               trackOffsetY={trackOffsetY}
               activeRowOffsetX={activeRowOffsetX}
               slideInstant={slideInstant}
-              categoryLabel={currentRow?.label ?? (rows.length ? "Browse talent" : undefined)}
               onSlideComplete={handleSlideComplete}
               onFocusCell={focusCell}
-              onOpenProfile={openProfile}
+              onOpenProfile={handleOpenFromGrid}
               onNavigate={navigate}
             />
           </div>
         ) : null}
 
-        <TalentFilterPanel
-          filters={filters}
-          filterOptions={filterOptions}
-          savedSearches={savedSearches}
-          savedSearchId={savedSearchId}
-          onChange={updateFilters}
-          onSavedSearchChange={applySavedSearch}
-          onClear={clearFilters}
-          onSaveSearch={handleSaveSearch}
-          open={filtersOpen}
-        />
-
         <div className="talent-navigator__overlay-layout">
-          {rows.length === 0 ? (
+          {rows.length === 0 && !filtersOpen ? (
             <section className="talent-navigator__hud" aria-label="Talent navigator">
               <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
                 <p className="text-lg font-semibold text-white">No matches</p>
@@ -516,26 +564,65 @@ export function TalentNavigatorPage({
           ) : null}
         </div>
 
-        <ActiveTalentPanel
-          talent={activeTalent}
-          open={detailsPanelOpen}
-          saveOpen={savePickerOpen}
-          onSaveOpenChange={setSavePickerOpen}
-          onInvite={() => activeTalent && openInvitePicker(activeTalent)}
-          onContact={() => activeTalent && contactTalent(activeTalent)}
-          onAddToProject={() => activeTalent && openProjectPicker(activeTalent)}
-        />
+        {viewMode === "browse" && !filtersOpen && rows.length > 0 ? (
+          <>
+            <button
+              type="button"
+              className="talent-navigator__browse-edge-nav talent-navigator__browse-edge-nav--left"
+              onClick={() => navigate("col-left")}
+              aria-label="Previous talent"
+            >
+              <ChevronLeft className="size-5" aria-hidden />
+            </button>
+            <button
+              type="button"
+              className="talent-navigator__browse-edge-nav talent-navigator__browse-edge-nav--right"
+              onClick={() => navigate("col-right")}
+              aria-label="Next talent"
+            >
+              <ChevronRight className="size-5" aria-hidden />
+            </button>
+          </>
+        ) : null}
 
-        <TalentNlChatPanel
-          filters={filters}
-          filtersOpen={filtersOpen}
-          onToggleFilters={() => setFiltersOpen((open) => !open)}
-          openRoles={openRoles}
-          selectedOpenRoleId={selectedOpenRoleId}
-          onOpenRoleChange={applyOpenRole}
-          onFiltersChange={applyNlFilters}
-          onTalentPoolChange={applyNlTalentPool}
-        />
+        {viewMode === "browse" || filtersOpen ? (
+          <ActiveTalentPanel
+            variant="focus-card"
+            talent={activeTalent}
+            open
+            saveOpen={savePickerOpen}
+            onSaveOpenChange={setSavePickerOpen}
+            onInvite={() => activeTalent && openInvitePicker(activeTalent)}
+            onContact={() => activeTalent && contactTalent(activeTalent)}
+            onAddToProject={() => activeTalent && openProjectPicker(activeTalent)}
+            categoryLabel={browseCategoryLabel}
+            filtersOpen={filtersOpen}
+            onToggleFilters={() => setFiltersOpen((open) => !open)}
+            filters={filters}
+            filterOptions={filterOptions}
+            savedSearches={savedSearches}
+            savedSearchId={savedSearchId}
+            onFiltersChange={updateFilters}
+            onSavedSearchChange={applySavedSearch}
+            onClearFilters={clearFilters}
+            onSaveSearch={handleSaveSearch}
+            onDeleteSavedSearch={handleDeleteSavedSearch}
+            onApplyFilters={() => setFiltersOpen(false)}
+          />
+        ) : (
+          <TalentNlChatPanel
+            filters={filters}
+            filtersOpen={filtersOpen}
+            onToggleFilters={() => setFiltersOpen((open) => !open)}
+            openRoles={openRoles}
+            selectedOpenRoleId={selectedOpenRoleId}
+            onOpenRoleChange={applyOpenRole}
+            onFiltersChange={applyNlFilters}
+            onTalentPoolChange={applyNlTalentPool}
+            categoryLabel={currentRow?.label ?? (rows.length ? "Browse" : undefined)}
+            open
+          />
+        )}
       </div>
 
       {initialData.usingFallbackData ? (
@@ -563,7 +650,7 @@ export function TalentNavigatorPage({
                   <li key={`${target.projectId}-${target.castingId ?? "project"}`}>
                     <button
                       type="button"
-                      className="w-full rounded-xl border border-white/10 px-4 py-3 text-left text-sm text-white hover:border-[#2dd4bf]/40"
+                      className="w-full rounded-xl border border-white/10 px-4 py-3 text-left text-sm text-white hover:border-[color-mix(in_oklab,var(--accent)_40%,transparent)]"
                       onClick={() => addTalentToProject(projectPicker.talent, target)}
                     >
                       {target.title}

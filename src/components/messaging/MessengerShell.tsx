@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Pin, Search } from "lucide-react";
 
 import { ConversationPane } from "@/components/messaging/ConversationPane";
+import { InboxEmptyState } from "@/components/messaging/InboxEmptyState";
 import { formatAttachmentPreviewLabel } from "@/lib/messaging/attachment-payload";
 import type { InboxConversation } from "@/types/app";
 
@@ -118,12 +119,18 @@ export function MessengerShell({
   }
 
   if (!conversations.length) {
+    if (isDashboard) {
+      return (
+        <div className={isWorkspace ? "flex h-full min-h-0 flex-1 flex-col" : undefined}>
+          <InboxEmptyState />
+        </div>
+      );
+    }
+
     return (
-      <div className={`px-6 py-10 text-center ${isDashboard ? "bd-muted-panel" : "ui-muted-panel"}`}>
-        <h2 className={`text-xl font-semibold ${isDashboard ? "text-white/92" : "text-[#fafafa]"}`}>
-          No conversations yet
-        </h2>
-        <p className={`mx-auto mt-2 max-w-md text-sm ${isDashboard ? "text-white/50" : "text-[#8a8a8a]"}`}>
+      <div className="ui-muted-panel px-6 py-10 text-center">
+        <h2 className="text-xl font-semibold text-[#fafafa]">No conversations yet</h2>
+        <p className="mx-auto mt-2 max-w-md text-sm text-[#8a8a8a]">
           When you message talent or respond to invites, threads will show up here.
         </p>
       </div>
@@ -131,7 +138,7 @@ export function MessengerShell({
   }
 
   return (
-    <div className={isWorkspace ? "flex h-full min-h-0 flex-1 flex-col" : "space-y-3"}>
+    <div className={isWorkspace ? "buyer-messages-workspace flex h-full min-h-0 flex-1 flex-col" : "space-y-3"}>
       {!isWorkspace && projectFilterTitle ? (
         <p className={`text-sm ${isDashboard ? "text-white/55" : "text-[#8a8a8a]"}`}>
           Showing conversations related to <span className="font-medium text-white/85">{projectFilterTitle}</span>

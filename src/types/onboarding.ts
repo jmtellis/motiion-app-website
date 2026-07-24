@@ -4,6 +4,7 @@ export type OnboardingRole = "dancer" | "choreographer" | "hiring";
 
 /** Web onboarding navigates by section (one screen per iOS container). */
 export type OnboardingStep =
+  | "role"
   | "account"
   | "profile"
   | "attributes"

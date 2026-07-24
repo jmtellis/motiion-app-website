@@ -8,43 +8,31 @@ import { getProjectTypeLabel } from "@/lib/talent-buyers/project-types";
 import { resolveBuyerCoverImage } from "@/lib/talent-buyers/stock-images";
 import type { ProjectHubSummary } from "@/lib/talent-buyers/projects-hub";
 
-import { ProjectCreateSlideContent } from "./ProjectCreateSlide";
-
 import "./projects-hub.css";
 
 export function ProjectCarousel({
   projects,
   onActiveIndexChange,
-  showCreateSlide = false,
 }: {
   projects: ProjectHubSummary[];
   onActiveIndexChange?: (index: number) => void;
-  showCreateSlide?: boolean;
 }) {
-  const slides = useMemo(() => {
-    if (showCreateSlide && !projects.length) {
-      return [
-        {
-          id: "create-project",
-          title: "Create project",
-          description: "Start a new project and add castings, classes, sessions, or events.",
-          href: "/projects?create=1",
-          content: <ProjectCreateSlideContent />,
+  const slides = useMemo(
+    () =>
+      projects.map((project) => ({
+        id: project.id,
+        title: project.title,
+        description: `${getProjectTypeLabel(project.projectType)} · ${project.talentCount} submissions · Updated ${formatBuyerRelativeDate(project.lastUpdated)}`,
+        href: `/projects/${project.id}`,
+        image: {
+          src: resolveBuyerCoverImage(project.id, project.coverImageUrl, "project"),
+          alt: project.title,
         },
-      ];
-    }
+      })),
+    [projects],
+  );
 
-    return projects.map((project) => ({
-      id: project.id,
-      title: project.title,
-      description: `${getProjectTypeLabel(project.projectType)} · ${project.talentCount} submissions · Updated ${formatBuyerRelativeDate(project.lastUpdated)}`,
-      href: `/projects/${project.id}`,
-      image: {
-        src: resolveBuyerCoverImage(project.id, project.coverImageUrl, "project"),
-        alt: project.title,
-      },
-    }));
-  }, [projects, showCreateSlide]);
+  if (!slides.length) return null;
 
   return (
     <FeatureCarousel

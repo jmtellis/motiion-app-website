@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { LayoutGrid, Search, Rows3 } from "lucide-react";
 
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 import { SegmentedControl } from "@/components/talent-buyers/dashboard/SegmentedControl";
@@ -20,17 +21,21 @@ import { CollectionCard } from "./CollectionCard";
 import { CollectionFormModal } from "./CollectionFormModal";
 import { LibraryEmptyState } from "./LibraryEmptyState";
 import { LibraryTalentCard } from "./LibraryTalentCard";
+import { LibraryTalentTable } from "./LibraryTalentTable";
 import { PickCollectionModal } from "./PickCollectionModal";
 import { SelectionActionBar } from "./SelectionActionBar";
 
 import "./library.css";
 
 type LibraryView = "collections" | "saved";
+type BrowseLayout = "grid" | "table";
+
+const BROWSE_LAYOUT_KEY = "library-browse-layout";
 
 export function LibraryPage({
   collections: initialCollections,
   savedTalent: initialSavedTalent,
-  initialView = "collections",
+  initialView = "saved",
   error,
 }: {
   collections: LibraryCollectionSummary[];
@@ -52,6 +57,7 @@ export function LibraryPage({
   const [query, setQuery] = useState("");
   const [collectionFilter, setCollectionFilter] = useState("all");
   const [sort, setSort] = useState<"recent" | "name">("recent");
+  const [browseLayout, setBrowseLayout] = useState<BrowseLayout>("grid");
   const [, startTransition] = useTransition();
 
   useEffect(() => {
@@ -61,6 +67,18 @@ export function LibraryPage({
   useEffect(() => {
     setSavedTalent(initialSavedTalent);
   }, [initialSavedTalent]);
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(BROWSE_LAYOUT_KEY);
+    if (stored === "grid" || stored === "table") {
+      setBrowseLayout(stored);
+    }
+  }, []);
+
+  function setBrowseLayoutAndPersist(next: BrowseLayout) {
+    setBrowseLayout(next);
+    window.localStorage.setItem(BROWSE_LAYOUT_KEY, next);
+  }
 
   const filteredSaved = useMemo(() => {
     let rows = [...savedTalent];
@@ -98,10 +116,10 @@ export function LibraryPage({
       startTransition(async () => {
         const result = await createCollection(input);
         if (!result.ok || !result.id) {
-          reject(new Error(result.error ?? "Could not create collection"));
+          reject(new Error(result.error ?? "Could not create roster"));
           return;
         }
-        showToast({ message: "Collection created", variant: "success" });
+        showToast({ message: "Roster created", variant: "success" });
         router.push(`/library/${result.id}`);
         resolve();
       });
@@ -118,7 +136,7 @@ export function LibraryPage({
           description: input.description,
         });
         if (!result.ok) {
-          reject(new Error(result.error ?? "Could not update collection"));
+          reject(new Error(result.error ?? "Could not update roster"));
           return;
         }
         setCollections((current) =>
@@ -128,7 +146,7 @@ export function LibraryPage({
               : collection,
           ),
         );
-        showToast({ message: "Collection updated", variant: "success" });
+        showToast({ message: "Roster updated", variant: "success" });
         setEditTarget(null);
         refresh();
         resolve();
@@ -140,10 +158,10 @@ export function LibraryPage({
     startTransition(async () => {
       const result = await duplicateCollection(collection.id);
       if (!result.ok || !result.id) {
-        showToast({ message: result.error ?? "Could not duplicate collection", variant: "error" });
+        showToast({ message: result.error ?? "Could not duplicate roster", variant: "error" });
         return;
       }
-      showToast({ message: "Collection duplicated", variant: "success" });
+      showToast({ message: "Roster duplicated", variant: "success" });
       router.push(`/library/${result.id}`);
     });
   }
@@ -153,12 +171,12 @@ export function LibraryPage({
     startTransition(async () => {
       const result = await deleteCollection(deleteTarget.id);
       if (!result.ok) {
-        showToast({ message: result.error ?? "Could not delete collection", variant: "error" });
+        showToast({ message: result.error ?? "Could not delete roster", variant: "error" });
         return;
       }
       setCollections((current) => current.filter((collection) => collection.id !== deleteTarget.id));
       setDeleteTarget(null);
-      showToast({ message: "Collection deleted", variant: "success" });
+      showToast({ message: "Roster deleted", variant: "success" });
       refresh();
     });
   }
@@ -170,6 +188,63 @@ export function LibraryPage({
   }
 
   const libraryIsEmpty = !collections.length && !savedTalent.length;
+
+  const browseControls = (
+    <div className="library-page__controls">
+      <label className="library-search-wrap">
+        <Search className="library-search-wrap__icon" aria-hidden />
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          className="library-search"
+          placeholder="Search talent"
+        />
+      </label>
+      <select
+        className="library-select"
+        value={collectionFilter}
+        onChange={(event) => setCollectionFilter(event.target.value)}
+        aria-label="Filter by roster"
+      >
+        <option value="all">All rosters</option>
+        {collections.map((collection) => (
+          <option key={collection.id} value={collection.id}>
+            {collection.name}
+          </option>
+        ))}
+      </select>
+      <select
+        className="library-select"
+        value={sort}
+        onChange={(event) => setSort(event.target.value as "recent" | "name")}
+        aria-label="Sort saved talent"
+      >
+        <option value="recent">Recent</option>
+        <option value="name">A–Z</option>
+      </select>
+      <div className="library-layout-toggle" role="group" aria-label="Browse layout">
+        <button
+          type="button"
+          className={`library-layout-toggle__btn${browseLayout === "grid" ? " library-layout-toggle__btn--active" : ""}`}
+          aria-pressed={browseLayout === "grid"}
+          aria-label="Picture grid"
+          onClick={() => setBrowseLayoutAndPersist("grid")}
+        >
+          <LayoutGrid className="size-3.5" aria-hidden />
+        </button>
+        <button
+          type="button"
+          className={`library-layout-toggle__btn${browseLayout === "table" ? " library-layout-toggle__btn--active" : ""}`}
+          aria-pressed={browseLayout === "table"}
+          aria-label="Table view"
+          onClick={() => setBrowseLayoutAndPersist("table")}
+        >
+          <Rows3 className="size-3.5" aria-hidden />
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="library-page">
@@ -186,31 +261,46 @@ export function LibraryPage({
 
           {libraryIsEmpty ? (
             <LibraryEmptyState
-              title="Build your talent library"
-              body="Save people you want to remember, organize them into collections, and return to them when the right opportunity comes up."
+              variant="collections"
+              title="Build your roster"
+              body="Save people you want to remember, organize them into rosters, and return to them when the right opportunity comes up."
               primaryLabel="Find Talent"
               primaryHref="/talent"
-              secondaryLabel="Create Collection"
+              secondaryLabel="Create roster"
               secondaryOnClick={() => setCreateOpen(true)}
             />
           ) : (
             <>
-              <div className="library-page__toolbar">
-                <div className="library-page__view-toggle">
-                  <SegmentedControl
-                    ariaLabel="Library views"
-                    value={view}
-                    onChange={setView}
-                    options={[
-                      { value: "collections", label: "Collections" },
-                      { value: "saved", label: "All Saved Talent" },
-                    ]}
-                  />
-                </div>
-                <div className="library-page__toolbar-end">
-                  <button type="button" className="buyer-chrome-bar__cta" onClick={() => setCreateOpen(true)}>
-                    New Collection
-                  </button>
+              <div className="library-page__mode-row">
+                <SegmentedControl
+                  ariaLabel="Library views"
+                  value={view}
+                  onChange={setView}
+                  options={[
+                    { value: "saved", label: "Browse" },
+                    { value: "collections", label: "Roster" },
+                  ]}
+                  equalWidth
+                  activeTone="white"
+                />
+              </div>
+
+              <div className="library-page__title-row">
+                <h1 className="library-page__title-heading">
+                  {view === "saved" ? "Saved Talent" : "Roster"}
+                </h1>
+                <div className="library-page__title-end">
+                  {view === "saved"
+                    ? browseControls
+                    : collections.length ? (
+                        <button
+                          type="button"
+                          className="buyer-chrome-bar__cta"
+                          onClick={() => setCreateOpen(true)}
+                        >
+                          Create roster
+                        </button>
+                      ) : null}
                 </div>
               </div>
 
@@ -236,60 +326,44 @@ export function LibraryPage({
                   </div>
                 ) : (
                   <LibraryEmptyState
-                    title="No collections yet"
-                    body="Create a collection to start grouping saved talent visually."
-                    primaryLabel="Create Collection"
+                    variant="collections"
+                    title="No rosters yet"
+                    body="Create a roster to start grouping saved talent visually."
+                    primaryLabel="Create roster"
                     primaryOnClick={() => setCreateOpen(true)}
-                    secondaryLabel="Browse Saved Talent"
-                    secondaryOnClick={() => setView("saved")}
                   />
                 )
               ) : (
                 <div className="space-y-4">
-                  <div className="library-page__controls">
-                    <input
-                      value={query}
-                      onChange={(event) => setQuery(event.target.value)}
-                      className="library-search"
-                      placeholder="Search saved talent"
-                    />
-                    <select
-                      className="library-select"
-                      value={collectionFilter}
-                      onChange={(event) => setCollectionFilter(event.target.value)}
-                      aria-label="Filter by collection"
-                    >
-                      <option value="all">All collections</option>
-                      {collections.map((collection) => (
-                        <option key={collection.id} value={collection.id}>
-                          {collection.name}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      className="library-select"
-                      value={sort}
-                      onChange={(event) => setSort(event.target.value as "recent" | "name")}
-                      aria-label="Sort saved talent"
-                    >
-                      <option value="recent">Recently saved</option>
-                      <option value="name">Name A–Z</option>
-                    </select>
-                  </div>
-
                   {filteredSaved.length ? (
-                    <div className="library-talent-grid">
-                      {filteredSaved.map((talent) => (
-                        <LibraryTalentCard
-                          key={talent.profileId}
-                          talent={talent}
-                          selectable
-                          selected={selected.includes(talent.profileId)}
-                          onToggleSelect={() => toggleSelected(talent.profileId)}
-                          savedIndicator
-                        />
-                      ))}
-                    </div>
+                    browseLayout === "table" ? (
+                      <LibraryTalentTable
+                        talent={filteredSaved}
+                        selected={selected}
+                        onToggleSelect={toggleSelected}
+                        onToggleSelectAll={() => {
+                          const allSelected = filteredSaved.every((person) =>
+                            selected.includes(person.profileId),
+                          );
+                          setSelected(
+                            allSelected ? [] : filteredSaved.map((person) => person.profileId),
+                          );
+                        }}
+                      />
+                    ) : (
+                      <div className="library-talent-grid">
+                        {filteredSaved.map((talent) => (
+                          <LibraryTalentCard
+                            key={talent.profileId}
+                            talent={talent}
+                            selectable
+                            selected={selected.includes(talent.profileId)}
+                            onToggleSelect={() => toggleSelected(talent.profileId)}
+                            savedIndicator
+                          />
+                        ))}
+                      </div>
+                    )
                   ) : query || collectionFilter !== "all" ? (
                     <LibraryEmptyState
                       title="No talent found"
@@ -302,6 +376,7 @@ export function LibraryPage({
                     />
                   ) : (
                     <LibraryEmptyState
+                      variant="talent"
                       title="No saved talent yet"
                       body="Save people from Talent Search to start building your library."
                       primaryLabel="Find Talent"
@@ -314,7 +389,7 @@ export function LibraryPage({
                     onClear={() => setSelected([])}
                     actions={[
                       {
-                        label: "Add to collection",
+                        label: "Add to roster",
                         onClick: () => setPickCollectionOpen(true),
                       },
                     ]}
@@ -329,15 +404,15 @@ export function LibraryPage({
       <CollectionFormModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        title="New Collection"
-        submitLabel="Create Collection"
+        title="New roster"
+        submitLabel="Create roster"
         onSubmit={handleCreate}
       />
 
       <CollectionFormModal
         open={Boolean(editTarget)}
         onClose={() => setEditTarget(null)}
-        title={editMode === "rename" ? "Rename collection" : "Edit description"}
+        title={editMode === "rename" ? "Rename roster" : "Edit description"}
         submitLabel="Save"
         initialName={editTarget?.name ?? ""}
         initialDescription={editTarget?.description ?? ""}
@@ -347,8 +422,8 @@ export function LibraryPage({
       <Modal
         open={Boolean(deleteTarget)}
         onClose={() => setDeleteTarget(null)}
-        title={deleteTarget ? `Delete “${deleteTarget.name}”?` : "Delete collection"}
-        description="This will delete the collection, but the people inside it will remain saved in your Library."
+        title={deleteTarget ? `Delete “${deleteTarget.name}”?` : "Delete roster"}
+        description="This will delete the roster, but the people inside it will remain saved in your Library."
         size="sm"
         footer={
           <div className="flex justify-end gap-2">
@@ -356,12 +431,12 @@ export function LibraryPage({
               Cancel
             </button>
             <button type="button" className="buyer-chrome-bar__cta" onClick={handleDelete}>
-              Delete Collection
+              Delete roster
             </button>
           </div>
         }
       >
-        <p className="text-sm text-white/50">You can recreate this collection later if needed.</p>
+        <p className="text-sm text-white/50">You can recreate this roster later if needed.</p>
       </Modal>
 
       <PickCollectionModal
@@ -374,10 +449,10 @@ export function LibraryPage({
             collectionIds,
           });
           if (!result.ok) {
-            showToast({ message: result.error ?? "Could not add to collection", variant: "error" });
+            showToast({ message: result.error ?? "Could not add to roster", variant: "error" });
             return;
           }
-          showToast({ message: "Added to collection", variant: "success" });
+          showToast({ message: "Added to roster", variant: "success" });
           setSavedTalent((current) =>
             current.map((person) =>
               selected.includes(person.profileId)

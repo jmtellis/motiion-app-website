@@ -492,7 +492,7 @@ export function ProjectDetailView({
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-[var(--ink-soft)]">{activity.attendeeCount} attending</span>
-                  <Link href={`/calendar/${activity.id}`} className="text-sm text-[#2dd4bf]">
+                  <Link href={`/calendar/${activity.id}`} className="text-sm text-[var(--accent)]">
                     Manage
                   </Link>
                 </div>

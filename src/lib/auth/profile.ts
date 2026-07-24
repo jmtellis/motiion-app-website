@@ -69,8 +69,14 @@ export function toDashboardProfile(
     userType: nonTalentProfile?.user_type ?? null,
     primaryGoal: nonTalentProfile?.primary_goal ?? null,
     buyerRole: nonTalentProfile?.role ?? null,
+    customRole: nonTalentProfile?.custom_role ?? null,
+    platformGoals: nonTalentProfile?.platform_goals ?? null,
+    workTypes: nonTalentProfile?.work_types ?? null,
+    customWorkType: nonTalentProfile?.custom_work_type ?? null,
     organizationName: nonTalentProfile?.organization_name ?? nonTalentProfile?.company_name ?? null,
     organizationWebsite: nonTalentProfile?.organization_website ?? null,
+    organizationRelationship: nonTalentProfile?.organization_relationship ?? null,
+    organizationBrandDomain: nonTalentProfile?.organization_brand_domain ?? null,
     companySize: nonTalentProfile?.company_size ?? null,
     buyerTalentTypes: nonTalentProfile?.talent_types ?? null,
     styleFocus: nonTalentProfile?.style_focus ?? null,
@@ -79,5 +85,6 @@ export function toDashboardProfile(
     verificationLinks: nonTalentProfile?.verification_links ?? null,
     notificationPreferences: nonTalentProfile?.notification_preferences ?? null,
     buyerOnboardingCompleted: nonTalentProfile?.onboarding_completed ?? null,
+    onboardingStep: nonTalentProfile?.onboarding_step ?? null,
   };
 }

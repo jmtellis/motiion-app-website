@@ -38,7 +38,7 @@ export function BuyerSettingsProfileForm({
   const isDashboard = variant === "dashboard";
   const wrapperClass = isDashboard ? "bd-muted-panel space-y-5 p-5" : "ui-card space-y-5 p-5";
   const selectClass = isDashboard
-    ? "w-full rounded-full border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white outline-none transition-colors focus:border-white/30 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none"
+    ? "w-full rounded-full border border-white/10 bg-white/[0.06] px-3.5 py-2.5 text-sm text-white outline-none transition-colors focus:border-white/35 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none"
     : "w-full rounded-full border border-[var(--line)] bg-[var(--surface-card)] px-3 py-3 text-sm text-[var(--ink)] outline-none focus:border-[rgb(17_17_17_/_0.35)]";
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -180,7 +180,7 @@ export function BuyerSettingsWorkspaceSections({
   }
 
   const inputClass =
-    "w-full rounded-full border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none transition-colors focus:border-white/30 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none";
+    "w-full rounded-full border border-white/10 bg-white/[0.06] px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none transition-colors focus:border-white/35 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none";
 
   return (
     <div className="grid gap-3 md:grid-cols-2">
@@ -196,7 +196,7 @@ export function BuyerSettingsWorkspaceSections({
               <div>
                 <dt className="text-white/45">Website</dt>
                 <dd>
-                  <a href={organization.website} className="text-[#2dd4bf] hover:underline" target="_blank" rel="noreferrer">
+                  <a href={organization.website} className="text-[var(--accent)] hover:underline" target="_blank" rel="noreferrer">
                     {organization.website}
                   </a>
                 </dd>
@@ -241,7 +241,7 @@ export function BuyerSettingsWorkspaceSections({
             type="checkbox"
             checked={newTalentMatches}
             onChange={(event) => setNewTalentMatches(event.target.checked)}
-            className="size-4 rounded border-white/20 bg-transparent accent-[#2dd4bf]"
+            className="size-4 rounded border-white/20 bg-transparent accent-[var(--accent)]"
           />
         </label>
         <label className="flex items-center justify-between gap-3 text-sm text-white/75">
@@ -250,7 +250,7 @@ export function BuyerSettingsWorkspaceSections({
             type="checkbox"
             checked={opportunityUpdates}
             onChange={(event) => setOpportunityUpdates(event.target.checked)}
-            className="size-4 rounded border-white/20 bg-transparent accent-[#2dd4bf]"
+            className="size-4 rounded border-white/20 bg-transparent accent-[var(--accent)]"
           />
         </label>
         <label className="flex items-center justify-between gap-3 text-sm text-white/75">
@@ -259,7 +259,7 @@ export function BuyerSettingsWorkspaceSections({
             type="checkbox"
             checked={industryAnnouncements}
             onChange={(event) => setIndustryAnnouncements(event.target.checked)}
-            className="size-4 rounded border-white/20 bg-transparent accent-[#2dd4bf]"
+            className="size-4 rounded border-white/20 bg-transparent accent-[var(--accent)]"
           />
         </label>
         <button type="button" className="bd-btn-secondary" disabled={isPending} onClick={saveNotifications}>

@@ -254,7 +254,7 @@ export async function persistNewActivity(
   if (draft.type === "event") {
     Object.assign(baseRow, {
       root_job_id: rootJobId,
-      category: trimOrNull(draft.category),
+      category: null,
       subcategory: trimOrNull(draft.subcategory),
       price_amount_cents: null,
       price_currency: requirePayment ? "usd" : null,
@@ -294,6 +294,7 @@ export async function persistNewActivity(
     });
   } else {
     Object.assign(baseRow, {
+      category: null,
       subcategory: trimOrNull(draft.sessionType),
       session_level: trimOrNull(draft.sessionLevel),
       session_vibe: trimOrNull(draft.sessionVibe),
@@ -303,6 +304,7 @@ export async function persistNewActivity(
       session_equipment: trimOrNull(draft.whatToBring),
       session_cancellation_policy: trimOrNull(draft.cancellationPolicy),
       session_tags: normalizeStringList(draft.sessionTags, 10),
+      attendees_visible: draft.attendeesVisible,
       price_amount_cents: null,
       require_payment: false,
     });
@@ -316,7 +318,7 @@ export async function persistNewActivity(
 
   const activityId = data.id as string;
 
-  if (draft.type === "class" && draft.genres.length) {
+  if ((draft.type === "class" || draft.type === "session") && draft.genres.length) {
     await supabase.from("activity_tags").insert(
       normalizeStringList(draft.genres, 5).map((tag) => ({
         activity_id: activityId,
@@ -402,7 +404,7 @@ export async function persistUpdatedActivity(
 
   if (draft.type === "event") {
     Object.assign(updates, {
-      category: trimOrNull(draft.category),
+      category: null,
       subcategory: trimOrNull(draft.subcategory),
       price_currency: requirePayment ? "usd" : null,
       pricing_tiers: requirePayment ? legacyPricingTiers(draft.ticketOptions) : null,
@@ -441,6 +443,7 @@ export async function persistUpdatedActivity(
     });
   } else {
     Object.assign(updates, {
+      category: null,
       subcategory: trimOrNull(draft.sessionType),
       session_level: trimOrNull(draft.sessionLevel),
       session_vibe: trimOrNull(draft.sessionVibe),
@@ -450,6 +453,7 @@ export async function persistUpdatedActivity(
       session_equipment: trimOrNull(draft.whatToBring),
       session_cancellation_policy: trimOrNull(draft.cancellationPolicy),
       session_tags: normalizeStringList(draft.sessionTags, 10),
+      attendees_visible: draft.attendeesVisible,
       require_payment: false,
       price_amount_cents: null,
     });
@@ -459,6 +463,19 @@ export async function persistUpdatedActivity(
   if (error) {
     console.error("[activities] update activity", error.message);
     return { ok: false, error: "Could not update the activity." };
+  }
+
+  if (draft.type === "class" || draft.type === "session") {
+    await supabase.from("activity_tags").delete().eq("activity_id", activityId);
+    const tags = normalizeStringList(draft.genres, 5);
+    if (tags.length) {
+      await supabase.from("activity_tags").insert(
+        tags.map((tag) => ({
+          activity_id: activityId,
+          tag,
+        })),
+      );
+    }
   }
 
   if (draft.type === "event") {

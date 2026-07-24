@@ -36,7 +36,7 @@ export async function loadActivityDraft(
       id, creator_id, type, title, description, location, cover_image_url,
       activity_date, start_time, end_date, end_time, max_attendees, is_private,
       require_payment, project_id, category, subcategory,
-      price_amount_cents, max_guest_spots,
+      price_amount_cents, max_guest_spots, attendees_visible,
       class_what_you_will_learn, class_skill_level, class_focus, class_intensity,
       class_prerequisites, class_dress_code, class_equipment, class_cancellation_policy,
       session_level, session_vibe, session_rules, session_good_to_know,
@@ -85,12 +85,13 @@ export async function loadActivityDraft(
   draft.cancellationPolicy = String(
     r.class_cancellation_policy ?? r.session_cancellation_policy ?? "",
   );
-  draft.sessionType = String(r.subcategory ?? "");
+  draft.sessionType = type === "session" ? String(r.subcategory ?? "") : "";
   draft.sessionLevel = String(r.session_level ?? "");
   draft.sessionVibe = String(r.session_vibe ?? "");
   draft.sessionRules = String(r.session_rules ?? "");
   draft.sessionGoodToKnow = String(r.session_good_to_know ?? "");
   draft.sessionTags = Array.isArray(r.session_tags) ? (r.session_tags as string[]) : [];
+  draft.attendeesVisible = r.attendees_visible !== false;
   draft.eventHighlights = Array.isArray(r.event_highlights) ? (r.event_highlights as string[]) : [];
   draft.eventLineup = Array.isArray(r.event_lineup) ? (r.event_lineup as string[]) : [];
   draft.eventDressCode = String(r.event_dress_code ?? "");
@@ -109,6 +110,17 @@ export async function loadActivityDraft(
         detail: String(item.detail ?? ""),
       }),
     );
+  }
+
+  if (type === "class" || type === "session") {
+    const { data: tags } = await supabase
+      .from("activity_tags")
+      .select("tag")
+      .eq("activity_id", activityId);
+    draft.genres = ((tags ?? []) as { tag: string }[])
+      .map((row) => row.tag)
+      .filter(Boolean)
+      .slice(0, 5);
   }
 
   if (type === "event") {

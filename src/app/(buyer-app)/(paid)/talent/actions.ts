@@ -6,6 +6,7 @@ import { trackServerEvent } from "@/lib/analytics/track-server";
 import { sendNotificationEmail } from "@/lib/email/send";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { requireIndustryIdentityVerified } from "@/lib/talent-buyers/require-industry-identity";
 import { buildNavigatorInitialData } from "@/lib/talent-navigator/profile-adapter";
 import {
   type BuyerOpenRole,
@@ -68,14 +69,23 @@ export async function fetchNavigatorTalent(
         resolvedProductionIds: filters.resolvedProductionIds ?? [],
         relationshipMatchMode: filters.relationshipMatchMode ?? "all",
         verificationStatuses: (filters.verificationStatuses ?? []) as never[],
-        location: filters.location ? [filters.location] : [],
+        location: filters.locations?.length
+          ? filters.locations
+          : filters.location
+            ? [filters.location]
+            : [],
         danceStyles: filters.style ? [filters.style] : [],
-        agencies: filters.agency ? [filters.agency] : [],
+        agencies: filters.agencies?.length
+          ? filters.agencies
+          : filters.agency
+            ? [filters.agency]
+            : [],
         representedOnly: filters.representation === "Represented" ? true : undefined,
         availableOnly: filters.availability ? true : undefined,
-        broadExperienceQuery: filters.keyword || undefined,
+        // Keep keyword off credit entity searches — it is not credit-aware.
+        broadExperienceQuery: undefined,
       },
-      { navigatorFilters: filters },
+      { navigatorFilters: { ...filters, keyword: "" } },
     );
     return {
       talent: creditResult.talent,
@@ -295,9 +305,9 @@ export async function parseNlTalentQuery(
           agencies: merged.agency ? [merged.agency] : [],
           representedOnly: merged.representation === "Represented" ? true : undefined,
           availableOnly: merged.availability ? true : undefined,
-          broadExperienceQuery: merged.keyword || undefined,
+          broadExperienceQuery: undefined,
         },
-        { navigatorFilters: merged },
+        { navigatorFilters: { ...merged, keyword: "" } },
       );
 
       const unresolvedCount = creditResult.warnings.filter((w) => w.type === "unresolved").length;
@@ -879,7 +889,26 @@ export async function contactTalentUser(
   talentUserId: string,
   context?: { contextType?: string; contextId?: string; projectTitle?: string },
   initialMessage?: string,
-): Promise<{ ok: boolean; conversationId?: string; pendingRequest?: boolean; error?: string }> {
+): Promise<{
+  ok: boolean;
+  conversationId?: string;
+  pendingRequest?: boolean;
+  error?: string;
+  code?: string;
+}> {
+  const supabase = await createServerSupabaseClient();
+  if (!supabase) return { ok: false, error: "Supabase is not configured." };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "You must be signed in." };
+
+  const identity = await requireIndustryIdentityVerified(user.id);
+  if (!identity.ok) {
+    return { ok: false, code: identity.code, error: identity.error };
+  }
+
   const { startConversationWith } = await import("@/lib/app/conversations");
   const opener =
     initialMessage?.trim() ||

@@ -55,6 +55,8 @@ export function searchProfileToTalent(
     represented: isRepresented(profile.representation),
     gender: profile.gender ?? undefined,
     ethnicity: profile.ethnicity ?? undefined,
+    hairColor: profile.hair_color ?? undefined,
+    eyeColor: profile.eye_color ?? undefined,
     height: profile.height ?? undefined,
     unionStatus: profile.union_status ?? undefined,
     isVerified: profile.is_verified ?? false,
@@ -75,12 +77,18 @@ export function buildNavigatorInitialData(
   const source = mapSource(result);
   const useMockImages = result.usingFallbackData || result.source === "mock";
 
+  const shuffleSalt =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
   if (useMockImages) {
     const talent = filters ? filterTalentPool(mockNavigatorTalent, filters) : mockNavigatorTalent;
     return {
       talent,
       usingFallbackData: true,
       source: "mock",
+      shuffleSalt,
     };
   }
 
@@ -89,6 +97,7 @@ export function buildNavigatorInitialData(
       talent: [],
       usingFallbackData: false,
       source,
+      shuffleSalt,
     };
   }
 
@@ -100,6 +109,7 @@ export function buildNavigatorInitialData(
     talent,
     usingFallbackData: false,
     source,
+    shuffleSalt,
   };
 }
 

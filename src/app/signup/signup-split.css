@@ -3,19 +3,15 @@
   min-height: 100dvh;
   opacity: 1;
   transform: translateY(0);
+  background: #111111;
   transition:
     opacity 0.36s ease,
     transform 0.36s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: opacity, transform;
 }
 
-.signup-split-transition--enter,
 .signup-split-transition--exit {
   opacity: 0;
-  transform: translateY(12px);
-}
-
-.signup-split-transition--exit {
   transform: translateY(-10px);
 }
 
@@ -24,7 +20,6 @@
     transition-duration: 0.01ms;
   }
 
-  .signup-split-transition--enter,
   .signup-split-transition--exit {
     opacity: 1;
     transform: none;
@@ -36,50 +31,68 @@
   min-height: 100dvh;
   height: 100svh;
   height: 100dvh;
-  display: flex;
-  flex-direction: column;
+  /* Match home-split: equal CSS grid columns (flex + panel padding skewed the seam). */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
   overscroll-behavior: none;
-  background: #0a0a0a;
+  background: #000;
   color: #f5f5f3;
 }
 
-@media (min-width: 768px) {
+.signup-split--full-bleed {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+@media (min-width: 960px) {
   .signup-split {
-    flex-direction: row;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .signup-split--full-bleed {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 .signup-split-cover {
   position: relative;
-  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
   min-height: 220px;
+  min-width: 0;
   overflow: hidden;
   overscroll-behavior: none;
-  background: #0a0a0a;
+  background:
+    radial-gradient(ellipse 80% 55% at 0% -10%, rgb(0 170 204 / 0.06) 0%, transparent 50%),
+    linear-gradient(180deg, #111111 0%, #0d0d0d 100%);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 960px) {
   .signup-split-cover {
     min-height: 0;
-    flex: 1 1 0;
-    min-width: 0;
   }
-}
-
-.signup-split-cover__overlay {
-  background:
-    radial-gradient(ellipse 120% 85% at 50% 40%, transparent 30%, rgb(0 0 0 / 0.5) 100%),
-    linear-gradient(180deg, rgb(10 10 10 / 0.12) 0%, rgb(0 0 0 / 0.62) 100%);
 }
 
 .signup-split-cover__content {
   position: relative;
   z-index: 1;
   display: flex;
-  min-height: inherit;
+  min-height: 0;
+  flex: 1 1 auto;
   flex-direction: column;
-  padding: 2rem 1.5rem;
+  padding: 1.75rem 1.5rem 2rem;
+}
+
+.signup-split-cover__main {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.5rem;
 }
 
 .signup-split-cover__intro {
@@ -145,17 +158,16 @@
   font-size: clamp(1.5rem, 3.5vw, 2.75rem);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 960px) {
   .signup-split-cover__marquee {
     width: calc(100% + 5rem);
     margin-inline: -2.5rem;
   }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 960px) {
   .signup-split-cover__content {
-    padding: 3rem 2.5rem;
-    height: 100%;
+    padding: 1.75rem 2.5rem 3rem;
   }
 }
 
@@ -163,7 +175,47 @@
   display: flex;
   align-items: center;
   width: 100%;
-  margin-bottom: 2rem;
+  /* Match home-split__header-row top alignment */
+  padding: 1.25rem 1.5rem 0;
+}
+
+.signup-split-cover__header .home-split__brand-nav {
+  width: 100%;
+}
+
+.signup-split-cover__header-action {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+}
+
+@media (min-width: 960px) {
+  .signup-split-cover__header {
+    padding: 1.25rem 2.5rem 0;
+  }
+}
+
+/* Match home-split breakpoint: desktop nav in the side pane, accordion when stacked */
+.signup-split-cover__content > .home-split__nav--mobile {
+  display: none;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+@media (min-width: 960px) {
+  .signup-split-cover__header .home-split__nav:not(.home-split__nav--mobile) {
+    display: flex;
+  }
+}
+
+@media (max-width: 959px) {
+  .signup-split-cover__header .home-split__nav:not(.home-split__nav--mobile) {
+    display: none;
+  }
+
+  .signup-split-cover__content > .home-split__nav--mobile {
+    display: flex;
+  }
 }
 
 .signup-split-cover__eyebrow {
@@ -199,6 +251,40 @@
   text-decoration: underline;
 }
 
+.signup-split-cover__progress {
+  margin-bottom: 2.25rem;
+}
+
+.signup-split-cover__progress-dots {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: 14rem;
+}
+
+.signup-split-cover__progress-dot {
+  display: block;
+  height: 0.1875rem;
+  flex: 1 1 0;
+  min-width: 1.1rem;
+  max-width: 2rem;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.14);
+  transition:
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+.signup-split-cover__progress-dot--completed,
+.signup-split-cover__progress-dot--active {
+  background: var(--accent);
+}
+
+.signup-split-cover__progress-dot--active {
+  transform: none;
+}
+
 .signup-split-cover__headline {
   max-width: min(32rem, 100%);
   font-size: clamp(1.75rem, 3vw, 2.5rem);
@@ -213,6 +299,10 @@
   font-size: 0.875rem;
   line-height: 1.5;
   color: rgb(255 255 255 / 0.65);
+}
+
+.signup-split-cover__action {
+  margin-top: 1.75rem;
 }
 
 .signup-split-steps {
@@ -249,9 +339,9 @@
 }
 
 .signup-split-step--active {
-  border-color: transparent;
-  background: #fff;
-  color: #111;
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  background: color-mix(in oklab, var(--accent) 16%, #111111);
+  color: #fafafa;
   font-weight: 500;
 }
 
@@ -266,8 +356,8 @@
 }
 
 .signup-split-step--active .signup-split-step__num {
-  background: #111;
-  color: #fff;
+  background: var(--accent);
+  color: #0a0a0a;
 }
 
 .signup-split-step--completed .signup-split-step__num {
@@ -290,14 +380,15 @@
 
 .signup-split-panel {
   display: flex;
-  flex: 1 1 auto;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-width: 0;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: none;
   padding: 2rem 1.5rem 2.5rem;
+  background: #000;
   --ink: #f5f5f3;
   --ink-soft: rgb(255 255 255 / 0.55);
   --line: rgb(255 255 255 / 0.12);
@@ -306,17 +397,27 @@
   --surface-muted: #1e1e1e;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 960px) {
   .signup-split-panel {
-    flex: 1 1 0;
-    min-width: 0;
     padding: 3rem 2.5rem;
+  }
+
+  .signup-split-panel--setup {
+    align-items: stretch;
+    justify-content: flex-start;
+    overflow: hidden;
+    /* Scroll clip reaches the panel/screen top; inset lives on scroll content. */
+    padding: 0;
   }
 }
 
 .signup-split-form {
   width: 100%;
   max-width: 26rem;
+}
+
+.signup-split-form__header {
+  text-align: center;
 }
 
 .signup-split-form__title {
@@ -334,10 +435,30 @@
 }
 
 .signup-split-form__body {
-  margin-top: 2rem;
+  margin-top: 0.75rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+}
+
+.signup-split-audience {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.signup-split-rule {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgb(255 255 255 / 0.14) 20%,
+    rgb(255 255 255 / 0.14) 80%,
+    transparent
+  );
 }
 
 .signup-split-oauth-row {
@@ -369,7 +490,7 @@
 
 .signup-split-oauth-btn:disabled {
   opacity: 0.55;
-  cursor: not-allowed;
+  cursor: default;
 }
 
 .signup-split-divider {
@@ -382,7 +503,13 @@
   position: absolute;
   inset: 50% 0 auto;
   height: 1px;
-  background: rgb(255 255 255 / 0.12);
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgb(255 255 255 / 0.14) 20%,
+    rgb(255 255 255 / 0.14) 80%,
+    transparent
+  );
 }
 
 .signup-split-divider span {
@@ -394,16 +521,33 @@
   color: rgb(255 255 255 / 0.45);
 }
 
+/** Soft horizontal rule matching footer/onboarding dividers (no label). */
+.signup-split-fade-rule {
+  display: block;
+  width: 100%;
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgb(255 255 255 / 0.14) 20%,
+    rgb(255 255 255 / 0.14) 80%,
+    transparent
+  );
+}
+
 .signup-split-field {
+  --field-pad-x: 0.85rem;
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
 }
 
-.signup-split-field span {
+.signup-split-field > span:first-child {
   font-size: 0.8125rem;
   font-weight: 500;
   color: rgb(255 255 255 / 0.85);
+  padding-inline-start: var(--field-pad-x);
 }
 
 .signup-split-field input {
@@ -411,7 +555,7 @@
   border-radius: 9999px;
   border: 1px solid rgb(255 255 255 / 0.1);
   background: rgb(255 255 255 / 0.06);
-  padding: 0.72rem 0.85rem;
+  padding: 0.72rem var(--field-pad-x);
   font-size: 0.875rem;
   color: #fff;
   outline: none;
@@ -461,28 +605,43 @@
 .signup-split-hint {
   font-size: 0.75rem;
   color: rgb(255 255 255 / 0.4);
+  padding-inline-start: var(--field-pad-x, 0.85rem);
 }
 
 .signup-split-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
+  margin-top: 0.75rem;
+  min-height: 2.75rem;
   border-radius: 9999px;
-  border: 0;
-  background: #fff;
-  padding: 0.8rem 1rem;
+  border: 1px solid color-mix(in oklab, var(--accent) 45%, transparent);
+  background: color-mix(in oklab, var(--accent) 16%, #111111);
+  padding: 0.625rem 1.35rem;
   font-size: 0.875rem;
-  font-weight: 600;
-  color: #111;
+  font-weight: 500;
+  color: #fafafa;
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    opacity 0.15s ease;
 }
 
 .signup-split-submit:hover:not(:disabled) {
-  opacity: 0.92;
+  background: color-mix(in oklab, var(--accent) 24%, #111111);
+  border-color: color-mix(in oklab, var(--accent) 62%, transparent);
+}
+
+.signup-split-submit:focus-visible {
+  outline: 2px solid rgb(0 170 204 / 0.65);
+  outline-offset: 2px;
 }
 
 .signup-split-submit:disabled {
   opacity: 0.55;
-  cursor: not-allowed;
+  cursor: default;
 }
 
 .signup-split-footer {
@@ -503,7 +662,7 @@
 }
 
 .signup-split-signup-options {
-  margin-top: 1.5rem;
+  margin-top: 0.25rem;
   text-align: center;
 }
 
@@ -511,14 +670,6 @@
   margin: 0;
   font-size: 0.875rem;
   color: rgb(255 255 255 / 0.5);
-}
-
-.signup-split-signup-options__actions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
 }
 
 .signup-split-text-btn {
@@ -538,12 +689,30 @@
   text-decoration: underline;
 }
 
+.signup-split-text-btn--muted {
+  color: rgb(255 255 255 / 0.55);
+}
+
+.signup-split-text-btn--muted:hover {
+  color: rgb(255 255 255 / 0.75);
+  text-decoration: underline;
+}
+
+.signup-split-text-btn--accent {
+  color: var(--accent);
+}
+
+.signup-split-text-btn--accent:hover {
+  color: color-mix(in oklab, var(--accent) 80%, white);
+  text-decoration: underline;
+}
+
 .signup-split-alt-auth {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
-  margin-top: 1.5rem;
+  margin-top: 0.25rem;
   text-align: center;
 }
 
@@ -563,7 +732,14 @@
 }
 
 .signup-split-form--onboarding .signup-split-form__body {
-  margin-top: 1.5rem;
+  margin-top: 1.75rem;
+  gap: 1.5rem;
+}
+
+.signup-split-form__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .signup-split-form__progress {
@@ -572,15 +748,13 @@
 
 .signup-split-form__progress--first {
   margin-top: 0;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 
 .signup-split-form__progress-meta {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   font-size: 0.75rem;
 }
 
@@ -595,18 +769,38 @@
   color: rgb(255 255 255 / 0.45);
 }
 
-.signup-split-form__progress-track {
-  height: 0.25rem;
-  overflow: hidden;
-  border-radius: 9999px;
-  background: rgb(255 255 255 / 0.1);
+.signup-split-form__progress-dots {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
 }
 
-.signup-split-form__progress-bar {
-  height: 100%;
+.signup-split-form__progress-dot {
+  display: block;
+  height: 0.375rem;
+  flex: 1 1 0;
+  min-width: 1.25rem;
+  max-width: 2.5rem;
   border-radius: 9999px;
+  background: rgb(255 255 255 / 0.12);
+  transition:
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+.signup-split-form__progress-dot--completed,
+.signup-split-form__progress-dot--active {
   background: var(--accent);
-  transition: width 0.3s ease;
+}
+
+.signup-split-form__progress-dot--active {
+  transform: scaleY(1.15);
+}
+
+.signup-split-form__progress-track,
+.signup-split-form__progress-bar {
+  display: none;
 }
 
 .signup-split-form__footer {
@@ -624,6 +818,65 @@
   align-items: center;
   gap: 0.5rem;
   min-width: 0;
+  justify-self: start;
+}
+
+.signup-split-form__footer-center {
+  margin: 0;
+  justify-self: center;
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.3;
+  color: rgb(255 255 255 / 0.55);
+  text-align: center;
+}
+
+.signup-split-form__footer-identity {
+  margin: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.3;
+  color: rgb(255 255 255 / 0.55);
+}
+
+.signup-split-form__footer-end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  justify-self: end;
+  min-width: 0;
+}
+
+.signup-split-form__main {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.signup-split-form__stage {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.signup-split-form__step {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  will-change: transform, opacity;
 }
 
 .setup-flow-cancel-dialog {
@@ -707,7 +960,7 @@
 
 .setup-flow-cancel-dialog__confirm:disabled {
   opacity: 0.55;
-  cursor: not-allowed;
+  cursor: default;
 }
 
 .signup-split-nav-btn {
@@ -733,11 +986,44 @@
 
 .signup-split-nav-btn:disabled {
   opacity: 0.35;
-  cursor: not-allowed;
+  cursor: default;
 }
 
 .signup-split-nav-btn--ghost {
   padding-inline: 0.5rem;
+}
+
+.signup-split-continue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  padding: 0.55rem 0.35rem 0.55rem 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.signup-split-continue:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.06);
+}
+
+.signup-split-continue:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 0.45);
+  outline-offset: 2px;
+}
+
+.signup-split-continue:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .signup-split-panel .field > span,
@@ -768,14 +1054,29 @@
   box-shadow: none;
 }
 
+.signup-split-choice-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
 .signup-split-choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   width: 100%;
-  border-radius: 0.875rem;
+  min-height: 0;
+  border-radius: 1rem;
   border: 1px solid rgb(255 255 255 / 0.12);
   background: rgb(255 255 255 / 0.04);
-  padding: 1.1rem 1rem;
+  padding: 1.05rem 1.15rem;
   text-align: left;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  cursor: pointer;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease;
 }
 
 .signup-split-choice:hover {
@@ -783,21 +1084,206 @@
   background: rgb(255 255 255 / 0.07);
 }
 
-.signup-split-choice--selected {
-  border-color: rgb(45 212 191 / 0.55);
-  background: rgb(45 212 191 / 0.12);
+.signup-split-choice:focus-visible {
+  outline: 2px solid rgb(0 170 204 / 0.65);
+  outline-offset: 2px;
 }
 
-.signup-split-choice p:first-child {
-  font-size: 0.9375rem;
+.signup-split-choice--selected {
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  background: color-mix(in oklab, var(--accent) 16%, #111111);
+}
+
+.signup-split-choice--selected:hover {
+  border-color: color-mix(in oklab, var(--accent) 62%, transparent);
+  background: color-mix(in oklab, var(--accent) 22%, #111111);
+}
+
+.signup-split-choice__copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.signup-split-choice__icon {
+  display: inline-flex;
+  height: 2rem;
+  width: 2rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.65rem;
+  background: rgb(255 255 255 / 0.06);
+  color: rgb(255 255 255 / 0.72);
+}
+
+.signup-split-choice--selected .signup-split-choice__icon {
+  background: color-mix(in oklab, var(--accent) 22%, transparent);
+  color: var(--accent);
+}
+
+.signup-split-choice__title {
+  font-size: 1rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  color: #fff;
+}
+
+.signup-split-choice__description {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: rgb(255 255 255 / 0.55);
+}
+
+.signup-split-choice__check {
+  display: inline-flex;
+  height: 1.25rem;
+  width: 1.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  border-radius: 9999px;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(255 255 255 / 0.04);
+  color: #0a0a0a;
+}
+
+.signup-split-choice--selected .signup-split-choice__check {
+  border-color: transparent;
+  background: var(--accent);
+  color: #0a0a0a;
+}
+
+.signup-split-choice__check svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.signup-split-choice--multi .signup-split-choice__check {
+  border-radius: 0.3rem;
+}
+
+/* Legacy paragraph markup still used in a few places */
+.signup-split-choice p:first-child {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.3;
   color: #fff;
 }
 
 .signup-split-choice p:last-child {
-  margin-top: 0.25rem;
+  margin-top: 0.2rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: rgb(255 255 255 / 0.55);
+}
+
+.signup-split-search-field {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 3.25rem;
+  border-radius: 9999px;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  background: rgb(255 255 255 / 0.04);
+  padding: 0.45rem 1.15rem 0.45rem 0.55rem;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.signup-split-search-field:focus-within {
+  border-color: rgb(255 255 255 / 0.28);
+  background: rgb(255 255 255 / 0.06);
+}
+
+.signup-split-search-field__icon {
+  display: flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.06);
+  color: rgb(255 255 255 / 0.55);
+}
+
+.signup-split-search-field__icon img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+.signup-split-search-field__input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 0.9375rem;
+  color: #fff;
+  outline: none;
+}
+
+.signup-split-search-field__input::placeholder {
+  color: rgb(255 255 255 / 0.4);
+}
+
+.signup-split-search-field__input:disabled {
+  opacity: 0.6;
+}
+
+.signup-split-stack {
+  display: grid;
+}
+
+.signup-split-stack--loose {
+  gap: 4.5rem;
+}
+
+.signup-split-stack--sections {
+  gap: 3.5rem;
+}
+
+.signup-split-field-hint {
+  margin: 0;
   font-size: 0.8125rem;
   line-height: 1.45;
+  color: rgb(255 255 255 / 0.45);
+}
+
+.signup-split-field-block {
+  display: grid;
+  gap: 2.25rem;
+}
+
+.signup-split-field-block__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.signup-split-field-block__label {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: #fff;
+}
+
+.signup-split-field-block__hint {
+  margin: 0;
+  max-width: 34rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
   color: rgb(255 255 255 / 0.55);
 }
 
@@ -805,22 +1291,38 @@
   border-radius: 9999px;
   border: 1px solid rgb(255 255 255 / 0.14);
   background: rgb(255 255 255 / 0.04);
-  padding: 0.45rem 0.85rem;
+  padding: 0.4rem 0.8rem;
   font-size: 0.8125rem;
-  color: rgb(255 255 255 / 0.65);
-  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  font-weight: 500;
+  line-height: 1.25;
+  color: rgb(255 255 255 / 0.68);
+  cursor: pointer;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease;
 }
 
 .signup-split-pill:hover {
-  border-color: rgb(255 255 255 / 0.22);
+  border-color: rgb(255 255 255 / 0.24);
   color: #fff;
 }
 
+.signup-split-pill:focus-visible {
+  outline: 2px solid rgb(0 170 204 / 0.65);
+  outline-offset: 2px;
+}
+
 .signup-split-pill--selected {
-  border-color: rgb(45 212 191 / 0.55);
-  background: rgb(45 212 191 / 0.12);
-  color: #fff;
-  font-weight: 500;
+  border-color: transparent;
+  background: var(--accent);
+  color: #0a0a0a;
+}
+
+.signup-split-pill--selected:hover {
+  border-color: transparent;
+  background: color-mix(in oklab, var(--accent) 88%, white);
+  color: #0a0a0a;
 }
 
 .signup-split-panel .setup-flow-step-header h2 {
@@ -875,8 +1377,14 @@
 
 .signup-split-panel .btn-primary {
   border-radius: 9999px;
-  background: #fff;
-  color: #111;
+  border: 1px solid color-mix(in oklab, var(--accent) 45%, transparent);
+  background: color-mix(in oklab, var(--accent) 16%, #111111);
+  color: #fafafa;
+}
+
+.signup-split-panel .btn-primary:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--accent) 24%, #111111);
+  border-color: color-mix(in oklab, var(--accent) 62%, transparent);
 }
 
 .signup-split-panel .btn-outline {
@@ -885,5 +1393,217 @@
 }
 
 .signup-split-form--onboarding {
-  max-width: 36rem;
+  display: flex;
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.signup-split-form--onboarding .signup-split-form__main {
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: none;
+  /* No bottom padding — scrollable content should clip at the footer divider. */
+  padding: 0;
+}
+
+/*
+ * Stage must size to its content so `__main` can scroll. `overflow: hidden` +
+ * flex shrinking was clipping progressive disclosure (e.g. work-type follow-up)
+ * without allowing scroll, and well above the footer divider.
+ */
+.signup-split-form--onboarding .signup-split-form__stage {
+  flex: 0 0 auto;
+  min-height: auto;
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+.signup-split-form--onboarding .signup-split-form__step {
+  flex: 0 0 auto;
+  min-height: auto;
+  /* Breathing room so the last field isn’t flush against the footer divider. */
+  padding-bottom: 3rem;
+}
+
+.signup-split-form--onboarding .signup-split-form__scroll-content {
+  width: 100%;
+  /* Top inset scrolls away so content can reach the panel/screen edge. */
+  padding-top: 1.5rem;
+}
+
+@media (min-width: 960px) {
+  .signup-split-form--onboarding .signup-split-form__scroll-content {
+    padding-top: 2.75rem;
+  }
+}
+
+.signup-split-form--onboarding .signup-split-form__progress,
+.signup-split-form--onboarding .signup-split-form__step {
+  box-sizing: border-box;
+  width: min(42rem, 100%);
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+.signup-split-form--onboarding .signup-split-form__footer {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  flex-shrink: 0;
+  width: 100%;
+  margin-top: auto;
+  padding: 1.15rem 1.5rem 1.35rem;
+  border-top: 0;
+  background: #000;
+}
+
+.signup-split-form--onboarding .signup-split-form__footer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 1.5rem;
+  left: 1.5rem;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgb(255 255 255 / 0.14) 20%,
+    rgb(255 255 255 / 0.14) 80%,
+    transparent
+  );
+}
+
+@media (min-width: 960px) {
+  .signup-split-form--onboarding .signup-split-form__progress,
+  .signup-split-form--onboarding .signup-split-form__step {
+    padding-inline: 2.5rem;
+  }
+
+  .signup-split-form--onboarding .signup-split-form__footer {
+    padding-inline: 2.5rem;
+  }
+
+  .signup-split-form--onboarding .signup-split-form__footer::before {
+    right: 2.5rem;
+    left: 2.5rem;
+  }
+}
+
+@media (max-width: 959px) {
+  .signup-split-panel--setup {
+    align-items: stretch;
+    justify-content: flex-start;
+    overflow: hidden;
+    padding: 0;
+  }
+}
+
+.signup-split-panel--full-bleed {
+  align-items: stretch;
+  justify-content: stretch;
+  overflow: hidden;
+  padding: 0;
+  background: #000;
+}
+
+.industry-onboarding-complete {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  overscroll-behavior: none;
+  padding: 1.5rem;
+  background: #000;
+}
+
+.industry-onboarding-complete__pricing.audience-pricing {
+  display: flex;
+  width: min(52rem, 100%);
+  max-height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(1rem, 2.5vh, 1.75rem);
+  overflow: hidden;
+  margin-inline: auto;
+}
+
+.industry-onboarding-complete__pricing .audience-pricing__grid {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.industry-onboarding-complete__pricing .audience-pricing__plan {
+  min-height: 0;
+  gap: clamp(0.75rem, 1.8vh, 1.25rem);
+  padding: clamp(1rem, 2.2vh, 1.75rem);
+  overflow: hidden;
+}
+
+.industry-onboarding-complete__pricing .audience-pricing__features {
+  gap: clamp(0.4rem, 1.2vh, 0.75rem);
+  overflow: hidden;
+}
+
+.industry-onboarding-complete__pricing .audience-pricing__cta {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.industry-onboarding-complete__pricing .audience-pricing__cta:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.industry-onboarding-complete__copy {
+  display: flex;
+  width: 100%;
+  max-width: 34rem;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 0.5rem;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.industry-onboarding-complete__copy h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.5vh + 0.6rem, 2.25rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+
+.industry-onboarding-complete__copy p {
+  margin: 0;
+  font-size: clamp(0.8125rem, 1.2vh + 0.5rem, 0.9375rem);
+  line-height: 1.55;
+  color: rgb(255 255 255 / 0.55);
+}
+
+@media (min-width: 960px) {
+  .industry-onboarding-complete {
+    padding: 2rem 2.5rem;
+  }
+}
+
+.signup-split-form--onboarding .signup-split-form__title {
+  font-size: clamp(1.75rem, 2.4vw, 2.125rem);
+  letter-spacing: -0.03em;
+}
+
+.signup-split-form--onboarding .signup-split-form__subtitle {
+  max-width: 34rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
 }

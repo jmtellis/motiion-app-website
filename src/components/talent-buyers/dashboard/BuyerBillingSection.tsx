@@ -68,7 +68,7 @@ export function BuyerBillingSection({
             type="button"
             disabled={isPending}
             onClick={() => go(startIndustryCheckout)}
-            className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#0a0a0a] hover:bg-white/90 disabled:opacity-50"
+            className="bd-btn-primary disabled:opacity-50"
           >
             {isPending ? "Redirecting…" : "Start 60-day free trial"}
           </button>

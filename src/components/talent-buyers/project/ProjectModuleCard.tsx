@@ -21,14 +21,14 @@ export function ProjectModuleCard({
           <h3 className="text-lg font-semibold text-white/92">{title}</h3>
           <p className="mt-1 text-sm text-white/50">{description}</p>
           {typeof count === "number" ? (
-            <p className="mt-3 text-xs font-medium uppercase tracking-[0.12em] text-[#2dd4bf]">
+            <p className="mt-3 text-xs font-medium uppercase tracking-[0.12em] text-[var(--accent)]">
               {count} {count === 1 ? "item" : "items"}
             </p>
           ) : null}
         </div>
         {action}
       </div>
-      <Link href={href} className="mt-4 inline-flex text-sm font-medium text-[#2dd4bf] hover:text-[#5eead4]">
+      <Link href={href} className="mt-4 inline-flex text-sm font-medium text-[var(--accent)] hover:text-[color-mix(in_oklab,var(--accent),white_20%)]">
         Open {title.toLowerCase()} hub
       </Link>
     </div>

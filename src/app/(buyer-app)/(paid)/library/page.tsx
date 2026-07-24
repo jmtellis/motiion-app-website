@@ -1,5 +1,4 @@
 import { BuyerAppPage } from "@/components/talent-buyers/dashboard/BuyerAppPage";
-import { BuyerPageChromeRegistrar } from "@/components/talent-buyers/dashboard/BuyerPageChromeRegistrar";
 import { LibraryPage } from "@/components/talent-buyers/library/LibraryPage";
 import { listCollections, listSavedTalent } from "@/lib/talent-buyers/library";
 import { requireHiringAccount } from "@/lib/auth/session";
@@ -18,11 +17,10 @@ export default async function BuyerLibraryRoute({
   ]);
 
   const error = collectionsError || savedError;
-  const initialView = params.view === "saved" ? "saved" : "collections";
+  const initialView = params.view === "collections" ? "collections" : "saved";
 
   return (
     <BuyerAppPage fullWidth className="!space-y-0 flex min-h-0 flex-1 flex-col">
-      <BuyerPageChromeRegistrar title="Library" />
       <LibraryPage
         collections={collections}
         savedTalent={talent}

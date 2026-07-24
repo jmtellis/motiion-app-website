@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { SignupSplitShell } from "@/components/auth/SignupSplitShell";
@@ -8,7 +9,7 @@ import { getSetupFlowShellProps } from "@/lib/setup-flow/config";
 export default async function TalentBuyerSignupPage() {
   const profile = await getCurrentUserProfile();
 
-  if (profile) {
+  if (profile?.accountType) {
     redirect(getProfileDestination(profile));
   }
 
@@ -16,7 +17,9 @@ export default async function TalentBuyerSignupPage() {
 
   return (
     <SignupSplitShell {...shell}>
-      <TalentBuyerSignupForm />
+      <Suspense fallback={null}>
+        <TalentBuyerSignupForm />
+      </Suspense>
     </SignupSplitShell>
   );
 }

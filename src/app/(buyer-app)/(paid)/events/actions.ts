@@ -63,7 +63,11 @@ export async function createBuyerActivity(
   draft.endDate = values.activityDate;
   draft.maxAttendees = values.maxAttendees ?? (values.type === "session" ? 20 : null);
   draft.isPaid = false;
+  // Public only when a venue is present (matches iOS discoverability rules).
+  draft.isPublic = Boolean(draft.locationLabel.trim());
+
   if (values.type === "event") {
+    draft.subcategory = "Other";
     draft.eventDays = [
       {
         id: crypto.randomUUID(),
@@ -74,6 +78,18 @@ export async function createBuyerActivity(
         maxAttendees: values.maxAttendees ?? null,
       },
     ];
+  } else if (values.type === "class") {
+    draft.category = "Industry";
+    draft.subcategory = "Workshop";
+    draft.genres = ["Contemporary"];
+    draft.whatYouWillLearn = ["Core technique and performance notes"];
+    draft.skillLevel = "Open Level";
+    draft.classFocus = "Technique";
+  } else {
+    draft.sessionType = "Other";
+    draft.sessionLevel = "Open";
+    draft.sessionVibe = "Chill";
+    draft.genres = ["Contemporary"];
   }
 
   return createActivityFromDraft(draft);
@@ -155,7 +171,13 @@ type ActivityRow = {
   cover_image_url: string | null;
 };
 
-export type HostedActivity = BuyerEventSummary & { attendeeCount: number };
+export type ActivityHubItem = BuyerEventSummary & {
+  attendeeCount: number;
+  participation: "hosting" | "attending";
+};
+
+/** @deprecated Prefer ActivityHubItem */
+export type HostedActivity = ActivityHubItem;
 
 export type CalendarEvent = {
   id: string;
@@ -169,12 +191,36 @@ export type CalendarEvent = {
 };
 
 export type HostedActivitiesResult = {
-  upcoming: HostedActivity[];
-  past: HostedActivity[];
+  upcoming: ActivityHubItem[];
+  past: ActivityHubItem[];
   calendarEvents: CalendarEvent[];
 };
 
-/** Fetch the signed-in organizer's activities with attendee counts, split by date. */
+function toEventType(type: string): BuyerEventSummary["eventType"] {
+  return (["class", "session", "event"].includes(type) ? type : "event") as BuyerEventSummary["eventType"];
+}
+
+function rowToHubItem(
+  row: ActivityRow,
+  opts: { attendeeCount: number; participation: "hosting" | "attending"; today: string },
+): ActivityHubItem {
+  const isUpcoming = !row.activity_date || row.activity_date >= opts.today;
+  return {
+    id: row.id,
+    title: row.title,
+    eventType: toEventType(row.type),
+    status: row.status === "draft" ? "draft" : isUpcoming ? "upcoming" : "past",
+    dateTime: row.activity_date
+      ? `${row.activity_date}T${row.start_time ?? "00:00"}`
+      : new Date().toISOString(),
+    location: row.location ?? "Location TBD",
+    attendeeCount: opts.attendeeCount,
+    coverImageUrl: row.cover_image_url ?? null,
+    participation: opts.participation,
+  };
+}
+
+/** Fetch activities the signed-in user hosts or is attending, split by date. */
 export async function listHostedActivities(): Promise<HostedActivitiesResult> {
   const empty: HostedActivitiesResult = { upcoming: [], past: [], calendarEvents: [] };
   const supabase = await createServerSupabaseClient();
@@ -185,7 +231,9 @@ export async function listHostedActivities(): Promise<HostedActivitiesResult> {
   } = await supabase.auth.getUser();
   if (!user) return empty;
 
-  const { data: activities } = await supabase
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data: hostedRows } = await supabase
     .from("activities")
     .select(
       "id, title, type, status, location, activity_date, start_time, end_time, cover_image_url",
@@ -195,68 +243,173 @@ export async function listHostedActivities(): Promise<HostedActivitiesResult> {
     .order("activity_date", { ascending: true, nullsFirst: false })
     .limit(200);
 
-  const rows = (activities ?? []) as ActivityRow[];
-  if (!rows.length) return empty;
+  const hosted = (hostedRows ?? []) as ActivityRow[];
 
-  const counts = new Map<string, number>();
-  const { data: enrollments } = await supabase
+  const { data: enrollmentRows } = await supabase
     .from("enrollments")
     .select("activity_id")
-    .in(
-      "activity_id",
-      rows.map((row) => row.id),
-    )
-    .in("status", ["paid", "guest", "comped", "pending"]);
+    .eq("user_id", user.id)
+    .in("status", ["paid", "guest", "comped", "pending", "confirmed"])
+    .limit(200);
 
-  for (const row of (enrollments ?? []) as { activity_id: string }[]) {
-    counts.set(row.activity_id, (counts.get(row.activity_id) ?? 0) + 1);
+  const attendingIds = [
+    ...new Set(
+      ((enrollmentRows ?? []) as { activity_id: string }[])
+        .map((row) => row.activity_id)
+        .filter((id) => !hosted.some((activity) => activity.id === id)),
+    ),
+  ];
+
+  let attending: ActivityRow[] = [];
+  if (attendingIds.length) {
+    const { data: attendingRows } = await supabase
+      .from("activities")
+      .select(
+        "id, title, type, status, location, activity_date, start_time, end_time, cover_image_url",
+      )
+      .in("id", attendingIds)
+      .neq("status", "cancelled")
+      .order("activity_date", { ascending: true, nullsFirst: false });
+    attending = (attendingRows ?? []) as ActivityRow[];
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-  const upcoming: HostedActivity[] = [];
-  const past: HostedActivity[] = [];
-  const calendarEvents: CalendarEvent[] = [];
+  const allIds = [...hosted, ...attending].map((row) => row.id);
+  const counts = new Map<string, number>();
+  if (allIds.length) {
+    const { data: enrollmentCounts } = await supabase
+      .from("enrollments")
+      .select("activity_id")
+      .in("activity_id", allIds)
+      .in("status", ["paid", "guest", "comped", "pending", "confirmed"]);
 
-  for (const row of rows) {
-    const isUpcoming = !row.activity_date || row.activity_date >= today;
-    const eventType = (["class", "session", "event"].includes(row.type)
-      ? row.type
-      : "event") as BuyerEventSummary["eventType"];
-    const attendeeCount = counts.get(row.id) ?? 0;
-
-    const summary: HostedActivity = {
-      id: row.id,
-      title: row.title,
-      eventType,
-      status: row.status === "draft" ? "draft" : isUpcoming ? "upcoming" : "past",
-      dateTime: row.activity_date
-        ? `${row.activity_date}T${row.start_time ?? "00:00"}`
-        : new Date().toISOString(),
-      location: row.location ?? "Location TBD",
-      attendeeCount,
-      coverImageUrl: row.cover_image_url ?? null,
-    };
-
-    if (isUpcoming) {
-      upcoming.push(summary);
-    } else {
-      past.push(summary);
+    for (const row of (enrollmentCounts ?? []) as { activity_id: string }[]) {
+      counts.set(row.activity_id, (counts.get(row.activity_id) ?? 0) + 1);
     }
+  }
+
+  const upcoming: ActivityHubItem[] = [];
+  const past: ActivityHubItem[] = [];
+  const calendarEvents: CalendarEvent[] = [];
+  const seen = new Set<string>();
+
+  function pushRow(row: ActivityRow, participation: "hosting" | "attending") {
+    if (seen.has(row.id)) return;
+    seen.add(row.id);
+    const item = rowToHubItem(row, {
+      attendeeCount: counts.get(row.id) ?? 0,
+      participation,
+      today,
+    });
+    if (item.status === "past") past.push(item);
+    else upcoming.push(item);
 
     if (row.activity_date) {
       calendarEvents.push({
         id: row.id,
         title: row.title,
-        eventType,
+        eventType: item.eventType,
         date: row.activity_date,
         startTime: row.start_time ?? "09:00",
         endTime: row.end_time,
         location: row.location ?? "Location TBD",
-        attendeeCount,
+        attendeeCount: item.attendeeCount,
       });
     }
   }
 
-  past.reverse();
+  for (const row of hosted) pushRow(row, "hosting");
+  for (const row of attending) pushRow(row, "attending");
+
+  upcoming.sort((a, b) => a.dateTime.localeCompare(b.dateTime));
+  past.sort((a, b) => b.dateTime.localeCompare(a.dateTime));
+  calendarEvents.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+
   return { upcoming, past, calendarEvents };
+}
+
+export type ExploreActivityItem = BuyerEventSummary & {
+  attendeeCount: number;
+};
+
+/** Public upcoming activities available to discover on the platform. */
+export async function listOpenExploreActivities(): Promise<{
+  items: ExploreActivityItem[];
+  viewerCity: string | null;
+}> {
+  const empty = { items: [] as ExploreActivityItem[], viewerCity: null as string | null };
+  const supabase = await createServerSupabaseClient();
+  if (!supabase) return empty;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return empty;
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const [{ data: rows }, { data: profile }] = await Promise.all([
+    supabase
+      .from("activities")
+      .select(
+        "id, title, type, status, location, activity_date, start_time, end_time, cover_image_url",
+      )
+      .eq("status", "active")
+      .eq("is_private", false)
+      .gte("activity_date", today)
+      .order("activity_date", { ascending: true, nullsFirst: false })
+      .limit(120),
+    supabase
+      .from("profiles")
+      .select("working_locations")
+      .eq("user_id", user.id)
+      .maybeSingle<{ working_locations: unknown }>(),
+  ]);
+
+  const activityRows = (rows ?? []) as ActivityRow[];
+  const ids = activityRows.map((row) => row.id);
+  const counts = new Map<string, number>();
+
+  if (ids.length) {
+    const { data: enrollmentCounts } = await supabase
+      .from("enrollments")
+      .select("activity_id")
+      .in("activity_id", ids)
+      .in("status", ["paid", "guest", "comped", "pending", "confirmed"]);
+
+    for (const row of (enrollmentCounts ?? []) as { activity_id: string }[]) {
+      counts.set(row.activity_id, (counts.get(row.activity_id) ?? 0) + 1);
+    }
+  }
+
+  let viewerCity: string | null = null;
+  const workingLocations = profile?.working_locations;
+  if (Array.isArray(workingLocations) && workingLocations[0]) {
+    const loc = workingLocations[0];
+    if (typeof loc === "string") {
+      viewerCity = loc.split(",")[0]?.trim() || null;
+    } else if (typeof loc === "object" && loc && "city" in loc) {
+      const city = (loc as { city?: string }).city;
+      viewerCity = typeof city === "string" && city.trim() ? city.trim() : null;
+    }
+  }
+
+  const items: ExploreActivityItem[] = activityRows.map((row) => {
+    const hub = rowToHubItem(row, {
+      attendeeCount: counts.get(row.id) ?? 0,
+      participation: "attending",
+      today,
+    });
+    return {
+      id: hub.id,
+      title: hub.title,
+      eventType: hub.eventType,
+      status: hub.status,
+      dateTime: hub.dateTime,
+      location: hub.location,
+      coverImageUrl: hub.coverImageUrl,
+      attendeeCount: hub.attendeeCount,
+    };
+  });
+
+  return { items, viewerCity };
 }

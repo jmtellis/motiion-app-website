@@ -31,7 +31,7 @@ type ToastContextValue = {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 function ToastIcon({ variant }: { variant: ToastVariant }) {
-  if (variant === "success") return <CheckCircle2 className="size-4 shrink-0 text-[#2dd4bf]" aria-hidden />;
+  if (variant === "success") return <CheckCircle2 className="size-4 shrink-0 text-[var(--accent)]" aria-hidden />;
   if (variant === "error") return <AlertCircle className="size-4 shrink-0 text-rose-400" aria-hidden />;
   return <Info className="size-4 shrink-0 text-white/60" aria-hidden />;
 }

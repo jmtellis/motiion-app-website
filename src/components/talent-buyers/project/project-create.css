@@ -4,7 +4,7 @@
   min-height: 0;
   flex-direction: column;
   width: 100%;
-  background: #0a0a0a;
+  background: var(--buyer-bg, #000);
 }
 
 @media (min-width: 768px) {
@@ -59,6 +59,7 @@
 }
 
 .project-create__field {
+  --field-label-indent: 0.875rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -71,6 +72,7 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgb(255 255 255 / 0.42);
+  padding-inline-start: var(--field-label-indent);
 }
 
 .project-create__section-copy {
@@ -292,13 +294,15 @@
 }
 
 .project-create__btn--primary {
-  border: none;
-  background: #fafafa;
-  color: #0a0a0a;
+  border: 1px solid var(--buyer-accent-border, color-mix(in oklab, var(--accent) 45%, transparent));
+  background: var(--buyer-accent-fill, color-mix(in oklab, var(--accent) 16%, #111111));
+  color: #fafafa;
+  font-weight: 500;
 }
 
 .project-create__btn--primary:hover:not(:disabled) {
-  background: #e6e6e6;
+  background: var(--buyer-accent-fill-hover, color-mix(in oklab, var(--accent) 24%, #111111));
+  border-color: var(--buyer-accent-border-hover, color-mix(in oklab, var(--accent) 62%, transparent));
 }
 
 .project-create__btn--secondary {
@@ -448,7 +452,7 @@
 
 .project-create__add-attachment:hover {
   border-color: rgb(45 212 191 / 0.35);
-  color: #2dd4bf;
+  color: var(--accent);
 }
 
 .project-create__error {

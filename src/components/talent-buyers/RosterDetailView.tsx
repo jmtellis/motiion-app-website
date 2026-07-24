@@ -231,7 +231,7 @@ export function RosterDetailView({ roster: initialRoster }: { roster: RosterDeta
                   <li key={`${target.projectId}-${target.castingId ?? "project"}`}>
                     <button
                       type="button"
-                      className="w-full rounded-xl border border-white/10 px-4 py-3 text-left text-sm text-white hover:border-[#2dd4bf]/40"
+                      className="w-full rounded-xl border border-white/10 px-4 py-3 text-left text-sm text-white hover:border-[color-mix(in_oklab,var(--accent)_40%,transparent)]"
                       onClick={() => sendBulkInvite(target)}
                     >
                       {target.title}

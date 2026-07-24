@@ -122,11 +122,16 @@
 }
 
 .casting-toolbar__field {
+  --field-label-indent: 0.875rem;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   font-size: 0.8125rem;
   color: rgb(255 255 255 / 0.55);
+}
+
+.casting-toolbar__field > span:first-child {
+  padding-inline-start: var(--field-label-indent);
 }
 
 .casting-toolbar__hint {
@@ -867,7 +872,7 @@
   flex: 1;
   flex-direction: column;
   overflow: hidden;
-  background: #0a0a0a;
+  background: var(--buyer-bg, #000);
 }
 
 .casting-review-focus-profile__stage .buyer-talent-profile {

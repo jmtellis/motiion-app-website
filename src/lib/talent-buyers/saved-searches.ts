@@ -65,3 +65,28 @@ export async function saveSearch(
   revalidatePath("/talent");
   return { ok: true, id: data.id };
 }
+
+export async function deleteSavedSearch(
+  id: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createServerSupabaseClient();
+  if (!supabase) return { ok: false, error: "Supabase not configured" };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Not signed in" };
+
+  const trimmed = id.trim();
+  if (!trimmed) return { ok: false, error: "Search id is required" };
+
+  const { error } = await supabase
+    .from("saved_searches")
+    .delete()
+    .eq("id", trimmed)
+    .eq("owner_id", user.id);
+
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/talent");
+  return { ok: true };
+}

@@ -3,6 +3,7 @@ import {
   talentMatchesAnyEntity,
 } from "@/lib/talent-navigator/match-mode";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   TalentNavigatorSearchSchema,
   type TalentNavigatorSearchInput,
@@ -24,8 +25,23 @@ import { searchTalentProfiles } from "@/lib/search/search-profiles";
 import type { SearchFilters } from "@/types/search";
 import {
   EMPTY_NAVIGATOR_FILTERS,
+  type Talent,
   type TalentNavigatorFilters,
 } from "@/lib/talent-navigator/types";
+
+type CreditSearchClient = NonNullable<ReturnType<typeof createAdminSupabaseClient>>;
+
+async function getCreditSearchClient(): Promise<CreditSearchClient | null> {
+  const admin = createAdminSupabaseClient();
+  if (admin) return admin;
+  try {
+    // Authenticated buyers can read public searchable credits via RLS.
+    return (await createServerSupabaseClient()) as CreditSearchClient | null;
+  } catch {
+    // Outside a Next.js request (scripts/tests) cookies() is unavailable.
+    return null;
+  }
+}
 
 export type CreditSearchWarning = {
   type: "unresolved" | "ambiguous" | "partial";
@@ -98,6 +114,87 @@ function matchingRowsForTalent(
   );
 }
 
+async function loadTalentCardsByIds(
+  client: CreditSearchClient,
+  talentIds: string[],
+): Promise<Talent[]> {
+  if (!talentIds.length) return [];
+
+  const [{ data: talentRows }, { data: profileRows }] = await Promise.all([
+    client
+      .from("talent")
+      .select(
+        "id, full_name, username, headshot_url, location, representation, styles, gender, ethnicity, height, union_status",
+      )
+      .in("id", talentIds.slice(0, 100)),
+    client
+      .from("profiles")
+      .select("user_id, display_name, first_name, last_name, headshot_urls, location, representation")
+      .in("user_id", talentIds.slice(0, 100)),
+  ]);
+
+  const profileById = new Map(
+    (profileRows ?? []).map((row) => [row.user_id as string, row]),
+  );
+  const seen = new Set<string>();
+  const cards: Talent[] = [];
+
+  for (const row of talentRows ?? []) {
+    const id = row.id as string;
+    seen.add(id);
+    const profile = profileById.get(id);
+    const headshots = profile?.headshot_urls as string[] | null | undefined;
+    const name =
+      (row.full_name as string) ||
+      (profile?.display_name as string) ||
+      [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") ||
+      "Talent";
+    cards.push({
+      id,
+      slug: (row.username as string) || id,
+      name,
+      location: (row.location as string) || (profile?.location as string) || undefined,
+      agency: (row.representation as string) || (profile?.representation as string) || undefined,
+      styles: (row.styles as string[]) || [],
+      height: (row.height as string) || undefined,
+      unionStatus: (row.union_status as string) || undefined,
+      gender: (row.gender as string) || undefined,
+      ethnicity: Array.isArray(row.ethnicity)
+        ? (row.ethnicity[0] as string)
+        : (row.ethnicity as string) || undefined,
+      imageUrl:
+        (row.headshot_url as string) ||
+        headshots?.[0] ||
+        "/images/placeholder-talent.jpg",
+      represented: Boolean(row.representation || profile?.representation),
+    });
+  }
+
+  // Profiles without a talent row still surface if they have credits
+  for (const id of talentIds) {
+    if (seen.has(id)) continue;
+    const profile = profileById.get(id);
+    if (!profile) continue;
+    const headshots = profile.headshot_urls as string[] | null | undefined;
+    const name =
+      (profile.display_name as string) ||
+      [profile.first_name, profile.last_name].filter(Boolean).join(" ") ||
+      "Talent";
+    cards.push({
+      id,
+      slug: id,
+      name,
+      location: (profile.location as string) || undefined,
+      agency: (profile.representation as string) || undefined,
+      styles: [],
+      imageUrl: headshots?.[0] || "/images/placeholder-talent.jpg",
+      represented: Boolean(profile.representation),
+    });
+  }
+
+  return cards;
+}
+
 export async function searchTalentByCredits(
   rawInput: Partial<TalentNavigatorSearchInput>,
   options?: {
@@ -106,13 +203,27 @@ export async function searchTalentByCredits(
   },
 ): Promise<CreditSearchResult> {
   const input = TalentNavigatorSearchSchema.parse(rawInput);
-  const admin = createAdminSupabaseClient();
+  const client = await getCreditSearchClient();
   const warnings: CreditSearchWarning[] = [];
 
   let resolutions = options?.preResolved ?? [];
   if (!resolutions.length && hasCreditCriteria(input)) {
+    if (!client) {
+      return {
+        talent: [],
+        total: 0,
+        warnings: [
+          ...warnings,
+          { type: "partial", message: "Credit search is unavailable." },
+        ],
+        resolutions,
+        input,
+        usingFallbackData: false,
+        source: "unavailable",
+      };
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolutions = await resolveEntityNames(admin as any, {
+    resolutions = await resolveEntityNames(client as any, {
       artists: input.artists,
       choreographers: input.choreographers,
       productions: input.productions,
@@ -210,7 +321,7 @@ export async function searchTalentByCredits(
     };
   }
 
-  if (!admin) {
+  if (!client) {
     return {
       talent: [],
       total: 0,
@@ -222,11 +333,7 @@ export async function searchTalentByCredits(
     };
   }
 
-  const entityIds = [
-    ...new Set([...resolvedArtistIds, ...resolvedChoreographerIds, ...resolvedProductionIds]),
-  ];
-
-  let query = admin
+  let query = client
     .from("talent_credits")
     .select(
       `
@@ -357,65 +464,25 @@ export async function searchTalentByCredits(
     };
   }
 
-  // Load profile data for matching talent via existing search path, then filter
+  // Load matched talent directly by ID. Do not route through keyword profile search —
+  // credit phrases never appear in the profile keyword haystack, and unverified
+  // professional profiles are excluded from the navigator pool.
   const baseFilters = options?.navigatorFilters;
-  const profileSearch = await searchTalentProfiles({
-    ...profileFiltersFromCreditInput(input),
-    keyword: baseFilters?.keyword || input.broadExperienceQuery,
-    location: baseFilters?.location || input.location[0],
-    style: baseFilters?.style || input.danceStyles[0],
-    gender: baseFilters?.gender || undefined,
-    agency: baseFilters?.agency || input.agencies[0],
-    representation: baseFilters?.representation || (input.representedOnly ? "Represented" : undefined),
-    navigator: true,
-  });
+  let matched = await loadTalentCardsByIds(client, matchingTalentIds);
 
-  const adapted = buildNavigatorInitialData(
-    profileSearch,
-    baseFilters ?? {
-      ...EMPTY_NAVIGATOR_FILTERS,
-      location: input.location[0] ?? "",
-      representation: input.representedOnly ? "Represented" : "",
-      agency: input.agencies[0] ?? "",
-      style: input.danceStyles[0] ?? "",
-      availability: input.availableOnly ? "Available" : "",
-      artists: input.artists,
-      choreographers: input.choreographers,
-      productions: input.productions,
-      relationshipMatchMode: input.relationshipMatchMode,
-      verificationStatuses: input.verificationStatuses,
-    },
-  );
-
-  const idSet = new Set(matchingTalentIds);
-  let matched = adapted.talent.filter((t) => idSet.has(t.id));
-
-  // If profile search missed some credit matches (keyword narrowing), fetch those profiles directly
-  const missingIds = matchingTalentIds.filter((id) => !matched.some((t) => t.id === id));
-  if (missingIds.length && admin) {
-    const { data: profiles } = await admin
-      .from("talent")
-      .select(
-        "id, full_name, username, headshot_url, location, representation, styles, gender, ethnicity, height, union_status",
-      )
-      .in("id", missingIds.slice(0, 50));
-
-    for (const row of profiles ?? []) {
-      matched.push({
-        id: row.id as string,
-        slug: (row.username as string) || (row.id as string),
-        name: (row.full_name as string) || "Talent",
-        location: (row.location as string) || undefined,
-        agency: (row.representation as string) || undefined,
-        styles: (row.styles as string[]) || [],
-        height: (row.height as string) || undefined,
-        unionStatus: (row.union_status as string) || undefined,
-        gender: (row.gender as string) || undefined,
-        ethnicity: Array.isArray(row.ethnicity) ? row.ethnicity[0] : (row.ethnicity as string) || undefined,
-        imageUrl: (row.headshot_url as string) || "/images/placeholder-talent.jpg",
-        represented: Boolean(row.representation),
-      });
-    }
+  const locationFilter = (baseFilters?.location || input.location[0] || "").trim().toLowerCase();
+  const styleFilter = (baseFilters?.style || input.danceStyles[0] || "").trim().toLowerCase();
+  const genderFilter = (baseFilters?.gender || "").trim().toLowerCase();
+  if (locationFilter) {
+    matched = matched.filter((t) => (t.location || "").toLowerCase().includes(locationFilter));
+  }
+  if (styleFilter) {
+    matched = matched.filter((t) =>
+      (t.styles || []).some((style) => style.toLowerCase().includes(styleFilter)),
+    );
+  }
+  if (genderFilter) {
+    matched = matched.filter((t) => (t.gender || "").toLowerCase() === genderFilter);
   }
 
   const withEvidence = matched
@@ -428,8 +495,6 @@ export async function searchTalentByCredits(
 
   const sliced = withEvidence.slice(input.offset, input.offset + input.limit);
 
-  void entityIds;
-
   return {
     talent: sliced,
     total: withEvidence.length,
@@ -441,8 +506,8 @@ export async function searchTalentByCredits(
       resolvedChoreographerIds,
       resolvedProductionIds,
     },
-    usingFallbackData: adapted.usingFallbackData,
-    source: adapted.source,
+    usingFallbackData: false,
+    source: "live",
   };
 }
 

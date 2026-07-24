@@ -32,7 +32,7 @@ export async function AuthPageShell({
   return (
     <div
       id="top"
-      className={`theme-dark flex flex-col bg-[#0a0a0a] ${shouldHideFooter ? "h-svh" : "min-h-svh"}`}
+      className={`theme-dark marketing-atmosphere flex flex-col ${shouldHideFooter ? "h-svh" : "min-h-svh"}`}
     >
       <AppHeader
         profile={profile}

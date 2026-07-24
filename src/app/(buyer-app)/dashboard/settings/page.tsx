@@ -1,5 +1,4 @@
 import { BuyerAppPage } from "@/components/talent-buyers/dashboard/BuyerAppPage";
-import { BuyerPageChromeRegistrar } from "@/components/talent-buyers/dashboard/BuyerPageChromeRegistrar";
 import { BuyerBillingSection } from "@/components/talent-buyers/dashboard/BuyerBillingSection";
 import { BuyerConnectPaymentsSection } from "@/components/talent-buyers/dashboard/BuyerConnectPaymentsSection";
 import {
@@ -30,7 +29,6 @@ export default async function BuyerSettingsPage({
 
   return (
     <BuyerAppPage>
-      <BuyerPageChromeRegistrar title="Settings" />
       <FadeInSection>
         <PageHeader
           variant="dashboard"

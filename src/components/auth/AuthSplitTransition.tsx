@@ -18,7 +18,7 @@ import "@/app/signup/signup-split.css";
 
 const AUTH_SPLIT_TRANSITION_MS = 360;
 
-type AuthSplitPhase = "enter" | "idle" | "exit";
+type AuthSplitPhase = "idle" | "exit";
 
 type AuthSplitTransitionContextValue = {
   navigate: (href: string) => void;
@@ -31,7 +31,8 @@ export function AuthSplitTransitionProvider({ children }: { children: ReactNode 
   const reduceMotion = useReducedMotion();
   const isExitingRef = useRef(false);
   const exitTimerRef = useRef<number | null>(null);
-  const [phase, setPhase] = useState<AuthSplitPhase>("enter");
+  // Always paint visible first — an opacity-0 enter frame was flashing the paper body.
+  const [phase, setPhase] = useState<AuthSplitPhase>("idle");
 
   useEffect(() => {
     router.prefetch("/");
@@ -39,13 +40,6 @@ export function AuthSplitTransitionProvider({ children }: { children: ReactNode 
     router.prefetch("/login");
     router.prefetch("/talent-buyers/signup");
   }, [router]);
-
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      requestAnimationFrame(() => setPhase("idle"));
-    });
-    return () => cancelAnimationFrame(frame);
-  }, []);
 
   useEffect(() => {
     return () => {

@@ -1,9 +1,7 @@
-import { BuyerDashboardView } from "@/components/talent-buyers/dashboard/BuyerDashboardView";
-import { fetchBuyerDashboardLiveData } from "@/lib/talent-buyers/dashboard-live";
-import { requireHiringAccount } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 
-export default async function BuyerDashboardPage() {
-  const profile = await requireHiringAccount();
-  const liveData = await fetchBuyerDashboardLiveData(profile);
-  return <BuyerDashboardView profile={profile} liveData={liveData} />;
+import { BUYER_HOME_PATH } from "@/lib/talent-buyers/dashboard-data";
+
+export default function BuyerDashboardPage() {
+  redirect(BUYER_HOME_PATH);
 }

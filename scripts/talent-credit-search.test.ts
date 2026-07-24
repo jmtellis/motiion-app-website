@@ -69,6 +69,22 @@ test("mapNlParsedToNavigatorFilters extracts credit entities", () => {
   assert.equal(filters.location, "Los Angeles");
 });
 
+test("mapNlParsedToNavigatorFilters keeps credit phrases out of keyword", () => {
+  const filters = mapNlParsedToNavigatorFilters({
+    artists: ["Sabrina Carpenter"],
+    broadExperienceQuery: "worked with Sabrina Carpenter",
+  });
+  assert.deepEqual(filters.artists, ["Sabrina Carpenter"]);
+  assert.equal(filters.keyword, "");
+});
+
+test("heuristicCreditParse extracts worked-with artists", async () => {
+  const { heuristicCreditParse } = await import("../src/lib/talent-navigator/parse-nl-query.ts");
+  const parsed = heuristicCreditParse("worked with Sabrina Carpenter");
+  assert.deepEqual(parsed?.artists, ["Sabrina Carpenter"]);
+  assert.equal(parsed?.relationshipMatchMode, "all");
+});
+
 test("mergeNavigatorFilters merges credit arrays and profile filters", () => {
   const merged = mergeNavigatorFilters(EMPTY_NAVIGATOR_FILTERS, {
     artists: ["Rihanna"],

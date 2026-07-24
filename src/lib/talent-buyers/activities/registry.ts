@@ -102,15 +102,83 @@ export function stepLabel(step: ActivityComposerStepId): string {
   }
 }
 
-export const CLASS_SKILL_LEVELS = ["Beginner", "Intermediate", "Advanced", "All levels"] as const;
-export const CLASS_FOCUSES = ["Technique", "Choreography", "Conditioning", "Improvisation", "Performance"] as const;
-export const CLASS_INTENSITIES = ["Low", "Medium", "High"] as const;
-export const SESSION_VIBES = ["Chill", "Energetic", "Focused", "Social", "Competitive"] as const;
-export const EVENT_TYPES = [
-  "Showcase",
-  "Competition",
-  "Industry mixer",
-  "Workshop weekend",
-  "Audition",
+/** Matches iOS `ClassCategoryHighLevel`. */
+export const CLASS_CATEGORY_HIGH_LEVELS = ["Training", "Industry"] as const;
+
+/** Matches iOS `ClassCategoryType` chips by high-level. */
+export const CLASS_CATEGORY_TYPES_BY_HIGH_LEVEL: Record<
+  (typeof CLASS_CATEGORY_HIGH_LEVELS)[number],
+  readonly string[]
+> = {
+  Training: ["Technique", "Conditioning"],
+  Industry: [
+    "Workshop",
+    "Intensive",
+    "Master Class",
+    "Audition Prep",
+    "Repertoire",
+    "Drop-In",
+  ],
+};
+
+/** Matches iOS `ClassSkillLevel`. */
+export const CLASS_SKILL_LEVELS = [
+  "Open Level",
+  "Beginner",
+  "Intermediate",
+  "Advanced",
+  "Professional",
+] as const;
+
+/** Matches iOS `ClassFocus`. */
+export const CLASS_FOCUSES = [
+  "Choreography",
+  "Technique",
+  "Performance",
+  "Conditioning",
+  "Audition Prep",
+  "Freestyle",
+  "Repertoire",
+] as const;
+
+/** Matches iOS `ClassIntensity`. */
+export const CLASS_INTENSITIES = ["Low", "Moderate", "High", "Athletic"] as const;
+
+/** Matches iOS `SessionCategoryType`. */
+export const SESSION_TYPES = [
+  "Freestyle Session",
+  "Choreo Lab",
+  "Improvisation",
   "Other",
 ] as const;
+
+/** Matches iOS `SessionExperienceLevel`. */
+export const SESSION_LEVELS = ["Open", "Beginner", "Intermediate", "Advanced", "Pro"] as const;
+
+/** Matches iOS `SessionVibe`. */
+export const SESSION_VIBES = [
+  "Chill",
+  "High energy",
+  "Experimental",
+  "Industry-focused",
+] as const;
+
+/** Matches iOS event category chips (`jobType` → `subcategory`). */
+export const EVENT_TYPES = [
+  "Community",
+  "Competition",
+  "Convention",
+  "Fundraising",
+  "Live Performance",
+  "Networking",
+  "Promotional",
+  "Showcase",
+  "Other",
+] as const;
+
+export function classTypeOptionsForHighLevel(highLevel: string): readonly string[] {
+  if (highLevel === "Training" || highLevel === "Industry") {
+    return CLASS_CATEGORY_TYPES_BY_HIGH_LEVEL[highLevel];
+  }
+  return [];
+}

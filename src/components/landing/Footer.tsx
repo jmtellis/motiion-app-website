@@ -18,7 +18,7 @@ function TikTokIcon({ className }: { className?: string }) {
   );
 }
 
-function FooterSocialIcon({ link }: { link: FooterSocialLink }) {
+export function FooterSocialIcon({ link }: { link: FooterSocialLink }) {
   const iconClass = "size-3.5";
   const icon =
     link.icon === "instagram" ? (
@@ -125,7 +125,7 @@ export function Footer({
 
   return (
     <footer
-      className={`relative overflow-hidden text-white${transparentSurface ? " bg-transparent" : " bg-[#0a0a0a]"}${className ? ` ${className}` : ""}`}
+      className={`relative overflow-hidden text-white${transparentSurface ? " bg-transparent" : " bg-[#111111]"}${className ? ` ${className}` : ""}`}
     >
       {!transparentSurface ? (
         <div
@@ -163,7 +163,7 @@ export function Footer({
         <div className={`landing-footer__meta pt-8 ${reveal ? "mt-8 hidden md:block md:mt-14" : "mt-14"}`}>
           <div className="landing-footer__meta-divider" aria-hidden />
           <div className="landing-footer__meta-row">
-            <p>© {year} Motiion. All rights reserved.</p>
+            <p>© {year} Motiion Ventures, Inc.</p>
             <div className="flex items-center gap-2.5" aria-label="Social media">
               {footerSocialLinks.map((link) => (
                 <FooterSocialIcon key={link.label} link={link} />

@@ -1,7 +1,7 @@
 import type { DashboardProfile } from "@/types/database";
 
 import { isHiringAccount, isOnboardingComplete } from "@/lib/auth/profile";
-import { BUYER_DASHBOARD_PATH } from "@/lib/talent-buyers/dashboard-data";
+import { BUYER_DASHBOARD_PATH, BUYER_HOME_PATH } from "@/lib/talent-buyers/dashboard-data";
 
 export function getProfileInitials(fullName: string) {
   return fullName
@@ -23,7 +23,7 @@ export function getAccountProfileHref(profile: DashboardProfile) {
     return isHiringAccount(profile.accountType) ? "/talent-buyers/onboarding" : "/onboarding";
   }
   if (isHiringAccount(profile.accountType)) {
-    return BUYER_DASHBOARD_PATH;
+    return BUYER_HOME_PATH;
   }
   return "/portfolio";
 }

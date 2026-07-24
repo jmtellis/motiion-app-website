@@ -20,6 +20,7 @@ import {
   parseCastingComposerForm,
   parseCastingDraftForm,
 } from "@/lib/talent-buyers/casting-schema";
+import { requireIndustryIdentityVerified } from "@/lib/talent-buyers/require-industry-identity";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { PublishCastingResult, SaveCastingDraftResult } from "@/types/casting";
 
@@ -279,6 +280,11 @@ export async function publishProjectCasting(
 
   const session = await requirePosterSession();
   if (!session.ok) return { ok: false, error: session.error };
+
+  const identity = await requireIndustryIdentityVerified(session.userId);
+  if (!identity.ok) {
+    return { ok: false, code: identity.code, error: identity.error };
+  }
 
   const { supabase, userId } = session;
   const form = { ...parsed.data, projectId };

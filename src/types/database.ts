@@ -1,11 +1,14 @@
 import type {
   TalentBuyerMarketPlace,
   TalentBuyerNotificationPreferences,
+  TalentBuyerOrganizationRelationship,
+  TalentBuyerPlatformGoal,
   TalentBuyerPrimaryGoal,
   TalentBuyerRole,
   TalentBuyerStyleFocus,
   TalentBuyerTalentType,
   TalentBuyerVerificationLinks,
+  TalentBuyerWorkType,
 } from "@/types/talent-buyers";
 
 export type AccountType = "talent" | "lookingForTalent" | "looking_for_talent";
@@ -42,8 +45,14 @@ export type NonTalentProfileRecord = {
   user_type?: string | null;
   primary_goal?: TalentBuyerPrimaryGoal | null;
   role?: TalentBuyerRole | null;
+  custom_role?: string | null;
+  platform_goals?: TalentBuyerPlatformGoal[] | null;
+  work_types?: TalentBuyerWorkType[] | null;
+  custom_work_type?: string | null;
   organization_name?: string | null;
   organization_website?: string | null;
+  organization_relationship?: TalentBuyerOrganizationRelationship | null;
+  organization_brand_domain?: string | null;
   company_size?: string | null;
   talent_types?: TalentBuyerTalentType[] | null;
   style_focus?: TalentBuyerStyleFocus[] | null;
@@ -52,6 +61,7 @@ export type NonTalentProfileRecord = {
   verification_links?: TalentBuyerVerificationLinks | null;
   notification_preferences?: TalentBuyerNotificationPreferences | null;
   onboarding_completed?: boolean | null;
+  onboarding_step?: string | null;
 };
 
 export type DashboardProfile = {
@@ -68,8 +78,14 @@ export type DashboardProfile = {
   userType?: string | null;
   primaryGoal?: TalentBuyerPrimaryGoal | null;
   buyerRole?: TalentBuyerRole | null;
+  customRole?: string | null;
+  platformGoals?: TalentBuyerPlatformGoal[] | null;
+  workTypes?: TalentBuyerWorkType[] | null;
+  customWorkType?: string | null;
   organizationName?: string | null;
   organizationWebsite?: string | null;
+  organizationRelationship?: TalentBuyerOrganizationRelationship | null;
+  organizationBrandDomain?: string | null;
   companySize?: string | null;
   buyerTalentTypes?: TalentBuyerTalentType[] | null;
   styleFocus?: TalentBuyerStyleFocus[] | null;
@@ -78,4 +94,5 @@ export type DashboardProfile = {
   verificationLinks?: TalentBuyerVerificationLinks | null;
   notificationPreferences?: TalentBuyerNotificationPreferences | null;
   buyerOnboardingCompleted?: boolean | null;
+  onboardingStep?: string | null;
 };

@@ -65,8 +65,11 @@ export function useRegisterTalentChrome(slots: TalentChromeSlots) {
 
   useEffect(() => {
     setChrome(slots);
+  }, [slots.start, slots.center, slots.end, setChrome]);
+
+  useEffect(() => {
     return () => clearChrome();
-  }, [slots.start, slots.center, slots.end, setChrome, clearChrome]);
+  }, [clearChrome]);
 }
 
 export function useRegisterProfileBackHandler(handler: (() => void) | null) {

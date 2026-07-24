@@ -8,7 +8,9 @@ import { SmoothScroll } from "@/components/landing/SmoothScroll";
 export function HomeMarketingShell({ children }: { children: ReactNode }) {
   return (
     <BetaSignupModalProvider>
-      <SmoothScroll>{children}</SmoothScroll>
+      <SmoothScroll>
+        <div className="marketing-root">{children}</div>
+      </SmoothScroll>
     </BetaSignupModalProvider>
   );
 }

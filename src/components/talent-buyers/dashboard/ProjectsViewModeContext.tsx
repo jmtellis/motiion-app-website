@@ -12,14 +12,20 @@ import {
 
 import { SegmentedControl } from "./SegmentedControl";
 
-export type ProjectsViewMode = "carousel" | "grid";
+export type ProjectsViewMode = "browse" | "focus";
 
 const VIEW_MODE_KEY = "projects-view-mode";
 
 const VIEW_OPTIONS: { value: ProjectsViewMode; label: string }[] = [
-  { value: "carousel", label: "Carousel" },
-  { value: "grid", label: "Grid" },
+  { value: "browse", label: "Browse" },
+  { value: "focus", label: "Focus" },
 ];
+
+function normalizeViewMode(value: string | null): ProjectsViewMode | null {
+  if (value === "browse" || value === "grid") return "browse";
+  if (value === "focus" || value === "carousel") return "focus";
+  return null;
+}
 
 type ProjectsViewModeContextValue = {
   viewMode: ProjectsViewMode;
@@ -29,12 +35,13 @@ type ProjectsViewModeContextValue = {
 const ProjectsViewModeContext = createContext<ProjectsViewModeContextValue | null>(null);
 
 export function ProjectsViewModeProvider({ children }: { children: ReactNode }) {
-  const [viewMode, setViewModeState] = useState<ProjectsViewMode>("carousel");
+  const [viewMode, setViewModeState] = useState<ProjectsViewMode>("browse");
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(VIEW_MODE_KEY);
-    if (stored === "carousel" || stored === "grid") {
+    const stored = normalizeViewMode(window.localStorage.getItem(VIEW_MODE_KEY));
+    if (stored) {
       setViewModeState(stored);
+      window.localStorage.setItem(VIEW_MODE_KEY, stored);
     }
   }, []);
 
@@ -71,6 +78,8 @@ export function ProjectsHubViewToggle() {
       value={viewMode}
       onChange={setViewMode}
       ariaLabel="Projects view"
+      equalWidth
+      activeTone="white"
     />
   );
 }

@@ -17,8 +17,14 @@ export type DeleteBuyerAccountResult =
   | { ok: false; error: string };
 
 const talentBuyerRoleSchema = z.enum([
-  "casting_director",
   "choreographer",
+  "casting_professional",
+  "creative_director_or_producer",
+  "talent_representative",
+  "brand_or_agency_professional",
+  "other",
+  // Legacy values still accepted from existing profiles
+  "casting_director",
   "creative_director",
   "producer",
   "talent_agency",
@@ -27,7 +33,6 @@ const talentBuyerRoleSchema = z.enum([
   "brand",
   "production_company",
   "event_organizer",
-  "other",
 ]);
 
 const optionalUrlSchema = z

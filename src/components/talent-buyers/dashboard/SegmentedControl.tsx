@@ -14,6 +14,8 @@ export function SegmentedControl<T extends string>({
   onChange,
   ariaLabel,
   hug = false,
+  equalWidth = false,
+  activeTone = "accent",
 }: {
   options: SegmentedOption<T>[];
   value: T;
@@ -21,14 +23,26 @@ export function SegmentedControl<T extends string>({
   ariaLabel: string;
   /** Prefer a denser control (smaller type / padding). */
   hug?: boolean;
+  /** Give every segment the same width (symmetrical track). */
+  equalWidth?: boolean;
+  /** Selected pill fill. */
+  activeTone?: "accent" | "white";
 }) {
   const groupId = useId();
   const reducedMotion = useReducedMotion();
+  const indicatorClass =
+    activeTone === "white"
+      ? "absolute inset-0 rounded-full bg-white shadow-none"
+      : "absolute inset-0 rounded-full bg-[var(--accent)] shadow-none";
 
   return (
     <nav
       aria-label={ariaLabel}
-      className="relative inline-flex w-fit flex-nowrap gap-1 rounded-full bg-[#111111] p-1"
+      className={
+        equalWidth
+          ? "relative inline-grid grid-flow-col auto-cols-fr gap-1 rounded-full border border-white/10 bg-white/[0.06] p-1 shadow-none backdrop-blur-[14px]"
+          : "relative inline-flex w-fit flex-nowrap gap-1 rounded-full border border-white/10 bg-white/[0.06] p-1 shadow-none backdrop-blur-[14px]"
+      }
     >
       {options.map((option) => {
         const active = value === option.value;
@@ -37,21 +51,22 @@ export function SegmentedControl<T extends string>({
             key={option.value}
             type="button"
             onClick={() => onChange(option.value)}
-            className={`relative z-[1] shrink-0 whitespace-nowrap rounded-full font-medium transition-colors ${
-              hug ? "px-2.5 py-1 text-xs" : "px-4 py-1.5 text-sm"
-            } ${active ? "text-[#fafafa]" : "text-[#8a8a8a] hover:text-[#eaeaea]"}`}
+            className={`relative z-[1] whitespace-nowrap rounded-full text-center font-medium transition-colors ${
+              equalWidth ? "min-w-[5.5rem]" : "shrink-0"
+            } ${hug ? "px-2.5 py-1 text-xs" : "px-4 py-1.5 text-sm"} ${
+              active
+                ? "text-[#0a0a0a]"
+                : "text-[var(--buyer-text-soft,rgb(255_255_255/0.55))] hover:text-[#eaeaea]"
+            }`}
             aria-pressed={active}
           >
             {active ? (
               reducedMotion ? (
-                <span
-                  className="absolute inset-0 rounded-full bg-[#1e1e1e] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]"
-                  aria-hidden
-                />
+                <span className={indicatorClass} aria-hidden />
               ) : (
                 <motion.span
                   layoutId={`${groupId}-segment-indicator`}
-                  className="absolute inset-0 rounded-full bg-[#1e1e1e] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]"
+                  className={indicatorClass}
                   transition={{ type: "spring", stiffness: 420, damping: 34 }}
                   aria-hidden
                 />

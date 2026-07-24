@@ -18,9 +18,14 @@ export function loadOnboardingDraft(userId: string) {
 
   try {
     const draft = JSON.parse(rawDraft) as OnboardingDraft;
+    let currentStep = normalizeOnboardingStep(draft.currentStep);
+    // Older drafts stored role selection on the account screen.
+    if (currentStep === "account" && !draft.role) {
+      currentStep = "role";
+    }
     return {
       ...draft,
-      currentStep: normalizeOnboardingStep(draft.currentStep),
+      currentStep,
     };
   } catch {
     window.localStorage.removeItem(getDraftKey(userId));

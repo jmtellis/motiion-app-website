@@ -2,30 +2,13 @@
 
 import type { ProjectHubSummary } from "@/lib/talent-buyers/projects-hub";
 
-import { EmptyState } from "./EmptyState";
 import { ProjectCard } from "./ProjectCard";
 import { StaggerList } from "./FadeInSection";
 
 import "./projects-hub.css";
 
-export function ProjectGridView({
-  projects,
-  onCreateProject,
-}: {
-  projects: ProjectHubSummary[];
-  onCreateProject?: () => void;
-}) {
-  if (!projects.length) {
-    return (
-      <EmptyState
-        variant="dashboard"
-        title="No projects yet"
-        description="Create a project to start collecting submissions from talent."
-        actionLabel="Create project"
-        onAction={onCreateProject}
-      />
-    );
-  }
+export function ProjectGridView({ projects }: { projects: ProjectHubSummary[] }) {
+  if (!projects.length) return null;
 
   return (
     <StaggerList className="projects-hub__grid" stagger={0.03}>

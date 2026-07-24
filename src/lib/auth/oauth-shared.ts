@@ -68,6 +68,8 @@ export function oauthErrorMessage(code: string | null): string | null {
       return "The sign-in link was incomplete. Please try again.";
     case "profile_setup_failed":
       return "Your account signed in, but we could not finish setting up your profile.";
+    case "no_account":
+      return "No Motiion account found for that login. Create an industry account to continue, or sign up as talent instead.";
     default:
       return "Sign-in failed. Please try again.";
   }

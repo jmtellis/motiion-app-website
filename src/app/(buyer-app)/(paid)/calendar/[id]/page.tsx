@@ -21,7 +21,12 @@ export default async function CalendarActivityManagePage({
 
   return (
     <BuyerAppPage>
-      <BuyerPageChromeRegistrar title={result.data.activity.title} />
+      <BuyerPageChromeRegistrar
+        breadcrumbs={[
+          { label: "Events", href: "/events" },
+          { label: result.data.activity.title },
+        ]}
+      />
       <OrganizerManageView
         activity={result.data.activity}
         attendees={result.data.attendees}

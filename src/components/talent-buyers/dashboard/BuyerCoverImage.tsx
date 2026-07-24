@@ -27,8 +27,8 @@ function CoverOverlay({ strong = false }: { strong?: boolean }) {
     <div
       className={
         strong
-          ? "pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0a0a0a]/95 via-[#0a0a0a]/55 to-[#0a0a0a]/35"
-          : "pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0a0a0a]/88 via-[#0a0a0a]/35 to-[#0a0a0a]/15"
+          ? "pointer-events-none absolute inset-0 bg-gradient-to-t from-[#000000]/95 via-[#000000]/55 to-[#000000]/35"
+          : "pointer-events-none absolute inset-0 bg-gradient-to-t from-[#000000]/88 via-[#000000]/35 to-[#000000]/15"
       }
       aria-hidden
     />

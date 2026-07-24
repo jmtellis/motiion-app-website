@@ -8,7 +8,7 @@ import { getSetupFlowShellProps } from "@/lib/setup-flow/config";
 export default async function SignupPage() {
   const profile = await getCurrentUserProfile();
 
-  if (profile) {
+  if (profile?.accountType) {
     redirect(getProfileDestination(profile));
   }
 

@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { Montserrat } from "next/font/google";
+import { Inter } from "next/font/google";
 
 import { ArrowNavigationFocusCleanup } from "@/components/layout/ArrowNavigationFocusCleanup";
 import { AutoHideScrollbars } from "@/components/layout/AutoHideScrollbars";
@@ -11,11 +11,10 @@ import "./globals.css";
 const geistSans = GeistSans;
 const geistMono = GeistMono;
 
-/** Marketing pages — Montserrat matches iOS Figma legacy */
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
+/** Marketing pages */
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
   display: "swap",
 });
 
@@ -85,7 +84,7 @@ export default function RootLayout({
           </>
         ) : null}
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable} font-sans antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} font-sans antialiased`}>
         <ArrowNavigationFocusCleanup />
         <AutoHideScrollbars />
         {children}

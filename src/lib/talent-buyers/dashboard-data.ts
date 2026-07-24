@@ -1,20 +1,36 @@
 /** Default landing route for industry professionals after auth. */
 export const BUYER_HOME_PATH = "/projects";
 
-/** Ops summary surface (activity feed, metrics). */
+/** Legacy dashboard path — redirects to home; settings still live under `/dashboard/settings`. */
 export const BUYER_DASHBOARD_PATH = "/dashboard";
 
-export const buyerHomeNavItems = [
-  { href: BUYER_DASHBOARD_PATH, label: "Dashboard", segment: "dashboard" },
+/** Primary workflow items. */
+export const buyerMenuNavItems = [
+  { href: "/talent", label: "Find Talent", segment: "talent" },
+  { href: "/projects", label: "Projects", segment: "projects" },
+  { href: "/events", label: "Events", segment: "events" },
+  { href: "/library", label: "Roster", segment: "library" },
 ] as const;
 
 export const buyerWorkspaceNavItems = [
+  { href: "/talent", label: "Find Talent", segment: "talent" },
   { href: "/projects", label: "Projects", segment: "projects" },
-  { href: "/talent", label: "Talent", segment: "talent" },
   { href: "/messages", label: "Inbox", segment: "messages" },
-  { href: "/calendar", label: "Calendar", segment: "calendar" },
-  { href: "/library", label: "Library", segment: "library" },
+  { href: "/events", label: "Events", segment: "events" },
+  { href: "/library", label: "Roster", segment: "library" },
 ] as const;
+
+export const buyerInboxNavItem = {
+  href: "/messages",
+  label: "Inbox",
+  segment: "messages",
+} as const;
+
+export const buyerNotificationsNavItem = {
+  href: "/notifications",
+  label: "Notifications",
+  segment: "notifications",
+} as const;
 
 export const buyerSettingsNavItem = {
   href: "/dashboard/settings",
@@ -22,10 +38,9 @@ export const buyerSettingsNavItem = {
   segment: "settings",
 } as const;
 
-/** @deprecated Prefer buyerHomeNavItems + buyerWorkspaceNavItems */
+/** @deprecated Prefer buyerMenuNavItems + buyerWorkspaceNavItems */
 export const buyerNavItems = [
   ...buyerWorkspaceNavItems,
-  buyerHomeNavItems[0],
   buyerSettingsNavItem,
 ] as const;
 

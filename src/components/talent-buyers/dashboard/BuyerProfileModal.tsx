@@ -26,7 +26,7 @@ function roleLabel(role: DashboardProfile["buyerRole"]) {
 }
 
 const fieldClass =
-  "w-full rounded-full border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none transition-colors focus:border-white/30 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none disabled:opacity-55";
+  "w-full rounded-full border border-white/10 bg-white/[0.06] px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none transition-colors focus:border-white/35 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none disabled:opacity-55";
 
 export function BuyerProfileModal({
   open,
@@ -179,7 +179,7 @@ export function BuyerProfileModal({
         <div className="flex items-center gap-4">
           <button
             type="button"
-            className="relative size-20 shrink-0 overflow-hidden rounded-full bg-[#0c2a26] ring-1 ring-white/15 transition hover:ring-white/35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+            className="relative size-20 shrink-0 overflow-hidden rounded-full bg-[var(--buyer-accent-fill)] ring-1 ring-white/15 transition hover:ring-white/35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
             onClick={() => fileInputRef.current?.click()}
             aria-label="Change profile photo"
             disabled={isUploadingAvatar}
@@ -208,7 +208,7 @@ export function BuyerProfileModal({
             <p className="truncate text-sm text-white/55">{subtitle}</p>
             <button
               type="button"
-              className="mt-2 text-sm text-[#2dd4bf] transition hover:text-[#5eead4]"
+              className="mt-2 text-sm text-[var(--accent)] transition hover:text-[color-mix(in_oklab,var(--accent),white_20%)]"
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploadingAvatar}
             >

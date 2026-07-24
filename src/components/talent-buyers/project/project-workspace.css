@@ -6,7 +6,7 @@
   flex-direction: row;
   gap: 0;
   width: 100%;
-  background: #0a0a0a;
+  background: var(--buyer-bg, #000);
 }
 
 .project-workspace__rail {
@@ -16,8 +16,8 @@
   flex-direction: column;
   min-height: 0;
   align-self: stretch;
-  border-right: 1px solid #262626;
-  background: #0f0f0f;
+  border-right: 1px solid var(--buyer-line, rgb(255 255 255 / 0.12));
+  background: var(--buyer-surface, #111);
 }
 
 .project-workspace__cover {
@@ -25,7 +25,7 @@
   flex-shrink: 0;
   aspect-ratio: 4 / 3;
   overflow: hidden;
-  border-bottom: 1px solid #262626;
+  border-bottom: 1px solid var(--buyer-line, rgb(255 255 255 / 0.12));
 }
 
 .project-workspace__cover-footer {
@@ -399,7 +399,7 @@
 }
 
 .project-workspace__edit-btn:focus-visible {
-  outline: 2px solid #2dd4bf;
+  outline: 2px solid var(--buyer-focus-ring, rgb(0 170 204 / 0.65));
   outline-offset: 2px;
 }
 
@@ -648,7 +648,7 @@
   .project-workspace__rail {
     width: 100%;
     border-right: none;
-    border-bottom: 1px solid #262626;
+    border-bottom: 1px solid var(--buyer-line, rgb(255 255 255 / 0.12));
   }
 
   .project-workspace__cover {

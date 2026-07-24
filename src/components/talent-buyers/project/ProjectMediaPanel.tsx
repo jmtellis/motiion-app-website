@@ -175,9 +175,9 @@ export function ProjectMediaPanel({
           ) : (
             <>
               {isCoverPending ? (
-                <Loader2 className="size-8 animate-spin text-[#2dd4bf]" aria-hidden />
+                <Loader2 className="size-8 animate-spin text-[var(--accent)]" aria-hidden />
               ) : (
-                <ImagePlus className="size-8 text-[#2dd4bf]" aria-hidden />
+                <ImagePlus className="size-8 text-[var(--accent)]" aria-hidden />
               )}
               <p className="text-sm font-medium text-white/85">Upload cover image</p>
               <p className="text-xs text-white/45">JPG, PNG, or WebP up to 12 MB</p>

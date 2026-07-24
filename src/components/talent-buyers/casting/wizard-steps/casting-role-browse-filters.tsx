@@ -127,7 +127,7 @@ export function RoleAttributeDisclosure({
   );
 }
 
-function AnyMultiChipField({
+export function AnyMultiChipField({
   options,
   selected,
   onChange,
@@ -174,7 +174,7 @@ function AnyMultiChipField({
   );
 }
 
-function SearchableMultiSelect({
+export function SearchableMultiSelect({
   options,
   selected,
   onChange,

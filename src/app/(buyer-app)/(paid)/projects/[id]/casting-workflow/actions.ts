@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { trackServerEvent } from "@/lib/analytics/track-server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { requireIndustryIdentityVerified } from "@/lib/talent-buyers/require-industry-identity";
 import {
   candidateStatusToSubmissionStatus,
   isCastingStatusTransitionAllowed,
@@ -109,6 +110,11 @@ export async function publishCastingFromBreakdown(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "You must be signed in." };
+
+  const identity = await requireIndustryIdentityVerified(user.id);
+  if (!identity.ok) {
+    return { ok: false, error: identity.error };
+  }
 
   const access = await requireProjectAccess(projectId, user.id);
   if (!access.ok) return { ok: false, error: access.error };

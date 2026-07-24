@@ -54,7 +54,10 @@ export function MarketingPageLayout({
   const scrollContent = (
     <>
       <MarketingBodySurface dark={darkTheme} />
-      <div id="top" className={darkTheme ? "bg-[#0a0a0a]" : "bg-[var(--paper)]"}>
+      <div
+        id="top"
+        className={darkTheme ? "marketing-atmosphere" : "bg-[var(--paper)]"}
+      >
         <BrowserThemeColor color={browserThemeColor} />
         <HomeMarketingHeader
           activeTab={homeHeader ? null : activeTab}
@@ -65,7 +68,11 @@ export function MarketingPageLayout({
         {cleanHero ? (
           <section
             className={`relative w-full overflow-hidden border-b ${headerPullClass} ${
-              darkTheme && !heroVideo ? "border-[#262626] bg-[#0a0a0a]" : darkTheme ? "border-[#262626]" : "border-[var(--line)] bg-[var(--paper)]"
+              darkTheme && !heroVideo
+                ? "marketing-atmosphere--lines border-[#262626] bg-transparent"
+                : darkTheme
+                  ? "border-[#262626] bg-transparent"
+                  : "border-[var(--line)] bg-[var(--paper)]"
             }`}
           >
             {heroVideo ? (
@@ -81,7 +88,7 @@ export function MarketingPageLayout({
                   <div
                     className="absolute inset-0"
                     style={{
-                      background: `linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.35) 50%, ${MARKETING_DARK.bg} 92%)`,
+                      background: `linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.35) 50%, ${MARKETING_DARK.bg} 92%), radial-gradient(ellipse 70% 50% at 90% 100%, rgb(0 170 204 / 0.1) 0%, transparent 60%)`,
                     }}
                   />
                 </div>
@@ -142,7 +149,7 @@ export function MarketingPageLayout({
 
   const page = (
     <FooterRevealShell
-      surfaceClass={darkTheme ? "bg-[#0a0a0a]" : "bg-[var(--paper)]"}
+      surfaceClass={darkTheme ? "bg-[#111111]" : "bg-[var(--paper)]"}
       footerBand={
         darkTheme ? (
           <HomeSignupSection

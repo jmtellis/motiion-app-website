@@ -29,7 +29,7 @@ export default async function CalendarNewActivityPage({
         initialDraft={draft}
         mode="create"
         initialConnectStatus={connect.status ?? null}
-        closeHref={projectId ? `/projects/${projectId}` : "/calendar"}
+        closeHref={projectId ? `/projects/${projectId}` : "/events"}
       />
     </BuyerAppPage>
   );

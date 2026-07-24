@@ -22,7 +22,7 @@ export function ProjectCard({
     return (
       <Link
         href={`/projects/${project.id}`}
-        className="group relative block min-h-[320px] overflow-hidden rounded-xl border border-[#262626] text-white transition-colors hover:border-[#3a3a3a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2dd4bf]"
+        className="group relative block min-h-[320px] overflow-hidden rounded-xl border border-[var(--buyer-line)] text-white transition-colors hover:border-white/18 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
       >
         <BuyerCoverImage
           src={coverSrc}
@@ -39,7 +39,7 @@ export function ProjectCard({
           </span>
 
           <div>
-            <p className="font-mono text-xs font-medium tracking-[0.08em] text-[#2dd4bf] uppercase">
+            <p className="font-mono text-xs font-medium tracking-[0.08em] text-[var(--accent)] uppercase">
               {getProjectTypeLabel(project.projectType)}
             </p>
             <h3 className="mt-2 text-xl font-semibold tracking-tight text-white/92 group-hover:text-[var(--accent)]">

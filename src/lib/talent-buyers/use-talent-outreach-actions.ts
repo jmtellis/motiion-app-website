@@ -8,6 +8,8 @@ import {
   contactTalentUser,
   requestTalentSizeSheet,
 } from "@/app/(buyer-app)/(paid)/talent/actions";
+import { useIndustryIdentityGate } from "@/components/talent-buyers/IndustryIdentityGate";
+import { isIndustryIdentityRequiredError } from "@/lib/talent-buyers/industry-identity-errors";
 
 type UseTalentOutreachActionsOptions = {
   talentUserId: string | undefined;
@@ -28,6 +30,7 @@ export function useTalentOutreachActions({
 }: UseTalentOutreachActionsOptions) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const { runWithIdentity, gate: identityGate } = useIndustryIdentityGate("contact");
   const [availabilityModalOpen, setAvailabilityModalOpen] = useState(false);
   const [sizeSheetModalOpen, setSizeSheetModalOpen] = useState(false);
   const [availabilityTitle, setAvailabilityTitle] = useState("Availability check");
@@ -54,24 +57,39 @@ export function useTalentOutreachActions({
   const handleMessage = useCallback(() => {
     if (!talentUserId) return;
 
-    startTransition(async () => {
-      const result = await contactTalentUser(
-        talentUserId,
-        projectId
-          ? { contextType: "project", contextId: projectId, projectTitle }
-          : undefined,
-      );
-      if (result.ok && result.conversationId) {
-        router.push(`/messages?conversation=${result.conversationId}`);
-        return;
-      }
-      if (result.ok && result.pendingRequest) {
-        onSuccess?.(`Message request sent to ${displayName}`);
-        return;
-      }
-      onError?.(result.error ?? "Could not start a conversation.");
+    runWithIdentity(() => {
+      startTransition(async () => {
+        const result = await contactTalentUser(
+          talentUserId,
+          projectId
+            ? { contextType: "project", contextId: projectId, projectTitle }
+            : undefined,
+        );
+        if (result.ok && result.conversationId) {
+          router.push(`/messages?conversation=${result.conversationId}`);
+          return;
+        }
+        if (result.ok && result.pendingRequest) {
+          onSuccess?.(`Message request sent to ${displayName}`);
+          return;
+        }
+        if (isIndustryIdentityRequiredError(result)) {
+          onError?.(result.error ?? "Verify your identity to contact talent.");
+          return;
+        }
+        onError?.(result.error ?? "Could not start a conversation.");
+      });
     });
-  }, [displayName, onError, onSuccess, projectId, projectTitle, router, talentUserId]);
+  }, [
+    displayName,
+    onError,
+    onSuccess,
+    projectId,
+    projectTitle,
+    router,
+    runWithIdentity,
+    talentUserId,
+  ]);
 
   const openAvailabilityModal = useCallback(() => {
     setAvailabilityProject(projectTitle);
@@ -137,5 +155,6 @@ export function useTalentOutreachActions({
     openSizeSheetModal,
     handleAvailabilitySubmit,
     handleSizeSheetSubmit,
+    identityGate,
   };
 }

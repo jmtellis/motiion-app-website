@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 
 import { MessengerShell } from "@/components/messaging/MessengerShell";
 import { BuyerAppPage } from "@/components/talent-buyers/dashboard/BuyerAppPage";
-import { BuyerPageChromeRegistrar } from "@/components/talent-buyers/dashboard/BuyerPageChromeRegistrar";
 import { fetchInboxConversations } from "@/lib/app/inbox";
 import { requireHiringAccount } from "@/lib/auth/session";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -43,7 +42,6 @@ export default async function BuyerMessagesPage({
 
   return (
     <BuyerAppPage fullWidth className="buyer-messages-page !space-y-0 flex min-h-0 flex-1 flex-col">
-      <BuyerPageChromeRegistrar title="Inbox" />
       <MessengerShell
         conversations={conversations}
         currentUserId={profile.id}

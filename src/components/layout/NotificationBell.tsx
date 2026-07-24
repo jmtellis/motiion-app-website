@@ -1,18 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bell } from "lucide-react";
 
-import { createClientSupabaseClient } from "@/lib/supabase/client";
-
-type NotificationRow = {
-  id: string;
-  type: string;
-  title: string | null;
-  body: string | null;
-  read_at: string | null;
-  created_at: string;
-};
+import { useBuyerNotifications } from "@/hooks/use-buyer-notifications";
 
 function formatWhen(value: string) {
   const date = new Date(value);
@@ -20,48 +11,18 @@ function formatWhen(value: string) {
   return date.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
-export function NotificationBell({ userId }: { userId: string }) {
+export function NotificationBell({
+  userId,
+  className,
+  align = "right",
+}: {
+  userId: string;
+  className?: string;
+  align?: "left" | "right";
+}) {
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const unreadCount = notifications.filter((row) => !row.read_at).length;
-
-  const loadNotifications = useCallback(async () => {
-    const supabase = createClientSupabaseClient();
-    if (!supabase) return;
-
-    const { data } = await supabase
-      .from("notifications")
-      .select("id, type, title, body, read_at, created_at")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(15);
-
-    if (data) setNotifications(data);
-  }, [userId]);
-
-  useEffect(() => {
-    void loadNotifications();
-  }, [loadNotifications]);
-
-  useEffect(() => {
-    const supabase = createClientSupabaseClient();
-    if (!supabase) return;
-
-    const channel = supabase
-      .channel(`notifications-${userId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
-        () => void loadNotifications(),
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [userId, loadNotifications]);
+  const { notifications, unreadCount, markAllRead } = useBuyerNotifications(userId);
 
   useEffect(() => {
     if (!open) return;
@@ -73,18 +34,6 @@ export function NotificationBell({ userId }: { userId: string }) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  async function markAllRead() {
-    const supabase = createClientSupabaseClient();
-    if (!supabase) return;
-
-    const unreadIds = notifications.filter((row) => !row.read_at).map((row) => row.id);
-    if (!unreadIds.length) return;
-
-    const now = new Date().toISOString();
-    setNotifications((current) => current.map((row) => (row.read_at ? row : { ...row, read_at: now })));
-    await supabase.from("notifications").update({ read_at: now }).in("id", unreadIds);
-  }
-
   function toggleOpen() {
     setOpen((current) => {
       const next = !current;
@@ -94,7 +43,7 @@ export function NotificationBell({ userId }: { userId: string }) {
   }
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className={`relative ${className ?? ""}`}>
       <button
         type="button"
         onClick={toggleOpen}
@@ -111,7 +60,11 @@ export function NotificationBell({ userId }: { userId: string }) {
       </button>
 
       {open ? (
-        <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-[14px] border border-[#262626] bg-[#151515]">
+        <div
+          className={`absolute z-50 mt-2 w-80 overflow-hidden rounded-[14px] border border-[#262626] bg-[#151515] ${
+            align === "left" ? "left-0" : "right-0"
+          }`}
+        >
           <div className="border-b border-[#262626] px-4 py-3">
             <p className="text-sm font-semibold text-[#fafafa]">Notifications</p>
           </div>

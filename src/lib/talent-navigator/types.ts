@@ -18,6 +18,8 @@ export type Talent = {
   represented?: boolean;
   gender?: string;
   ethnicity?: string;
+  hairColor?: string;
+  eyeColor?: string;
   recentlyActive?: boolean;
   newToMotiion?: boolean;
   recommended?: boolean;
@@ -50,11 +52,24 @@ export type RelationshipMatchMode = "all" | "any";
 export type TalentNavigatorFilters = {
   keyword: string;
   location: string;
+  /** Multi-select locations; `location` stays as the first selected for legacy paths. */
+  locations: string[];
   representation: string;
   agency: string;
+  /** Multi-select agencies; `agency` stays as the first selected for legacy paths. */
+  agencies: string[];
+  /** Primary style/genre for legacy search paths (first of `genres`). */
   style: string;
+  /** Multi-select genres aligned with casting role browse filters. */
+  genres: string[];
+  /** Multi-select skills aligned with casting role browse filters. */
+  skills: string[];
   gender: string;
   ethnicity: string;
+  /** Multi-select ethnicities aligned with casting role attribute selection. */
+  ethnicities: string[];
+  hairColors: string[];
+  eyeColors: string[];
   height: string;
   availability: string;
   unionStatus: string;
@@ -76,11 +91,18 @@ export type TalentNavigatorFilters = {
 export const EMPTY_NAVIGATOR_FILTERS: TalentNavigatorFilters = {
   keyword: "",
   location: "",
+  locations: [],
   representation: "",
   agency: "",
+  agencies: [],
   style: "",
+  genres: [],
+  skills: [],
   gender: "",
   ethnicity: "",
+  ethnicities: [],
+  hairColors: [],
+  eyeColors: [],
   height: "",
   availability: "",
   unionStatus: "",
@@ -103,6 +125,8 @@ export type TalentNavigatorInitialData = {
   talent: Talent[];
   usingFallbackData: boolean;
   source: NavigatorDataSource;
+  /** Per-visit salt so unfiltered Discover rows reshuffle without hydration mismatch. */
+  shuffleSalt?: string;
 };
 
 export type SavedSearch = {

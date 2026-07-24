@@ -37,7 +37,9 @@ export function MarketingDialog({
     dialog.addEventListener("cancel", handleCancel);
     return () => {
       dialog.removeEventListener("cancel", handleCancel);
-      if (dialog.open) dialog.close();
+      // Intentionally do not call dialog.close() here. Under React Strict Mode
+      // (dev), effect cleanup + remount would fire the native `close` event and
+      // bounce `onClose` back to the parent, unmounting the modal immediately.
     };
   }, [onClose]);
 
@@ -47,7 +49,6 @@ export function MarketingDialog({
       aria-labelledby={titleId}
       aria-describedby={description ? descriptionId : undefined}
       className="marketing-dialog fixed inset-0 z-[200] m-0 h-full max-h-none w-full max-w-none border-0 bg-transparent p-4 open:flex open:items-center open:justify-center sm:p-6"
-      onClose={onClose}
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}

@@ -19,8 +19,8 @@ export function DashboardScrollLock() {
       bodyHeight: body.style.height,
     };
 
-    html.style.backgroundColor = "#0a0a0a";
-    body.style.backgroundColor = "#0a0a0a";
+    html.style.backgroundColor = "#000000";
+    body.style.backgroundColor = "#000000";
     html.style.overscrollBehavior = "none";
     body.style.overscrollBehavior = "none";
     html.style.overflow = "hidden";

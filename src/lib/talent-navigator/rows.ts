@@ -1,3 +1,5 @@
+import { profileMatchesHeightFilter } from "@/lib/talent-navigator/height-filter";
+
 import type { Talent, TalentNavigatorFilters, TalentRow } from "./types";
 
 function normalize(value: string) {
@@ -20,16 +22,7 @@ function matchesKeyword(talent: Talent, keyword: string) {
 }
 
 function matchesHeight(talent: Talent, heightFilter: string) {
-  if (!heightFilter) return true;
-  const h = talent.height ?? "";
-  if (heightFilter === "Under 5'6\"") return h.includes("5'3") || h.includes("5'4") || h.includes("5'5");
-  if (heightFilter === "5'6\" – 5'9\"") {
-    return h.includes("5'6") || h.includes("5'7") || h.includes("5'8") || h.includes("5'9");
-  }
-  if (heightFilter === "5'10\" and above") {
-    return h.includes("5'10") || h.includes("5'11") || h.includes("6'");
-  }
-  return true;
+  return profileMatchesHeightFilter(talent.height, heightFilter);
 }
 
 function matchesSubtype(talent: Talent, subtype: string) {
@@ -47,30 +40,91 @@ function matchesSubtype(talent: Talent, subtype: string) {
 }
 
 export function filterTalentPool(talent: Talent[], filters: TalentNavigatorFilters): Talent[] {
+  const genres = filters.genres?.length ? filters.genres : filters.style ? [filters.style] : [];
+  const skills = filters.skills ?? [];
+  const ethnicities = filters.ethnicities?.length
+    ? filters.ethnicities
+    : filters.ethnicity
+      ? [filters.ethnicity]
+      : [];
+  const hairColors = filters.hairColors ?? [];
+  const eyeColors = filters.eyeColors ?? [];
+
   return talent.filter((item) => {
     if (!matchesKeyword(item, filters.keyword)) return false;
     if (!matchesSubtype(item, filters.subtype)) return false;
 
-    if (filters.location && !(item.location ?? "").toLowerCase().includes(normalize(filters.location))) {
-      return false;
+    const locations = filters.locations?.length
+      ? filters.locations
+      : filters.location
+        ? [filters.location]
+        : [];
+    if (locations.length) {
+      const itemLocation = normalize(item.location ?? "");
+      if (!itemLocation) return false;
+      const matched = locations.some((location) => {
+        const wanted = normalize(location);
+        return itemLocation.includes(wanted) || wanted.includes(itemLocation);
+      });
+      if (!matched) return false;
     }
 
     if (filters.representation === "Represented" && !item.represented) return false;
     if (filters.representation === "Independent" && item.represented) return false;
 
-    if (filters.agency && !(item.agency ?? "").toLowerCase().includes(normalize(filters.agency))) {
-      return false;
+    const agencies = filters.agencies?.length
+      ? filters.agencies
+      : filters.agency
+        ? [filters.agency]
+        : [];
+    if (agencies.length) {
+      const itemAgency = normalize(item.agency ?? "");
+      if (!itemAgency) return false;
+      const matched = agencies.some((agency) => {
+        const wanted = normalize(agency);
+        return itemAgency.includes(wanted) || wanted.includes(itemAgency);
+      });
+      if (!matched) return false;
     }
 
-    if (
-      filters.style &&
-      !item.styles.some((style) => style.toLowerCase().includes(normalize(filters.style)))
-    ) {
-      return false;
+    if (genres.length) {
+      const haystack = item.styles.map(normalize);
+      const matched = genres.some((genre) =>
+        haystack.some((style) => style.includes(normalize(genre)) || normalize(genre).includes(style)),
+      );
+      if (!matched) return false;
+    }
+
+    if (skills.length) {
+      const haystack = item.styles.map(normalize);
+      const matched = skills.some((skill) =>
+        haystack.some((style) => style.includes(normalize(skill)) || normalize(skill).includes(style)),
+      );
+      if (!matched) return false;
     }
 
     if (filters.gender && item.gender !== filters.gender) return false;
-    if (filters.ethnicity && item.ethnicity !== filters.ethnicity) return false;
+
+    if (ethnicities.length) {
+      const itemEthnicity = normalize(item.ethnicity ?? "");
+      if (!itemEthnicity) return false;
+      const matched = ethnicities.some((ethnicity) => {
+        const wanted = normalize(ethnicity);
+        return itemEthnicity.includes(wanted) || wanted.includes(itemEthnicity);
+      });
+      if (!matched) return false;
+    }
+
+    if (hairColors.length) {
+      const hair = normalize(item.hairColor ?? "");
+      if (!hair || !hairColors.some((color) => hair.includes(normalize(color)))) return false;
+    }
+
+    if (eyeColors.length) {
+      const eyes = normalize(item.eyeColor ?? "");
+      if (!eyes || !eyeColors.some((color) => eyes.includes(normalize(color)))) return false;
+    }
+
     if (filters.height && !matchesHeight(item, filters.height)) return false;
     if (filters.availability && item.availability !== filters.availability) return false;
     if (filters.unionStatus && item.unionStatus !== filters.unionStatus) return false;
@@ -144,30 +198,48 @@ const DEFAULT_ROW_DEFS: Array<{ id: string; label: string; description?: string 
     label: "New to Motiion",
     description: "Fresh profiles joining the platform",
   },
-  { id: "commercial", label: "Commercial Dancers" },
-  { id: "hip-hop", label: "Hip Hop Dancers" },
-  { id: "contemporary", label: "Contemporary Dancers" },
-  { id: "represented", label: "Represented Talent" },
+  { id: "commercial", label: "Commercial" },
+  { id: "hip-hop", label: "Hip Hop" },
+  { id: "contemporary", label: "Contemporary" },
+  { id: "represented", label: "Represented" },
   { id: "available", label: "Available This Month" },
   { id: "los-angeles", label: "Los Angeles" },
   { id: "new-york", label: "New York" },
 ];
 
-function shuffle<T>(items: T[]): T[] {
+function hashSeed(input: string): number {
+  let hash = 2166136261;
+  for (let i = 0; i < input.length; i += 1) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0 || 1;
+}
+
+/** Deterministic shuffle so SSR and client hydration produce the same rows. */
+function seededShuffle<T>(items: T[], seed: number): T[] {
   const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
+  let state = seed || 1;
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    const j = state % (i + 1);
+    [copy[i], copy[j]] = [copy[j]!, copy[i]!];
   }
   return copy;
 }
 
 const DEFAULT_ROW_SIZE = 16;
 
-function sampleRowTalent(pool: Talent[], size: number): Talent[] {
+function sampleRowTalent(
+  pool: Talent[],
+  size: number,
+  rowKey: string,
+  shuffleSalt = "",
+): Talent[] {
   if (pool.length === 0 || size <= 0) return [];
 
-  const shuffled = shuffle(pool);
+  const seed = hashSeed(`${shuffleSalt}:${rowKey}:${pool.map((item) => item.id).join(",")}`);
+  const shuffled = seededShuffle(pool, seed);
   const result: Talent[] = [];
   const usedInRow = new Set<string>();
 
@@ -188,7 +260,7 @@ function sampleRowTalent(pool: Talent[], size: number): Talent[] {
   return result;
 }
 
-function defaultRows(talent: Talent[]): TalentRow[] {
+function defaultRows(talent: Talent[], shuffleSalt = ""): TalentRow[] {
   const pool = uniqueById(talent);
   if (pool.length === 0) return [];
 
@@ -198,7 +270,7 @@ function defaultRows(talent: Talent[]): TalentRow[] {
     id: def.id,
     label: def.label,
     description: def.description,
-    talent: sampleRowTalent(pool, rowSize),
+    talent: sampleRowTalent(pool, rowSize, def.id, shuffleSalt),
   }));
 }
 
@@ -206,12 +278,19 @@ function hasActiveFilters(filters: TalentNavigatorFilters) {
   return Boolean(
     filters.keyword ||
       filters.location ||
+      filters.locations?.length ||
       filters.representation ||
       filters.agency ||
+      filters.agencies?.length ||
       filters.style ||
+      filters.genres?.length ||
+      filters.skills?.length ||
       filters.subtype ||
       filters.gender ||
       filters.ethnicity ||
+      filters.ethnicities?.length ||
+      filters.hairColors?.length ||
+      filters.eyeColors?.length ||
       filters.height ||
       filters.availability ||
       filters.unionStatus ||
@@ -222,14 +301,14 @@ function hasActiveFilters(filters: TalentNavigatorFilters) {
 export function buildTalentRows(
   talent: Talent[],
   filters: TalentNavigatorFilters,
-  options?: { prefiltered?: boolean },
+  options?: { prefiltered?: boolean; shuffleSalt?: string },
 ): TalentRow[] {
   const filtered = options?.prefiltered ? talent : filterTalentPool(talent, filters);
 
   if (filtered.length === 0) return [];
 
   if (!hasActiveFilters(filters)) {
-    return defaultRows(filtered);
+    return defaultRows(filtered, options?.shuffleSalt ?? "");
   }
 
   let rows: TalentRow[];
@@ -237,13 +316,13 @@ export function buildTalentRows(
   if (filters.representation === "Represented") {
     const byAgency = groupByField(filtered, (t) => t.agency, "agency");
     rows = byAgency.length ? byAgency : defaultFilteredFallback(filtered);
-  } else if (filters.agency) {
+  } else if (filters.agency || filters.agencies?.length) {
     const byStyle = groupByField(filtered, (t) => t.styles[0], "style");
     rows = byStyle.length ? byStyle : defaultFilteredFallback(filtered);
   } else if (filters.style) {
     const byLocation = groupByField(filtered, (t) => t.location?.split(",")[0], "location");
     rows = byLocation.length ? byLocation : defaultFilteredFallback(filtered);
-  } else if (filters.location) {
+  } else if (filters.location || filters.locations?.length) {
     const byStyle = groupByField(filtered, (t) => t.styles[0], "style");
     rows = byStyle.length ? byStyle : defaultFilteredFallback(filtered);
   } else if (filters.availability) {
@@ -308,15 +387,26 @@ export function buildFilterSummary(filters: TalentNavigatorFilters, rows: Talent
     parts.push("professional dancers");
   }
 
-  if (filters.location) parts.unshift(`in ${filters.location.split(",")[0]}`);
+  if (filters.locations?.length) {
+    parts.unshift(
+      `in ${filters.locations.map((location) => location.split(",")[0]).join(" / ")}`,
+    );
+  } else if (filters.location) {
+    parts.unshift(`in ${filters.location.split(",")[0]}`);
+  }
   if (filters.style) parts.unshift(`${filters.style.toLowerCase()} dancers`);
-  if (filters.agency) parts.unshift(`from ${filters.agency}`);
+  if (filters.agencies?.length) {
+    parts.unshift(`from ${filters.agencies.join(" / ")}`);
+  } else if (filters.agency) {
+    parts.unshift(`from ${filters.agency}`);
+  }
   if (filters.availability) parts.unshift(`${filters.availability.toLowerCase()}`);
 
   let grouping = "recommendation";
   if (filters.representation === "Represented") grouping = "agency";
-  else if (filters.agency || filters.style) grouping = filters.agency ? "style" : "location";
-  else if (filters.location) grouping = "style";
+  else if (filters.agency || filters.agencies?.length || filters.style) {
+    grouping = filters.agency || filters.agencies?.length ? "style" : "location";
+  } else if (filters.location || filters.locations?.length) grouping = "style";
   else if (filters.availability) grouping = "style or location";
   else if (rows[0]?.label && !hasActiveFilters(filters)) grouping = "recommendation";
 

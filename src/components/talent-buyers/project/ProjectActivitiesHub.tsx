@@ -48,7 +48,7 @@ export function ProjectActivitiesHub({
                     {labelFromSnake(activity.eventType)} · {activity.attendeeCount} attendees
                   </p>
                 </div>
-                <Link href={`/calendar/${activity.id}`} className="text-sm text-[#2dd4bf]">
+                <Link href={`/calendar/${activity.id}`} className="text-sm text-[var(--accent)]">
                   Manage
                 </Link>
               </div>

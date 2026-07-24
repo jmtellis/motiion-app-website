@@ -242,6 +242,7 @@ export function CollectionDetail({
             </>
           ) : (
             <LibraryEmptyState
+              variant="talent"
               title="This collection is empty"
               body="Add saved talent to start building this collection."
               primaryLabel="Add Talent"

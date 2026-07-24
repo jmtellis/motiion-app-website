@@ -20,6 +20,7 @@ import {
   ActivityLocationField,
   ActivityTextArea,
   ActivityTextInput,
+  PillMultiSelect,
   PillSelect,
   StringListEditor,
 } from "@/components/talent-buyers/activities/activity-composer-fields";
@@ -29,14 +30,19 @@ import {
 } from "@/lib/talent-buyers/activities/defaults";
 import {
   ACTIVITY_CREATE_REGISTRY,
+  CLASS_CATEGORY_HIGH_LEVELS,
   CLASS_FOCUSES,
   CLASS_INTENSITIES,
   CLASS_SKILL_LEVELS,
   EVENT_TYPES,
+  SESSION_LEVELS,
+  SESSION_TYPES,
   SESSION_VIBES,
+  classTypeOptionsForHighLevel,
   stepLabel,
   type ActivityComposerStepId,
 } from "@/lib/talent-buyers/activities/registry";
+import { ROLE_GENRE_OPTIONS } from "@/lib/talent-navigator/filter-options";
 import type {
   ActivityDraft,
   ActivityType,
@@ -61,7 +67,7 @@ export function ActivityCreateWizard({
   mode = "create",
   activityId,
   initialConnectStatus = null,
-  closeHref = "/calendar",
+  closeHref = "/events",
 }: Props) {
   const router = useRouter();
   const [draft, setDraft] = useState(initialDraft);
@@ -179,7 +185,7 @@ export function ActivityCreateWizard({
                   onClick={() => setStepIndex(index)}
                   className={`w-full rounded-xl px-3 py-2 text-left text-sm transition ${
                     index === stepIndex
-                      ? "bg-[#2dd4bf]/12 text-[#2dd4bf]"
+                      ? "bg-[color-mix(in_oklab,var(--accent)_12%,transparent)] text-[var(--accent)]"
                       : "text-white/55 hover:bg-white/5 hover:text-white"
                   }`}
                 >
@@ -306,7 +312,7 @@ function TypeStep({
             onClick={() => onSelect(option.type)}
             className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
               selected
-                ? "border-[#2dd4bf]/45 bg-[#2dd4bf]/10"
+                ? "border-[color-mix(in_oklab,var(--accent)_45%,transparent)] bg-[color-mix(in_oklab,var(--accent)_10%,transparent)]"
                 : "border-white/12 bg-black/20 hover:border-white/25"
             }`}
           >
@@ -326,6 +332,8 @@ function BasicsStep({
   draft: ActivityDraft;
   onChange: (draft: ActivityDraft) => void;
 }) {
+  const classTypeOptions = classTypeOptionsForHighLevel(draft.category);
+
   return (
     <div className="space-y-4">
       <ActivityField label="Title">
@@ -348,8 +356,39 @@ function BasicsStep({
           label="Event type"
           options={EVENT_TYPES}
           value={draft.subcategory}
-          onChange={(value) => onChange({ ...draft, subcategory: value })}
+          onChange={(value) => onChange({ ...draft, subcategory: value, category: "" })}
         />
+      ) : null}
+      {draft.type === "class" ? (
+        <>
+          <PillSelect
+            label="Category"
+            options={CLASS_CATEGORY_HIGH_LEVELS}
+            value={draft.category}
+            onChange={(category) => {
+              const allowed = classTypeOptionsForHighLevel(category);
+              const subcategory = (allowed as readonly string[]).includes(draft.subcategory)
+                ? draft.subcategory
+                : "";
+              onChange({ ...draft, category, subcategory });
+            }}
+          />
+          {classTypeOptions.length > 0 ? (
+            <PillSelect
+              label="Class type"
+              options={classTypeOptions}
+              value={draft.subcategory}
+              onChange={(subcategory) => onChange({ ...draft, subcategory })}
+            />
+          ) : null}
+          <PillMultiSelect
+            label="Genres"
+            options={ROLE_GENRE_OPTIONS}
+            values={draft.genres}
+            max={5}
+            onChange={(genres) => onChange({ ...draft, genres })}
+          />
+        </>
       ) : null}
       {draft.type !== "event" ? (
         <div className="grid grid-cols-2 gap-3">
@@ -589,7 +628,7 @@ function TicketsStep({
           type="checkbox"
           checked={draft.isPaid}
           onChange={(event) => onChange({ ...draft, isPaid: event.target.checked })}
-          className="size-4 accent-[#2dd4bf]"
+          className="size-4 accent-[var(--accent)]"
         />
       </label>
 
@@ -680,7 +719,7 @@ function TicketsStep({
                       }}
                       className={`rounded-full border px-3 py-1.5 text-sm ${
                         ticket.accessMode === mode.id
-                          ? "border-[#2dd4bf]/45 bg-[#2dd4bf]/12 text-[#2dd4bf]"
+                          ? "border-[color-mix(in_oklab,var(--accent)_45%,transparent)] bg-[color-mix(in_oklab,var(--accent)_12%,transparent)] text-[var(--accent)]"
                           : "border-white/12 text-white/60"
                       }`}
                     >
@@ -744,7 +783,7 @@ function TicketsStep({
                               };
                               onChange({ ...draft, ticketOptions });
                             }}
-                            className="accent-[#2dd4bf]"
+                            className="accent-[var(--accent)]"
                           />
                           {day.label || day.dayDate}
                         </label>
@@ -798,33 +837,31 @@ function ExperienceStep({
   if (draft.type === "session") {
     return (
       <div className="space-y-4">
-        <ActivityField label="Session type">
-          <ActivityTextInput
-            value={draft.sessionType}
-            placeholder="Open floor, freestyle, etc."
-            onChange={(event) => onChange({ ...draft, sessionType: event.target.value })}
-          />
-        </ActivityField>
-        <ActivityField label="Level">
-          <ActivityTextInput
-            value={draft.sessionLevel}
-            placeholder="All levels"
-            onChange={(event) => onChange({ ...draft, sessionLevel: event.target.value })}
-          />
-        </ActivityField>
+        <PillSelect
+          label="Session type"
+          options={SESSION_TYPES}
+          value={draft.sessionType}
+          onChange={(sessionType) => onChange({ ...draft, sessionType })}
+        />
+        <PillSelect
+          label="Level"
+          options={SESSION_LEVELS}
+          value={draft.sessionLevel}
+          onChange={(sessionLevel) => onChange({ ...draft, sessionLevel })}
+        />
         <PillSelect
           label="Vibe"
           options={SESSION_VIBES}
           value={draft.sessionVibe}
           onChange={(sessionVibe) => onChange({ ...draft, sessionVibe })}
         />
-        <ActivityField label="Genre">
-          <ActivityTextInput
-            value={draft.sessionGenre}
-            placeholder="Hip-hop, contemporary…"
-            onChange={(event) => onChange({ ...draft, sessionGenre: event.target.value })}
-          />
-        </ActivityField>
+        <PillMultiSelect
+          label="Genres"
+          options={ROLE_GENRE_OPTIONS}
+          values={draft.genres}
+          max={5}
+          onChange={(genres) => onChange({ ...draft, genres })}
+        />
       </div>
     );
   }
@@ -1031,7 +1068,7 @@ function SettingsPublishStep({
               type="checkbox"
               checked={draft.isPaid}
               onChange={(event) => onChange({ ...draft, isPaid: event.target.checked })}
-              className="size-4 accent-[#2dd4bf]"
+              className="size-4 accent-[var(--accent)]"
             />
           </label>
           {draft.isPaid ? (
@@ -1074,15 +1111,32 @@ function SettingsPublishStep({
       <label className="flex items-center justify-between rounded-2xl border border-white/10 px-4 py-3">
         <div>
           <p className="text-sm font-semibold text-white">Public listing</p>
-          <p className="text-xs text-white/50">Discoverable on Motiion when public</p>
+          <p className="text-xs text-white/50">
+            Public activities appear in the Motiion mobile app for other dancers to discover
+          </p>
         </div>
         <input
           type="checkbox"
           checked={draft.isPublic}
           onChange={(event) => onChange({ ...draft, isPublic: event.target.checked })}
-          className="size-4 accent-[#2dd4bf]"
+          className="size-4 accent-[var(--accent)]"
         />
       </label>
+
+      {draft.type === "session" ? (
+        <label className="flex items-center justify-between rounded-2xl border border-white/10 px-4 py-3">
+          <div>
+            <p className="text-sm font-semibold text-white">Attendees visible</p>
+            <p className="text-xs text-white/50">Let attendees see who else is coming</p>
+          </div>
+          <input
+            type="checkbox"
+            checked={draft.attendeesVisible}
+            onChange={(event) => onChange({ ...draft, attendeesVisible: event.target.checked })}
+            className="size-4 accent-[var(--accent)]"
+          />
+        </label>
+      ) : null}
 
       {draft.type !== "event" || step === "publish" ? (
         <ActivityField label="Co-organizer user IDs (optional, up to 5)">

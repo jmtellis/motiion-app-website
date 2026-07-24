@@ -18,8 +18,10 @@ import {
 
 import { EmptyState } from "@/components/talent-buyers/dashboard/EmptyState";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
+import { useIndustryIdentityGate } from "@/components/talent-buyers/IndustryIdentityGate";
 import { CreateCastingModal } from "@/components/talent-buyers/project/CreateCastingModal";
 import { useProjectWorkspace } from "@/components/talent-buyers/project/ProjectWorkspaceContext";
+import { isIndustryIdentityRequiredError } from "@/lib/talent-buyers/industry-identity-errors";
 
 import { CastingBreakdownDocumentView } from "./CastingBreakdownDocumentView";
 import { CastingPanelHeader } from "./CastingPanelHeader";
@@ -30,6 +32,7 @@ export function CastingBreakdownPanel() {
   const { projectId, castingWorkflow } = useProjectWorkspace();
   const [castingOpen, setCastingOpen] = useState(false);
   const [, startTransition] = useTransition();
+  const { runWithIdentity, gate } = useIndustryIdentityGate("publish");
 
   const workflow = castingWorkflow ?? {
     primaryCasting: null,
@@ -85,14 +88,21 @@ export function CastingBreakdownPanel() {
 
   function handlePrimaryAction(actionId: string) {
     if (actionId === "publish-casting" || actionId === "reopen-casting") {
-      startTransition(async () => {
-        const result = await publishCastingFromBreakdown(projectId);
-        if (!result.ok) {
-          showToast({ message: result.error ?? "Publish failed", variant: "error" });
-          return;
-        }
-        showToast({ message: "Casting published", variant: "success" });
-        router.refresh();
+      runWithIdentity(() => {
+        startTransition(async () => {
+          const result = await publishCastingFromBreakdown(projectId);
+          if (!result.ok) {
+            showToast({
+              message: isIndustryIdentityRequiredError(result)
+                ? (result.error ?? "Verify your identity to publish.")
+                : (result.error ?? "Publish failed"),
+              variant: "error",
+            });
+            return;
+          }
+          showToast({ message: "Casting published", variant: "success" });
+          router.refresh();
+        });
       });
       return;
     }
@@ -146,6 +156,7 @@ export function CastingBreakdownPanel() {
           router.refresh();
         }}
       />
+      {gate}
     </>
   );
 }

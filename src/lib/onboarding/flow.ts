@@ -5,6 +5,7 @@ import type {
 } from "@/types/onboarding";
 
 const talentSteps: OnboardingStep[] = [
+  "role",
   "account",
   "profile",
   "attributes",
@@ -21,7 +22,7 @@ const legacyStepToSection: Record<string, OnboardingStep> = {
   email: "account",
   dateOfBirth: "account",
   notifications: "account",
-  role: "account",
+  role: "role",
   headshots: "profile",
   resume: "profile",
   username: "profile",
@@ -43,6 +44,7 @@ const legacyStepToSection: Record<string, OnboardingStep> = {
 };
 
 export const onboardingSectionLabels: Record<OnboardingStep, string> = {
+  role: "Role",
   account: "Account",
   profile: "Profile",
   attributes: "Attributes",
@@ -56,7 +58,7 @@ export function normalizeOnboardingStep(step: string): OnboardingStep {
     return step as OnboardingStep;
   }
 
-  return legacyStepToSection[step] ?? "account";
+  return legacyStepToSection[step] ?? "role";
 }
 
 export function getOnboardingSteps(role: OnboardingRole | null): OnboardingStep[] {
@@ -64,11 +66,11 @@ export function getOnboardingSteps(role: OnboardingRole | null): OnboardingStep[
     return hiringSteps;
   }
 
-  if (role === "choreographer") {
+  if (role === "choreographer" || role === "dancer") {
     return talentSteps;
   }
 
-  return role === "dancer" ? talentSteps : ["account"];
+  return ["role"];
 }
 
 export function getStepIndex(step: OnboardingStep, role: OnboardingRole | null) {

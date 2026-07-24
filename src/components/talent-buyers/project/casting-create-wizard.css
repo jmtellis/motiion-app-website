@@ -5,7 +5,7 @@
   height: 100%;
   flex-direction: column;
   width: 100%;
-  background: #0a0a0a;
+  background: var(--buyer-bg, #000);
   --ink: #f5f5f3;
   --ink-soft: rgb(255 255 255 / 0.55);
   --line: rgb(255 255 255 / 0.12);
@@ -120,9 +120,14 @@
   max-width: none;
 }
 
-/* Title/progress chrome only — never pin the body or it can't constrain scroll. */
-.casting-create-wizard__form .signup-split-form > :first-child:not(.signup-split-form__body) {
-  flex-shrink: 0;
+/*
+ * Scroll owner is `.signup-split-form__main` (Lenis + onboarding CSS).
+ * Do not pin `__main` with flex-shrink: 0 — it must shrink so overflow-y engages.
+ * Footer is already flex-shrink: 0 below.
+ */
+.casting-create-wizard__form .signup-split-form__main {
+  min-height: 0;
+  flex: 1 1 auto;
 }
 
 .casting-create-wizard__form .signup-split-form__title {
@@ -182,12 +187,11 @@
   margin-top: 0;
 }
 
+/* Size to content — nested overflow here fights Lenis on `__main`. */
 .casting-create-wizard__form .signup-split-form__body {
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: 0 0 auto;
   margin-top: 2rem;
   padding-bottom: 2rem;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -196,13 +200,10 @@
 .casting-create-wizard__form--breakdown-review .signup-split-form__body {
   margin-top: 0;
   padding-bottom: 0;
-  overflow: hidden;
-  flex: 1 1 auto;
-  min-height: 0;
 }
 
 .casting-create-wizard__form--breakdown-review .casting-breakdown-review {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-height: 0;
 }
 
@@ -241,7 +242,7 @@
 
 .casting-create-wizard__form--with-progress .signup-split-form__footer::after {
   width: var(--casting-progress, 0%);
-  background: var(--accent, #2dd4bf);
+  background: var(--accent);
   transition: width 0.3s ease;
 }
 
@@ -503,7 +504,7 @@
   width: min(24rem, 100vw);
   height: 100%;
   border-left: 1px solid rgb(255 255 255 / 0.1);
-  background: #0a0a0a;
+  background: var(--buyer-bg, #000);
   box-shadow: -24px 0 48px rgb(0 0 0 / 0.35);
 }
 
@@ -1111,12 +1112,15 @@
 }
 
 .casting-breakdown-review--document {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-height: 0;
   gap: 0;
 }
 
 .casting-breakdown-review__sticky {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -1125,7 +1129,7 @@
   padding-bottom: 1.25rem;
   margin-bottom: 0.25rem;
   border-bottom: 1px solid rgb(255 255 255 / 0.1);
-  background: #0a0a0a;
+  background: var(--buyer-bg, #000);
 }
 
 .casting-breakdown-review__sticky-copy {
@@ -1141,7 +1145,7 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--accent, #2dd4bf);
+  color: var(--accent);
 }
 
 .casting-breakdown-review__title {
@@ -1177,21 +1181,17 @@
 }
 
 .casting-breakdown-review__scroll {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-height: 0;
-  overflow-y: auto;
-  /* Keep chips/actions clear of the scrollbar track. */
+  /* Scroll via `.signup-split-form__main`; keep inset for chip alignment. */
   padding-right: 1rem;
   padding-bottom: 1rem;
-  scrollbar-gutter: stable;
 }
 
 .casting-breakdown-review--editing {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-height: 0;
-  overflow-y: auto;
   padding-right: 1rem;
-  scrollbar-gutter: stable;
 }
 
 .casting-breakdown-review .casting-breakdown-doc {

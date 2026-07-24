@@ -15,8 +15,8 @@ function cn(...classes: Array<string | false | null | undefined>) {
 function audienceSectionSurface(altBackground: boolean, dark: boolean) {
   if (dark) {
     return altBackground
-      ? "border-[#262626] bg-[var(--graphite)]"
-      : "border-[#262626] bg-[var(--stage-black)]";
+      ? "marketing-atmosphere-band marketing-atmosphere-band--lines border-[#262626]"
+      : "marketing-atmosphere-clear border-[rgb(255_255_255/0.08)]";
   }
   return altBackground ? "border-[var(--line)] bg-[var(--tone)]" : "border-[var(--line)] bg-[var(--paper)]";
 }

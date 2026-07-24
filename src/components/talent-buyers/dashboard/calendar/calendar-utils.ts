@@ -169,7 +169,7 @@ export function layoutDayEvents(events: CalendarEvent[]): PlacedEvent[] {
 export function eventTypeColor(type: BuyerEventType): { accent: string; bg: string } {
   switch (type) {
     case "class":
-      return { accent: "#2dd4bf", bg: "rgb(45 212 191 / 0.12)" };
+      return { accent: "#00aacc", bg: "rgb(0 170 204 / 0.12)" };
     case "session":
       return { accent: "#a78bfa", bg: "rgb(167 139 250 / 0.12)" };
     case "event":

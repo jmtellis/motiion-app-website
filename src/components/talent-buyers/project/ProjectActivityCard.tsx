@@ -42,7 +42,7 @@ export function ProjectActivityCard({
       href={item.href}
       ref={cardRef}
       data-workspace-item-id={item.id}
-      className={`bd-visual-card bd-interactive-card group block ${highlighted ? "ring-2 ring-[#2dd4bf]/50" : ""}`}
+      className={`bd-visual-card bd-interactive-card group block ${highlighted ? "ring-2 ring-[color-mix(in_oklab,var(--accent)_50%,transparent)]" : ""}`}
     >
       <div className="bd-visual-card__media">
         <BuyerCoverImage

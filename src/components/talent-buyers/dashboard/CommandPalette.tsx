@@ -5,7 +5,6 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   Calendar,
   FolderKanban,
-  LayoutDashboard,
   Library,
   MessageSquare,
   Search,
@@ -14,6 +13,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { BUYER_OPEN_COMMAND_PALETTE_EVENT } from "@/lib/talent-buyers/command-palette";
 import { buyerNavItems } from "@/lib/talent-buyers/dashboard-data";
 
 import "./buyer-ui.css";
@@ -21,16 +21,16 @@ import "./buyer-ui.css";
 const QUICK_ACTIONS = [
   { href: "/projects?create=1", label: "Create project", icon: FolderKanban, keywords: "new project casting audition" },
   { href: "/projects/new/casting", label: "Create casting", icon: FolderKanban, keywords: "new casting breakdown roles" },
-  { href: "/calendar", label: "Create Event", icon: Calendar, keywords: "class session event" },
-  { href: "/library", label: "Library", icon: Users, keywords: "roster library save collection" },
+  { href: "/calendar/new", label: "Create Event", icon: Calendar, keywords: "class session event" },
+  { href: "/library", label: "Roster", icon: Users, keywords: "roster library save collection" },
 ] as const;
 
-const NAV_ICONS: Record<string, typeof LayoutDashboard> = {
-  dashboard: LayoutDashboard,
+const NAV_ICONS: Record<string, typeof Search> = {
   talent: Search,
   projects: FolderKanban,
   messages: MessageSquare,
   calendar: Calendar,
+  events: Calendar,
   library: Library,
   settings: Settings,
 };
@@ -46,7 +46,7 @@ export function CommandPalette() {
     const nav = buyerNavItems.map((item) => ({
       href: item.href,
       label: item.label,
-      icon: NAV_ICONS[item.segment] ?? LayoutDashboard,
+      icon: NAV_ICONS[item.segment] ?? Search,
       keywords: item.label.toLowerCase(),
     }));
     return [...nav, ...QUICK_ACTIONS];
@@ -108,6 +108,14 @@ export function CommandPalette() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, filtered, activeIndex, navigate]);
+
+  useEffect(() => {
+    function onOpenPalette() {
+      setOpen(true);
+    }
+    window.addEventListener(BUYER_OPEN_COMMAND_PALETTE_EVENT, onOpenPalette);
+    return () => window.removeEventListener(BUYER_OPEN_COMMAND_PALETTE_EVENT, onOpenPalette);
+  }, []);
 
   useEffect(() => {
     setActiveIndex(0);

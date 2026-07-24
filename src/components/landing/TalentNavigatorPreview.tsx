@@ -260,7 +260,7 @@ export function TalentNavigatorPreview() {
               initial={false}
               animate={{ opacity: 1, y: 0 }}
             >
-              {currentRow?.label ?? "Browse talent"}
+              {currentRow?.label ?? "Browse"}
             </motion.p>
           </div>
 

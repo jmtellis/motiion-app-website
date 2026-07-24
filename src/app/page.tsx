@@ -1,12 +1,12 @@
-import { redirect } from "next/navigation";
 import type { Viewport } from "next";
+import { redirect } from "next/navigation";
 
-import { HomeLandingHero, HomeLandingSections } from "@/components/landing/HomeLandingSections";
-import { MarketingPageLayout } from "@/components/landing/MarketingPageLayout";
+import { BrowserThemeColor } from "@/components/landing/BrowserThemeColor";
+import { HomeMarketingShell } from "@/components/landing/HomeMarketingShell";
+import { HomeSplitLanding } from "@/components/landing/HomeSplitLanding";
 import { getProfileDestination, isOnboardingComplete } from "@/lib/auth/profile";
 import { getCurrentUserProfile } from "@/lib/auth/session";
 import { MARKETING_DARK } from "@/lib/marketing/dark-theme";
-import { homeHeroVideo } from "@/lib/marketing/hero-video";
 
 export const viewport: Viewport = {
   themeColor: MARKETING_DARK.bg,
@@ -21,14 +21,9 @@ export default async function Home() {
   }
 
   return (
-    <MarketingPageLayout
-      homeHeader
-      darkTheme
-      activeTab={null}
-      heroVideo={homeHeroVideo}
-      hero={<HomeLandingHero dark />}
-    >
-      <HomeLandingSections dark />
-    </MarketingPageLayout>
+    <HomeMarketingShell>
+      <BrowserThemeColor color={MARKETING_DARK.bg} />
+      <HomeSplitLanding />
+    </HomeMarketingShell>
   );
 }

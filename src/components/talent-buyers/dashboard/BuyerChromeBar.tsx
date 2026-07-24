@@ -2,12 +2,13 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { MotiionBrandMark } from "@/components/brand/MotiionBrandMark";
+import { BUYER_HOME_PATH } from "@/lib/talent-buyers/dashboard-data";
 
 import "./buyer-chrome.css";
 
 export function BuyerChromeLogo({ height = 16 }: { height?: number }) {
   return (
-    <Link href="/dashboard" className="buyer-chrome-bar__logo" aria-label="Motiion dashboard">
+    <Link href={BUYER_HOME_PATH} className="buyer-chrome-bar__logo" aria-label="Motiion home">
       <MotiionBrandMark inverted height={height} />
     </Link>
   );

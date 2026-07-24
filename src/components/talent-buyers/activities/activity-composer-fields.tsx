@@ -134,8 +134,61 @@ export function PillSelect({
               onClick={() => onChange(option)}
               className={`rounded-full border px-3 py-1.5 text-sm transition ${
                 selected
-                  ? "border-[#2dd4bf]/45 bg-[#2dd4bf]/12 text-[#2dd4bf]"
+                  ? "border-[color-mix(in_oklab,var(--accent)_45%,transparent)] bg-[color-mix(in_oklab,var(--accent)_12%,transparent)] text-[var(--accent)]"
                   : "border-white/12 text-white/60 hover:text-white"
+              }`}
+            >
+              {option}
+            </button>
+          );
+        })}
+      </div>
+    </ActivityField>
+  );
+}
+
+export function PillMultiSelect({
+  label,
+  options,
+  values,
+  max = 5,
+  onChange,
+}: {
+  label: string;
+  options: readonly string[];
+  values: string[];
+  max?: number;
+  onChange: (values: string[]) => void;
+}) {
+  const selected = new Set(values);
+
+  return (
+    <ActivityField label={label}>
+      <p className="mb-2 text-xs text-white/45">
+        Select up to {max}
+        {values.length ? ` · ${values.length} selected` : ""}
+      </p>
+      <div className="flex max-h-48 flex-wrap gap-2 overflow-y-auto">
+        {options.map((option) => {
+          const isSelected = selected.has(option);
+          return (
+            <button
+              key={option}
+              type="button"
+              onClick={() => {
+                if (isSelected) {
+                  onChange(values.filter((v) => v !== option));
+                  return;
+                }
+                if (values.length >= max) return;
+                onChange([...values, option]);
+              }}
+              className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                isSelected
+                  ? "border-[color-mix(in_oklab,var(--accent)_45%,transparent)] bg-[color-mix(in_oklab,var(--accent)_12%,transparent)] text-[var(--accent)]"
+                  : values.length >= max
+                    ? "border-white/8 text-white/30"
+                    : "border-white/12 text-white/60 hover:text-white"
               }`}
             >
               {option}

@@ -13,7 +13,7 @@ export function MarketingShell({
 }) {
   return (
     <SiteScrollShell>
-      <div className="theme-marketing-dark min-h-screen bg-[#0a0a0a]">
+      <div className="theme-marketing-dark marketing-root marketing-atmosphere marketing-atmosphere--lines min-h-screen">
         <div className="relative">
           <MarketingHeader activeTab={activeTab} darkTheme />
         </div>

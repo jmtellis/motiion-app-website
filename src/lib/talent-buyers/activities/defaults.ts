@@ -89,7 +89,6 @@ export function createDefaultActivityDraft(
 
     sessionType: "",
     sessionLevel: "",
-    sessionGenre: "",
     sessionVibe: "",
     sessionRules: "",
     sessionGoodToKnow: "",

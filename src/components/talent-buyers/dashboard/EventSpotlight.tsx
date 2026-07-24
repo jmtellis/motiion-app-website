@@ -21,7 +21,7 @@ export function EventSpotlight({ event }: { event: BuyerEventSummary }) {
 
   return (
     <Link
-      href="/calendar"
+      href={`/calendar/${event.id}`}
       className="group relative block min-h-[280px] overflow-hidden rounded-xl text-white"
     >
       <BuyerCoverImage
@@ -45,7 +45,7 @@ export function EventSpotlight({ event }: { event: BuyerEventSummary }) {
         </div>
 
         <div>
-          <p className="font-mono text-xs font-medium tracking-[0.08em] text-[#2dd4bf] uppercase">
+          <p className="font-mono text-xs font-medium tracking-[0.08em] text-[var(--accent)] uppercase">
             {labelFromSnake(event.eventType)}
           </p>
           <h3 className="mt-2 max-w-xs text-2xl font-semibold tracking-tight text-white/92">

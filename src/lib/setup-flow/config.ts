@@ -44,18 +44,39 @@ export const setupFlowConfig: Record<SetupFlowAudience, SetupFlowAudienceConfig>
       complete: "Start discovering talent",
     },
     subtexts: {
-      signup:
-        "For casting teams, agencies, and producers. Discover talent, manage rosters, create castings, and run projects from one place.",
-      onboarding:
-        "Tell us how you work so we can tailor talent recommendations, castings, and project tools.",
-      finishing: "Confirm your preferences, then start building your roster.",
-      complete: "Your workspace is ready. Discover talent and run projects.",
+      signup: "Discover talent, manage rosters, and run projects in one place.",
+      onboarding: "A few details so we can tailor your workspace.",
+      finishing: "Connect your setup, then start hiring.",
+      complete: "Your workspace is ready.",
     },
     macroStepLabels: [
       "Create your account",
       "Set up your workspace",
       "Discover talent and run projects",
     ],
+  },
+};
+
+/** Per-step left-panel copy for industry onboarding (overrides phase defaults). */
+export const industryOnboardingCoverCopy: Record<
+  string,
+  { headline: string; subtext: string }
+> = {
+  professionalContext: {
+    headline: "Who are you hiring as?",
+    subtext: "We’ll tailor your workspace to your role.",
+  },
+  goalsAndWork: {
+    headline: "What do you need?",
+    subtext: "Pick the jobs Motiion should help with.",
+  },
+  organizationAndMarket: {
+    headline: "How do you work?",
+    subtext: "Add your org and primary market.",
+  },
+  success: {
+    headline: "Start discovering talent",
+    subtext: "Your workspace is ready.",
   },
 };
 
@@ -97,6 +118,7 @@ export function resolveSetupFlowPhase({
     microStep === "review" ||
     microStep === "notifications" ||
     microStep === "verification" ||
+    microStep === "organizationAndMarket" ||
     microStep === "success"
   ) {
     return microStep === "success" ? "complete" : "finishing";
@@ -139,15 +161,20 @@ export function getSetupFlowShellProps({
 }) {
   const config = setupFlowConfig[audience];
   const phase = resolveSetupFlowPhase({ surface, microStep, isSuccess });
+  const industryCover =
+    audience === "industry" && surface === "onboarding" && microStep
+      ? industryOnboardingCoverCopy[microStep]
+      : undefined;
 
   return {
-    headline: config.headlines[phase],
-    subtext: config.subtexts[phase],
+    headline: industryCover?.headline ?? config.headlines[phase],
+    subtext: industryCover?.subtext ?? config.subtexts[phase],
     steps: buildMacroSteps(audience, phase),
-    // Industry signup/onboarding: left-panel macro steps stay hidden.
-    // Talent onboarding still shows Create account → Build profile → Get discovered.
-    showSteps: audience === "talent" && surface !== "signup",
-    marquee: signupSplitMarquees[audience],
+    showSteps: false,
+    showNav: surface === "signup",
+    showWordmark: surface === "signup",
+    mediaCover: surface === "signup",
+    marquee: surface === "signup" ? signupSplitMarquees[audience] : undefined,
   };
 }
 
@@ -158,6 +185,8 @@ export function getLoginShellProps() {
       "Sign in to your talent profile or industry workspace to pick up where you left off.",
     steps: [] as SignupSplitStep[],
     showSteps: false,
+    showNav: true,
+    mediaCover: true,
     marquee: loginSplitMarquee,
   };
 }

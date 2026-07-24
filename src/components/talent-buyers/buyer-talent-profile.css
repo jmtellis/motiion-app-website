@@ -5,7 +5,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: #0a0a0a;
+  background: var(--buyer-bg, #000);
   overflow: hidden;
   overscroll-behavior: none;
   transform: translateX(100%);
@@ -44,11 +44,11 @@
 }
 
 .buyer-talent-profile {
-  --btp-bg: #0a0a0a;
-  --btp-bg-elevated: #0c0c0c;
-  --btp-bg-panel: rgb(12 12 12 / 0.92);
-  --btp-border: rgb(255 255 255 / 0.06);
-  --btp-border-strong: rgb(255 255 255 / 0.1);
+  --btp-bg: var(--buyer-bg, #000);
+  --btp-bg-elevated: var(--buyer-surface, #111);
+  --btp-bg-panel: rgb(17 17 17 / 0.92);
+  --btp-border: var(--buyer-line-subtle, rgb(255 255 255 / 0.06));
+  --btp-border-strong: var(--buyer-line, rgb(255 255 255 / 0.12));
   --btp-accent: var(--accent);
   --btp-accent-soft: color-mix(in oklab, var(--accent) 35%, transparent);
 
@@ -92,7 +92,7 @@
   align-self: stretch;
   min-height: 0;
   height: 100%;
-  background: #0a0a0a;
+  background: var(--buyer-bg, #000);
   border-bottom: 1px solid var(--btp-border);
   overflow: hidden;
 }

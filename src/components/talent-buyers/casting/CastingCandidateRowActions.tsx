@@ -105,6 +105,7 @@ export function CastingCandidateRowActions({
     openSizeSheetModal,
     handleAvailabilitySubmit,
     handleSizeSheetSubmit,
+    identityGate,
   } = useTalentOutreachActions({
     talentUserId: candidate.talentUserId,
     displayName: candidate.displayName,
@@ -227,6 +228,7 @@ export function CastingCandidateRowActions({
           placeholder="Optional note for the talent"
         />
       </Modal>
+      {identityGate}
     </>
   );
 }

@@ -1,7 +1,7 @@
 import type { TalentBuyerOnboardingDraft, TalentBuyerOnboardingStep } from "@/types/talent-buyers";
 import { talentBuyerSteps } from "@/lib/talent-buyers/onboarding";
 
-const CURRENT_DRAFT_VERSION = 2 as const;
+const CURRENT_DRAFT_VERSION = 3 as const;
 
 function getDraftKey(userId: string) {
   return `motiion:talent-buyer-onboarding:${userId}`;
@@ -12,8 +12,8 @@ function isKnownStep(value: unknown): value is TalentBuyerOnboardingStep {
 }
 
 /**
- * Load a v2 draft. Older drafts (v1 / missing version) are discarded so users
- * restart on the shortened flow instead of landing on removed steps.
+ * Load a v3 draft. Older drafts (v1/v2 / missing version) are discarded so users
+ * restart on the refreshed flow instead of landing on removed steps.
  */
 export function loadTalentBuyerDraft(userId: string): TalentBuyerOnboardingDraft | null {
   if (typeof window === "undefined") {

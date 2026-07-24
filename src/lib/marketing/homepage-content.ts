@@ -48,13 +48,41 @@ export const homeBrandStatementSection = {
 };
 
 export const iosHeroCta = {
-  label: "Download for iOS",
+  label: "Download the iOS app",
   modal: {
     title: "iOS app coming soon",
     description:
       "The Motiion mobile app is on the way. Join our beta to get early access, test new features, and help shape the experience before launch.",
     betaCta: { label: "Join Beta", href: "#signup" },
     dismissLabel: "Not now",
+  },
+} as const;
+
+export const homeLoginCta = {
+  label: "Login",
+  href: "/login",
+} as const;
+
+/** Root split landing — create-account opens Talent vs Industry chooser. */
+export const createAccountHeroCta = {
+  label: "Create an account",
+  modal: {
+    title: "Create an account",
+    description: "Choose the path that fits you and we'll take you to the right signup.",
+    paths: [
+      {
+        id: "talent",
+        label: "Creative Talent",
+        description: "For dancers and choreographers building a profile and managing their career.",
+        href: "/signup",
+      },
+      {
+        id: "industry",
+        label: "Industry Professional",
+        description: "For casting teams, agencies, and producers discovering and managing talent.",
+        href: "/talent-buyers/signup",
+      },
+    ],
   },
 } as const;
 
@@ -80,15 +108,97 @@ export const learnMoreHeroCta = {
   },
 } as const;
 
-export const homeHero = {
-  headline: {
-    parts: [
-      "The platform designed to keep the industry in ",
-      { text: "Motiion", emphasis: true, accent: true },
-      ".",
-    ] as EditorialPart[],
+/** Audience nav links shown on the root split landing. */
+export const homeSplitNavLinks = [
+  { id: "talent" as const, label: "Talent", href: "/for-talent" },
+  { id: "casting" as const, label: "Industry Professionals", href: "/for-casting" },
+];
+
+export type HomeSplitNavItem = {
+  label: string;
+  href: string;
+  description: string;
+};
+
+export type HomeSplitNavGroup = {
+  id: "community" | "talent" | "industry";
+  label: string;
+  items: HomeSplitNavItem[];
+};
+
+export const homeSplitNav: HomeSplitNavGroup[] = [
+  {
+    id: "community",
+    label: "Community",
+    items: [
+      {
+        label: "Events",
+        href: "/community/events",
+        description: "Live appearances, activations, and industry gatherings.",
+      },
+      {
+        label: "Classes",
+        href: "/community/classes",
+        description: "Training sessions and open classes from the community.",
+      },
+      {
+        label: "Programs",
+        href: "/community/programs",
+        description: "Intensives, workshops, and development programs.",
+      },
+    ],
   },
-  subtext: "Reshaping how professional dancers are discovered, booked, and managed.",
+  {
+    id: "talent",
+    label: "Talent",
+    items: [
+      {
+        label: "Product",
+        href: "/for-talent",
+        description: "One profile. Better opportunities. Less friction.",
+      },
+      {
+        label: "Open Calls",
+        href: "/open-calls",
+        description: "Browse open castings and calls across the platform.",
+      },
+      {
+        label: "Resources",
+        href: "/resources",
+        description: "SAG dancer rules, Dancer's Alliance rates, and more.",
+      },
+    ],
+  },
+  {
+    id: "industry",
+    label: "Industry Professionals",
+    items: [
+      {
+        label: "Product",
+        href: "/for-casting",
+        description: "Discover talent. Build rosters. Run projects.",
+      },
+      {
+        label: "Dancerbase",
+        href: "/dancerbase",
+        description: "Ask simple questions against Motiion's dance knowledge base.",
+      },
+      {
+        label: "Resources",
+        href: "/resources",
+        description: "SAG dancer rules, Dancer's Alliance rates, and more.",
+      },
+    ],
+  },
+];
+
+export const homeHero = {
+  eyebrow: "Professional Dance Talent",
+  headline: {
+    parts: ["Hire dancers without the chaos"] as EditorialPart[],
+  },
+  subtext:
+    "Search verified profiles and book dancers for your commercial, music video, television/film project, print campaign, or stage performance.",
   pillars: [
     {
       title: "Casting",
@@ -96,8 +206,8 @@ export const homeHero = {
       description:
         "Define roles, collect submissions, and shortlist talent in one casting workflow.",
       image: {
-        src: "/images/pillars/discover-smarter.png",
-        alt: "Two dancers in silhouette against a warm orange backdrop",
+        src: "/marketing/product/casting.png",
+        alt: "Motiion casting product screen",
       },
     },
     {
@@ -106,8 +216,8 @@ export const homeHero = {
       description:
         "Plan activations, launches, and live appearances with dates, venue, and talent in one place.",
       image: {
-        src: "/images/pillars/verify-instantly.png",
-        alt: "Dancer in a dynamic pose against a white studio background",
+        src: "/marketing/product/events.png",
+        alt: "Motiion events product screen",
       },
     },
     {
@@ -116,8 +226,8 @@ export const homeHero = {
       description:
         "Run intensives, workshops, and development programs with enrollments and schedules together.",
       image: {
-        src: "/images/pillars/decide-faster.png",
-        alt: "Dancer in black velvet on a terracotta studio set",
+        src: "/marketing/product/training.png",
+        alt: "Motiion training programs product screen",
       },
     },
     {
@@ -126,8 +236,8 @@ export const homeHero = {
       description:
         "Coordinate booked talent, rehearsals, fittings, and deliverables after the cast is locked.",
       image: {
-        src: "/images/pillars/discover-smarter.png",
-        alt: "Two dancers in silhouette against a warm orange backdrop",
+        src: "/marketing/product/jobs.png",
+        alt: "Motiion jobs product screen",
       },
     },
     {
@@ -136,8 +246,8 @@ export const homeHero = {
       description:
         "Connect castings, events, deliverables, and approvals across a full campaign.",
       image: {
-        src: "/images/pillars/verify-instantly.png",
-        alt: "Dancer in a dynamic pose against a white studio background",
+        src: "/marketing/product/campaigns.png",
+        alt: "Motiion campaigns product screen",
       },
     },
   ],

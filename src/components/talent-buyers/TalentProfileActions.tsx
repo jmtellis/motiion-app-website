@@ -25,6 +25,8 @@ import type { PublicTalentProfile } from "@/types/public";
 import { Modal } from "./dashboard/Modal";
 import { useToast } from "./dashboard/ToastProvider";
 import { SaveToCollectionPopover } from "./library/SaveToCollectionPopover";
+import { useIndustryIdentityGate } from "./IndustryIdentityGate";
+import { isIndustryIdentityRequiredError } from "@/lib/talent-buyers/industry-identity-errors";
 
 type TalentProfileActionsProps = {
   profile: PublicTalentProfile;
@@ -34,6 +36,7 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
   const router = useRouter();
   const { showToast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const { runWithIdentity, gate } = useIndustryIdentityGate("contact");
 
   const [saveOpen, setSaveOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
@@ -92,17 +95,26 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
   }
 
   function handleContact() {
-    startTransition(async () => {
-      const result = await contactTalentUser(talentUserId);
-      if (result.ok && result.conversationId) {
-        router.push(`/messages?conversation=${result.conversationId}`);
-        return;
-      }
-      if (result.ok && result.pendingRequest) {
-        showToast({ message: `Message request sent to ${displayName}`, variant: "success" });
-        return;
-      }
-      showToast({ message: result.error ?? "Could not start a conversation.", variant: "error" });
+    runWithIdentity(() => {
+      startTransition(async () => {
+        const result = await contactTalentUser(talentUserId);
+        if (result.ok && result.conversationId) {
+          router.push(`/messages?conversation=${result.conversationId}`);
+          return;
+        }
+        if (result.ok && result.pendingRequest) {
+          showToast({ message: `Message request sent to ${displayName}`, variant: "success" });
+          return;
+        }
+        if (isIndustryIdentityRequiredError(result)) {
+          showToast({
+            message: result.error ?? "Verify your identity to contact talent.",
+            variant: "error",
+          });
+          return;
+        }
+        showToast({ message: result.error ?? "Could not start a conversation.", variant: "error" });
+      });
     });
   }
 
@@ -243,7 +255,7 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
               <li key={`${target.projectId}-${target.castingId ?? "project"}`}>
                 <button
                   type="button"
-                  className="w-full rounded-xl border border-white/10 bg-white/4 px-4 py-3 text-left text-sm font-medium text-white/85 transition hover:border-[#2dd4bf]/30 hover:bg-white/8"
+                  className="w-full rounded-xl border border-white/10 bg-white/4 px-4 py-3 text-left text-sm font-medium text-white/85 transition hover:border-[color-mix(in_oklab,var(--accent)_30%,transparent)] hover:bg-white/8"
                   disabled={isPending}
                   onClick={() => handleInvite(target)}
                 >
@@ -313,6 +325,7 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
           placeholder="Optional note for the talent"
         />
       </Modal>
+      {gate}
     </>
   );
 }

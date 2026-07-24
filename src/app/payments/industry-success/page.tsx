@@ -20,10 +20,10 @@ export default async function IndustryCheckoutSuccessPage({ searchParams }: Page
         <p className="text-xs text-white/35">Checkout reference: {sessionId}</p>
       ) : null}
       <Link
-        href="/dashboard"
+        href="/projects"
         className="mt-2 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-[#0a0a0a] hover:bg-white/90"
       >
-        Go to dashboard
+        Go to projects
       </Link>
       <Link href="/dashboard/settings" className="text-sm text-white/55 underline-offset-4 hover:underline">
         Manage billing

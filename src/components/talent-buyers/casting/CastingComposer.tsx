@@ -28,6 +28,8 @@ import {
   authPill,
 } from "@/components/auth/ui";
 import { CastingTagSelector } from "@/components/talent-buyers/casting/wizard-steps/casting-wizard-shared";
+import { useIndustryIdentityGate } from "@/components/talent-buyers/IndustryIdentityGate";
+import { isIndustryIdentityRequiredError } from "@/lib/talent-buyers/industry-identity-errors";
 import {
   CARD_COLOR_OPTIONS,
   CASTING_COMPOSER_STEPS,
@@ -282,6 +284,7 @@ export function CastingComposer({
   scopedLabelVariant?: "casting";
 }) {
   const router = useRouter();
+  const { runWithIdentity, gate } = useIndustryIdentityGate("publish");
   const [internalForm, setInternalForm] = useState<CastingComposerForm>(
     () => initialForm ?? createDefaultCastingComposerForm(),
   );
@@ -388,47 +391,54 @@ export function CastingComposer({
   }
 
   function handlePublish() {
-    startTransition(async () => {
-      setError(null);
-      setNotice(null);
+    runWithIdentity(() => {
+      startTransition(async () => {
+        setError(null);
+        setNotice(null);
 
-      const validation = validateCastingStep("review", parsedForm as never);
-      if (validation) {
-        setError(validation);
-        setCurrentStep("review");
-        return;
-      }
+        const validation = validateCastingStep("review", parsedForm as never);
+        if (validation) {
+          setError(validation);
+          setCurrentStep("review");
+          return;
+        }
 
-      const projectId = isScoped ? await resolveScopedProjectId() : form.projectId;
-      if (isScoped && !projectId) return;
+        const projectId = isScoped ? await resolveScopedProjectId() : form.projectId;
+        if (isScoped && !projectId) return;
 
-      const payload = {
-        ...(projectId ? { ...form, projectId } : form),
-        configuration: { ...form.configuration, composer_draft: false },
-      };
+        const payload = {
+          ...(projectId ? { ...form, projectId } : form),
+          configuration: { ...form.configuration, composer_draft: false },
+        };
 
-      const result =
-        isScoped && projectId
-          ? await publishProjectCasting(projectId, payload)
-          : isEditingPublished
-            ? await updatePublishedCasting(payload)
-            : await publishCasting(payload);
+        const result =
+          isScoped && projectId
+            ? await publishProjectCasting(projectId, payload)
+            : isEditingPublished
+              ? await updatePublishedCasting(payload)
+              : await publishCasting(payload);
 
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
+        if (!result.ok) {
+          setError(
+            isIndustryIdentityRequiredError(result)
+              ? result.error
+              : result.error,
+          );
+          return;
+        }
 
-      if (onComplete) {
-        onComplete(result.projectId);
-        return;
-      }
+        if (onComplete) {
+          onComplete(result.projectId);
+          return;
+        }
 
-      router.push(`/projects/${result.projectId}/overview`);
+        router.push(`/projects/${result.projectId}/overview`);
+      });
     });
   }
 
   return (
+    <>
     <div
       className={
         isOverlay || isSplit || isScoped ? "w-full space-y-4" : "mx-auto w-full max-w-4xl space-y-6"
@@ -1233,5 +1243,7 @@ export function CastingComposer({
         </AuthCardContent>
       </AuthCard>
     </div>
+    {gate}
+    </>
   );
 }

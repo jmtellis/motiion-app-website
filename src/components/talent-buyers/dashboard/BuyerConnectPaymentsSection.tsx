@@ -63,7 +63,7 @@ export function BuyerConnectPaymentsSection({
                 : "Connect Stripe to accept ticket and class payments. This is separate from your Industry Pro subscription."}
           </p>
           {highlightReturn && !ready ? (
-            <p className="mt-2 text-sm text-[#2dd4bf]">
+            <p className="mt-2 text-sm text-[var(--accent)]">
               Finish any remaining Stripe steps, then return here to confirm you&apos;re ready.
             </p>
           ) : null}
@@ -72,7 +72,7 @@ export function BuyerConnectPaymentsSection({
           type="button"
           disabled={loading || isPending || ready}
           onClick={startOnboarding}
-          className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#0a0a0a] hover:bg-white/90 disabled:opacity-50"
+          className="bd-btn-primary disabled:opacity-50"
         >
           {isPending ? "Redirecting…" : ready ? "Connected" : "Set up payouts"}
         </button>

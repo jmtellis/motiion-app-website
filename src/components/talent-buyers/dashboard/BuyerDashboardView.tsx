@@ -15,7 +15,6 @@ import type { DashboardProfile } from "@/types/database";
 
 import { ActivityFeedItem } from "./ActivityFeedItem";
 import { BuyerAppPage } from "./BuyerAppPage";
-import { useRegisterBuyerChrome } from "./BuyerPageChromeContext";
 import { EmptyState } from "./EmptyState";
 import { FadeInSection } from "./FadeInSection";
 import { SectionHeader } from "./SectionHeader";
@@ -28,7 +27,7 @@ const QUICK_ACTIONS = [
     description: "Start a new workspace",
     icon: FolderPlus,
   },
-  { href: "/calendar", title: "Create Event", description: "Schedule your next session", icon: CalendarPlus },
+  { href: "/events", title: "Events", description: "Manage classes and sessions", icon: CalendarPlus },
   { href: "/library", title: "New Roster", description: "Organize talent selections", icon: ListPlus },
 ] as const;
 
@@ -46,8 +45,6 @@ export function BuyerDashboardView({
   profile: DashboardProfile;
   liveData: BuyerDashboardLiveData;
 }) {
-  useRegisterBuyerChrome({ title: "Dashboard" });
-
   const firstName = profile.fullName.split(" ")[0];
   const recentActivity = liveData.activityFeed;
 

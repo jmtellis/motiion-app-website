@@ -59,6 +59,66 @@ function heightToBucket(min?: string, max?: string): string {
   return HEIGHT_OPTIONS[2];
 }
 
+function splitEntityNames(raw: string): string[] {
+  return raw
+    .split(/\s+(?:and|&|or|,)\s+/i)
+    .map((part) => part.replace(/[?.!,;:]+$/g, "").trim())
+    .filter((part) => part.length >= 2 && !/^(a|an|the|some|any)$/i.test(part));
+}
+
+/**
+ * Deterministic fallback when OpenAI is unavailable or skips credit entities.
+ * Covers common buyer phrasing like "worked with Sabrina Carpenter".
+ */
+export function heuristicCreditParse(prompt: string): NlParsedFilters | null {
+  const text = prompt.trim();
+  if (!text) return null;
+
+  const choreo =
+    text.match(
+      /\b(?:choreographed by|trained with|took class(?:es)? (?:from|with)|rehearsed with)\s+(.+)$/i,
+    ) ?? null;
+  if (choreo?.[1]) {
+    const names = splitEntityNames(choreo[1]);
+    if (names.length) {
+      return {
+        choreographers: names,
+        relationshipMatchMode: /\bor\b/i.test(choreo[1]) ? "any" : "all",
+      };
+    }
+  }
+
+  const artist =
+    text.match(
+      /\b(?:worked with|danced (?:for|with)|toured with|performed (?:with|for)|backup(?: dancer)? for)\s+(.+)$/i,
+    ) ?? null;
+  if (artist?.[1]) {
+    const names = splitEntityNames(artist[1]);
+    if (names.length) {
+      return {
+        artists: names,
+        relationshipMatchMode: /\bor\b/i.test(artist[1]) ? "any" : "all",
+      };
+    }
+  }
+
+  const production =
+    text.match(
+      /\b(?:appeared in|was in|cast in|on the)\s+(.+?)(?:\s+tour)?$/i,
+    ) ?? null;
+  if (production?.[1]) {
+    const names = splitEntityNames(production[1]);
+    if (names.length) {
+      return {
+        productions: names,
+        relationshipMatchMode: /\bor\b/i.test(production[1]) ? "any" : "all",
+      };
+    }
+  }
+
+  return null;
+}
+
 function buildDescriptionLabels(parsed: NlParsedFilters): string[] {
   const labels: string[] = [];
   if (parsed.artists?.length) labels.push(`Artist: ${parsed.artists.join(", ")}`);
@@ -91,13 +151,27 @@ function buildDescriptionLabels(parsed: NlParsedFilters): string[] {
 }
 
 export function mapNlParsedToNavigatorFilters(parsed: NlParsedFilters): Partial<TalentNavigatorFilters> {
+  const artists = parsed.artists?.map((a) => a.trim()).filter(Boolean) ?? [];
+  const choreographers = parsed.choreographers?.map((a) => a.trim()).filter(Boolean) ?? [];
+  const productions = parsed.productions?.map((a) => a.trim()).filter(Boolean) ?? [];
+  const hasCreditEntities =
+    artists.length > 0 || choreographers.length > 0 || productions.length > 0;
+
+  // Credit entity names must not land in keyword — profile keyword search does not
+  // scan experiences/credits, so phrases like "worked with Sabrina Carpenter" would
+  // zero out otherwise-valid credit matches.
   const keywordParts = [
     parsed.nameQuery?.trim(),
     ...(parsed.skills ?? []),
-    parsed.broadExperienceQuery?.trim(),
+    hasCreditEntities ? undefined : parsed.broadExperienceQuery?.trim(),
   ].filter(Boolean);
   const height = heightToBucket(parsed.heightMin, parsed.heightMax);
   const styles = parsed.danceStyles?.length ? parsed.danceStyles : parsed.genres;
+  const genres = (styles ?? []).map((item) => item.trim()).filter(Boolean);
+  const skills = (parsed.skills ?? []).map((item) => item.trim()).filter(Boolean);
+  const ethnicities = (parsed.ethnicities ?? []).map((item) => item.trim()).filter(Boolean);
+  const hairColors = (parsed.hairColors ?? []).map((item) => item.trim()).filter(Boolean);
+  const eyeColors = (parsed.eyeColors ?? []).map((item) => item.trim()).filter(Boolean);
 
   return {
     keyword: keywordParts.join(" "),
@@ -105,16 +179,21 @@ export function mapNlParsedToNavigatorFilters(parsed: NlParsedFilters): Partial<
     representation:
       parsed.hasRepresentation || parsed.representedOnly ? "Represented" : "",
     agency: parsed.agencies?.[0]?.trim() ?? "",
-    style: styles?.[0]?.trim() ?? "",
+    style: genres[0] ?? "",
+    genres,
+    skills,
     gender: parsed.gender?.trim() ?? "",
-    ethnicity: parsed.ethnicities?.[0]?.trim() ?? "",
+    ethnicity: ethnicities[0] ?? "",
+    ethnicities,
+    hairColors,
+    eyeColors,
     height,
     availability: parsed.availableOnly ? "Available" : "",
     unionStatus: parsed.unionStatus?.replace("Non-Union", "Non-union") ?? "",
     subtype: parsed.talentTypes?.[0]?.trim() ?? "",
-    artists: parsed.artists?.map((a) => a.trim()).filter(Boolean) ?? [],
-    choreographers: parsed.choreographers?.map((a) => a.trim()).filter(Boolean) ?? [],
-    productions: parsed.productions?.map((a) => a.trim()).filter(Boolean) ?? [],
+    artists,
+    choreographers,
+    productions,
     relationshipMatchMode: parsed.relationshipMatchMode ?? "all",
     verificationStatuses: parsed.verificationStatuses ?? [],
   };
@@ -159,6 +238,17 @@ export function mergeNavigatorFilters(
   if (patch.resolvedProductionIds?.length) {
     merged.resolvedProductionIds = patch.resolvedProductionIds;
   }
+  if (patch.genres) {
+    merged.genres = patch.genres;
+    merged.style = patch.genres[0] ?? "";
+  }
+  if (patch.skills) merged.skills = patch.skills;
+  if (patch.ethnicities) {
+    merged.ethnicities = patch.ethnicities;
+    merged.ethnicity = patch.ethnicities[0] ?? "";
+  }
+  if (patch.hairColors) merged.hairColors = patch.hairColors;
+  if (patch.eyeColors) merged.eyeColors = patch.eyeColors;
   if (patch.relationshipMatchMode) merged.relationshipMatchMode = patch.relationshipMatchMode;
   if (patch.verificationStatuses?.length) merged.verificationStatuses = patch.verificationStatuses;
 
@@ -217,18 +307,43 @@ export async function parseNlQuery(prompt: string): Promise<NlParseResult> {
     return { filters: {}, parsed: {}, parsedDescription: "", confidence: 0 };
   }
 
+  const heuristic = heuristicCreditParse(trimmed);
+
   let parsed = await callOpenAiJson(trimmed, false);
   if (!parsed) {
     parsed = await callOpenAiJson(trimmed, true);
   }
 
   if (!parsed) {
+    if (heuristic) {
+      const labels = buildDescriptionLabels(heuristic);
+      return {
+        filters: mapNlParsedToNavigatorFilters(heuristic),
+        parsed: heuristic,
+        parsedDescription: labels.length ? labels.join(" · ") : `Searching for "${trimmed}"`,
+        confidence: 0.75,
+      };
+    }
     return {
       filters: { keyword: trimmed },
       parsed: { nameQuery: trimmed },
       parsedDescription: `Searching for "${trimmed}"`,
       confidence: 0.2,
       parseFailed: true,
+    };
+  }
+
+  // If the model omitted credit entities but the phrase is clearly credit intent, keep them.
+  if (heuristic) {
+    parsed = {
+      ...parsed,
+      artists: parsed.artists?.length ? parsed.artists : heuristic.artists,
+      choreographers: parsed.choreographers?.length
+        ? parsed.choreographers
+        : heuristic.choreographers,
+      productions: parsed.productions?.length ? parsed.productions : heuristic.productions,
+      relationshipMatchMode:
+        parsed.relationshipMatchMode ?? heuristic.relationshipMatchMode,
     };
   }
 

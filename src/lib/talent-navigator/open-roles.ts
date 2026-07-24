@@ -58,10 +58,23 @@ export function mapOpenRoleToNavigatorFilters(
     openRoleId: role.id,
     keyword: base.keyword,
     style: danceStyles[0] ?? base.style,
+    genres: danceStyles.length ? danceStyles : base.genres,
+    skills: Array.isArray(matchFilters.skills)
+      ? (matchFilters.skills as string[])
+      : base.skills,
     gender: role.gender ?? genderPresentation[0] ?? base.gender,
     location: locationRequirements[0] ?? base.location,
     unionStatus: role.unionStatus ?? (matchFilters.unionRequirement as string | undefined) ?? base.unionStatus,
     ethnicity: role.ethnicityPreferences[0] ?? base.ethnicity,
+    ethnicities: role.ethnicityPreferences.length
+      ? role.ethnicityPreferences
+      : base.ethnicities,
+    hairColors: Array.isArray(matchFilters.hairColors)
+      ? (matchFilters.hairColors as string[])
+      : base.hairColors,
+    eyeColors: Array.isArray(matchFilters.eyeColors)
+      ? (matchFilters.eyeColors as string[])
+      : base.eyeColors,
     representation: base.representation,
     agency: base.agency,
     height: base.height,

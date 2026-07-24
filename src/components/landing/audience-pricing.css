@@ -71,9 +71,13 @@
 }
 
 .audience-pricing__plan--highlighted {
-  border-color: rgb(45 212 191 / 0.35);
+  border-color: color-mix(in oklab, var(--accent) 55%, transparent);
   background:
-    radial-gradient(ellipse 80% 60% at 50% -20%, rgb(45 212 191 / 0.12) 0%, transparent 62%),
+    radial-gradient(
+      ellipse 80% 60% at 50% -20%,
+      color-mix(in oklab, var(--accent) 18%, transparent) 0%,
+      transparent 62%
+    ),
     rgb(255 255 255 / 0.05);
 }
 

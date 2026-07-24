@@ -1,0 +1,111 @@
+/**
+ * Shared marketing atmosphere — gradient, grain, and contour lines from the
+ * home split landing. Apply on shells/sections without forcing a split layout.
+ */
+
+.marketing-atmosphere {
+  --marketing-noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.9'/%3E%3C/svg%3E");
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 95% 75% at 88% 108%, rgb(0 170 204 / 0.08) 0%, transparent 58%),
+    radial-gradient(ellipse 70% 55% at 8% -10%, rgb(0 170 204 / 0.05) 0%, transparent 52%),
+    linear-gradient(158deg, #111111 0%, #0d0d0d 42%, #090909 78%, #060606 100%);
+  color: #fafafa;
+}
+
+.marketing-atmosphere::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.55;
+  mix-blend-mode: soft-light;
+  background-image: var(--marketing-noise);
+  background-repeat: repeat;
+  background-size: 110px 110px;
+}
+
+/* Contour lines — pair with .marketing-atmosphere or any positioned dark surface */
+.marketing-atmosphere--lines::before,
+.marketing-decor-lines {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.1;
+  background-image: url("/marketing/panel-lines.svg?v=8");
+  background-position: 35% 40%;
+  background-repeat: no-repeat;
+  background-size: 125% auto;
+  mask-image: linear-gradient(180deg, #000 0%, #000 50%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 50%, transparent 100%);
+}
+
+.marketing-decor-lines {
+  display: block;
+}
+
+.marketing-atmosphere--lines-right::before {
+  background-position: 78% 30%;
+  background-size: 110% auto;
+  opacity: 0.09;
+  mask-image: linear-gradient(240deg, #000 0%, #000 45%, transparent 78%);
+  -webkit-mask-image: linear-gradient(240deg, #000 0%, #000 45%, transparent 78%);
+}
+
+/* Soft elevated band for alternating sections on an atmosphere page */
+.marketing-atmosphere-band {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-color: #262626;
+  background:
+    radial-gradient(ellipse 70% 60% at 100% 0%, rgb(0 170 204 / 0.06) 0%, transparent 55%),
+    linear-gradient(180deg, #151515 0%, #121212 100%);
+}
+
+.marketing-atmosphere-band::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.35;
+  mix-blend-mode: soft-light;
+  background-image: var(
+    --marketing-noise,
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.9'/%3E%3C/svg%3E")
+  );
+  background-repeat: repeat;
+  background-size: 110px 110px;
+}
+
+.marketing-atmosphere-band--lines::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.08;
+  background-image: url("/marketing/panel-lines.svg?v=8");
+  background-position: 70% 20%;
+  background-repeat: no-repeat;
+  background-size: 120% auto;
+  mask-image: linear-gradient(200deg, #000 0%, #000 40%, transparent 75%);
+  -webkit-mask-image: linear-gradient(200deg, #000 0%, #000 40%, transparent 75%);
+}
+
+.marketing-atmosphere > *:not(.marketing-decor-lines),
+.marketing-atmosphere-band > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Transparent section so page-level atmosphere shows through */
+.marketing-atmosphere-clear {
+  background: transparent;
+  border-color: rgb(255 255 255 / 0.08);
+}

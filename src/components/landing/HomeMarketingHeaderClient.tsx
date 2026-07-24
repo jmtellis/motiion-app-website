@@ -18,7 +18,7 @@ import {
 import { scrollToSignupSection } from "@/lib/marketing/scroll-to-signup";
 
 const marketingTabs: { id: MarketingTab; label: string; href: string }[] = [
-  { id: "talent", label: "Creative Talent", href: "/for-talent" },
+  { id: "talent", label: "Talent", href: "/for-talent" },
   { id: "casting", label: "Industry Professionals", href: "/for-casting" },
 ];
 

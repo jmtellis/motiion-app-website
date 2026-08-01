@@ -4,7 +4,6 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Calendar, Mic, Plus, Timer, Trash2, X } from "lucide-react";
 
-import { AuthButton } from "@/components/auth/ui";
 import { ProjectDatePickerField } from "@/components/talent-buyers/project/ProjectDateRangePicker";
 import { ProjectMultiDateCalendar } from "@/components/talent-buyers/project/ProjectMultiDateCalendar";
 import {
@@ -698,15 +697,19 @@ export function CastingScheduleStep({
 
             <footer className="casting-schedule-rail__footer">
               {hasScheduleValues(form, editingType.id) || categoriesWithDays.length > 0 ? (
-                <AuthButton type="button" variant="secondary" onClick={clearAndClose}>
+                <button
+                  type="button"
+                  className="project-create__btn project-create__btn--secondary"
+                  onClick={clearAndClose}
+                >
                   Clear
-                </AuthButton>
+                </button>
               ) : (
                 <span />
               )}
-              <AuthButton type="button" onClick={applyEditor}>
+              <button type="button" className="project-create__btn project-create__btn--primary" onClick={applyEditor}>
                 Apply
-              </AuthButton>
+              </button>
             </footer>
           </aside>
         </div>,

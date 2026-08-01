@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { createElement, Fragment, type ReactNode } from "react";
 import {
   BadgeCheck,
   Calendar,
@@ -11,7 +11,9 @@ import {
   Image as ImageIcon,
   Images,
   MapPin,
+  Paperclip,
   Send,
+  Settings,
   Users,
   Video,
 } from "lucide-react";
@@ -43,14 +45,21 @@ function eligibilityIcon(label: string) {
 
 function sectionIcon(title: string) {
   switch (title) {
+    case "Overview":
+      return FileText;
     case "Location & schedule":
+    case "Production and schedule":
       return MapPin;
     case "Compensation":
       return DollarSign;
     case "How to apply":
       return Send;
+    case "Casting settings":
+      return Settings;
     case "Roles":
       return Users;
+    case "Files":
+      return Paperclip;
     default:
       return null;
   }
@@ -106,21 +115,105 @@ function CastingBreakdownRoleArticle({ role }: { role: CastingBreakdownDocumentR
   );
 }
 
+function SectionTitleIcon({ title }: { title: string }) {
+  const Icon = sectionIcon(title);
+  if (!Icon) return null;
+  return createElement(Icon, { className: "casting-breakdown-doc__section-icon", "aria-hidden": true });
+}
+
+function CastingBreakdownDocSection({
+  title,
+  action,
+  children,
+  wide = false,
+}: {
+  title: string;
+  action?: ReactNode;
+  children: ReactNode;
+  wide?: boolean;
+}) {
+  const headingId = `doc-${title}`;
+
+  return (
+    <section
+      className={`casting-breakdown-doc__section${wide ? " casting-breakdown-doc__section--wide" : ""}`}
+      aria-labelledby={headingId}
+    >
+      <div className="casting-breakdown-doc__section-heading">
+        <h3 id={headingId} className="casting-breakdown-doc__section-title">
+          <SectionTitleIcon title={title} />
+          {title}
+        </h3>
+        {action}
+      </div>
+      <div className="casting-breakdown-doc__section-body">{children}</div>
+    </section>
+  );
+}
+
 export function CastingBreakdownDocumentView({
   document,
   headerAction,
   renderSectionAction,
+  renderRoles,
   hideHeader = false,
   sectionsOnly = false,
+  hideRoles = false,
+  rolesAfterOverview = false,
 }: {
   document: CastingBreakdownDocument;
   headerAction?: ReactNode;
   renderSectionAction?: (sectionTitle: string) => ReactNode;
+  /** Replace the default static role articles (e.g. overview role cards). */
+  renderRoles?: ReactNode;
   hideHeader?: boolean;
   /** Render only sections/roles/readiness — title, intro, and byline are owned by the parent. */
   sectionsOnly?: boolean;
+  /** Omit the Roles section when the parent renders role cards separately. */
+  hideRoles?: boolean;
+  /** Place Roles immediately after Overview instead of at the end. */
+  rolesAfterOverview?: boolean;
 }) {
   const outstandingReadiness = document.readiness.filter((item) => !item.ok);
+  const overviewIndex = document.sections.findIndex((section) => section.title === "Overview");
+  const showRoles = !hideRoles;
+  const insertRolesAfterOverview = showRoles && rolesAfterOverview && overviewIndex >= 0;
+
+  function renderRolesSection() {
+    return (
+      <CastingBreakdownDocSection
+        title="Roles"
+        wide={renderRoles != null}
+        action={renderSectionAction?.("Roles")}
+      >
+        {renderRoles != null ? (
+          renderRoles
+        ) : document.roles.length > 0 ? (
+          <div className="casting-breakdown-doc__roles">
+            {document.roles.map((role) => (
+              <CastingBreakdownRoleArticle key={role.id} role={role} />
+            ))}
+          </div>
+        ) : (
+          <p className="casting-breakdown-doc__paragraph">No roles yet — add who you&apos;re casting for.</p>
+        )}
+      </CastingBreakdownDocSection>
+    );
+  }
+
+  function renderProseSection(section: CastingBreakdownDocument["sections"][number]) {
+    return (
+      <CastingBreakdownDocSection
+        key={section.title}
+        title={section.title}
+        action={renderSectionAction?.(section.title)}
+      >
+        {section.blocks.map((block, index) => (
+          <CastingBreakdownBlockView key={`${section.title}-${index}`} block={block} />
+        ))}
+      </CastingBreakdownDocSection>
+    );
+  }
 
   return (
     <article className="casting-breakdown-doc">
@@ -152,44 +245,14 @@ export function CastingBreakdownDocumentView({
         )
       ) : null}
 
-      {document.sections.map((section) => {
-        const SectionIcon = sectionIcon(section.title);
-        return (
-          <section key={section.title} className="casting-breakdown-doc__section" aria-labelledby={`doc-${section.title}`}>
-            <div className="casting-breakdown-doc__section-heading">
-              <h3 id={`doc-${section.title}`} className="casting-breakdown-doc__section-title">
-                {SectionIcon ? <SectionIcon className="casting-breakdown-doc__section-icon" aria-hidden /> : null}
-                {section.title}
-              </h3>
-              {renderSectionAction?.(section.title)}
-            </div>
-            <div className="casting-breakdown-doc__section-body">
-              {section.blocks.map((block, index) => (
-                <CastingBreakdownBlockView key={`${section.title}-${index}`} block={block} />
-              ))}
-            </div>
-          </section>
-        );
-      })}
+      {document.sections.map((section, index) => (
+        <Fragment key={section.title}>
+          {renderProseSection(section)}
+          {insertRolesAfterOverview && index === overviewIndex ? renderRolesSection() : null}
+        </Fragment>
+      ))}
 
-      <section className="casting-breakdown-doc__section" aria-labelledby="doc-roles">
-        <div className="casting-breakdown-doc__section-heading">
-          <h3 id="doc-roles" className="casting-breakdown-doc__section-title">
-            <Users className="casting-breakdown-doc__section-icon" aria-hidden />
-            Roles
-          </h3>
-          {renderSectionAction?.("Roles")}
-        </div>
-        {document.roles.length > 0 ? (
-          <div className="casting-breakdown-doc__roles">
-            {document.roles.map((role) => (
-              <CastingBreakdownRoleArticle key={role.id} role={role} />
-            ))}
-          </div>
-        ) : (
-          <p className="casting-breakdown-doc__paragraph">No roles yet — add who you&apos;re casting for.</p>
-        )}
-      </section>
+      {showRoles && !insertRolesAfterOverview ? renderRolesSection() : null}
 
       {outstandingReadiness.length > 0 ? (
         <footer className="casting-breakdown-doc__footer">

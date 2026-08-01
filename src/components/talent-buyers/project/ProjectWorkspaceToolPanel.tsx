@@ -6,7 +6,6 @@ import { useState } from "react";
 import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
 import { getWorkspaceEmptyState } from "@/lib/talent-buyers/project-quick-actions";
 import { projectTabPath, projectWorkspacePath } from "@/lib/talent-buyers/project-routes";
-import { getProjectWorkspaceConfig } from "@/lib/talent-buyers/project-workspace-config";
 
 import { CastingWorkspacePanel } from "@/components/talent-buyers/casting/CastingWorkspacePanel";
 
@@ -20,8 +19,6 @@ import "./project-workspace.css";
 export function ProjectWorkspaceToolPanel({ workspaceTab }: { workspaceTab: string }) {
   const router = useRouter();
   const { projectId, project } = useProjectWorkspace();
-  const config = getProjectWorkspaceConfig(project.projectType);
-  const navItem = config.workspaceItems.find((item) => item.id === workspaceTab);
   const empty = getWorkspaceEmptyState(project.projectType, workspaceTab);
 
   const [castingOpen, setCastingOpen] = useState(false);
@@ -30,10 +27,6 @@ export function ProjectWorkspaceToolPanel({ workspaceTab }: { workspaceTab: stri
   if (getNormalizedProjectType(project.projectType) === "casting") {
     return <CastingWorkspacePanel workspaceTab={workspaceTab} />;
   }
-
-  const title = navItem?.label ?? workspaceTab.replace(/-/g, " ");
-  const description =
-    navItem?.description ?? `Tools for your ${config.label.toLowerCase()} workspace.`;
 
   function handlePrimaryAction() {
     const actionId = empty.actionId;
@@ -66,19 +59,15 @@ export function ProjectWorkspaceToolPanel({ workspaceTab }: { workspaceTab: stri
 
   return (
     <>
-      <header className="project-workspace__panel-header">
-        <div>
-          <h2 className="project-workspace__panel-title">{title}</h2>
-          <p className="project-workspace__panel-description">{description}</p>
-        </div>
-        {hasWiredAction ? (
+      {hasWiredAction ? (
+        <header className="project-workspace__panel-header project-workspace__panel-header--actions">
           <div className="project-workspace__panel-actions">
             <button type="button" className="bd-btn-accent" onClick={handlePrimaryAction}>
               {empty.actionLabel}
             </button>
           </div>
-        ) : null}
-      </header>
+        </header>
+      ) : null}
 
       <div className="project-workspace__panel-body">
         <ProjectWorkspaceEmpty

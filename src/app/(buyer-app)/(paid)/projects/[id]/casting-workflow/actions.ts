@@ -4,6 +4,8 @@ import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 
 import { trackServerEvent } from "@/lib/analytics/track-server";
+import { requireCastingOutreachAllowance } from "@/lib/billing/casting-outreach-limit";
+import { requireIndustryProFeature } from "@/lib/billing/gate";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { requireIndustryIdentityVerified } from "@/lib/talent-buyers/require-industry-identity";
@@ -20,6 +22,7 @@ import type {
 import { bridgeWebInviteToMobile } from "@/lib/talent-buyers/casting/bridge-mobile-invite";
 import { activatePublishedCasting } from "@/lib/talent-buyers/casting/activate-published-casting";
 import { closePublishedCasting } from "@/lib/talent-buyers/casting/close-published-casting";
+import { castingAcceptsOutreach } from "@/lib/talent-buyers/casting/casting-display";
 import {
   ensurePrimaryCastingDraft,
   resolvePrimaryCastingId,
@@ -69,6 +72,7 @@ async function requireProjectAccess(projectId: string, userId: string) {
 function revalidateProject(projectId: string) {
   revalidatePath(`/projects/${projectId}`);
   revalidatePath(`/projects/${projectId}/overview`);
+  revalidatePath(`/projects/${projectId}/workspace/breakdown`);
   revalidatePath(`/projects/${projectId}/workspace/breakdown`);
   revalidatePath(`/projects/${projectId}/workspace/review`);
   revalidatePath(`/projects/${projectId}/workspace/cast`);
@@ -175,6 +179,13 @@ export async function updateCastingCandidateStatus(input: {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "You must be signed in." };
+
+  if (input.notifyTalent || input.status === "availability_requested") {
+    const pro = await requireIndustryProFeature(user.id, "talent_outreach");
+    if (!pro.ok) {
+      return { ok: false, error: "Industry Pro is required to reach talent." };
+    }
+  }
 
   const access = await requireProjectAccess(input.projectId, user.id);
   if (!access.ok) return { ok: false, error: access.error };
@@ -713,11 +724,25 @@ export async function inviteCandidatesFromSearch(input: {
   const access = await requireProjectAccess(input.projectId, user.id);
   if (!access.ok) return { ok: false, error: access.error };
 
-  const castingId =
-    (await resolvePrimaryCastingId(input.projectId, user.id)) ??
-    (await ensurePrimaryCastingDraft(input.projectId, user.id, access.project.title));
+  const castingId = await resolvePrimaryCastingId(input.projectId, user.id);
+  if (!castingId) {
+    return { ok: false, error: "Publish the casting before inviting talent." };
+  }
 
-  if (!castingId) return { ok: false, error: "Could not resolve casting." };
+  const { data: casting } = await supabase
+    .from("castings")
+    .select("status")
+    .eq("id", castingId)
+    .maybeSingle<{ status: string | null }>();
+
+  if (!castingAcceptsOutreach(casting?.status)) {
+    return { ok: false, error: "Publish the casting before inviting talent." };
+  }
+
+  const allowance = await requireCastingOutreachAllowance(user.id, castingId, input.profileIds.length);
+  if (!allowance.ok) {
+    return { ok: false, error: allowance.error };
+  }
 
   let count = 0;
   for (const talentKey of input.profileIds) {
@@ -883,6 +908,9 @@ export async function createCastingReferral(input: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "You must be signed in." };
 
+  const allowance = await requireCastingOutreachAllowance(user.id, input.castingId, 1);
+  if (!allowance.ok) return { ok: false, error: allowance.error };
+
   const referredProfileId = await resolveProfessionalProfileId(supabase, input.referredProfileId);
   if (!referredProfileId) {
     return { ok: false, error: "This profile isn't available for referrals yet." };
@@ -895,7 +923,7 @@ export async function createCastingReferral(input: {
     .maybeSingle();
 
   if (!casting) return { ok: false, error: "Casting not found." };
-  if (!["open", "published"].includes((casting.status as string) ?? "")) {
+  if (!castingAcceptsOutreach(casting.status as string | null)) {
     return { ok: false, error: "This casting is not accepting referrals." };
   }
 
@@ -1101,6 +1129,9 @@ export async function getOrCreateCastingReferralToken(
     .maybeSingle();
 
   if (!casting) return { ok: false, error: "Casting not found." };
+  if (!castingAcceptsOutreach(casting.status as string | null)) {
+    return { ok: false, error: "Publish the casting before sharing referral links." };
+  }
 
   const access = await requireProjectAccess(casting.project_id as string, user.id);
   if (!access.ok) return { ok: false, error: access.error };
@@ -1279,7 +1310,7 @@ export async function validateReferralToken(token: string): Promise<{
     .eq("id", tokenRow.casting_id as string)
     .maybeSingle();
 
-  if (!casting || !["open", "published"].includes((casting.status as string) ?? "")) {
+  if (!casting || !castingAcceptsOutreach(casting.status as string | null)) {
     return { ok: false, error: "This casting is not accepting referrals." };
   }
 

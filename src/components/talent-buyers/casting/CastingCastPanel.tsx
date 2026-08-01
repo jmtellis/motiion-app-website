@@ -30,6 +30,7 @@ import {
 import { EmptyState } from "@/components/talent-buyers/dashboard/EmptyState";
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
+import { useIndustryProOptional } from "@/components/talent-buyers/billing/IndustryProContext";
 import { useProjectWorkspace } from "@/components/talent-buyers/project/ProjectWorkspaceContext";
 
 import { CastingFinalSelectsRail } from "./CastingFinalSelectsRail";
@@ -96,6 +97,7 @@ export function CastingCastPanel() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
+  const { requirePro } = useIndustryProOptional();
   const { projectId, castingWorkflow } = useProjectWorkspace();
   const [createJobOpen, setCreateJobOpen] = useState(false);
   const [finalizeOpen, setFinalizeOpen] = useState(false);
@@ -239,6 +241,7 @@ export function CastingCastPanel() {
 
   function requestAvailability(candidate: CastingCandidate) {
     if (isRoleFinalized(roleForCandidate(candidate, roles))) return;
+    if (!requirePro("talent_outreach")) return;
     applyStatusOverride(candidate.id, "availability_requested");
     startTransition(async () => {
       const result = await updateCastingCandidateStatus({

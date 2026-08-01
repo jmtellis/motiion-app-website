@@ -16,10 +16,38 @@ export function BuyerChromeTitle() {
   const { chrome } = useBuyerPageChromeContext();
 
   const breadcrumbs = useMemo(() => {
-    return chrome.breadcrumbs ?? defaultBuyerChromeBreadcrumbs(pathname) ?? [
+    if (chrome.breadcrumbs) return chrome.breadcrumbs;
+    return defaultBuyerChromeBreadcrumbs(pathname) ?? [
       { label: defaultBuyerChromeTitle(pathname) },
     ];
   }, [chrome.breadcrumbs, pathname]);
 
-  return <BuyerBreadcrumbs items={breadcrumbs} />;
+  const hasTitleStack = Boolean(chrome.title || chrome.lede);
+
+  if (chrome.leading && hasTitleStack) {
+    return (
+      <div className="buyer-chrome-bar__title-block buyer-chrome-bar__title-block--stacked">
+        {chrome.leading}
+        <div className="buyer-chrome-bar__title-text">
+          {chrome.title ? (
+            <p className="buyer-chrome-bar__project-title">{chrome.title}</p>
+          ) : null}
+          {chrome.lede ? (
+            <p className="buyer-chrome-bar__project-lede">{chrome.lede}</p>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
+  if (!chrome.leading) {
+    return <BuyerBreadcrumbs items={breadcrumbs} />;
+  }
+
+  return (
+    <div className="buyer-chrome-bar__title-block">
+      {chrome.leading}
+      {breadcrumbs.length > 0 ? <BuyerBreadcrumbs items={breadcrumbs} /> : null}
+    </div>
+  );
 }

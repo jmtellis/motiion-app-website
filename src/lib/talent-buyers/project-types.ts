@@ -117,6 +117,25 @@ export const PROJECT_TYPE_INTENTION_GROUPS: ProjectTypeIntentionGroup[] = [
   },
 ];
 
+/**
+ * Project types shown in create UI for MVP.
+ * Full PROJECT_TYPES / intention groups stay intact for existing projects and future unlock.
+ * Classes/sessions continue to be created from the Events page, not the project picker.
+ */
+export const MVP_CREATE_PROJECT_TYPES: readonly ProjectType[] = ["casting", "event"];
+
+export const MVP_PROJECT_TYPE_INTENTION_GROUPS: ProjectTypeIntentionGroup[] = [
+  {
+    id: "mvp",
+    label: "Castings & Events",
+    types: ["casting", "event"],
+  },
+];
+
+export function isMvpCreateProjectType(value: string): value is ProjectType {
+  return (MVP_CREATE_PROJECT_TYPES as readonly string[]).includes(value);
+}
+
 export function isProjectType(value: string): value is ProjectType {
   return (PROJECT_TYPES as string[]).includes(value);
 }
@@ -133,7 +152,7 @@ export function getProjectTypeLabel(raw: string | null | undefined): string {
 
 export type ProjectOverviewSection = "meta" | "items" | "talent";
 
-/** Which generic overview blocks to show (casting uses CastingOverviewPanel instead). */
+/** Which generic overview blocks to show for non-casting project types. */
 export function getProjectOverviewSections(raw: string | null | undefined): ProjectOverviewSection[] {
   const type = getNormalizedProjectType(raw);
   if (type === "casting") return [];

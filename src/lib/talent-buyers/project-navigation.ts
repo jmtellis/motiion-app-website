@@ -44,6 +44,16 @@ export function getProjectNavigation(project: {
   const projectType = getNormalizedProjectType(project.projectType ?? project.type);
   const config = getProjectWorkspaceConfig(projectType);
 
+  if (projectType === "casting") {
+    return {
+      projectType,
+      project: [],
+      workspace: config.workspaceItems,
+      config,
+      sections: [{ id: "workspace", label: "Workspace", items: config.workspaceItems }],
+    };
+  }
+
   return {
     projectType,
     project: UNIVERSAL_PROJECT_NAVIGATION,

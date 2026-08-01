@@ -6,7 +6,7 @@ import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
 import { fetchProjectRecord } from "@/lib/talent-buyers/projects";
 import {
   isValidWorkspaceRoute,
-  projectOverviewPath,
+  projectLandingPath,
   projectPath,
 } from "@/lib/talent-buyers/project-routes";
 import { requireHiringAccount } from "@/lib/auth/session";
@@ -34,7 +34,7 @@ export default async function ProjectWorkspaceTabPage({
   const projectRecord = await fetchProjectRecord(id, profile.id);
 
   if (!projectRecord) {
-    redirect(projectOverviewPath(id));
+    redirect(projectLandingPath(id, null));
   }
 
   const projectType = getNormalizedProjectType(projectRecord.project_type);
@@ -62,7 +62,7 @@ export default async function ProjectWorkspaceTabPage({
   }
 
   if (!isValidWorkspaceRoute(projectRecord.project_type, workspaceTab)) {
-    redirect(projectOverviewPath(id));
+    redirect(projectLandingPath(id, projectRecord.project_type));
   }
 
   return (

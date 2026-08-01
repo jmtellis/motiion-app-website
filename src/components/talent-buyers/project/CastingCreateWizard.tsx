@@ -1,13 +1,17 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
-import { publishProjectCasting, saveProjectCastingDraft } from "@/app/(buyer-app)/(paid)/projects/[id]/castings/actions";
+import {
+  publishProjectCasting,
+  saveProjectCastingChanges,
+  saveProjectCastingDraft,
+} from "@/app/(buyer-app)/(paid)/projects/[id]/castings/actions";
 import { SetupFlowFormPanel } from "@/components/auth/SetupFlowFormPanel";
-import { AuthButton } from "@/components/auth/ui";
+import { useBuyerPageChromeContext } from "@/components/talent-buyers/dashboard/BuyerPageChromeContext";
 import { CastingBasicsStep } from "@/components/talent-buyers/casting/wizard-steps/CastingBasicsStep";
 import { CastingBreakdownReviewStep } from "@/components/talent-buyers/casting/wizard-steps/CastingBreakdownReviewStep";
 import { CastingBreakdownUploadStep } from "@/components/talent-buyers/casting/wizard-steps/CastingBreakdownUploadStep";
@@ -42,8 +46,8 @@ import type { ExtractedBreakdownData } from "@/lib/talent-buyers/breakdown-types
 import type { CastingComposerForm } from "@/types/casting";
 import type { ProjectAttachment, ProjectComposerForm } from "@/types/project";
 
-import { CastingProjectPreview } from "./CastingProjectPreview";
 import "./casting-create-wizard.css";
+import "./project-create.css";
 
 export function CastingCreateWizard({
   draftSessionId,
@@ -77,6 +81,7 @@ export function CastingCreateWizard({
   initialStepId?: CastingWizardStepId;
 }) {
   const router = useRouter();
+  const { setChromeProgress } = useBuyerPageChromeContext();
   const isEdit = mode === "edit";
   const [wizardPath, setWizardPath] = useState<CastingWizardPath>("scratch");
   const [currentStepId, setCurrentStepId] = useState<CastingWizardStepId>(
@@ -104,6 +109,15 @@ export function CastingCreateWizard({
     wizardPath === "breakdown" ? incompleteSteps : undefined,
   );
   const showProgress = currentStepId !== "start";
+
+  // Drive the buyer chrome breadcrumb divider as the wizard progress track.
+  useEffect(() => {
+    setChromeProgress(showProgress ? progress.percent : null);
+  }, [showProgress, progress.percent, setChromeProgress]);
+
+  useEffect(() => {
+    return () => setChromeProgress(null);
+  }, [setChromeProgress]);
 
   const updateConfiguration = useCallback(
     (patch: Partial<CastingComposerForm["configuration"]>) => {
@@ -203,13 +217,15 @@ export function CastingCreateWizard({
       }
 
       const synced = syncContainerAndCasting(containerForm, { ...castingForm, projectId });
-      const result = await saveProjectCastingDraft(projectId, synced.casting);
+      const result = isEdit
+        ? await saveProjectCastingChanges(projectId, synced.casting)
+        : await saveProjectCastingDraft(projectId, synced.casting);
       if (!result.ok) {
         setError(result.error);
         return;
       }
 
-      router.push(draftRedirectHref ?? `/projects/${projectId}/overview`);
+      router.push(draftRedirectHref ?? `/projects/${projectId}/workspace/breakdown`);
     });
   }
 
@@ -276,38 +292,17 @@ export function CastingCreateWizard({
         ? "Looks Good, Continue"
         : "Continue";
 
-  const panelTitle = isDocumentLayout ? "" : stepMeta.title;
-  const panelSubtitle = isDocumentLayout ? undefined : stepMeta.subtitle;
+  // Type/visibility owns its own section titles inside the step body.
+  const usesInlineSectionTitles = currentStepId === "type_visibility";
+  const panelTitle = isDocumentLayout || usesInlineSectionTitles ? "" : stepMeta.title;
+  const panelSubtitle = isDocumentLayout || usesInlineSectionTitles ? undefined : stepMeta.subtitle;
 
   return (
     <div className="casting-create-wizard flex min-h-0 flex-1 flex-col">
-      <aside className="casting-create-wizard__context">
-        <div className="casting-create-wizard__context-body">
-          <CastingProjectPreview
-            form={syncedForms.casting}
-            draftSessionId={draftSessionId}
-            coverStoragePath={coverStoragePath}
-            onCoverChange={onCoverChange}
-            onError={setError}
-          />
-
-          {wizardPath === "breakdown" && prefillSources.sections.size > 0 ? (
-            <p className="casting-create-wizard__breakdown-status">
-              Breakdown uploaded — {prefillSources.sections.size} sections prefilled
-            </p>
-          ) : null}
-        </div>
-      </aside>
-
       <div
         className={`casting-create-wizard__form${
           isDocumentLayout ? " casting-create-wizard__form--breakdown-review" : ""
-        }${showProgress ? " casting-create-wizard__form--with-progress" : ""}`}
-        style={
-          showProgress
-            ? ({ ["--casting-progress"]: `${progress.percent}%` } as CSSProperties)
-            : undefined
-        }
+        }`}
       >
         <div className="casting-create-wizard__form-top">
           <Link href={closeHref} className="casting-create-wizard__close">
@@ -324,33 +319,46 @@ export function CastingCreateWizard({
           error={error}
           footer={
             <div className="casting-create-wizard__footer">
+              <div className="casting-create-wizard__scroll-fade" aria-hidden />
               <div className="casting-create-wizard__footer-start">
                 {!isFirstStep ? (
-                  <AuthButton type="button" variant="secondary" onClick={goBack} disabled={isPending}>
+                  <button
+                    type="button"
+                    className="project-create__btn project-create__btn--secondary"
+                    onClick={goBack}
+                    disabled={isPending}
+                  >
                     <ChevronLeft className="size-4" />
                     Back
-                  </AuthButton>
+                  </button>
                 ) : null}
               </div>
 
               <div className="casting-create-wizard__footer-end">
-                <AuthButton type="button" variant="secondary" onClick={handleSaveDraft} disabled={isPending}>
-                  Save Draft
-                </AuthButton>
+                <button
+                  type="button"
+                  className="project-create__btn project-create__btn--secondary"
+                  onClick={handleSaveDraft}
+                  disabled={isPending}
+                >
+                  {isEdit ? "Save & return" : "Save Draft"}
+                </button>
 
                 {currentStepId === "start" || currentStepId === "breakdown" ? null : !isReview ? (
-                  <AuthButton
+                  <button
                     type="button"
+                    className="project-create__btn project-create__btn--primary"
                     onClick={goNext}
                     disabled={isPending || !canContinue}
                     title={stepBlockingError ?? undefined}
                   >
                     {continueLabel}
                     <ChevronRight className="size-4" />
-                  </AuthButton>
+                  </button>
                 ) : (
-                  <AuthButton
+                  <button
                     type="button"
+                    className="project-create__btn project-create__btn--primary"
                     onClick={handlePublish}
                     disabled={isPending || !canPublish}
                     title={
@@ -361,7 +369,7 @@ export function CastingCreateWizard({
                     }
                   >
                     {isEdit ? "Save Changes" : "Publish Casting"}
-                  </AuthButton>
+                  </button>
                 )}
               </div>
             </div>
@@ -385,6 +393,10 @@ export function CastingCreateWizard({
               castingForm={castingForm}
               onContainerFormChange={onContainerFormChange}
               onCastingFormChange={onCastingFormChange}
+              draftSessionId={draftSessionId}
+              coverStoragePath={coverStoragePath}
+              onCoverChange={onCoverChange}
+              onCoverError={setError}
             />
           ) : null}
 
@@ -393,6 +405,10 @@ export function CastingCreateWizard({
               form={syncedForms.casting}
               onFormChange={handleCastingChange}
               showPrefillBadge={showPrefillBadge}
+              draftSessionId={draftSessionId}
+              coverStoragePath={coverStoragePath}
+              onCoverChange={onCoverChange}
+              onCoverError={setError}
             />
           ) : null}
 
@@ -453,6 +469,10 @@ export function CastingCreateWizard({
               form={syncedForms.casting}
               onFormChange={handleCastingChange}
               mode={mode}
+              draftSessionId={draftSessionId}
+              coverStoragePath={coverStoragePath}
+              onCoverChange={onCoverChange}
+              onCoverError={setError}
             />
           ) : null}
         </SetupFlowFormPanel>

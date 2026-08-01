@@ -106,7 +106,7 @@ export async function createActivityFromDraft(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "You need to be signed in." };
 
-  const connect = await fetchConnectAccountStatus();
+const connect = await fetchConnectAccountStatus();
   const connectReady = Boolean(connect.status?.isReadyToAcceptPayments);
 
   const result = await persistNewActivity(supabase, user.id, draft, { connectReady });
@@ -169,11 +169,14 @@ type ActivityRow = {
   start_time: string | null;
   end_time: string | null;
   cover_image_url: string | null;
+  require_payment?: boolean | null;
 };
 
 export type ActivityHubItem = BuyerEventSummary & {
   attendeeCount: number;
   participation: "hosting" | "attending";
+  requirePayment?: boolean;
+  dayCount?: number;
 };
 
 /** @deprecated Prefer ActivityHubItem */
@@ -202,7 +205,12 @@ function toEventType(type: string): BuyerEventSummary["eventType"] {
 
 function rowToHubItem(
   row: ActivityRow,
-  opts: { attendeeCount: number; participation: "hosting" | "attending"; today: string },
+  opts: {
+    attendeeCount: number;
+    participation: "hosting" | "attending";
+    today: string;
+    dayCount?: number;
+  },
 ): ActivityHubItem {
   const isUpcoming = !row.activity_date || row.activity_date >= opts.today;
   return {
@@ -217,6 +225,8 @@ function rowToHubItem(
     attendeeCount: opts.attendeeCount,
     coverImageUrl: row.cover_image_url ?? null,
     participation: opts.participation,
+    requirePayment: row.require_payment === true,
+    dayCount: opts.dayCount,
   };
 }
 
@@ -236,7 +246,7 @@ export async function listHostedActivities(): Promise<HostedActivitiesResult> {
   const { data: hostedRows } = await supabase
     .from("activities")
     .select(
-      "id, title, type, status, location, activity_date, start_time, end_time, cover_image_url",
+      "id, title, type, status, location, activity_date, start_time, end_time, cover_image_url, require_payment",
     )
     .eq("creator_id", user.id)
     .neq("status", "cancelled")
@@ -265,7 +275,7 @@ export async function listHostedActivities(): Promise<HostedActivitiesResult> {
     const { data: attendingRows } = await supabase
       .from("activities")
       .select(
-        "id, title, type, status, location, activity_date, start_time, end_time, cover_image_url",
+        "id, title, type, status, location, activity_date, start_time, end_time, cover_image_url, require_payment",
       )
       .in("id", attendingIds)
       .neq("status", "cancelled")
@@ -275,15 +285,22 @@ export async function listHostedActivities(): Promise<HostedActivitiesResult> {
 
   const allIds = [...hosted, ...attending].map((row) => row.id);
   const counts = new Map<string, number>();
+  const dayCounts = new Map<string, number>();
   if (allIds.length) {
-    const { data: enrollmentCounts } = await supabase
-      .from("enrollments")
-      .select("activity_id")
-      .in("activity_id", allIds)
-      .in("status", ["paid", "guest", "comped", "pending", "confirmed"]);
+    const [{ data: enrollmentCounts }, { data: eventDayRows }] = await Promise.all([
+      supabase
+        .from("enrollments")
+        .select("activity_id")
+        .in("activity_id", allIds)
+        .in("status", ["paid", "guest", "comped", "pending", "confirmed"]),
+      supabase.from("activity_event_days").select("activity_id").in("activity_id", allIds),
+    ]);
 
     for (const row of (enrollmentCounts ?? []) as { activity_id: string }[]) {
       counts.set(row.activity_id, (counts.get(row.activity_id) ?? 0) + 1);
+    }
+    for (const row of (eventDayRows ?? []) as { activity_id: string }[]) {
+      dayCounts.set(row.activity_id, (dayCounts.get(row.activity_id) ?? 0) + 1);
     }
   }
 
@@ -299,6 +316,7 @@ export async function listHostedActivities(): Promise<HostedActivitiesResult> {
       attendeeCount: counts.get(row.id) ?? 0,
       participation,
       today,
+      dayCount: dayCounts.get(row.id),
     });
     if (item.status === "past") past.push(item);
     else upcoming.push(item);

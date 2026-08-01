@@ -1551,7 +1551,8 @@
 }
 
 .casting-breakdown-doc {
-  width: min(100%, 42rem);
+  width: 100%;
+  max-width: none;
   margin: 0;
   padding: 0.25rem 0 2rem;
   color: rgb(255 255 255 / 0.88);
@@ -1616,6 +1617,16 @@
 .casting-breakdown-doc__section {
   padding: 1.5rem 0;
   border-bottom: 1px solid rgb(255 255 255 / 0.06);
+}
+
+.casting-breakdown-doc__section--wide {
+  width: 100%;
+  max-width: none;
+}
+
+.casting-breakdown-workspace > .casting-breakdown-doc__section--wide:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 .casting-breakdown-doc__section-title {
@@ -1901,8 +1912,27 @@
   flex: 0 0 min(320px, 38%);
   width: min(320px, 38%);
   border-inline-start: 1px solid rgb(255 255 255 / 0.08);
-  padding: 1.5rem 1rem 1.5rem 1.25rem;
+  padding: 2.25rem 1.25rem 1.5rem;
   background: rgb(255 255 255 / 0.015);
+}
+
+/* Keep the invited heading on the same baseline as the left column heading. */
+.casting-talent-search .casting-find-talent-carousel-section__header,
+.casting-find-talent-invited-panel__header {
+  align-items: center;
+  min-height: 2.25rem;
+}
+
+.casting-find-talent-invited-panel__header {
+  margin-bottom: 0.75rem;
+}
+
+.casting-find-talent-invited-panel__count {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: rgb(255 255 255 / 0.5);
 }
 
 .casting-find-talent-invited-panel.is-drop-active,
@@ -2072,6 +2102,13 @@
   scrollbar-width: thin;
 }
 
+/* Bleed the rails to the column edges so cards are never cut off mid-scroll. */
+.casting-talent-search__main .casting-find-talent-carousel {
+  margin-inline: calc(-1 * var(--casting-talent-search-pad));
+  padding-inline: var(--casting-talent-search-pad);
+  scroll-padding-inline: var(--casting-talent-search-pad);
+}
+
 .casting-find-talent-carousel::-webkit-scrollbar {
   height: 8px;
 }
@@ -2096,8 +2133,8 @@
   flex: 1;
   flex-direction: column;
   overflow: hidden;
-  padding-block: 0 !important;
-  padding-inline-end: 0 !important;
+  /* The columns own their padding so the invited divider reaches the tab line. */
+  padding: 0 !important;
 }
 
 .casting-talent-search__layout {
@@ -2110,13 +2147,14 @@
 }
 
 .casting-talent-search__main {
+  --casting-talent-search-pad: var(--buyer-main-padding-inline, 1.25rem);
   display: flex;
   min-width: 0;
   flex: 1;
   flex-direction: column;
   overflow-y: auto;
-  padding-block: 1.5rem;
-  padding-inline-end: 1.25rem;
+  padding-block: 2.25rem 1.5rem;
+  padding-inline: var(--casting-talent-search-pad);
 }
 
 .casting-talent-search__detail-scrim {
@@ -2295,7 +2333,7 @@
   align-items: center;
   justify-content: center;
   padding: 1.5rem 0;
-  border: 1px dashed rgb(255 255 255 / 0.14);
+  border: 1px solid rgb(255 255 255 / 0.08);
   border-radius: 12px;
   text-align: center;
 }
@@ -2400,15 +2438,11 @@
     min-height: 0;
   }
 
-  .casting-talent-search__main {
-    padding-inline-end: 0;
-  }
-
   .casting-find-talent-invited-panel {
     flex: 1 1 auto;
     width: 100%;
     border-inline-start: 0;
-    padding: 1.25rem 0 1.5rem;
+    padding: 1.25rem var(--buyer-main-padding-inline, 1.25rem) 1.5rem;
     border-block-start: 1px solid rgb(255 255 255 / 0.08);
     background: transparent;
   }

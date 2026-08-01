@@ -8,6 +8,7 @@ import {
   contactTalentUser,
   requestTalentSizeSheet,
 } from "@/app/(buyer-app)/(paid)/talent/actions";
+import { useIndustryProOptional } from "@/components/talent-buyers/billing/IndustryProContext";
 import { useIndustryIdentityGate } from "@/components/talent-buyers/IndustryIdentityGate";
 import { isIndustryIdentityRequiredError } from "@/lib/talent-buyers/industry-identity-errors";
 
@@ -29,6 +30,7 @@ export function useTalentOutreachActions({
   onError,
 }: UseTalentOutreachActionsOptions) {
   const router = useRouter();
+  const { requirePro } = useIndustryProOptional();
   const [isPending, startTransition] = useTransition();
   const { runWithIdentity, gate: identityGate } = useIndustryIdentityGate("contact");
   const [availabilityModalOpen, setAvailabilityModalOpen] = useState(false);
@@ -56,6 +58,7 @@ export function useTalentOutreachActions({
 
   const handleMessage = useCallback(() => {
     if (!talentUserId) return;
+    if (!requirePro("talent_outreach")) return;
 
     runWithIdentity(() => {
       startTransition(async () => {
@@ -86,22 +89,26 @@ export function useTalentOutreachActions({
     onSuccess,
     projectId,
     projectTitle,
+    requirePro,
     router,
     runWithIdentity,
     talentUserId,
   ]);
 
   const openAvailabilityModal = useCallback(() => {
+    if (!requirePro("talent_outreach")) return;
     setAvailabilityProject(projectTitle);
     setAvailabilityModalOpen(true);
-  }, [projectTitle]);
+  }, [projectTitle, requirePro]);
 
   const openSizeSheetModal = useCallback(() => {
+    if (!requirePro("talent_outreach")) return;
     setSizeSheetModalOpen(true);
-  }, []);
+  }, [requirePro]);
 
   const handleAvailabilitySubmit = useCallback(() => {
     if (!talentUserId) return;
+    if (!requirePro("talent_outreach")) return;
 
     runAction(
       () =>
@@ -121,19 +128,21 @@ export function useTalentOutreachActions({
     availabilityTitle,
     displayName,
     projectId,
+    requirePro,
     runAction,
     talentUserId,
   ]);
 
   const handleSizeSheetSubmit = useCallback(() => {
     if (!talentUserId) return;
+    if (!requirePro("talent_outreach")) return;
 
     runAction(
       () => requestTalentSizeSheet({ talentUserId, message: sizeSheetMessage, projectId }),
       `Size sheet request sent to ${displayName}`,
     );
     setSizeSheetModalOpen(false);
-  }, [displayName, projectId, runAction, sizeSheetMessage, talentUserId]);
+  }, [displayName, projectId, requirePro, runAction, sizeSheetMessage, talentUserId]);
 
   return {
     canReachTalent,

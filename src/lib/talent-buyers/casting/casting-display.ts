@@ -1,4 +1,16 @@
-import type { CastingVisibility } from "./casting-types";
+import type { CastingProjectStatus, CastingVisibility } from "./casting-types";
+
+/** DB `castings.status` values that allow invites and referrals. */
+export function castingAcceptsOutreach(status: string | null | undefined): boolean {
+  return status === "open" || status === "published";
+}
+
+/** UI-mapped casting status that allows invites and referrals. */
+export function castingProjectAcceptsOutreach(
+  status: CastingProjectStatus | "none" | null | undefined,
+): boolean {
+  return status === "published";
+}
 
 export function isCastingPublicVisibility(visibility: CastingVisibility | undefined): boolean {
   return visibility === "public";

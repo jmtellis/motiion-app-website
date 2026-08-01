@@ -3,6 +3,7 @@
 import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 
+import { requireIndustryProFeature } from "@/lib/billing/gate";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   collectionShareExpiresAt,
@@ -87,6 +88,11 @@ export async function createCollectionShare(input: {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Not signed in" };
+
+  const pro = await requireIndustryProFeature(user.id, "roster_write");
+  if (!pro.ok) {
+    return { ok: false, error: "Industry Pro is required to share collections." };
+  }
 
   const { data: list, error: listError } = await supabase
     .from("talent_lists")

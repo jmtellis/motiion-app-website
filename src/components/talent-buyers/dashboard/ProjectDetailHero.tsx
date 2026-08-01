@@ -1,12 +1,13 @@
 import { labelFromSnake } from "@/lib/talent-buyers/dashboard-data";
 import { getProjectTypeLabel } from "@/lib/talent-buyers/project-types";
-import { resolveBuyerCoverImage } from "@/lib/talent-buyers/stock-images";
+import { resolveBuyerCoverSrc } from "@/lib/talent-buyers/stock-images";
 
 import { BuyerCoverImage } from "./BuyerCoverImage";
 
 export function ProjectDetailHero({
   id,
   coverImageUrl,
+  productionCompanyLogoUrl,
   title,
   projectType,
   status,
@@ -14,12 +15,17 @@ export function ProjectDetailHero({
 }: {
   id: string;
   coverImageUrl?: string | null;
+  productionCompanyLogoUrl?: string | null;
   title?: string;
   projectType: string;
   status: string;
   showTitle?: boolean;
 }) {
-  const coverSrc = resolveBuyerCoverImage(id, coverImageUrl, "project");
+  void id;
+  const coverSrc = resolveBuyerCoverSrc(coverImageUrl, {
+    fallbackUrl: productionCompanyLogoUrl,
+    allowStock: false,
+  });
 
   return (
     <div className="bd-project-hero relative overflow-hidden">
@@ -28,8 +34,8 @@ export function ProjectDetailHero({
         alt=""
         aspectRatio="21/9"
         overlay
-        fallbackId={id}
-        fallbackCategory="project"
+        secondarySrc={productionCompanyLogoUrl}
+        allowStockFallback={false}
       />
       <div className="bd-project-hero__meta">
         <p className="text-xs font-semibold tracking-[0.14em] text-white/50 uppercase">

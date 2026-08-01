@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { updateProject } from "@/app/(buyer-app)/(paid)/projects/actions";
 import { castingWorkspaceHref } from "@/lib/talent-buyers/casting/casting-routes";
 import { createDefaultCastingComposerForm } from "@/lib/talent-buyers/casting-composer-defaults";
+import type { CastingWizardStepId } from "@/lib/talent-buyers/casting-create-wizard";
 import { createDefaultProjectComposerForm } from "@/lib/talent-buyers/project-composer-defaults";
 import type { CastingComposerForm } from "@/types/casting";
 import type { ProjectAttachment, ProjectComposerForm } from "@/types/project";
@@ -39,11 +40,13 @@ export function CastingCreateShell({
   initialForm,
   initialContainerForm,
   mode = "create",
+  initialStepId,
 }: {
   projectId: string;
   initialForm?: CastingComposerForm;
   initialContainerForm?: ProjectComposerForm;
   mode?: "create" | "edit";
+  initialStepId?: CastingWizardStepId;
 }) {
   const router = useRouter();
   const draftSessionId = useId().replace(/:/g, "");
@@ -72,7 +75,6 @@ export function CastingCreateShell({
     ...(initialForm ?? createDefaultCastingComposerForm()),
     projectId,
   }));
-
   const [coverStoragePath, setCoverStoragePath] = useState<string | null>(null);
 
   const ensureProjectId = useCallback(async (): Promise<string | null> => {
@@ -123,7 +125,7 @@ export function CastingCreateShell({
         mode={mode}
         closeHref={workspaceHref}
         draftRedirectHref={workspaceHref}
-        initialStepId={mode === "edit" ? "basics" : "start"}
+        initialStepId={initialStepId ?? (mode === "edit" ? "basics" : "start")}
       />
     </div>
   );

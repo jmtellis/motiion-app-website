@@ -2,6 +2,7 @@ import { CalendarDays, MapPin } from "lucide-react";
 
 import { formatBuyerDateTime, labelFromSnake } from "@/lib/talent-buyers/dashboard-data";
 import { resolveBuyerCoverImage } from "@/lib/talent-buyers/stock-images";
+import type { ActivityHubItem } from "@/app/(buyer-app)/(paid)/events/actions";
 import type { BuyerEventSummary } from "@/types/talent-buyer-dashboard";
 
 import { BuyerCoverImage } from "./BuyerCoverImage";
@@ -15,11 +16,17 @@ function eventDateParts(dateTime: string) {
   };
 }
 
+type EventCardModel = BuyerEventSummary & {
+  requirePayment?: boolean;
+  dayCount?: number;
+  attendeeCount?: number;
+};
+
 export function EventCard({
   event,
   variant = "light",
 }: {
-  event: BuyerEventSummary;
+  event: EventCardModel | ActivityHubItem;
   variant?: "light" | "dark";
 }) {
   const { month, day, weekday } = eventDateParts(event.dateTime);
@@ -91,6 +98,32 @@ export function EventCard({
           <MapPin className="size-3.5 shrink-0" aria-hidden />
           {event.location}
         </p>
+        {"requirePayment" in event || "dayCount" in event ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {event.requirePayment ? (
+              <span
+                className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                  isDark
+                    ? "border-[var(--accent)]/30 bg-[var(--accent)]/10 text-[var(--accent)]"
+                    : "border-[var(--line)] text-[var(--ink-soft)]"
+                }`}
+              >
+                Ticketed
+              </span>
+            ) : null}
+            {event.dayCount && event.dayCount > 1 ? (
+              <span
+                className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                  isDark
+                    ? "border-white/12 bg-white/[0.04] text-white/70"
+                    : "border-[var(--line)] text-[var(--ink-soft)]"
+                }`}
+              >
+                {event.dayCount} days
+              </span>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </article>
   );

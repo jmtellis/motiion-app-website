@@ -22,6 +22,8 @@ import type { NavigatorFilterOptions } from "@/lib/talent-navigator/filter-optio
 import { getTalentProfileHref } from "@/lib/talent-navigator/profile-adapter";
 import type { Talent, TalentNavigatorFilters } from "@/lib/talent-navigator/types";
 
+import { useIndustryProOptional } from "@/components/talent-buyers/billing/IndustryProContext";
+
 import { Modal } from "../dashboard/Modal";
 import { useToast } from "../dashboard/ToastProvider";
 import { SaveToCollectionPopover } from "../library/SaveToCollectionPopover";
@@ -138,16 +140,18 @@ function TalentIdentityHeader({
 function FocusViewMenu({
   tab,
   onTabChange,
+  disabled = false,
 }: {
   tab: ProfileTab;
   onTabChange: (tab: ProfileTab) => void;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const activeLabel = PROFILE_VIEW_OPTIONS.find((item) => item.id === tab)?.label ?? "About";
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || disabled) return;
 
     function handlePointerDown(event: MouseEvent) {
       if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
@@ -155,7 +159,22 @@ function FocusViewMenu({
 
     window.addEventListener("mousedown", handlePointerDown);
     return () => window.removeEventListener("mousedown", handlePointerDown);
-  }, [open]);
+  }, [disabled, open]);
+
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+
+  if (disabled) {
+    return (
+      <div className="talent-navigator__focus-view-menu">
+        <span className="talent-navigator__focus-view-trigger talent-navigator__focus-view-trigger--disabled">
+          <span>{activeLabel}</span>
+          <ChevronDown className="size-3.5 opacity-35" aria-hidden />
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="talent-navigator__focus-view-menu" ref={menuRef}>
@@ -578,6 +597,32 @@ function ProfileFields({ talent }: { talent: Talent }) {
         {talent.experience ? <MetaRow label="Experience" value={talent.experience} /> : null}
       </dl>
 
+      {talent.matchReasons?.length ? (
+        <div className="space-y-2">
+          <p className="text-xs font-medium uppercase tracking-wide text-white/45">
+            Why this dancer matched
+          </p>
+          <ul className="space-y-2">
+            {talent.matchReasons.slice(0, 4).map((reason) => (
+              <li
+                key={`${reason.category}-${reason.label}`}
+                className="rounded-lg border border-white/8 bg-white/4 px-3 py-2 text-xs text-white/75"
+              >
+                <p className="font-medium text-white/90">{reason.label}</p>
+                {reason.caveat ? (
+                  <p className="mt-1 text-white/45">{reason.caveat}</p>
+                ) : null}
+                {reason.verificationStatus || reason.sourceType ? (
+                  <p className="mt-1 text-white/40">
+                    {[reason.verificationStatus, reason.sourceType].filter(Boolean).join(" · ")}
+                  </p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       {talent.matchingCredits?.length ? (
         <div className="space-y-2">
           <p className="text-xs font-medium uppercase tracking-wide text-white/45">Matched because</p>
@@ -596,8 +641,7 @@ function ProfileFields({ talent }: { talent: Talent }) {
                   {[
                     credit.artistName ? `Artist: ${credit.artistName}` : null,
                     credit.choreographerName
-                      ? `Choreographer: ${credit.choreographerName}`
-                      : null,
+                      ? `Choreographer: ${credit.choreographerName}` : null,
                     credit.creditYear,
                     credit.verificationLabel,
                   ]
@@ -668,14 +712,16 @@ function ProfileActions({
         <CalendarPlus className="size-3.5" aria-hidden />
         Add to Project
       </button>
-      <button
-        type="button"
-        className="talent-navigator__action-btn talent-navigator__action-btn--block"
-        onClick={onInvite}
-      >
-        <Send className="size-3.5" aria-hidden />
-        Just Invite
-      </button>
+      {onInvite ? (
+        <button
+          type="button"
+          className="talent-navigator__action-btn talent-navigator__action-btn--block"
+          onClick={onInvite}
+        >
+          <Send className="size-3.5" aria-hidden />
+          Just Invite
+        </button>
+      ) : null}
       <button
         type="button"
         className="talent-navigator__action-btn talent-navigator__action-btn--block"
@@ -721,6 +767,7 @@ export function ActiveTalentPanel({
   onDeleteSavedSearch,
   onApplyFilters,
 }: ActiveTalentPanelProps) {
+  const { hasIndustryPro } = useIndustryProOptional();
   const [saveOpenInternal, setSaveOpenInternal] = useState(false);
   const saveOpen = saveOpenControlled ?? saveOpenInternal;
   const setSaveOpen = onSaveOpenChange ?? setSaveOpenInternal;
@@ -810,6 +857,7 @@ export function ActiveTalentPanel({
                 trailing={
                   <FocusViewMenu
                     tab={profileTab}
+                    disabled={!hasIndustryPro}
                     onTabChange={(next) => {
                       setProfileTab(next);
                       setFocusPreview(primaryFocusPreview(talent));
@@ -824,23 +872,25 @@ export function ActiveTalentPanel({
                 projectDetailOpen ? " talent-navigator__focus-card-content--project" : ""
               }`}
             >
-              <BrowseFocusProfileSections
-                slugOrId={talent.slug || talent.id}
-                selectedMediaId={activeFocusPreview?.id ?? null}
-                primaryPreview={primaryFocusPreview(talent)}
-                onSelectMedia={setFocusPreview}
-                onProjectDetailOpenChange={setProjectDetailOpen}
-                tab={profileTab}
-                onTabChange={(next) => {
-                  setProfileTab(next);
-                  setFocusPreview(primaryFocusPreview(talent));
-                  setProjectDetailOpen(false);
-                }}
-                onProfileMeta={(meta) => {
-                  setResumeUrl(meta.resumeUrl);
-                  setTalentUserId(meta.talentUserId);
-                }}
-              />
+              {hasIndustryPro ? (
+                <BrowseFocusProfileSections
+                  slugOrId={talent.slug || talent.id}
+                  selectedMediaId={activeFocusPreview?.id ?? null}
+                  primaryPreview={primaryFocusPreview(talent)}
+                  onSelectMedia={setFocusPreview}
+                  onProjectDetailOpenChange={setProjectDetailOpen}
+                  tab={profileTab}
+                  onTabChange={(next) => {
+                    setProfileTab(next);
+                    setFocusPreview(primaryFocusPreview(talent));
+                    setProjectDetailOpen(false);
+                  }}
+                  onProfileMeta={(meta) => {
+                    setResumeUrl(meta.resumeUrl);
+                    setTalentUserId(meta.talentUserId);
+                  }}
+                />
+              ) : null}
             </div>
           </div>
         </article>

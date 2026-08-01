@@ -1,6 +1,5 @@
 "use client";
 
-import { AuthField } from "@/components/auth/ui";
 import { CASTING_KIND_OPTIONS, VISIBILITY_OPTIONS } from "@/lib/talent-buyers/casting-composer-defaults";
 import type { CastingComposerForm } from "@/types/casting";
 
@@ -23,11 +22,18 @@ export function CastingTypeVisibilityStep({
   showPrefillBadge?: boolean;
 }) {
   return (
-    <div className="space-y-4">
-      {showPrefillBadge ? <PrefillBadge /> : null}
+    <div>
+      {showPrefillBadge ? (
+        <div className="mb-4">
+          <PrefillBadge />
+        </div>
+      ) : null}
 
-      <AuthField label="Casting type">
-        <div className="grid gap-3 md:grid-cols-2" role="radiogroup" aria-label="Casting type">
+      <section className="casting-wizard-section" aria-labelledby="casting-type-heading">
+        <h2 id="casting-type-heading" className="casting-wizard-section__title">
+          Casting type
+        </h2>
+        <div className="grid gap-3 md:grid-cols-2" role="radiogroup" aria-labelledby="casting-type-heading">
           {CASTING_KIND_OPTIONS.map((option) => {
             const selectedKind =
               form.configuration.casting_kind ?? form.configuration.casting_kinds[0] ?? null;
@@ -55,18 +61,22 @@ export function CastingTypeVisibilityStep({
             );
           })}
         </div>
-      </AuthField>
+      </section>
 
-      <AuthField label="Visibility">
-        <div className="grid gap-3">
+      <section className="casting-wizard-section" aria-labelledby="casting-visibility-heading">
+        <h2 id="casting-visibility-heading" className="casting-wizard-section__title">
+          Visibility
+        </h2>
+        <div className="grid gap-3" role="radiogroup" aria-labelledby="casting-visibility-heading">
           {VISIBILITY_OPTIONS.map((option) => {
             const selected = form.visibility === option.value;
             return (
               <button
                 key={option.value}
                 type="button"
+                role="radio"
                 className={castingWizardChoiceCard(selected)}
-                aria-pressed={selected}
+                aria-checked={selected}
                 onClick={() =>
                   onFormChange({
                     ...form,
@@ -96,7 +106,7 @@ export function CastingTypeVisibilityStep({
             );
           })}
         </div>
-      </AuthField>
+      </section>
     </div>
   );
 }

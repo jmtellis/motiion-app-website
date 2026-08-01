@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 
-import { AuthButton, AuthField, AuthInput, AuthTextArea } from "@/components/auth/ui";
+import { AuthField, AuthInput, AuthTextArea } from "@/components/auth/ui";
 import {
   DEFAULT_SUBMISSION_MATERIALS,
   PRIVATE_SUBMITTER_POLICY_OPTIONS,
@@ -288,9 +288,9 @@ export function CastingSubmissionStep({
             </div>
           ))}
 
-          <AuthButton
+          <button
             type="button"
-            variant="secondary"
+            className="project-create__btn project-create__btn--secondary"
             onClick={() =>
               updateConfiguration({
                 additional_submission_questions: [
@@ -306,7 +306,7 @@ export function CastingSubmissionStep({
           >
             <Plus className="size-4" />
             Add question
-          </AuthButton>
+          </button>
         </div>
       ) : null}
     </div>

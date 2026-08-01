@@ -2,33 +2,33 @@
 
 import type { ReactNode } from "react";
 
-import { AuthField, AuthInput, AuthTextArea } from "@/components/auth/ui";
 import {
   LocationAutocomplete,
   type SelectedPlace,
 } from "@/components/talent-buyers/project/LocationAutocomplete";
 import type { ActivityDraft } from "@/lib/talent-buyers/activities/types";
 
-export const activityFieldClass =
-  "w-full rounded-full border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-white/30 focus:outline-none";
+export const activityFieldClass = "project-create__input";
 
-const activityTextAreaClass =
-  "w-full rounded-[var(--radius-field)] border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-white/30 focus:outline-none focus:shadow-none";
+const activityTextAreaClass = "project-create__textarea";
 
 export function ActivityField({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <AuthField label={label}>
+    <div className="project-create__field">
+      <span className="project-create__label">{label}</span>
       <div className="activity-composer-field">{children}</div>
-    </AuthField>
+    </div>
   );
 }
 
-export function ActivityTextInput(props: React.ComponentProps<typeof AuthInput>) {
-  return <AuthInput {...props} className={`${activityFieldClass} ${props.className ?? ""}`} />;
+export function ActivityTextInput(props: React.ComponentProps<"input">) {
+  const { className, ...rest } = props;
+  return <input {...rest} className={`${activityFieldClass}${className ? ` ${className}` : ""}`} />;
 }
 
-export function ActivityTextArea(props: React.ComponentProps<typeof AuthTextArea>) {
-  return <AuthTextArea {...props} className={`${activityTextAreaClass} ${props.className ?? ""}`} />;
+export function ActivityTextArea(props: React.ComponentProps<"textarea">) {
+  const { className, ...rest } = props;
+  return <textarea {...rest} className={`${activityTextAreaClass}${className ? ` ${className}` : ""}`} />;
 }
 
 export function ActivityLocationField({
@@ -76,7 +76,7 @@ export function StringListEditor({
 }) {
   return (
     <ActivityField label={label}>
-      <div className="space-y-2">
+      <div className="flex flex-col gap-2">
         {values.map((value, index) => (
           <div key={`${index}-${placeholder}`} className="flex gap-2">
             <ActivityTextInput
@@ -90,7 +90,7 @@ export function StringListEditor({
             />
             <button
               type="button"
-              className="bd-btn-secondary shrink-0"
+              className="project-create__btn project-create__btn--secondary shrink-0"
               onClick={() => onChange(values.filter((_, i) => i !== index))}
             >
               Remove
@@ -100,7 +100,7 @@ export function StringListEditor({
         {values.length < max ? (
           <button
             type="button"
-            className="bd-btn-secondary"
+            className="project-create__btn project-create__btn--secondary"
             onClick={() => onChange([...values, ""])}
           >
             Add
@@ -132,11 +132,7 @@ export function PillSelect({
               key={option}
               type="button"
               onClick={() => onChange(option)}
-              className={`rounded-full border px-3 py-1.5 text-sm transition ${
-                selected
-                  ? "border-[color-mix(in_oklab,var(--accent)_45%,transparent)] bg-[color-mix(in_oklab,var(--accent)_12%,transparent)] text-[var(--accent)]"
-                  : "border-white/12 text-white/60 hover:text-white"
-              }`}
+              className={`casting-wizard-pill${selected ? " casting-wizard-pill--selected" : ""}`}
             >
               {option}
             </button>
@@ -164,7 +160,7 @@ export function PillMultiSelect({
 
   return (
     <ActivityField label={label}>
-      <p className="mb-2 text-xs text-white/45">
+      <p className="project-create__section-copy mb-2">
         Select up to {max}
         {values.length ? ` · ${values.length} selected` : ""}
       </p>
@@ -183,13 +179,8 @@ export function PillMultiSelect({
                 if (values.length >= max) return;
                 onChange([...values, option]);
               }}
-              className={`rounded-full border px-3 py-1.5 text-sm transition ${
-                isSelected
-                  ? "border-[color-mix(in_oklab,var(--accent)_45%,transparent)] bg-[color-mix(in_oklab,var(--accent)_12%,transparent)] text-[var(--accent)]"
-                  : values.length >= max
-                    ? "border-white/8 text-white/30"
-                    : "border-white/12 text-white/60 hover:text-white"
-              }`}
+              className={`casting-wizard-pill${isSelected ? " casting-wizard-pill--selected" : ""}`}
+              disabled={!isSelected && values.length >= max}
             >
               {option}
             </button>

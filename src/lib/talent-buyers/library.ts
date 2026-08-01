@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { trackServerEvent } from "@/lib/analytics/track-server";
+import { requireIndustryProFeature } from "@/lib/billing/gate";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -394,6 +395,9 @@ export async function createCollection(input: {
   const { supabase, userId, error } = await requireOwner();
   if (!supabase || !userId) return { ok: false, error: error ?? "Not signed in" };
 
+  const pro = await requireIndustryProFeature(userId, "roster_write");
+  if (!pro.ok) return { ok: false, error: "Industry Pro is required to create rosters." };
+
   const name = input.name.trim();
   if (!name) return { ok: false, error: "Name is required" };
 
@@ -446,6 +450,9 @@ export async function duplicateCollection(
 ): Promise<{ ok: boolean; id?: string; error?: string }> {
   const { supabase, userId, error } = await requireOwner();
   if (!supabase || !userId) return { ok: false, error: error ?? "Not signed in" };
+
+  const pro = await requireIndustryProFeature(userId, "roster_write");
+  if (!pro.ok) return { ok: false, error: "Industry Pro is required to duplicate rosters." };
 
   const { data: source, error: sourceError } = await supabase
     .from("talent_lists")
@@ -514,6 +521,9 @@ export async function addTalentToCollections(input: {
 }): Promise<{ ok: boolean; error?: string }> {
   const { supabase, userId, error } = await requireOwner();
   if (!supabase || !userId) return { ok: false, error: error ?? "Not signed in" };
+
+  const pro = await requireIndustryProFeature(userId, "roster_write");
+  if (!pro.ok) return { ok: false, error: "Industry Pro is required to update rosters." };
 
   const profileIds = [...new Set(input.profileIds.filter(Boolean))];
   const collectionIds = [...new Set(input.collectionIds.filter(Boolean))];

@@ -6,17 +6,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { BuyerInboxFile } from "@/types/buyer-file-inbox";
 import type { ProjectHubSummary } from "@/lib/talent-buyers/projects-hub";
 
+import { ProjectTypePickerOverlay } from "@/components/talent-buyers/project/ProjectTypePickerOverlay";
+import { PROJECTS_CREATE_QUERY } from "@/lib/talent-buyers/projects-hub-constants";
+
 import { FadeInSection } from "./FadeInSection";
-import { ProjectCard } from "./ProjectCard";
 import { ProjectCarousel } from "./ProjectCarousel";
 import { ProjectGridView } from "./ProjectGridView";
 import { ProjectsEmptyState } from "./ProjectsEmptyState";
 import { ProjectsHubFilesSection } from "./ProjectsHubFilesSection";
 import { ProjectsHubViewToggle, useProjectsViewMode } from "./ProjectsViewModeContext";
-import { StaggerList } from "./FadeInSection";
 import { UnderlineTabs } from "./UnderlineTabs";
-import { PROJECTS_CREATE_QUERY } from "@/lib/talent-buyers/projects-hub-constants";
-import { ProjectTypePickerOverlay } from "@/components/talent-buyers/project/ProjectTypePickerOverlay";
 
 import "./projects-hub.css";
 
@@ -68,16 +67,14 @@ export function ProjectsHubView({
     () => filterByScope(allProjects, scopeFilter),
     [allProjects, scopeFilter],
   );
+  // Focus carousel includes drafts (All) plus active/archived by scope — same pool as Browse.
   const focusProjects = useMemo(
-    () => filterByScope(published, scopeFilter),
-    [published, scopeFilter],
+    () => filterByScope(allProjects, scopeFilter),
+    [allProjects, scopeFilter],
   );
-  const visibleDrafts = scopeFilter === "all" ? drafts : [];
   const isEmpty = allProjects.length === 0;
   const hasVisibleProjects =
-    viewMode === "browse"
-      ? browseProjects.length > 0
-      : focusProjects.length > 0 || visibleDrafts.length > 0;
+    viewMode === "browse" ? browseProjects.length > 0 : focusProjects.length > 0;
   const focusProjectId = focusProjects[focusIndex]?.id ?? focusProjects[0]?.id ?? null;
 
   const openCreatePicker = useCallback(() => {
@@ -96,7 +93,8 @@ export function ProjectsHubView({
   }, [router, searchParams]);
 
   useEffect(() => {
-    setCreatePickerOpen(searchParams.get(PROJECTS_CREATE_QUERY) === "1");
+    const wantsCreate = searchParams.get(PROJECTS_CREATE_QUERY) === "1";
+    setCreatePickerOpen(wantsCreate);
   }, [searchParams]);
 
   useEffect(() => {
@@ -137,24 +135,7 @@ export function ProjectsHubView({
           <ProjectGridView projects={browseProjects} />
         </FadeInSection>
       ) : (
-        <>
-          {focusProjects.length ? (
-            <ProjectCarousel projects={focusProjects} onActiveIndexChange={setFocusIndex} />
-          ) : null}
-
-          {visibleDrafts.length ? (
-            <FadeInSection delay={0.05}>
-              <section className="projects-hub__drafts space-y-4">
-                <h2 className="bd-eyebrow">Draft projects</h2>
-                <StaggerList className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" stagger={0.04}>
-                  {sortByLastUpdated(visibleDrafts).map((project) => (
-                    <ProjectCard key={project.id} project={project} variant="dashboard" />
-                  ))}
-                </StaggerList>
-              </section>
-            </FadeInSection>
-          ) : null}
-        </>
+        <ProjectCarousel projects={focusProjects} onActiveIndexChange={setFocusIndex} />
       )}
 
       <ProjectsHubFilesSection

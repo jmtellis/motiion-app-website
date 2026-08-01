@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 
 import { trackServerEvent } from "@/lib/analytics/track-server";
+import { requireCastingOutreachAllowance } from "@/lib/billing/casting-outreach-limit";
+import { requireIndustryProFeature } from "@/lib/billing/gate";
 import { sendNotificationEmail } from "@/lib/email/send";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -19,6 +21,7 @@ import {
   bridgeWebInviteToMobile,
   resolveCastingIdFromRoleId,
 } from "@/lib/talent-buyers/casting/bridge-mobile-invite";
+import { castingAcceptsOutreach } from "@/lib/talent-buyers/casting/casting-display";
 import { searchTalentProfiles } from "@/lib/search/search-profiles";
 
 export type ParseNlTalentQueryResult = {
@@ -26,8 +29,25 @@ export type ParseNlTalentQueryResult = {
   parsedDescription: string;
   confidence: number;
   data: TalentNavigatorInitialData;
-  reasoning: { headline: string; bullets: string[] };
+  reasoning: { prose: string };
   error?: string;
+  errorCode?:
+    | "parse_failed"
+    | "ambiguous_entity"
+    | "ambiguous_profile"
+    | "forbidden_reference"
+    | "ai_unavailable"
+    | "zero_results"
+    | "rate_limited"
+    | "indexing_pending";
+  /** Versioned interpreted brief (intent v1). */
+  intent?: import("@/lib/talent-navigator/search-intent").SearchIntent;
+  /** True when AI was unavailable and heuristic/structured path was used. */
+  degraded?: boolean;
+  /** Blocking clarification required before full retrieval. */
+  blockingClarification?: boolean;
+  /** Suggested relaxations when zero results (user must consent). */
+  relaxationSuggestions?: Array<{ id: string; label: string }>;
   warnings?: Array<{
     type: string;
     message: string;
@@ -37,6 +57,17 @@ export type ParseNlTalentQueryResult = {
       role: string;
       candidates?: Array<{ id: string; name: string; type: string; score: number }>;
     };
+  }>;
+  /** Ambiguous Motiion profiles for opposite/similar reference resolution. */
+  ambiguousProfiles?: Array<{
+    requestedName: string;
+    candidates: Array<{
+      id: string;
+      name: string;
+      height: string | null;
+      location: string | null;
+      score: number;
+    }>;
   }>;
   creditEvidenceByTalentId?: Record<
     string,
@@ -262,31 +293,281 @@ export async function transcribeNavigatorVoiceAudio(
 export async function parseNlTalentQuery(
   prompt: string,
   priorFilters?: TalentNavigatorFilters,
+  options?: {
+    /** Pre-resolved intent (after clarification / brief edit). */
+    intentOverride?: import("@/lib/talent-navigator/search-intent").SearchIntent;
+    /** Skip retrieval when blocking clarification is present. */
+    skipRetrieval?: boolean;
+  },
 ): Promise<ParseNlTalentQueryResult> {
-  const { parseNlQuery, mergeNavigatorFilters, creditResultsToReasoning } = await import(
-    "@/lib/talent-navigator/parse-nl-query"
-  );
+  const startedAt = Date.now();
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
+  void user;
+
+  const { parseNlQuery, mergeNavigatorFilters, creditResultsToReasoning, buildSearchReasoning } =
+    await import("@/lib/talent-navigator/parse-nl-query");
   const { EMPTY_NAVIGATOR_FILTERS, hasCreditSearchFilters } = await import(
     "@/lib/talent-navigator/types"
   );
+  const { isTalentNavigatorIntentV1Enabled } = await import(
+    "@/lib/talent-navigator/feature-flag"
+  );
+  const intentV1 = isTalentNavigatorIntentV1Enabled();
 
   try {
     await trackServerEvent("talent_navigator_search_submitted", {
       promptLength: prompt.trim().length,
+      intentV1,
     });
 
-    const parsed = await parseNlQuery(prompt);
-    if (parsed.parseFailed) {
+    const parsed = options?.intentOverride
+      ? null
+      : await parseNlQuery(prompt);
+
+    let intent = options?.intentOverride;
+    if (!intent && parsed) {
+      intent = parsed.intent;
+    }
+    if (!intent) {
+      const { emptySearchIntent } = await import("@/lib/talent-navigator/search-intent");
+      intent = emptySearchIntent(prompt.trim());
+    }
+
+    if (parsed?.parseFailed) {
       await trackServerEvent("talent_navigator_search_parse_failed", {});
     } else {
       await trackServerEvent("talent_navigator_search_parsed", {
-        artistCount: parsed.filters.artists?.length ?? 0,
-        choreographerCount: parsed.filters.choreographers?.length ?? 0,
-        productionCount: parsed.filters.productions?.length ?? 0,
+        artistCount: intent.relationships.filter((r) => r.role === "artist").length,
+        choreographerCount: intent.relationships.filter((r) => r.role === "choreographer")
+          .length,
+        productionCount: intent.relationships.filter((r) => r.role === "production").length,
+        hasOpposite: intent.referenceProfiles.some((r) => r.relation === "opposite"),
+        clarificationCount: intent.clarificationQuestions.length,
+        parseLatencyMs: Date.now() - startedAt,
+        aiUnavailable: parsed?.aiUnavailable ?? false,
       });
     }
 
-    const merged = mergeNavigatorFilters(priorFilters ?? EMPTY_NAVIGATOR_FILTERS, parsed.filters);
+    const { mergeIntentIntoFilters, intentParsedDescription } = await import(
+      "@/lib/talent-navigator/build-search-intent"
+    );
+
+    let merged = parsed
+      ? mergeNavigatorFilters(priorFilters ?? EMPTY_NAVIGATOR_FILTERS, parsed.filters)
+      : mergeIntentIntoFilters(priorFilters ?? EMPTY_NAVIGATOR_FILTERS, intent);
+
+    // Also apply intent-derived filters when intent v1 is on
+    if (intentV1 && parsed) {
+      merged = mergeIntentIntoFilters(merged, intent, parsed.parsed);
+    }
+
+    const parsedDescription =
+      (intentV1 ? intentParsedDescription(intent) : null) ||
+      parsed?.parsedDescription ||
+      `Searching for "${prompt.trim()}"`;
+
+    const degraded = Boolean(parsed?.aiUnavailable);
+    const ambiguousProfiles: NonNullable<ParseNlTalentQueryResult["ambiguousProfiles"]> = [];
+    let oppositeWindow: import("@/lib/talent-navigator/opposite-match").OppositeHeightWindow | null =
+      null;
+    let referenceName: string | undefined;
+    let excludeProfileId: string | undefined;
+
+    // Resolve reference profiles (opposite / similar)
+    if (intentV1 && intent.referenceProfiles.length && supabase) {
+      const {
+        resolveReferenceProfileByName,
+        resolveReferenceProfileById,
+      } = await import("@/lib/talent-navigator/resolve-reference-profile");
+      const {
+        buildOppositeHeightWindow,
+        oppositeHeightClarificationQuestions,
+        oppositeBriefTokens,
+        resolveOppositeTolerance,
+      } = await import("@/lib/talent-navigator/opposite-match");
+
+      for (const ref of intent.referenceProfiles) {
+        const resolution = ref.profileId
+          ? await resolveReferenceProfileById(supabase, ref.profileId)
+          : ref.name
+            ? await resolveReferenceProfileByName(supabase, ref.name)
+            : {
+                requestedName: "",
+                status: "unresolved" as const,
+                message: "Select a dancer for this pairing search.",
+              };
+
+        if (resolution.status === "ambiguous" && resolution.candidates?.length) {
+          ambiguousProfiles.push({
+            requestedName: resolution.requestedName,
+            candidates: resolution.candidates.map((c) => ({
+              id: c.id,
+              name: c.name,
+              height: c.height,
+              location: c.location,
+              score: c.score,
+            })),
+          });
+          await trackServerEvent("talent_navigator_entity_ambiguous", {
+            ambiguousEntityCount: resolution.candidates.length,
+            kind: "profile",
+          });
+        }
+
+        if (resolution.status === "unresolved" || resolution.status === "forbidden") {
+          intent = {
+            ...intent,
+            clarificationQuestions: [
+              {
+                id: "opposite_pick_dancer",
+                category: "Reference dancer",
+                question:
+                  ref.relation === "opposite"
+                    ? "Who should we find an opposite for?"
+                    : `Which dancer should we use for “${ref.relation.replace("_", " ")}”?`,
+                options: [
+                  { id: "type_name", label: "Type a full name in search", value: "retype" },
+                  { id: "skip", label: "Skip / use default", value: "skip" },
+                ],
+                recommendedOptionId: "type_name",
+                effect: "Opposite pairing needs a specific Motiion profile to read height from.",
+                multiSelect: false,
+                blocking: true,
+              },
+              ...intent.clarificationQuestions.filter((q) => q.id !== "opposite_pick_dancer"),
+            ].slice(0, 3),
+            missingContext: [
+              ...intent.missingContext,
+              resolution.message ?? "Referenced dancer not found",
+            ],
+          };
+        }
+
+        if (resolution.status === "resolved" && resolution.profile && ref.relation === "opposite") {
+          referenceName = resolution.profile.name;
+          excludeProfileId = resolution.profile.id;
+          const tolerance = resolveOppositeTolerance(
+            intent.referenceProfiles,
+            intent.assumptions,
+          );
+          oppositeWindow = buildOppositeHeightWindow({
+            referenceHeight: resolution.profile.height,
+            toleranceInches: tolerance,
+          });
+
+          if (!oppositeWindow) {
+            const missingQs = oppositeHeightClarificationQuestions({
+              hasReferenceHeight: false,
+            });
+            intent = {
+              ...intent,
+              clarificationQuestions: [
+                ...missingQs,
+                ...intent.clarificationQuestions.filter(
+                  (q) => !missingQs.some((m) => m.id === q.id),
+                ),
+              ].slice(0, 3),
+              referenceProfiles: intent.referenceProfiles.map((r) =>
+                r.relation === "opposite"
+                  ? { ...r, profileId: resolution.profile!.id, name: resolution.profile!.name }
+                  : r,
+              ),
+            };
+          } else {
+            merged = {
+              ...merged,
+              height: oppositeWindow.heightFilter,
+            };
+            intent = {
+              ...intent,
+              hardFilters: [
+                ...intent.hardFilters.filter((f) => f.field !== "height"),
+                {
+                  field: "height",
+                  operator: "between",
+                  value: oppositeWindow.heightFilter,
+                  source: "default",
+                  label: `Height ${oppositeWindow.referenceHeightLabel} ±${tolerance}"`,
+                },
+              ],
+              briefTokens: [
+                ...intent.briefTokens.filter(
+                  (t) => t.filterKey !== "height" && t.filterKey !== "reference",
+                ),
+                ...oppositeBriefTokens({
+                  referenceName: resolution.profile.name,
+                  window: oppositeWindow,
+                  toleranceInches: tolerance,
+                }),
+              ],
+              referenceProfiles: intent.referenceProfiles.map((r) =>
+                r.relation === "opposite"
+                  ? {
+                      ...r,
+                      profileId: resolution.profile!.id,
+                      name: resolution.profile!.name,
+                      heightToleranceInches: tolerance,
+                    }
+                  : r,
+              ),
+            };
+          }
+        }
+      }
+    }
+
+    const blockingClarification =
+      intentV1 &&
+      intent.clarificationQuestions.some((q) => q.blocking) &&
+      !options?.intentOverride;
+
+    if (
+      intentV1 &&
+      (blockingClarification || ambiguousProfiles.length > 0) &&
+      (options?.skipRetrieval || blockingClarification || ambiguousProfiles.length > 0)
+    ) {
+      // Show brief + questions; still allow provisional results for non-blocking only
+      const provisional =
+        !blockingClarification && ambiguousProfiles.length === 0
+          ? await fetchNavigatorTalent(merged)
+          : {
+              talent: [] as TalentNavigatorInitialData["talent"],
+              usingFallbackData: false,
+              source: "live" as const,
+            };
+
+      if (blockingClarification || ambiguousProfiles.length > 0) {
+        await trackServerEvent("talent_navigator_clarification_shown", {
+          blocking: blockingClarification,
+          ambiguousProfiles: ambiguousProfiles.length,
+          questionCount: intent.clarificationQuestions.length,
+        });
+
+        return {
+          filters: merged,
+          parsedDescription,
+          confidence: parsed?.confidence ?? 0.7,
+          data: provisional,
+          reasoning: {
+            prose: blockingClarification
+              ? "I need one clarification before I can search."
+              : "I found a few dancers with that name — which one did you mean?",
+          },
+          intent,
+          degraded,
+          blockingClarification: blockingClarification || ambiguousProfiles.length > 0,
+          ambiguousProfiles: ambiguousProfiles.length ? ambiguousProfiles : undefined,
+          errorCode: ambiguousProfiles.length ? "ambiguous_profile" : undefined,
+        };
+      }
+    }
+
+    const { attachMatchReasons, rankOppositeCandidates } = await import(
+      "@/lib/talent-navigator/match-reasons"
+    );
 
     if (hasCreditSearchFilters(merged)) {
       const { searchTalentByCredits } = await import("@/lib/talent-navigator/search-by-credits");
@@ -334,6 +615,7 @@ export async function parseNlTalentQuery(
           matchMode: merged.relationshipMatchMode,
           verificationFilterCount: merged.verificationStatuses.length,
           unresolvedEntityCount: unresolvedCount,
+          parseLatencyMs: Date.now() - startedAt,
         },
       );
 
@@ -358,48 +640,131 @@ export async function parseNlTalentQuery(
         }));
       }
 
+      const talentWithReasons = intentV1
+        ? attachMatchReasons(creditResult.talent, intent, {
+            oppositeWindow,
+            referenceName,
+            excludeProfileId,
+          })
+        : creditResult.talent;
+
       return {
         filters: filtersWithResolved,
-        parsedDescription: parsed.parsedDescription,
-        confidence: parsed.confidence,
+        parsedDescription,
+        confidence: parsed?.confidence ?? 0.9,
         data: {
-          talent: creditResult.talent,
+          talent: talentWithReasons,
           usingFallbackData: creditResult.usingFallbackData,
           source: creditResult.source,
         },
         reasoning: creditResultsToReasoning(
           creditResult.talent,
           filtersWithResolved,
-          parsed.parsedDescription,
+          parsedDescription,
           creditResult.warnings.map((w) => w.message),
+          degraded,
         ),
         warnings: creditResult.warnings,
         creditEvidenceByTalentId,
+        intent: intentV1 ? intent : undefined,
+        degraded,
+        errorCode: creditResult.total === 0 ? "zero_results" : undefined,
+        relaxationSuggestions:
+          creditResult.total === 0
+            ? [
+                { id: "include_self_reported", label: "Include self-reported credits" },
+                { id: "match_any", label: "Match any named connection (OR)" },
+                { id: "remove_location", label: "Remove location filter" },
+              ]
+            : undefined,
       };
     }
 
-    const data = await fetchNavigatorTalent(merged);
-    const { buildSearchReasoning } = await import("@/lib/talent-navigator/parse-nl-query");
+    let data = await fetchNavigatorTalent(merged);
+    if (intentV1 && oppositeWindow) {
+      const ranked = rankOppositeCandidates(
+        data.talent,
+        oppositeWindow,
+        // reference styles filled when we have resolved profile — use empty for now
+        [],
+      );
+      data = {
+        ...data,
+        talent: attachMatchReasons(ranked, intent, {
+          oppositeWindow,
+          referenceName,
+          excludeProfileId,
+        }),
+      };
+    } else if (intentV1) {
+      data = {
+        ...data,
+        talent: attachMatchReasons(data.talent, intent, {
+          oppositeWindow,
+          referenceName,
+          excludeProfileId,
+        }),
+      };
+    }
+
     const reasoning = buildSearchReasoning({
       count: data.talent.length,
-      parsedDescription: parsed.parsedDescription,
+      parsedDescription,
       topTalentNames: data.talent.slice(0, 5).map((talent) => talent.name),
       activeFilters: merged,
+      degraded,
     });
 
     await trackServerEvent(
       data.talent.length === 0
         ? "talent_navigator_search_zero_results"
         : "talent_navigator_search_returned_results",
-      { resultCount: data.talent.length },
+      {
+        resultCount: data.talent.length,
+        parseLatencyMs: Date.now() - startedAt,
+        rankingProfile: intent.rankingProfile,
+        clarificationCount: intent.clarificationQuestions.length,
+      },
     );
+
+    if (intentV1 && intent.clarificationQuestions.length) {
+      await trackServerEvent("talent_navigator_clarification_shown", {
+        blocking: false,
+        questionCount: intent.clarificationQuestions.length,
+      });
+    }
 
     return {
       filters: merged,
-      parsedDescription: parsed.parsedDescription,
-      confidence: parsed.confidence,
+      parsedDescription,
+      confidence: parsed?.confidence ?? 0.85,
       data,
       reasoning,
+      intent: intentV1 ? intent : undefined,
+      degraded,
+      blockingClarification: false,
+      errorCode:
+        data.talent.length === 0
+          ? "zero_results"
+          : degraded
+            ? "ai_unavailable"
+            : undefined,
+      relaxationSuggestions:
+        data.talent.length === 0
+          ? [
+              ...(oppositeWindow
+                ? [
+                    {
+                      id: "expand_height",
+                      label: `Expand opposite height tolerance to ±${Math.min(4, (oppositeWindow.toleranceInches || 2) + 1)} inches`,
+                    },
+                  ]
+                : []),
+              { id: "remove_location", label: "Remove location filter" },
+              { id: "remove_availability", label: "Remove availability requirement" },
+              { id: "broaden_styles", label: "Broaden dance style filters" },
+            ]
+          : undefined,
     };
   } catch (error) {
     return {
@@ -407,11 +772,127 @@ export async function parseNlTalentQuery(
       parsedDescription: "",
       confidence: 0,
       data: await fetchNavigatorTalent(priorFilters ?? EMPTY_NAVIGATOR_FILTERS),
-      reasoning: { headline: "Could not parse that request.", bullets: [] },
+      reasoning: { prose: "I couldn't parse that request — try rephrasing what you're looking for." },
       error: error instanceof Error ? error.message : "Search assistant unavailable.",
+      errorCode: "parse_failed",
     };
   }
 }
+
+/** Apply a clarification chip answer and re-run search with updated intent. */
+export async function applyNavigatorClarification(input: {
+  priorFilters: TalentNavigatorFilters;
+  intent: import("@/lib/talent-navigator/search-intent").SearchIntent;
+  questionId: string;
+  optionIds: string[];
+}): Promise<ParseNlTalentQueryResult> {
+  const { applyClarificationAnswer } = await import("@/lib/talent-navigator/search-intent");
+  const nextIntent = applyClarificationAnswer(
+    input.intent,
+    input.questionId,
+    input.optionIds,
+  );
+  await trackServerEvent("talent_navigator_clarification_answered", {
+    questionId: input.questionId,
+    optionCount: input.optionIds.length,
+  });
+  return parseNlTalentQuery(nextIntent.originalQuery, input.priorFilters, {
+    intentOverride: nextIntent,
+  });
+}
+
+/** Remove a brief token and re-run search. */
+export async function removeNavigatorBriefToken(input: {
+  priorFilters: TalentNavigatorFilters;
+  intent: import("@/lib/talent-navigator/search-intent").SearchIntent;
+  tokenId: string;
+}): Promise<ParseNlTalentQueryResult> {
+  const { removeBriefToken } = await import("@/lib/talent-navigator/search-intent");
+  const nextIntent = removeBriefToken(input.intent, input.tokenId);
+  return parseNlTalentQuery(nextIntent.originalQuery, input.priorFilters, {
+    intentOverride: nextIntent,
+  });
+}
+
+/** Resolve an ambiguous Motiion profile for opposite/similar searches. */
+export async function resolveReferenceProfileChoice(input: {
+  priorFilters: TalentNavigatorFilters;
+  intent: import("@/lib/talent-navigator/search-intent").SearchIntent;
+  profileId: string;
+  profileName: string;
+}): Promise<ParseNlTalentQueryResult> {
+  const nextIntent = {
+    ...input.intent,
+    referenceProfiles: input.intent.referenceProfiles.map((ref) => ({
+      ...ref,
+      profileId: input.profileId,
+      name: input.profileName,
+    })),
+    clarificationQuestions: input.intent.clarificationQuestions.filter(
+      (q) => q.id !== "opposite_pick_dancer" && q.id !== "opposite_missing_height",
+    ),
+  };
+  return parseNlTalentQuery(nextIntent.originalQuery, input.priorFilters, {
+    intentOverride: nextIntent,
+  });
+}
+
+/** Apply an explicit no-results relaxation chosen by the user. */
+export async function applyNavigatorRelaxation(input: {
+  priorFilters: TalentNavigatorFilters;
+  intent?: import("@/lib/talent-navigator/search-intent").SearchIntent;
+  relaxationId: string;
+}): Promise<ParseNlTalentQueryResult> {
+  let filters = { ...input.priorFilters };
+  let intent = input.intent;
+
+  if (input.relaxationId === "remove_location") {
+    filters = { ...filters, location: "", locations: [] };
+    if (intent) {
+      intent = {
+        ...intent,
+        hardFilters: intent.hardFilters.filter((f) => f.field !== "location"),
+        briefTokens: intent.briefTokens.filter((t) => t.filterKey !== "location"),
+      };
+    }
+  } else if (input.relaxationId === "remove_availability") {
+    filters = { ...filters, availability: "" };
+  } else if (input.relaxationId === "expand_height" && intent) {
+    const { DEFAULT_OPPOSITE_HEIGHT_TOLERANCE_INCHES } = await import(
+      "@/lib/talent-navigator/opposite-match"
+    );
+    const current =
+      intent.referenceProfiles.find((r) => r.relation === "opposite")
+        ?.heightToleranceInches ?? DEFAULT_OPPOSITE_HEIGHT_TOLERANCE_INCHES;
+    intent = {
+      ...intent,
+      referenceProfiles: intent.referenceProfiles.map((r) =>
+        r.relation === "opposite"
+          ? { ...r, heightToleranceInches: Math.min(4, current + 1) }
+          : r,
+      ),
+    };
+  } else if (input.relaxationId === "match_any") {
+    filters = { ...filters, relationshipMatchMode: "any" };
+  } else if (input.relaxationId === "include_self_reported") {
+    filters = { ...filters, verificationStatuses: [] };
+  } else if (input.relaxationId === "broaden_styles") {
+    filters = { ...filters, genres: [], style: "" };
+    if (intent) {
+      intent = {
+        ...intent,
+        hardFilters: intent.hardFilters.filter((f) => f.field !== "danceStyle"),
+        briefTokens: intent.briefTokens.filter((t) => t.filterKey !== "danceStyle"),
+      };
+    }
+  }
+
+  if (intent) {
+    return parseNlTalentQuery(intent.originalQuery, filters, { intentOverride: intent });
+  }
+  return parseNlTalentQuery(filters.keyword || "dancers", filters);
+}
+
 
 export async function resolveCreditEntityChoice(input: {
   priorFilters: TalentNavigatorFilters;
@@ -464,8 +945,7 @@ export async function resolveCreditEntityChoice(input: {
     confidence: 1,
     data,
     reasoning: {
-      headline: `Searching with ${input.entityName}.`,
-      bullets: [`Resolved ${input.role}: ${input.entityName}`],
+      prose: `Got it — I'll search using ${input.entityName}.`,
     },
     creditEvidenceByTalentId: Object.fromEntries(
       evidenceTalent.map((t) => [
@@ -522,6 +1002,10 @@ export async function saveTalentToRoster(input: {
 
   let listId = input.rosterId;
   if (!listId && input.rosterName?.trim()) {
+    const pro = await requireIndustryProFeature(user.id, "roster_write");
+    if (!pro.ok) {
+      return { ok: false, error: "Industry Pro is required to create rosters." };
+    }
     const { data: created, error } = await supabase
       .from("talent_lists")
       .insert({ owner_id: user.id, name: input.rosterName.trim(), kind: "roster" })
@@ -533,6 +1017,11 @@ export async function saveTalentToRoster(input: {
 
   if (!listId) {
     return saveTalentForBuyer(input.talentIdOrSlug);
+  }
+
+  const pro = await requireIndustryProFeature(user.id, "roster_write");
+  if (!pro.ok) {
+    return { ok: false, error: "Industry Pro is required to add talent to rosters." };
   }
 
   const { error: memberError } = await supabase
@@ -566,6 +1055,19 @@ export async function bulkInviteRosterToCasting(input: {
   if (error) return { ok: false, invited: 0, error: error.message };
 
   const castingId = await resolveCastingIdFromRoleId(supabase, input.roleId);
+  if (!castingId) {
+    return { ok: false, invited: 0, error: "Publish the casting before inviting talent." };
+  }
+
+  const { data: casting } = await supabase
+    .from("castings")
+    .select("status")
+    .eq("id", castingId)
+    .maybeSingle<{ status: string | null }>();
+
+  if (!castingAcceptsOutreach(casting?.status)) {
+    return { ok: false, invited: 0, error: "Publish the casting before inviting talent." };
+  }
 
   let invited = 0;
   for (const member of members ?? []) {
@@ -742,26 +1244,42 @@ export async function listBuyerCastingTargets(): Promise<{
   const projectIds = projects.map((project) => project.id);
   const { data: roles } = await supabase
     .from("roles")
-    .select("id, title, project_id")
+    .select("id, title, project_id, casting_id")
     .in("project_id", projectIds)
     .order("created_at", { ascending: false });
+
+  const castingIds = [
+    ...new Set(
+      (roles ?? [])
+        .map((role) => role.casting_id as string | null)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+
+  const publishedCastingIds = new Set<string>();
+  if (castingIds.length) {
+    const { data: castings } = await supabase
+      .from("castings")
+      .select("id, status")
+      .in("id", castingIds);
+    for (const casting of castings ?? []) {
+      if (castingAcceptsOutreach(casting.status as string | null)) {
+        publishedCastingIds.add(casting.id as string);
+      }
+    }
+  }
 
   const titleByProject = new Map(projects.map((project) => [project.id, project.title ?? "Untitled project"]));
   const targets: CastingInviteTarget[] = [];
 
   for (const role of roles ?? []) {
+    const castingId = role.casting_id as string | null;
+    if (!castingId || !publishedCastingIds.has(castingId)) continue;
     targets.push({
       projectId: role.project_id as string,
       castingId: role.id as string,
       title: (role.title as string) || titleByProject.get(role.project_id as string) || "Role",
     });
-  }
-
-  for (const project of projects) {
-    const hasRole = (roles ?? []).some((role) => role.project_id === project.id);
-    if (!hasRole) {
-      targets.push({ projectId: project.id, castingId: null, title: project.title ?? "Untitled project" });
-    }
   }
 
   return { targets };
@@ -785,6 +1303,22 @@ export async function inviteTalentFromNavigator(
   }
 
   const castingId = await resolveCastingIdFromRoleId(supabase, target.castingId);
+  if (!castingId) {
+    return { ok: false, error: "Publish the casting before inviting talent." };
+  }
+
+  const { data: casting } = await supabase
+    .from("castings")
+    .select("status")
+    .eq("id", castingId)
+    .maybeSingle<{ status: string | null }>();
+
+  if (!castingAcceptsOutreach(casting?.status)) {
+    return { ok: false, error: "Publish the casting before inviting talent." };
+  }
+
+  const allowance = await requireCastingOutreachAllowance(user.id, castingId, 1);
+  if (!allowance.ok) return { ok: false, error: allowance.error };
 
   const { error } = await supabase.from("invitations").insert({
     project_id: target.projectId,
@@ -834,6 +1368,9 @@ export async function askTalentAvailability(input: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "You must be signed in." };
 
+  const pro = await requireIndustryProFeature(user.id, "talent_outreach");
+  if (!pro.ok) return { ok: false, error: "Industry Pro is required to request availability." };
+
   const { error } = await supabase.from("availability_check_requests").insert({
     requester_id: user.id,
     talent_id: input.talentUserId,
@@ -866,6 +1403,9 @@ export async function requestTalentSizeSheet(input: {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "You must be signed in." };
+
+  const pro = await requireIndustryProFeature(user.id, "talent_outreach");
+  if (!pro.ok) return { ok: false, error: "Industry Pro is required to request size sheets." };
 
   const { error } = await supabase.from("size_sheet_requests").insert({
     requester_id: user.id,
@@ -903,6 +1443,9 @@ export async function contactTalentUser(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "You must be signed in." };
+
+  const pro = await requireIndustryProFeature(user.id, "talent_outreach");
+  if (!pro.ok) return { ok: false, error: "Industry Pro is required to contact talent." };
 
   const identity = await requireIndustryIdentityVerified(user.id);
   if (!identity.ok) {

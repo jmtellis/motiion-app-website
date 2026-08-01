@@ -14,12 +14,15 @@ export function ProjectCoverPanel({
   coverStoragePath,
   onCoverChange,
   onError,
+  /** Shown as a soft preview when no cover is uploaded (e.g. client logo). */
+  placeholderImageUrl,
 }: {
   draftSessionId: string;
   coverImageUrl: string;
   coverStoragePath: string | null;
   onCoverChange: (url: string, storagePath: string | null) => void;
   onError: (message: string | null) => void;
+  placeholderImageUrl?: string | null;
 }) {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [isCoverPending, startCoverTransition] = useTransition();
@@ -117,13 +120,28 @@ export function ProjectCoverPanel({
           </>
         ) : (
           <>
-            {isCoverPending ? (
-              <Loader2 className="size-8 animate-spin text-white/60" aria-hidden />
-            ) : (
-              <ImagePlus className="size-8 text-white/55" aria-hidden />
-            )}
-            <p className="text-sm font-medium text-white/85">Upload cover image</p>
-            <p className="text-xs text-white/45">JPG, PNG, or WebP up to 12 MB</p>
+            {placeholderImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={placeholderImageUrl}
+                alt=""
+                className="project-create__cover-preview project-create__cover-preview--placeholder"
+                aria-hidden
+              />
+            ) : null}
+            <div className="project-create__cover-empty-content">
+              {isCoverPending ? (
+                <Loader2 className="size-8 animate-spin text-white/60" aria-hidden />
+              ) : (
+                <ImagePlus className="size-8 text-white/55" aria-hidden />
+              )}
+              <p className="text-sm font-medium text-white/85">Upload cover image</p>
+              <p className="text-xs text-white/45">
+                {placeholderImageUrl
+                  ? "Using client image until you upload a cover"
+                  : "JPG, PNG, or WebP up to 12 MB"}
+              </p>
+            </div>
           </>
         )}
       </div>

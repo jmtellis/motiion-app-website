@@ -12,11 +12,7 @@ import {
   withdrawInvitationFromSearch,
 } from "@/app/(buyer-app)/(paid)/projects/[id]/casting-workflow/actions";
 import { getProfileInitials } from "@/lib/auth/avatar";
-import {
-  deriveCastingWorkflowState,
-  getCastingPanelHeader,
-  getCastingPrimaryAction,
-} from "@/lib/talent-buyers/casting/casting-navigation";
+import { castingProjectAcceptsOutreach } from "@/lib/talent-buyers/casting/casting-display";
 import {
   castingConfigurationLocalHireOnly,
   invitationMatchesRole,
@@ -28,13 +24,13 @@ import { referralToTalent } from "@/lib/talent-buyers/casting/casting-referrals"
 import type { CastingInvitation, CastingRole } from "@/lib/talent-buyers/casting/casting-types";
 import type { Talent } from "@/lib/talent-navigator/types";
 
+import { useIndustryProOptional } from "@/components/talent-buyers/billing/IndustryProContext";
 import { EmptyState } from "@/components/talent-buyers/dashboard/EmptyState";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
 import { useProjectWorkspace } from "@/components/talent-buyers/project/ProjectWorkspaceContext";
 import { ActiveTalentPanel } from "@/components/talent-buyers/talent-navigator/ActiveTalentPanel";
 
 import { AskForReferralModal } from "./AskForReferralModal";
-import { CastingPanelHeader } from "./CastingPanelHeader";
 import { CastingTalentCarousel, PROFILE_DRAG_MIME } from "./CastingTalentCarousel";
 import { FindTalentReferralMenu } from "./FindTalentReferralMenu";
 
@@ -58,6 +54,7 @@ export function CastingTalentSearchPanel() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
+  const { openUpgrade } = useIndustryProOptional();
   const { projectId, castingWorkflow } = useProjectWorkspace();
   const [matchedTalent, setMatchedTalent] = useState<Talent[]>([]);
   const [loadingMatches, setLoadingMatches] = useState(false);
@@ -81,13 +78,7 @@ export function CastingTalentSearchPanel() {
   const selectedRoleId = searchParams.get("role") ?? roles[0]?.id ?? "";
   const selectedRole = roles.find((role) => role.id === selectedRoleId) ?? roles[0] ?? null;
 
-  const state = deriveCastingWorkflowState(workflow);
-  const header = getCastingPanelHeader("talent-search");
-
-  const primaryAction = {
-    ...getCastingPrimaryAction("talent-search", state),
-    disabled: !selectedRole?.id,
-  };
+  const acceptsOutreach = castingProjectAcceptsOutreach(workflow.primaryCasting?.status);
 
   const roleInvitations = useMemo(
     () =>
@@ -201,6 +192,10 @@ export function CastingTalentSearchPanel() {
       showToast({ message: "Save the casting before sharing a referral link.", variant: "error" });
       return;
     }
+    if (!acceptsOutreach) {
+      showToast({ message: "Publish the casting before sharing referral links.", variant: "error" });
+      return;
+    }
     const result = await getCastingReferralShareUrls(castingId);
     if (!result.ok) {
       showToast({ message: result.error ?? "Could not create referral link.", variant: "error" });
@@ -227,12 +222,6 @@ export function CastingTalentSearchPanel() {
     );
   }
 
-  function handlePrimaryAction(actionId: string) {
-    if (actionId === "search-talent" && selectedRole?.id) {
-      router.push(`/talent?roleId=${encodeURIComponent(selectedRole.id)}`);
-    }
-  }
-
   function openTalentDetails(talent: Talent) {
     setSelectedTalent(talent);
     setDetailsOpen(true);
@@ -245,6 +234,10 @@ export function CastingTalentSearchPanel() {
 
   function inviteProfiles(profileIds: string[]) {
     if (!selectedRole || !profileIds.length) return;
+    if (!acceptsOutreach) {
+      showToast({ message: "Publish the casting before inviting talent.", variant: "error" });
+      return;
+    }
 
     const roleIds = [selectedRole.bridgedRoleId ?? selectedRole.id].filter(Boolean) as string[];
 
@@ -255,7 +248,11 @@ export function CastingTalentSearchPanel() {
         roleIds,
       });
       if (!result.ok) {
-        showToast({ message: result.error ?? "Invite failed", variant: "error" });
+        const message = result.error ?? "Invite failed";
+        if (message.toLowerCase().includes("free plans")) {
+          openUpgrade("casting_invite_limit");
+        }
+        showToast({ message, variant: "error" });
         return;
       }
       showToast({ message: `Invited ${result.count ?? profileIds.length} dancer(s)`, variant: "success" });
@@ -292,63 +289,56 @@ export function CastingTalentSearchPanel() {
 
   if (!roles.length) {
     return (
-      <>
-        <CastingPanelHeader title={header.title} description="" />
-        <div className="project-workspace__panel-body">
-          <EmptyState
-            variant="dashboard"
-            title="No roles available for matching"
-            description="Add at least one role to search, invite, and source candidates."
-            actionLabel="Add role"
-            actionHref={`/projects/${projectId}/castings/new`}
-          />
-        </div>
-      </>
+      <div className="project-workspace__panel-body">
+        <EmptyState
+          variant="dashboard"
+          title="No roles available for matching"
+          description="Add at least one role to search, invite, and source candidates."
+          actionLabel="Add role"
+          actionHref={`/projects/${projectId}/castings/new`}
+        />
+      </div>
     );
   }
 
+  const rolePicker = (
+    <label className="casting-find-talent-role-pill">
+      <span className="sr-only">Role</span>
+      <select
+        value={selectedRole?.id ?? ""}
+        onChange={(event) => setSelectedRole(event.target.value)}
+        className="casting-find-talent-role-pill__select"
+        disabled={roles.length <= 1}
+        aria-label="Role"
+      >
+        {roles.map((role) => (
+          <option key={role.id} value={role.id}>
+            {role.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+
   return (
     <>
-      <CastingPanelHeader
-        title={header.title}
-        description=""
-        primaryAction={primaryAction}
-        onPrimaryAction={handlePrimaryAction}
-        center={
-          <label className="casting-find-talent-role-pill">
-            <span className="sr-only">Role</span>
-            <select
-              value={selectedRole?.id ?? ""}
-              onChange={(event) => setSelectedRole(event.target.value)}
-              className="casting-find-talent-role-pill__select"
-              disabled={roles.length <= 1}
-              aria-label="Role"
-            >
-              {roles.map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        }
-      />
-
       <div className="project-workspace__panel-body casting-talent-search">
         <div className="casting-talent-search__layout">
           <div className="casting-talent-search__main">
             <div className="casting-find-talent-board">
               <div className="casting-find-talent-board__left">
                 <CastingTalentCarousel
-                  title="Matched talent"
+                  title="Find talent"
                   items={visibleMatchedTalent}
                   loading={loadingMatches}
                   selectedId={selectedTalent?.id}
                   onSelect={openTalentDetails}
+                  countLabel="matched"
                   emptyTitle="No matches yet"
                   emptyDescription="Try another role or broaden the role requirements in Breakdown."
                   emptyActionLabel="Edit breakdown"
                   emptyActionHref={`/projects/${projectId}/workspace/breakdown#roles`}
+                  headerActions={rolePicker}
                 />
 
                 <div className="casting-find-talent-board__row-divider" role="separator" />
@@ -358,15 +348,22 @@ export function CastingTalentSearchPanel() {
                   items={referredTalent}
                   selectedId={selectedTalent?.id}
                   onSelect={openTalentDetails}
+                  countLabel="referred"
                   emptyTitle="No referrals yet"
-                  emptyDescription="Ask someone on Motiion or share a referral link to collect dancer recommendations."
+                  emptyDescription={
+                    acceptsOutreach
+                      ? "Ask someone on Motiion or share a referral link to collect dancer recommendations."
+                      : "Publish the casting to ask for referrals and share referral links."
+                  }
                   emptyActionLabel="Ask for referral"
                   onEmptyAction={
-                    workflow.primaryCasting?.id ? () => setAskReferralOpen(true) : undefined
+                    acceptsOutreach && workflow.primaryCasting?.id
+                      ? () => setAskReferralOpen(true)
+                      : undefined
                   }
                   headerActions={
                     <FindTalentReferralMenu
-                      disabled={!workflow.primaryCasting?.id}
+                      disabled={!acceptsOutreach || !workflow.primaryCasting?.id}
                       onAskForReferral={() => setAskReferralOpen(true)}
                       onCopyMotiionLink={() => void copyReferralLink("motiion")}
                       onCopyExternalLink={() => void copyReferralLink("external")}
@@ -381,6 +378,7 @@ export function CastingTalentSearchPanel() {
             className={`casting-find-talent-invited-panel${dropActive ? " is-drop-active" : ""}`}
             aria-labelledby="casting-invited-heading"
             onDragOver={(event) => {
+              if (!acceptsOutreach) return;
               event.preventDefault();
               event.dataTransfer.dropEffect = "copy";
               setDropActive(true);
@@ -388,13 +386,18 @@ export function CastingTalentSearchPanel() {
             onDragLeave={() => setDropActive(false)}
             onDrop={handleDrop}
           >
-            <div className="casting-find-talent-board__section-header">
-              <h3 id="casting-invited-heading">Invited ({roleInvitations.length})</h3>
+            <div className="casting-find-talent-carousel-section__header casting-find-talent-invited-panel__header">
+              <h3 id="casting-invited-heading">Invited</h3>
+              <span className="casting-find-talent-invited-panel__count">{roleInvitations.length}</span>
             </div>
 
             {roleInvitations.length === 0 ? (
               <div className="casting-find-talent-dropzone">
-                <p>Drop talent here to invite.</p>
+                <p>
+                  {acceptsOutreach
+                    ? "Drop talent here to invite."
+                    : "Publish the casting to invite talent."}
+                </p>
               </div>
             ) : (
               <ul className="casting-find-talent-invite-list">
@@ -453,14 +456,16 @@ export function CastingTalentSearchPanel() {
                 open
                 compact
                 onClose={closeTalentDetails}
-                onInvite={() => inviteProfiles([selectedTalent.id])}
+                onInvite={
+                  acceptsOutreach ? () => inviteProfiles([selectedTalent.id]) : undefined
+                }
               />
             </>
           ) : null}
         </div>
       </div>
 
-      {workflow.primaryCasting?.id ? (
+      {acceptsOutreach && workflow.primaryCasting?.id ? (
         <AskForReferralModal
           open={askReferralOpen}
           onClose={() => setAskReferralOpen(false)}

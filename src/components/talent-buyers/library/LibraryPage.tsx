@@ -7,6 +7,10 @@ import { LayoutGrid, Search, Rows3 } from "lucide-react";
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 import { SegmentedControl } from "@/components/talent-buyers/dashboard/SegmentedControl";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
+import { ProChip } from "@/components/talent-buyers/billing/ProChip";
+import { ProLockHint } from "@/components/talent-buyers/billing/ProLockHint";
+import { useIndustryProOptional } from "@/components/talent-buyers/billing/IndustryProContext";
+import "@/components/talent-buyers/billing/upgrade-pro.css";
 import {
   addTalentToCollections,
   createCollection,
@@ -45,6 +49,7 @@ export function LibraryPage({
 }) {
   const router = useRouter();
   const { showToast } = useToast();
+  const { requirePro, hasIndustryPro, openUpgrade } = useIndustryProOptional();
   const [view, setView] = useState<LibraryView>(initialView);
   const [collections, setCollections] = useState(initialCollections);
   const [savedTalent, setSavedTalent] = useState(initialSavedTalent);
@@ -267,7 +272,10 @@ export function LibraryPage({
               primaryLabel="Find Talent"
               primaryHref="/talent"
               secondaryLabel="Create roster"
-              secondaryOnClick={() => setCreateOpen(true)}
+              secondaryOnClick={() => {
+                if (!requirePro("roster_write")) return;
+                setCreateOpen(true);
+              }}
             />
           ) : (
             <>
@@ -278,12 +286,35 @@ export function LibraryPage({
                   onChange={setView}
                   options={[
                     { value: "saved", label: "Browse" },
-                    { value: "collections", label: "Roster" },
+                    {
+                      value: "collections",
+                      label: "Roster",
+                      badge: !hasIndustryPro ? (
+                        <ProChip tone={view === "collections" ? "on-active" : "accent"} />
+                      ) : undefined,
+                    },
                   ]}
                   equalWidth
                   activeTone="white"
                 />
               </div>
+
+              {view === "collections" && !hasIndustryPro ? (
+                <div className="library-pro-callout">
+                  <p className="library-pro-callout__title">Rosters are an Industry Pro feature</p>
+                  <p className="library-pro-callout__copy">
+                    Save talent for free from Find Talent. Upgrade to create named rosters, organize
+                    collections, and share lists with collaborators.{" "}
+                    <button
+                      type="button"
+                      className="text-[color-mix(in_oklab,var(--accent)_85%,white)] underline-offset-2 hover:underline"
+                      onClick={() => openUpgrade("roster_write")}
+                    >
+                      Start free trial
+                    </button>
+                  </p>
+                </div>
+              ) : null}
 
               <div className="library-page__title-row">
                 <h1 className="library-page__title-heading">
@@ -296,8 +327,12 @@ export function LibraryPage({
                         <button
                           type="button"
                           className="buyer-chrome-bar__cta"
-                          onClick={() => setCreateOpen(true)}
+                          onClick={() => {
+                            if (!requirePro("roster_write")) return;
+                            setCreateOpen(true);
+                          }}
                         >
+                          <ProLockHint />
                           Create roster
                         </button>
                       ) : null}
@@ -330,7 +365,10 @@ export function LibraryPage({
                     title="No rosters yet"
                     body="Create a roster to start grouping saved talent visually."
                     primaryLabel="Create roster"
-                    primaryOnClick={() => setCreateOpen(true)}
+                    primaryOnClick={() => {
+                      if (!requirePro("roster_write")) return;
+                      setCreateOpen(true);
+                    }}
                   />
                 )
               ) : (

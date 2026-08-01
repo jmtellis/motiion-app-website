@@ -106,7 +106,7 @@ export async function saveCastingDraft(payload: unknown): Promise<SaveCastingDra
     return { ok: false, error: session.error };
   }
 
-  const { supabase, userId } = session;
+const { supabase, userId } = session;
   const form = parsed.data;
   const projectRow = buildProjectInsertRow(userId, form, true);
 
@@ -175,7 +175,7 @@ export async function publishCasting(payload: unknown): Promise<PublishCastingRe
     return { ok: false, error: session.error };
   }
 
-  const identity = await requireIndustryIdentityVerified(session.userId);
+const identity = await requireIndustryIdentityVerified(session.userId);
   if (!identity.ok) {
     return { ok: false, code: identity.code, error: identity.error };
   }
@@ -319,7 +319,7 @@ export async function createProject(payload: unknown, isDraft = false): Promise<
     return { ok: false, error: session.error };
   }
 
-  const { supabase, userId } = session;
+const { supabase, userId } = session;
   const { data, error } = await supabase
     .from("projects")
     .insert(buildContainerProjectInsertRow(userId, parsed.data, isDraft))

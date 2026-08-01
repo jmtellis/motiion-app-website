@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { getOrganizerPageData } from "@/app/(buyer-app)/(paid)/calendar/organizer-actions";
 import { OrganizerManageView } from "@/components/talent-buyers/activities/OrganizerManageView";
 import { BuyerAppPage } from "@/components/talent-buyers/dashboard/BuyerAppPage";
-import { BuyerPageChromeRegistrar } from "@/components/talent-buyers/dashboard/BuyerPageChromeRegistrar";
 import { requireHiringAccount } from "@/lib/auth/session";
 
 export default async function CalendarActivityManagePage({
@@ -21,16 +20,12 @@ export default async function CalendarActivityManagePage({
 
   return (
     <BuyerAppPage>
-      <BuyerPageChromeRegistrar
-        breadcrumbs={[
-          { label: "Events", href: "/events" },
-          { label: result.data.activity.title },
-        ]}
-      />
       <OrganizerManageView
         activity={result.data.activity}
         attendees={result.data.attendees}
         revenue={result.data.revenue}
+        subgroups={result.data.subgroups}
+        promos={result.data.promos}
       />
     </BuyerAppPage>
   );

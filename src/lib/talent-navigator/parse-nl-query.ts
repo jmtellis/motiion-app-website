@@ -1,38 +1,31 @@
-import { HEIGHT_OPTIONS } from "@/lib/talent-navigator/filter-options";
-import { TALENT_NAVIGATOR_CREDIT_SYSTEM_PROMPT, TALENT_NAVIGATOR_REPAIR_PROMPT } from "@/lib/talent-navigator/prompts";
+import {
+  buildSearchIntentFromDraft,
+  draftToNlParsed,
+  heuristicReferenceParse,
+  intentParsedDescription,
+  type NlParsedFilters,
+} from "@/lib/talent-navigator/build-search-intent";
+import { callOpenAiJsonObject } from "@/lib/talent-navigator/openai-json";
+import {
+  TALENT_NAVIGATOR_CREDIT_SYSTEM_PROMPT,
+  TALENT_NAVIGATOR_REPAIR_PROMPT,
+} from "@/lib/talent-navigator/prompts";
+import {
+  validateLlmDraft,
+  type SearchIntent,
+} from "@/lib/talent-navigator/search-intent";
 import type { TalentNavigatorFilters } from "@/lib/talent-navigator/types";
 import { EMPTY_NAVIGATOR_FILTERS } from "@/lib/talent-navigator/types";
 import type { CreditSearchResultTalent } from "@/lib/talent-navigator/result-transform";
 import type { VerificationStatus } from "@/lib/talent-navigator/credit-types";
+import {
+  inchesToHeightLabel,
+  serializeHeightFilter,
+} from "@/lib/talent-navigator/height-filter";
 
 export const NL_QUERY_SYSTEM_PROMPT = TALENT_NAVIGATOR_CREDIT_SYSTEM_PROMPT;
 
-export type NlParsedFilters = {
-  gender?: string;
-  ethnicities?: string[];
-  heightMin?: string;
-  heightMax?: string;
-  hairColors?: string[];
-  eyeColors?: string[];
-  talentTypes?: string[];
-  location?: string;
-  unionStatus?: string;
-  hasRepresentation?: boolean;
-  agencies?: string[];
-  genres?: string[];
-  skills?: string[];
-  nameQuery?: string;
-  artists?: string[];
-  choreographers?: string[];
-  productions?: string[];
-  relationshipMatchMode?: "all" | "any";
-  verificationStatuses?: string[];
-  danceStyles?: string[];
-  representedOnly?: boolean;
-  availableOnly?: boolean;
-  verifiedProfilesOnly?: boolean;
-  broadExperienceQuery?: string;
-};
+export type { NlParsedFilters };
 
 export type NlParseResult = {
   filters: Partial<TalentNavigatorFilters>;
@@ -40,6 +33,8 @@ export type NlParseResult = {
   parsedDescription: string;
   confidence: number;
   parseFailed?: boolean;
+  aiUnavailable?: boolean;
+  intent: SearchIntent;
 };
 
 function parseHeightInches(value: string | undefined): number | null {
@@ -49,14 +44,30 @@ function parseHeightInches(value: string | undefined): number | null {
   return Number(match[1]) * 12 + Number(match[2]);
 }
 
-function heightToBucket(min?: string, max?: string): string {
+/** Map NL height min/max to range filter string (preferred) or legacy bucket. */
+export function heightRangeFromNl(min?: string, max?: string): string {
   const minInches = parseHeightInches(min);
   const maxInches = parseHeightInches(max);
-  const inches = minInches ?? maxInches;
-  if (inches === null) return "";
-  if (inches < 66) return HEIGHT_OPTIONS[0];
-  if (inches <= 69) return HEIGHT_OPTIONS[1];
-  return HEIGHT_OPTIONS[2];
+  if (minInches != null && maxInches != null) {
+    const low = Math.min(minInches, maxInches);
+    const high = Math.max(minInches, maxInches);
+    return serializeHeightFilter({ mode: "between", minInches: low, maxInches: high });
+  }
+  if (minInches != null) {
+    return serializeHeightFilter({
+      mode: "above",
+      minInches,
+      maxInches: minInches,
+    });
+  }
+  if (maxInches != null) {
+    return serializeHeightFilter({
+      mode: "under",
+      minInches: maxInches,
+      maxInches,
+    });
+  }
+  return "";
 }
 
 function splitEntityNames(raw: string): string[] {
@@ -116,6 +127,45 @@ export function heuristicCreditParse(prompt: string): NlParsedFilters | null {
     }
   }
 
+  // Blonde / hair color hard filter heuristic
+  const hairMatch = text.match(
+    /\b(blonde|blond|brunette|brown|black|red|auburn|silver|gray|grey)\s+hair\b|\b(blonde|blond)\b/i,
+  );
+  const hairColors = hairMatch
+    ? [((hairMatch[1] ?? hairMatch[2]) || "").replace(/^blond$/i, "Blonde").replace(/^blonde$/i, "Blonde")]
+        .map((h) => (h.toLowerCase() === "blond" || h.toLowerCase() === "blonde" ? "Blonde" : h))
+        .filter(Boolean)
+    : undefined;
+
+  // Style heuristic
+  const styleMatch = text.match(
+    /\b(hip[- ]?hop|contemporary|jazz|ballet|heels|house|popping|locking|waacking|breaking|tap|ballroom)\b/i,
+  );
+  const danceStyles = styleMatch
+    ? [
+        styleMatch[1]!.replace(/hip[- ]?hop/i, "Hip-Hop").replace(/\b\w/g, (c) =>
+          c.toUpperCase(),
+        ),
+      ]
+    : undefined;
+
+  if (hairColors?.length || danceStyles?.length) {
+    return {
+      hairColors,
+      danceStyles: danceStyles?.map((s) =>
+        s.toLowerCase().includes("hip") ? "Hip-Hop" : s,
+      ),
+      genres: danceStyles?.map((s) =>
+        s.toLowerCase().includes("hip") ? "Hip-Hop" : s,
+      ),
+    };
+  }
+
+  // Opposite without relying on LLM
+  if (heuristicReferenceParse(text).length) {
+    return { nameQuery: undefined };
+  }
+
   return null;
 }
 
@@ -137,6 +187,7 @@ function buildDescriptionLabels(parsed: NlParsedFilters): string[] {
   if (parsed.heightMin || parsed.heightMax) {
     labels.push(`Height: ${parsed.heightMin ?? "any"} – ${parsed.heightMax ?? "any"}`);
   }
+  if (parsed.hairColors?.length) labels.push(`Hair: ${parsed.hairColors.join(", ")}`);
   if (parsed.talentTypes?.length) labels.push(`Type: ${parsed.talentTypes.join(", ")}`);
   if (parsed.location) labels.push(`Location: ${parsed.location}`);
   if (parsed.unionStatus) labels.push(`Union: ${parsed.unionStatus}`);
@@ -165,7 +216,7 @@ export function mapNlParsedToNavigatorFilters(parsed: NlParsedFilters): Partial<
     ...(parsed.skills ?? []),
     hasCreditEntities ? undefined : parsed.broadExperienceQuery?.trim(),
   ].filter(Boolean);
-  const height = heightToBucket(parsed.heightMin, parsed.heightMax);
+  const height = heightRangeFromNl(parsed.heightMin, parsed.heightMax);
   const styles = parsed.danceStyles?.length ? parsed.danceStyles : parsed.genres;
   const genres = (styles ?? []).map((item) => item.trim()).filter(Boolean);
   const skills = (parsed.skills ?? []).map((item) => item.trim()).filter(Boolean);
@@ -249,110 +300,154 @@ export function mergeNavigatorFilters(
   }
   if (patch.hairColors) merged.hairColors = patch.hairColors;
   if (patch.eyeColors) merged.eyeColors = patch.eyeColors;
+  if (patch.locations?.length) {
+    merged.locations = patch.locations;
+    merged.location = patch.locations[0] ?? merged.location;
+  }
+  if (patch.agencies?.length) {
+    merged.agencies = patch.agencies;
+    merged.agency = patch.agencies[0] ?? merged.agency;
+  }
   if (patch.relationshipMatchMode) merged.relationshipMatchMode = patch.relationshipMatchMode;
   if (patch.verificationStatuses?.length) merged.verificationStatuses = patch.verificationStatuses;
 
   return merged;
 }
 
-async function callOpenAiJson(prompt: string, repair = false): Promise<NlParsedFilters | null> {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) return null;
-
+async function callOpenAiJson(prompt: string, repair = false): Promise<unknown | null> {
   const messages = repair
     ? [
-        { role: "system", content: TALENT_NAVIGATOR_CREDIT_SYSTEM_PROMPT },
-        { role: "user", content: prompt },
-        { role: "system", content: TALENT_NAVIGATOR_REPAIR_PROMPT },
+        { role: "system" as const, content: TALENT_NAVIGATOR_CREDIT_SYSTEM_PROMPT },
+        { role: "user" as const, content: prompt },
+        { role: "system" as const, content: TALENT_NAVIGATOR_REPAIR_PROMPT },
       ]
     : [
-        { role: "system", content: TALENT_NAVIGATOR_CREDIT_SYSTEM_PROMPT },
-        { role: "user", content: prompt },
+        { role: "system" as const, content: TALENT_NAVIGATOR_CREDIT_SYSTEM_PROMPT },
+        { role: "user" as const, content: prompt },
       ];
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      temperature: 0,
-      max_tokens: 450,
-      messages,
-      response_format: { type: "json_object" },
-    }),
-    signal: AbortSignal.timeout(15_000),
-  });
-
-  if (!response.ok) return null;
-
-  const payload = (await response.json()) as {
-    choices?: { message?: { content?: string } }[];
-  };
-  const content = payload.choices?.[0]?.message?.content;
-  if (!content) return null;
-
-  try {
-    return JSON.parse(content) as NlParsedFilters;
-  } catch {
-    return null;
-  }
+  const result = await callOpenAiJsonObject({ messages, maxTokens: 900 });
+  if (!result.ok) return null;
+  return result.json;
 }
 
 export async function parseNlQuery(prompt: string): Promise<NlParseResult> {
   const trimmed = prompt.trim();
   if (!trimmed) {
-    return { filters: {}, parsed: {}, parsedDescription: "", confidence: 0 };
+    return {
+      filters: {},
+      parsed: {},
+      parsedDescription: "",
+      confidence: 0,
+      intent: buildSearchIntentFromDraft({
+        originalQuery: "",
+        draft: null,
+        heuristicCredits: null,
+      }),
+    };
   }
 
   const heuristic = heuristicCreditParse(trimmed);
+  let aiUnavailable = false;
 
-  let parsed = await callOpenAiJson(trimmed, false);
-  if (!parsed) {
-    parsed = await callOpenAiJson(trimmed, true);
+  let raw = await callOpenAiJson(trimmed, false);
+  if (!raw) {
+    raw = await callOpenAiJson(trimmed, true);
+  }
+  if (!raw) {
+    aiUnavailable = true;
   }
 
-  if (!parsed) {
-    if (heuristic) {
-      const labels = buildDescriptionLabels(heuristic);
-      return {
-        filters: mapNlParsedToNavigatorFilters(heuristic),
-        parsed: heuristic,
-        parsedDescription: labels.length ? labels.join(" · ") : `Searching for "${trimmed}"`,
-        confidence: 0.75,
-      };
+  let draft = null;
+  if (raw) {
+    const validated = validateLlmDraft(raw);
+    if (validated.ok) {
+      draft = validated.draft;
+    } else {
+      // Accept loosely shaped legacy JSON as NlParsedFilters
+      draft = raw as Parameters<typeof buildSearchIntentFromDraft>[0]["draft"];
     }
+  }
+
+  if (!draft && !heuristic && !heuristicReferenceParse(trimmed).length) {
+    const intent = buildSearchIntentFromDraft({
+      originalQuery: trimmed,
+      draft: null,
+      heuristicCredits: null,
+      aiUnavailable,
+    });
     return {
       filters: { keyword: trimmed },
       parsed: { nameQuery: trimmed },
       parsedDescription: `Searching for "${trimmed}"`,
       confidence: 0.2,
       parseFailed: true,
+      aiUnavailable,
+      intent,
     };
   }
 
-  // If the model omitted credit entities but the phrase is clearly credit intent, keep them.
-  if (heuristic) {
-    parsed = {
-      ...parsed,
-      artists: parsed.artists?.length ? parsed.artists : heuristic.artists,
-      choreographers: parsed.choreographers?.length
-        ? parsed.choreographers
+  if (heuristic && draft) {
+    draft = {
+      ...draft,
+      artists: draft.artists?.length ? draft.artists : heuristic.artists,
+      choreographers: draft.choreographers?.length
+        ? draft.choreographers
         : heuristic.choreographers,
-      productions: parsed.productions?.length ? parsed.productions : heuristic.productions,
+      productions: draft.productions?.length ? draft.productions : heuristic.productions,
       relationshipMatchMode:
-        parsed.relationshipMatchMode ?? heuristic.relationshipMatchMode,
+        draft.relationshipMatchMode ?? heuristic.relationshipMatchMode,
+      hairColors: draft.hairColors?.length ? draft.hairColors : heuristic.hairColors,
+      danceStyles: draft.danceStyles?.length ? draft.danceStyles : heuristic.danceStyles,
+      genres: draft.genres?.length ? draft.genres : heuristic.genres,
     };
   }
+
+  const intent = buildSearchIntentFromDraft({
+    originalQuery: trimmed,
+    draft,
+    heuristicCredits: heuristic,
+    aiUnavailable,
+  });
+
+  const parsed: NlParsedFilters = draft
+    ? { ...draftToNlParsed(draft), ...(heuristic ?? {}) }
+    : (heuristic ?? { nameQuery: trimmed });
+
+  // Prefer intent-derived filters (includes height ranges + hair)
+  const fromLegacy = mapNlParsedToNavigatorFilters(parsed);
+  const { searchIntentToNavigatorFilters } = await import(
+    "@/lib/talent-navigator/build-search-intent"
+  );
+  const fromIntent = searchIntentToNavigatorFilters(intent, parsed);
+  const filters = { ...fromLegacy, ...fromIntent };
 
   const labels = buildDescriptionLabels(parsed);
-  const filters = mapNlParsedToNavigatorFilters(parsed);
-  const parsedDescription = labels.length ? labels.join(" · ") : `Searching for "${trimmed}"`;
-  const confidence = labels.length ? 0.9 : 0.4;
+  const parsedDescription =
+    intentParsedDescription(intent) ||
+    (labels.length ? labels.join(" · ") : `Searching for "${trimmed}"`);
+  const confidence = intent.hardFilters.length || intent.relationships.length
+    ? aiUnavailable
+      ? 0.75
+      : 0.9
+    : 0.4;
 
-  return { filters, parsed, parsedDescription, confidence };
+  return {
+    filters,
+    parsed,
+    parsedDescription,
+    confidence,
+    aiUnavailable,
+    intent,
+  };
+}
+
+function formatNaturalList(items: string[], conjunction = "and"): string {
+  const trimmed = items.map((item) => item.trim()).filter(Boolean);
+  if (trimmed.length === 0) return "";
+  if (trimmed.length === 1) return trimmed[0];
+  if (trimmed.length === 2) return `${trimmed[0]} ${conjunction} ${trimmed[1]}`;
+  return `${trimmed.slice(0, -1).join(", ")}, ${conjunction} ${trimmed[trimmed.length - 1]}`;
 }
 
 export function buildSearchReasoning(input: {
@@ -363,45 +458,77 @@ export function buildSearchReasoning(input: {
   verifiedCount?: number;
   warnings?: string[];
   locationCount?: number;
-}): { headline: string; bullets: string[] } {
-  const bullets: string[] = [];
-  if (input.parsedDescription) bullets.push(input.parsedDescription);
-
-  if (input.verifiedCount != null && input.count > 0) {
-    bullets.push(
-      `${input.verifiedCount} ${input.verifiedCount === 1 ? "has" : "have"} industry-confirmed or Motiion-verified credits.`,
-    );
-  }
-
-  if (input.locationCount != null && input.activeFilters.location) {
-    bullets.push(
-      `${input.locationCount} ${input.locationCount === 1 ? "is" : "are"} based in ${input.activeFilters.location}.`,
-    );
-  }
-
-  if (input.warnings?.length) {
-    bullets.push(...input.warnings.slice(0, 3));
-  }
-
-  if (input.topTalentNames.length) {
-    bullets.push(`Strongest matches include ${input.topTalentNames.slice(0, 3).join(", ")}.`);
-  }
-
+  degraded?: boolean;
+}): { prose: string } {
+  const sentences: string[] = [];
+  const count = input.count;
   const creditParts = [
     ...input.activeFilters.artists,
     ...input.activeFilters.choreographers,
     ...input.activeFilters.productions,
-  ];
-  const headline =
-    creditParts.length > 0
-      ? `I found ${input.count.toLocaleString()} dancer${input.count === 1 ? "" : "s"} with credits connected to ${creditParts.slice(0, 3).join(", ")}.`
-      : `Found ${input.count.toLocaleString()} dancer${input.count === 1 ? "" : "s"} matching your request.`;
+  ].filter(Boolean);
 
-  return { headline, bullets };
+  if (count === 0) {
+    sentences.push("I couldn't find any dancers that match this brief yet.");
+  } else if (creditParts.length > 0) {
+    sentences.push(
+      `I found ${count.toLocaleString()} dancer${count === 1 ? "" : "s"} with credits connected to ${formatNaturalList(creditParts.slice(0, 3))}.`,
+    );
+  } else {
+    sentences.push(
+      `I found ${count.toLocaleString()} dancer${count === 1 ? "" : "s"} that fit what you're looking for.`,
+    );
+  }
+
+  if (count > 0 && input.topTalentNames.length) {
+    sentences.push(
+      `Strong fits include ${formatNaturalList(input.topTalentNames.slice(0, 3))}.`,
+    );
+  }
+
+  if (input.verifiedCount != null && input.verifiedCount > 0 && count > 0) {
+    const verifiedCount = input.verifiedCount;
+    sentences.push(
+      `${verifiedCount} of them ${verifiedCount === 1 ? "has" : "have"} industry-confirmed or Motiion-verified credits.`,
+    );
+  }
+
+  if (
+    input.locationCount != null &&
+    input.activeFilters.location &&
+    count > 0 &&
+    input.locationCount < count
+  ) {
+    const locationCount = input.locationCount;
+    sentences.push(
+      `${locationCount} ${locationCount === 1 ? "is" : "are"} based in ${input.activeFilters.location}.`,
+    );
+  }
+
+  if (input.degraded) {
+    sentences.push("I'm using structured filters while AI parsing is unavailable.");
+  }
+
+  if (input.warnings?.length) {
+    for (const warning of input.warnings.slice(0, 2)) {
+      sentences.push(warning.endsWith(".") ? warning : `${warning}.`);
+    }
+  }
+
+  return { prose: sentences.join(" ") };
 }
 
 export function clearNavigatorFilters(): TalentNavigatorFilters {
-  return { ...EMPTY_NAVIGATOR_FILTERS, artists: [], choreographers: [], productions: [], resolvedArtistIds: [], resolvedChoreographerIds: [], resolvedProductionIds: [], verificationStatuses: [] };
+  return {
+    ...EMPTY_NAVIGATOR_FILTERS,
+    artists: [],
+    choreographers: [],
+    productions: [],
+    resolvedArtistIds: [],
+    resolvedChoreographerIds: [],
+    resolvedProductionIds: [],
+    verificationStatuses: [],
+  };
 }
 
 export function creditResultsToReasoning(
@@ -409,7 +536,8 @@ export function creditResultsToReasoning(
   filters: TalentNavigatorFilters,
   parsedDescription: string,
   warningMessages: string[],
-): { headline: string; bullets: string[] } {
+  degraded?: boolean,
+): { prose: string } {
   const verifiedCount = talent.filter((t) =>
     t.matchingCredits.some((c) => {
       const status = c.verificationStatus as VerificationStatus | undefined;
@@ -430,5 +558,8 @@ export function creditResultsToReasoning(
     verifiedCount,
     locationCount,
     warnings: warningMessages,
+    degraded,
   });
 }
+
+export { inchesToHeightLabel };

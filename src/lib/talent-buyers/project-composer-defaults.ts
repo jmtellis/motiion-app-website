@@ -1,4 +1,6 @@
 import {
+  MVP_CREATE_PROJECT_TYPES,
+  MVP_PROJECT_TYPE_INTENTION_GROUPS,
   PROJECT_TYPE_DESCRIPTIONS,
   PROJECT_TYPE_INTENTION_GROUPS,
   PROJECT_TYPE_LABELS,
@@ -13,7 +15,14 @@ export const PROJECT_TYPE_OPTIONS = PROJECT_TYPES.map((value) => ({
   description: PROJECT_TYPE_DESCRIPTIONS[value],
 })) as ReadonlyArray<{ value: ProjectType; label: string; description: string }>;
 
-export { PROJECT_TYPE_INTENTION_GROUPS };
+/** Create-picker options limited to MVP-visible project types. */
+export const MVP_PROJECT_TYPE_OPTIONS = MVP_CREATE_PROJECT_TYPES.map((value) => ({
+  value,
+  label: PROJECT_TYPE_LABELS[value],
+  description: PROJECT_TYPE_DESCRIPTIONS[value],
+})) as ReadonlyArray<{ value: ProjectType; label: string; description: string }>;
+
+export { PROJECT_TYPE_INTENTION_GROUPS, MVP_PROJECT_TYPE_INTENTION_GROUPS };
 
 export function createDefaultProjectConfiguration(isDraft = true): ProjectConfiguration {
   return {

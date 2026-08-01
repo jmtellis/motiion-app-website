@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { requireIndustryProFeature } from "@/lib/billing/gate";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { TalentNavigatorFilters } from "@/lib/talent-navigator/types";
 
@@ -51,6 +52,9 @@ export async function saveSearch(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Not signed in" };
+
+  const pro = await requireIndustryProFeature(user.id, "saved_search");
+  if (!pro.ok) return { ok: false, error: "Industry Pro is required to save searches." };
 
   const trimmed = label.trim();
   if (!trimmed) return { ok: false, error: "Label is required" };

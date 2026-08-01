@@ -24,6 +24,9 @@ import type { ProjectHubSummary } from "@/lib/talent-buyers/projects-hub";
 import { Modal } from "./Modal";
 import { useToast } from "./ToastProvider";
 import type { ProjectsViewMode } from "./ProjectsViewModeContext";
+import { ProLockHint } from "@/components/talent-buyers/billing/ProLockHint";
+import { useIndustryProOptional } from "@/components/talent-buyers/billing/IndustryProContext";
+import { ProjectAttachmentThumbnail } from "@/components/talent-buyers/project/ProjectAttachmentThumbnail";
 
 import "./projects-hub.css";
 import "./buyer-empty.css";
@@ -58,6 +61,7 @@ export function ProjectsHubFilesSection({
 }) {
   const router = useRouter();
   const { showToast } = useToast();
+  const { openUpgrade } = useIndustryProOptional();
   const inputRef = useRef<HTMLInputElement>(null);
   const dragDepth = useRef(0);
 
@@ -122,6 +126,9 @@ export function ProjectsHubFilesSection({
               formData.append("file", file);
               const result = await uploadInboxFile(formData);
               if (!result.ok) {
+                if (result.error.toLowerCase().includes("file storage")) {
+                  openUpgrade("project_files_storage");
+                }
                 showToast({ message: result.error, variant: "error" });
                 continue;
               }
@@ -167,6 +174,7 @@ export function ProjectsHubFilesSection({
       focusProjectId,
       focusProjectType,
       isBrowse,
+      openUpgrade,
       projectAttachments,
       router,
       showToast,
@@ -259,6 +267,8 @@ export function ProjectsHubFilesSection({
         }),
         updatedLabel: formatBuyerRelativeDate(file.createdAt),
         href: file.fileUrl,
+        contentType: file.contentType,
+        fileName: file.fileName,
         kind: "inbox" as const,
         source: file,
       }))
@@ -270,6 +280,8 @@ export function ProjectsHubFilesSection({
           ? formatBuyerRelativeDate(attachment.uploaded_at_iso8601)
           : null,
         href: attachment.file_url_string ?? undefined,
+        contentType: attachment.content_type,
+        fileName: attachment.file_name ?? attachment.title,
         kind: "project" as const,
         source: attachment,
       }));
@@ -297,6 +309,7 @@ export function ProjectsHubFilesSection({
               </>
             ) : (
               <>
+                <ProLockHint />
                 <Paperclip className="size-3.5" aria-hidden />
                 Add files
               </>
@@ -378,67 +391,103 @@ export function ProjectsHubFilesSection({
             <ul className="projects-hub__files-list">
               {listedFiles.map((item) => (
                 <li key={item.id} className="projects-hub__files-item">
-                  <div className="projects-hub__files-item-main">
+                  <div className="projects-hub__files-item-media">
                     {item.href ? (
                       <a
                         href={item.href}
                         target="_blank"
                         rel="noreferrer"
-                        className="projects-hub__files-item-link"
+                        className="projects-hub__files-item-preview"
+                        aria-label={`Open ${item.title}`}
                       >
-                        <span className="projects-hub__files-item-title">{item.title}</span>
-                        <span className="projects-hub__files-item-meta">
-                          {item.meta}
-                          {item.updatedLabel ? ` · ${item.updatedLabel}` : null}
-                        </span>
+                        <ProjectAttachmentThumbnail
+                          url={item.href}
+                          contentType={item.contentType}
+                          fileName={item.fileName}
+                          title={item.title}
+                          className="project-attachment-thumb--card"
+                        />
                       </a>
                     ) : (
-                      <div>
-                        <span className="projects-hub__files-item-title">{item.title}</span>
-                        <span className="projects-hub__files-item-meta">
-                          {item.meta}
-                          {item.updatedLabel ? ` · ${item.updatedLabel}` : null}
-                        </span>
+                      <div className="projects-hub__files-item-preview">
+                        <ProjectAttachmentThumbnail
+                          url={item.href}
+                          contentType={item.contentType}
+                          fileName={item.fileName}
+                          title={item.title}
+                          className="project-attachment-thumb--card"
+                        />
                       </div>
                     )}
-                  </div>
 
-                  <div className="projects-hub__files-item-actions">
-                    {item.kind === "inbox" ? (
+                    <div
+                      className={`projects-hub__files-item-actions${
+                        busyId === item.id ? " projects-hub__files-item-actions--busy" : ""
+                      }`}
+                    >
+                      {item.kind === "inbox" ? (
+                        <button
+                          type="button"
+                          className="projects-hub__files-action"
+                          onClick={() => setAssignFileId(item.id)}
+                          disabled={busyId === item.id || isAssigning || projects.length === 0}
+                          title={
+                            projects.length === 0
+                              ? "Create a project to assign this file"
+                              : "Assign to project"
+                          }
+                        >
+                          <FolderInput className="size-3.5" aria-hidden />
+                          <span className="projects-hub__files-action-label">Assign</span>
+                        </button>
+                      ) : null}
                       <button
                         type="button"
-                        className="projects-hub__files-action"
-                        onClick={() => setAssignFileId(item.id)}
-                        disabled={busyId === item.id || isAssigning || projects.length === 0}
-                        title={
-                          projects.length === 0
-                            ? "Create a project to assign this file"
-                            : "Assign to project"
-                        }
+                        className="projects-hub__files-action projects-hub__files-action--danger"
+                        onClick={() => {
+                          if (item.kind === "inbox") {
+                            void handleDeleteInbox(item.source);
+                          } else {
+                            void handleDeleteProjectAttachment(item.source);
+                          }
+                        }}
+                        disabled={busyId === item.id}
+                        aria-label={`Remove ${item.title}`}
                       >
-                        <FolderInput className="size-3.5" aria-hidden />
-                        Assign
+                        {busyId === item.id ? (
+                          <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                        ) : (
+                          <Trash2 className="size-3.5" aria-hidden />
+                        )}
                       </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      className="projects-hub__files-action projects-hub__files-action--danger"
-                      onClick={() => {
-                        if (item.kind === "inbox") {
-                          void handleDeleteInbox(item.source);
-                        } else {
-                          void handleDeleteProjectAttachment(item.source);
-                        }
-                      }}
-                      disabled={busyId === item.id}
-                      aria-label={`Remove ${item.title}`}
-                    >
-                      {busyId === item.id ? (
-                        <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                    </div>
+                  </div>
+
+                  <div className="projects-hub__files-item-body">
+                    <div className="projects-hub__files-item-main">
+                      {item.href ? (
+                        <a
+                          href={item.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="projects-hub__files-item-link"
+                        >
+                          <span className="projects-hub__files-item-title">{item.title}</span>
+                          <span className="projects-hub__files-item-meta">
+                            {item.meta}
+                            {item.updatedLabel ? ` · ${item.updatedLabel}` : null}
+                          </span>
+                        </a>
                       ) : (
-                        <Trash2 className="size-3.5" aria-hidden />
+                        <div>
+                          <span className="projects-hub__files-item-title">{item.title}</span>
+                          <span className="projects-hub__files-item-meta">
+                            {item.meta}
+                            {item.updatedLabel ? ` · ${item.updatedLabel}` : null}
+                          </span>
+                        </div>
                       )}
-                    </button>
+                    </div>
                   </div>
                 </li>
               ))}

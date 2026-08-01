@@ -1,9 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type {
+  DraftPromoCode,
   OrganizerAttendee,
+  OrganizerLeadRow,
   OrganizerRevenueSummary,
+  OrganizerSubgroup,
 } from "@/lib/talent-buyers/activities/types";
+import { loadPromoCodesForDraft } from "@/lib/talent-buyers/activities/promo-codes";
 
 export type OrganizerActivityDetail = {
   id: string;
@@ -23,6 +27,7 @@ export type OrganizerActivityDetail = {
   status: string;
   priceAmountCents: number | null;
   priceCurrency: string | null;
+  rootJobId: string | null;
   eventDays: {
     id: string;
     dayDate: string;
@@ -32,6 +37,7 @@ export type OrganizerActivityDetail = {
     spotsRemaining: number | null;
     maxAttendees: number | null;
   }[];
+  ticketOptions: { id: string; label: string }[];
 };
 
 function profileName(row: {
@@ -62,7 +68,7 @@ export async function loadOrganizerActivity(
       `
       id, creator_id, type, title, description, location, cover_image_url,
       activity_date, start_time, end_date, end_time, max_attendees, spots_remaining,
-      require_payment, is_private, status, price_amount_cents, price_currency
+      require_payment, is_private, status, price_amount_cents, price_currency, root_job_id
     `,
     )
     .eq("id", activityId)
@@ -77,11 +83,19 @@ export async function loadOrganizerActivity(
   const type =
     r.type === "class" || r.type === "session" || r.type === "event" ? r.type : "event";
 
-  const { data: days } = await supabase
-    .from("activity_event_days")
-    .select("id,day_date,start_time,end_time,label,spots_remaining,max_attendees,sort_order")
-    .eq("activity_id", activityId)
-    .order("sort_order", { ascending: true });
+  const [{ data: days }, { data: tickets }] = await Promise.all([
+    supabase
+      .from("activity_event_days")
+      .select("id,day_date,start_time,end_time,label,spots_remaining,max_attendees,sort_order")
+      .eq("activity_id", activityId)
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("activity_ticket_options")
+      .select("id,label")
+      .eq("activity_id", activityId)
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true }),
+  ]);
 
   return {
     ok: true,
@@ -103,6 +117,7 @@ export async function loadOrganizerActivity(
       status: String(r.status ?? "active"),
       priceAmountCents: (r.price_amount_cents as number | null) ?? null,
       priceCurrency: (r.price_currency as string | null) ?? "usd",
+      rootJobId: (r.root_job_id as string | null) ?? null,
       eventDays: ((days ?? []) as Record<string, unknown>[]).map((day) => ({
         id: String(day.id),
         dayDate: String(day.day_date),
@@ -112,8 +127,160 @@ export async function loadOrganizerActivity(
         spotsRemaining: (day.spots_remaining as number | null) ?? null,
         maxAttendees: (day.max_attendees as number | null) ?? null,
       })),
+      ticketOptions: ((tickets ?? []) as { id: string; label: string }[]).map((ticket) => ({
+        id: ticket.id,
+        label: ticket.label,
+      })),
     },
   };
+}
+
+export async function loadOrganizerSubgroups(
+  supabase: SupabaseClient,
+  rootJobId: string | null,
+): Promise<OrganizerSubgroup[]> {
+  if (!rootJobId) return [];
+
+  const { data: groups } = await supabase
+    .from("job_groups")
+    .select("id,name,sort_order")
+    .eq("job_id", rootJobId)
+    .order("sort_order", { ascending: true });
+
+  const groupRows = (groups ?? []) as { id: string; name: string; sort_order: number }[];
+  if (!groupRows.length) return [];
+
+  const groupIds = groupRows.map((group) => group.id);
+  const [{ data: invites }, { data: members }] = await Promise.all([
+    supabase
+      .from("job_group_invites")
+      .select("id,job_group_id,invited_user_id,status,membership_role_on_accept")
+      .in("job_group_id", groupIds)
+      .in("status", ["pending", "accepted"])
+      .eq("membership_role_on_accept", "lead"),
+    supabase
+      .from("job_group_members")
+      .select("id,job_group_id,member_user_id,member_role,subgroup_activity_id,subgroup_setup_completed_at")
+      .in("job_group_id", groupIds)
+      .eq("member_role", "lead"),
+  ]);
+
+  const inviteRows = (invites ?? []) as {
+    id: string;
+    job_group_id: string;
+    invited_user_id: string;
+    status: string;
+  }[];
+  const memberRows = (members ?? []) as {
+    id: string;
+    job_group_id: string;
+    member_user_id: string;
+    subgroup_activity_id: string | null;
+    subgroup_setup_completed_at: string | null;
+  }[];
+
+  const userIds = [
+    ...new Set([
+      ...inviteRows.map((row) => row.invited_user_id),
+      ...memberRows.map((row) => row.member_user_id),
+    ]),
+  ];
+  const activityIds = memberRows
+    .map((row) => row.subgroup_activity_id)
+    .filter((id): id is string => Boolean(id));
+
+  const [profilesResult, activitiesResult] = await Promise.all([
+    userIds.length
+      ? supabase
+          .from("profiles")
+          .select("user_id,display_name,first_name,last_name,headshot_urls")
+          .in("user_id", userIds)
+      : Promise.resolve({ data: [] as Record<string, unknown>[] }),
+    activityIds.length
+      ? supabase.from("activities").select("id,title").in("id", activityIds)
+      : Promise.resolve({ data: [] as { id: string; title: string }[] }),
+  ]);
+
+  const profileById = new Map(
+    ((profilesResult.data ?? []) as Record<string, unknown>[]).map((profile) => [
+      String(profile.user_id),
+      profile,
+    ]),
+  );
+  const activityTitleById = new Map(
+    ((activitiesResult.data ?? []) as { id: string; title: string }[]).map((row) => [
+      row.id,
+      row.title,
+    ]),
+  );
+
+  return groupRows.map((group) => {
+    const leads: OrganizerLeadRow[] = [];
+    const memberForGroup = memberRows.filter((row) => row.job_group_id === group.id);
+    const inviteForGroup = inviteRows.filter((row) => row.job_group_id === group.id);
+    const coveredUsers = new Set<string>();
+
+    for (const member of memberForGroup) {
+      coveredUsers.add(member.member_user_id);
+      const profile = profileById.get(member.member_user_id) as
+        | {
+            display_name?: string | null;
+            first_name?: string | null;
+            last_name?: string | null;
+            headshot_urls?: string[] | null;
+          }
+        | undefined;
+      const status =
+        member.subgroup_activity_id != null
+          ? "child_event_linked"
+          : "accepted_setup_incomplete";
+      leads.push({
+        groupId: group.id,
+        groupName: group.name,
+        userId: member.member_user_id,
+        displayName: profile ? profileName(profile) : "Lead",
+        headshotUrl: profile ? headshot(profile.headshot_urls) : null,
+        status,
+        inviteId: null,
+        memberId: member.id,
+        subgroupActivityId: member.subgroup_activity_id,
+        subgroupActivityTitle: member.subgroup_activity_id
+          ? (activityTitleById.get(member.subgroup_activity_id) ?? "Subgroup event")
+          : null,
+      });
+    }
+
+    for (const invite of inviteForGroup) {
+      if (coveredUsers.has(invite.invited_user_id)) continue;
+      const profile = profileById.get(invite.invited_user_id) as
+        | {
+            display_name?: string | null;
+            first_name?: string | null;
+            last_name?: string | null;
+            headshot_urls?: string[] | null;
+          }
+        | undefined;
+      leads.push({
+        groupId: group.id,
+        groupName: group.name,
+        userId: invite.invited_user_id,
+        displayName: profile ? profileName(profile) : "Lead",
+        headshotUrl: profile ? headshot(profile.headshot_urls) : null,
+        status: invite.status === "pending" ? "pending_invite" : "accepted_setup_incomplete",
+        inviteId: invite.id,
+        memberId: null,
+        subgroupActivityId: null,
+        subgroupActivityTitle: null,
+      });
+    }
+
+    return {
+      id: group.id,
+      name: group.name,
+      sortOrder: group.sort_order,
+      leads,
+    };
+  });
 }
 
 export async function loadOrganizerRoster(
@@ -307,11 +474,24 @@ export async function loadOrganizerRevenue(
     }
   }
 
+  const { count: promoRedemptionCount } = await supabase
+    .from("activity_promo_redemptions")
+    .select("id", { count: "exact", head: true })
+    .eq("activity_id", activityId);
+
   return {
     paidCount: rows.length,
     grossCents,
     currency,
+    promoRedemptionCount: promoRedemptionCount ?? 0,
   };
+}
+
+export async function loadOrganizerPromos(
+  supabase: SupabaseClient,
+  activityId: string,
+): Promise<DraftPromoCode[]> {
+  return loadPromoCodesForDraft(supabase, activityId);
 }
 
 export function parseProfileQrPayload(raw: string): string | null {

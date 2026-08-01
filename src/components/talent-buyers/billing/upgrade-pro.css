@@ -1,0 +1,223 @@
+.upgrade-pro-dialog__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  border: 1px solid var(--buyer-accent-border, color-mix(in oklab, var(--accent) 45%, transparent));
+  border-radius: 1rem;
+  background: var(--buyer-accent-fill, color-mix(in oklab, var(--accent) 16%, #111111));
+  padding: 0.95rem 1rem;
+}
+
+.upgrade-pro-dialog__eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--accent) 80%, white);
+}
+
+.upgrade-pro-dialog__copy {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: rgb(255 255 255 / 0.62);
+}
+
+.upgrade-pro-dialog__footer {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.upgrade-pro-dialog__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.92);
+  padding: 0.55rem 0.9rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #0a0a0a;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.upgrade-pro-dialog__cta:hover:not(:disabled) {
+  background: #fff;
+}
+
+.upgrade-pro-dialog__cta:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.upgrade-pro-dialog__meta {
+  margin: 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: rgb(255 255 255 / 0.42);
+}
+
+.upgrade-pro-dialog__error {
+  margin: 0;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: rgb(251 191 36);
+}
+
+.pro-lock-affordance {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pro-chip {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.55rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.pro-chip--accent {
+  color: color-mix(in oklab, var(--accent) 88%, white);
+}
+
+.pro-chip--on-active {
+  color: color-mix(in oklab, var(--accent) 72%, #111);
+}
+
+.talent-profile-pro-gate {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  border-radius: inherit;
+  background: rgb(8 8 8 / 0.42);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.talent-profile-pro-gate--inline {
+  position: relative;
+  inset: auto;
+  z-index: auto;
+  display: flex;
+  flex: 1;
+  align-items: stretch;
+  justify-content: stretch;
+  min-height: 100%;
+  padding: 0.15rem 0 0.35rem;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.talent-profile-pro-gate__card {
+  width: min(100%, 20rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  border: 1px solid var(--buyer-accent-border, color-mix(in oklab, var(--accent) 45%, transparent));
+  border-radius: 1rem;
+  background: var(--buyer-accent-fill, color-mix(in oklab, var(--accent) 16%, #111111));
+  padding: 1rem 1.05rem;
+  text-align: left;
+}
+
+.talent-profile-pro-gate--inline .talent-profile-pro-gate__card {
+  width: 100%;
+  height: 100%;
+  min-height: 12rem;
+  justify-content: center;
+}
+
+.talent-profile-pro-gate__eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--accent) 80%, white);
+}
+
+.talent-profile-pro-gate__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  color: rgb(255 255 255 / 0.94);
+}
+
+.talent-profile-pro-gate__copy {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: rgb(255 255 255 / 0.62);
+}
+
+.talent-profile-pro-gate__list {
+  margin: 0.15rem 0 0;
+  padding-left: 1.05rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: rgb(255 255 255 / 0.7);
+}
+
+.talent-profile-pro-gate__cta {
+  margin-top: 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.92);
+  padding: 0.5rem 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #0a0a0a;
+  cursor: pointer;
+}
+
+.talent-profile-pro-gate__cta:hover {
+  background: #fff;
+}
+
+.library-pro-callout {
+  margin: 0 0 1rem;
+  border: 1px solid var(--buyer-accent-border, color-mix(in oklab, var(--accent) 40%, transparent));
+  border-radius: 0.9rem;
+  background: var(--buyer-accent-fill, color-mix(in oklab, var(--accent) 12%, transparent));
+  padding: 0.85rem 1rem;
+}
+
+.library-pro-callout__title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.92);
+}
+
+.library-pro-callout__copy {
+  margin: 0.3rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: rgb(255 255 255 / 0.58);
+}

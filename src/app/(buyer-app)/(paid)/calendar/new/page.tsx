@@ -22,6 +22,7 @@ export default async function CalendarNewActivityPage({
   const projectId = typeof params.projectId === "string" ? params.projectId : null;
   const draft = createDefaultActivityDraft(type, projectId);
   const connect = await fetchConnectAccountStatus();
+  const closeHref = projectId ? `/projects/${projectId}` : "/events";
 
   return (
     <BuyerAppPage fullWidth className="!space-y-0 flex min-h-0 flex-1 flex-col">
@@ -29,7 +30,7 @@ export default async function CalendarNewActivityPage({
         initialDraft={draft}
         mode="create"
         initialConnectStatus={connect.status ?? null}
-        closeHref={projectId ? `/projects/${projectId}` : "/events"}
+        closeHref={closeHref}
       />
     </BuyerAppPage>
   );

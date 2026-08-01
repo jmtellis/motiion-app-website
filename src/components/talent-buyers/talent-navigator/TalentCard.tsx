@@ -1,6 +1,7 @@
 "use client";
 
 import { Heart } from "lucide-react";
+import { useState, useTransition } from "react";
 
 import type { Talent } from "@/lib/talent-navigator/types";
 
@@ -11,6 +12,8 @@ type TalentCardProps = {
   onClick?: () => void;
   onDoubleClick?: () => void;
   onMouseEnter?: () => void;
+  onSave?: (talent: Talent) => void | Promise<void>;
+  saved?: boolean;
   tabIndex?: number;
   ariaLabel?: string;
 };
@@ -33,10 +36,15 @@ export function TalentCard({
   onClick,
   onDoubleClick,
   onMouseEnter,
+  onSave,
+  saved = false,
   tabIndex = -1,
   ariaLabel,
 }: TalentCardProps) {
   const visuals = visualsForDistance(distance, active);
+  const [isPending, startTransition] = useTransition();
+  const [justSaved, setJustSaved] = useState(false);
+  const isSaved = saved || justSaved;
 
   return (
     <button
@@ -65,10 +73,46 @@ export function TalentCard({
             <div className="talent-navigator__card-overlay-content">
               <p className="talent-navigator__card-name">{talent.name}</p>
               <p className="talent-navigator__card-sub">{talent.location ?? "Location TBD"}</p>
+              {talent.matchReasons?.[0] ? (
+                <p className="talent-navigator__card-why" title={talent.matchReasons[0].label}>
+                  {talent.matchReasons[0].label}
+                </p>
+              ) : null}
             </div>
-            <span className="talent-navigator__card-save" aria-hidden>
-              <Heart className="size-3.5" />
-            </span>
+            {onSave ? (
+              <span
+                role="button"
+                tabIndex={0}
+                className={`talent-navigator__card-save${isSaved ? " talent-navigator__card-save--saved" : ""}`}
+                aria-label={isSaved ? `${talent.name} saved` : `Save ${talent.name}`}
+                aria-pressed={isSaved}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (isPending || isSaved) return;
+                  startTransition(async () => {
+                    await onSave(talent);
+                    setJustSaved(true);
+                  });
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" && event.key !== " ") return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (isPending || isSaved) return;
+                  startTransition(async () => {
+                    await onSave(talent);
+                    setJustSaved(true);
+                  });
+                }}
+              >
+                <Heart className="size-3.5" fill={isSaved ? "currentColor" : "none"} />
+              </span>
+            ) : (
+              <span className="talent-navigator__card-save" aria-hidden>
+                <Heart className="size-3.5" />
+              </span>
+            )}
           </>
         ) : null}
       </div>

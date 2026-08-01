@@ -151,7 +151,7 @@ export const PROJECT_WORKSPACE_CONFIG: Record<ProjectType, ProjectWorkspaceConfi
       item("breakdown", "Breakdown", FileText, "Define the casting, roles, requirements, and submission process."),
       item(
         "talent-search",
-        "Find Talent",
+        "Invite",
         Search,
         "Search the network, invite dancers, and manage how candidates enter the casting.",
       ),

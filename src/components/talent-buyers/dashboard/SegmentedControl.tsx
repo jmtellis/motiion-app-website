@@ -1,11 +1,14 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
+import type { ReactNode } from "react";
 import { useId } from "react";
 
 type SegmentedOption<T extends string> = {
   value: T;
-  label: string;
+  label: ReactNode;
+  /** Optional badge rendered after the label (e.g. Pro chip). */
+  badge?: ReactNode;
 };
 
 export function SegmentedControl<T extends string>({
@@ -72,7 +75,10 @@ export function SegmentedControl<T extends string>({
                 />
               )
             ) : null}
-            <span className="relative z-[1]">{option.label}</span>
+            <span className="relative z-[1] inline-flex items-center justify-center leading-none">
+              <span className="leading-none">{option.label}</span>
+              {option.badge}
+            </span>
           </button>
         );
       })}

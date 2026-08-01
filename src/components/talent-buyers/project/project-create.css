@@ -375,6 +375,22 @@
   object-fit: cover;
 }
 
+.project-create__cover-preview--placeholder {
+  opacity: 0.35;
+  filter: saturate(0.85);
+}
+
+.project-create__cover-empty-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1.25rem;
+  text-align: center;
+}
+
 .project-create__cover-actions {
   position: absolute;
   right: 0.75rem;
@@ -407,17 +423,110 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
-.project-create__attachment-item {
+.project-create__attachment-list--grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.75rem, 1fr));
+  gap: 0.75rem;
+}
+
+.project-create__attachment-list:not(.project-create__attachment-list--grid) .project-create__attachment-item {
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  overflow: visible;
+}
+
+.project-create__attachment-list--grid .project-create__attachment-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: rgb(255 255 255 / 0.03);
+  overflow: hidden;
+}
+
+.project-create__attachment-item {
   border-radius: 0.625rem;
   border: 1px solid rgb(255 255 255 / 0.08);
   background: rgb(255 255 255 / 0.03);
-  padding: 0.625rem 0.75rem;
+}
+
+.project-create__attachment-media {
+  position: relative;
+}
+
+.project-create__attachment-preview {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.project-create__attachment-remove {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 999px;
+  background: rgb(10 10 10 / 0.72);
+  color: rgb(255 255 255 / 0.82);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease;
+}
+
+.project-create__attachment-list--grid .project-create__attachment-item:hover .project-create__attachment-remove,
+.project-create__attachment-list--grid .project-create__attachment-item:focus-within .project-create__attachment-remove,
+.project-create__attachment-remove--busy {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (hover: none) {
+  .project-create__attachment-remove {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.project-create__attachment-remove:hover:not(:disabled) {
+  background: rgb(20 20 20 / 0.9);
+  color: rgb(255 255 255 / 0.96);
+}
+
+.project-create__attachment-remove:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.project-create__attachment-remove--busy:disabled {
+  opacity: 1;
+}
+
+.project-create__attachment-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0 0.65rem 0.7rem;
 }
 
 .project-create__attachment-name {
@@ -425,12 +534,18 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.875rem;
-  color: rgb(255 255 255 / 0.85);
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 550;
+  color: rgb(255 255 255 / 0.88);
 }
 
 .project-create__attachment-meta {
-  font-size: 0.75rem;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.6875rem;
   color: rgb(255 255 255 / 0.42);
 }
 

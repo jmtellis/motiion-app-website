@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { useRegisterBuyerChrome } from "@/components/talent-buyers/dashboard/BuyerPageChromeContext";
 import { EmptyState } from "@/components/talent-buyers/dashboard/EmptyState";
@@ -17,6 +18,8 @@ export function ProjectCastingsHub({
   projectTitle: string;
   castings: ProjectCastingSummary[];
 }) {
+  const router = useRouter();
+
   useRegisterBuyerChrome({
     breadcrumbs: [
       { label: "Projects", href: "/projects" },
@@ -25,13 +28,15 @@ export function ProjectCastingsHub({
     ],
   });
 
+  const castingHref = `/projects/${projectId}/castings/new`;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SectionHeader title="Castings" description="Manage castings and roles for this project." size="dashboard" />
-        <Link href={`/projects/${projectId}/castings/new`} className="bd-btn-accent">
+        <button type="button" className="bd-btn-accent inline-flex items-center gap-1.5" onClick={() => router.push(castingHref)}>
           Add casting
-        </Link>
+        </button>
       </div>
 
       {castings.length ? (
@@ -68,7 +73,7 @@ export function ProjectCastingsHub({
           title="No castings yet"
           description="Add a casting to collect submissions and manage roles for this project."
           actionLabel="Add casting"
-          actionHref={`/projects/${projectId}/castings/new`}
+          onAction={() => router.push(castingHref)}
         />
       )}
     </div>

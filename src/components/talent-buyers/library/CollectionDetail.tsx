@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
 import { useRegisterBuyerChrome } from "@/components/talent-buyers/dashboard/BuyerPageChromeContext";
+import { useIndustryProOptional } from "@/components/talent-buyers/billing/IndustryProContext";
 import type { CollectionShareSummary } from "@/lib/talent-buyers/collection-share-types";
 import {
   addTalentToCollections,
@@ -50,6 +51,7 @@ export function CollectionDetail({
 }) {
   const router = useRouter();
   const { showToast } = useToast();
+  const { requirePro } = useIndustryProOptional();
   const [collection, setCollection] = useState(initialCollection);
   const [members, setMembers] = useState(initialCollection.members);
   const [shares, setShares] = useState(initialShares);
@@ -256,7 +258,10 @@ export function CollectionDetail({
         <LibrarySharesRail
           shares={shares}
           collectionScoped
-          onCreateShare={() => setShareOpen(true)}
+          onCreateShare={() => {
+            if (!requirePro("roster_write")) return;
+            setShareOpen(true);
+          }}
         />
       </div>
 

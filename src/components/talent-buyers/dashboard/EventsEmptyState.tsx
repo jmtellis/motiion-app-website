@@ -72,8 +72,8 @@ export function EventsEmptyState({ onOpenSchedule }: { onOpenSchedule: () => voi
   return (
     <div className="buyer-empty">
       <BuyerEmptyIntro
-        title="Your activities will live here"
-        lede="Create a class, session, or event — or join one — and manage it from this list."
+        title="Host your next industry event"
+        lede="Set up tickets, invite subgroup leads, check guests in, and run the whole showcase from Motiion."
       >
         <div className="buyer-empty__actions">
           <CreateActivityButton

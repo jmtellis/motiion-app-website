@@ -36,6 +36,8 @@ export type BuyerProjectSummary = {
   notesCount?: number;
   sharedLinksCount?: number;
   coverImageUrl?: string | null;
+  /** Client / production company image used when no cover is set. */
+  productionCompanyLogoUrl?: string | null;
 };
 
 export type BuyerEventSummary = {

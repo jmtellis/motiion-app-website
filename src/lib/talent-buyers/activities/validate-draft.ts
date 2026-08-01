@@ -106,6 +106,24 @@ export function validateActivityDraft(draft: ActivityDraft): string | null {
           }
         }
       }
+      for (const promo of draft.promoCodes) {
+        const code = promo.code.trim();
+        if (!code) continue;
+        if (code.length < 3) return "Promo codes need at least 3 characters.";
+        if (promo.discountType === "percent") {
+          if (promo.discountValue < 1 || promo.discountValue > 100) {
+            return `Promo ${code.toUpperCase()} needs a percent between 1 and 100.`;
+          }
+        } else if (promo.discountValue < 0.5) {
+          return `Promo ${code.toUpperCase()} needs a discount of at least $0.50.`;
+        }
+      }
+    }
+    if (draft.eventSubgroupsEnabled) {
+      const named = draft.jobGroups.filter((group) => group.name.trim());
+      if (named.length < 1) {
+        return "Add at least one named subgroup, or turn subgroups off.";
+      }
     }
   }
 

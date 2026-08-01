@@ -5,20 +5,29 @@ import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   loadOrganizerActivity,
+  loadOrganizerPromos,
   loadOrganizerRevenue,
   loadOrganizerRoster,
+  loadOrganizerSubgroups,
   parseProfileQrPayload,
   type OrganizerActivityDetail,
 } from "@/lib/talent-buyers/activities/organizer-data";
+import { syncActivityPromoCodes } from "@/lib/talent-buyers/activities/promo-codes";
 import type {
+  ActivityDraft,
+  DraftPromoCode,
   OrganizerAttendee,
   OrganizerRevenueSummary,
+  OrganizerSubgroup,
 } from "@/lib/talent-buyers/activities/types";
+import { createDefaultActivityDraft } from "@/lib/talent-buyers/activities/defaults";
 
 export type OrganizerPageData = {
   activity: OrganizerActivityDetail;
   attendees: OrganizerAttendee[];
   revenue: OrganizerRevenueSummary;
+  subgroups: OrganizerSubgroup[];
+  promos: DraftPromoCode[];
 };
 
 export async function getOrganizerPageData(
@@ -36,9 +45,11 @@ export async function getOrganizerPageData(
   const activityResult = await loadOrganizerActivity(supabase, activityId, user.id);
   if (!activityResult.ok) return activityResult;
 
-  const [attendees, revenue] = await Promise.all([
+  const [attendees, revenue, subgroups, promos] = await Promise.all([
     loadOrganizerRoster(supabase, activityId, eventDayId),
     loadOrganizerRevenue(supabase, activityId),
+    loadOrganizerSubgroups(supabase, activityResult.activity.rootJobId),
+    loadOrganizerPromos(supabase, activityId),
   ]);
 
   return {
@@ -47,6 +58,8 @@ export async function getOrganizerPageData(
       activity: activityResult.activity,
       attendees,
       revenue,
+      subgroups,
+      promos,
     },
   };
 }
@@ -109,4 +122,160 @@ export async function recordOrganizerCheckIn(input: {
 
   revalidatePath(`/calendar/${input.activityId}`);
   return { ok: true, checkedInAt: payload.checked_in_at };
+}
+
+export async function grantOrganizerComp(input: {
+  activityId: string;
+  userId: string;
+  ticketOptionId?: string | null;
+}): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createServerSupabaseClient();
+  if (!supabase) return { ok: false, error: "Supabase is not configured." };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "You need to be signed in." };
+
+  const { data, error } = await supabase.rpc("event_grant_comp_enrollment", {
+    p_activity_id: input.activityId,
+    p_student_id: input.userId,
+    p_pricing_tier_id: input.ticketOptionId ?? "",
+    p_ticket_option_id: input.ticketOptionId ?? null,
+  });
+
+  if (error) {
+    console.error("[organizer] comp", error.message);
+    // Fallback for free/class activities without the event RPC shape.
+    const { error: upsertError } = await supabase.from("enrollments").upsert(
+      {
+        activity_id: input.activityId,
+        student_id: input.userId,
+        status: "comped",
+        ticket_option_id: input.ticketOptionId ?? null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "activity_id,student_id" },
+    );
+    if (upsertError) {
+      return { ok: false, error: "Could not comp this guest." };
+    }
+  } else {
+    const payload = data as { ok?: boolean; error?: string } | null;
+    if (payload && payload.ok === false) {
+      return { ok: false, error: payload.error ?? "Could not comp this guest." };
+    }
+  }
+
+  revalidatePath(`/calendar/${input.activityId}`);
+  return { ok: true };
+}
+
+export async function inviteSubgroupLead(input: {
+  activityId: string;
+  groupId: string;
+  userId: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createServerSupabaseClient();
+  if (!supabase) return { ok: false, error: "Supabase is not configured." };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "You need to be signed in." };
+
+  const activityResult = await loadOrganizerActivity(supabase, input.activityId, user.id);
+  if (!activityResult.ok) return activityResult;
+  const rootJobId = activityResult.activity.rootJobId;
+  if (!rootJobId) return { ok: false, error: "This event has no showcase workspace." };
+
+  const { error } = await supabase.from("job_group_invites").insert({
+    job_group_id: input.groupId,
+    job_id: rootJobId,
+    invited_user_id: input.userId,
+    invited_by: user.id,
+    status: "pending",
+    membership_role_on_accept: "lead",
+    context_activity_id: input.activityId,
+  });
+
+  if (error) {
+    console.error("[organizer] invite lead", error.message);
+    return { ok: false, error: "Could not invite that lead." };
+  }
+
+  revalidatePath(`/calendar/${input.activityId}`);
+  return { ok: true };
+}
+
+export async function removeSubgroupLead(input: {
+  activityId: string;
+  groupId: string;
+  userId: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createServerSupabaseClient();
+  if (!supabase) return { ok: false, error: "Supabase is not configured." };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "You need to be signed in." };
+
+  const { data, error } = await supabase.rpc("organizer_remove_job_group_member", {
+    p_job_group_id: input.groupId,
+    p_member_user_id: input.userId,
+  });
+
+  if (error) {
+    console.error("[organizer] remove lead member", error.message);
+  } else {
+    const payload = data as { ok?: boolean } | null;
+    if (payload?.ok) {
+      revalidatePath(`/calendar/${input.activityId}`);
+      return { ok: true };
+    }
+  }
+
+  const { error: revokeError } = await supabase
+    .from("job_group_invites")
+    .update({ status: "revoked" })
+    .eq("job_group_id", input.groupId)
+    .eq("invited_user_id", input.userId)
+    .eq("status", "pending");
+
+  if (revokeError) {
+    return { ok: false, error: "Could not remove that lead." };
+  }
+
+  revalidatePath(`/calendar/${input.activityId}`);
+  return { ok: true };
+}
+
+export async function saveOrganizerPromos(input: {
+  activityId: string;
+  promos: DraftPromoCode[];
+}): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createServerSupabaseClient();
+  if (!supabase) return { ok: false, error: "Supabase is not configured." };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "You need to be signed in." };
+
+  const activityResult = await loadOrganizerActivity(supabase, input.activityId, user.id);
+  if (!activityResult.ok) return activityResult;
+
+  const draft: ActivityDraft = {
+    ...createDefaultActivityDraft(activityResult.activity.type),
+    type: activityResult.activity.type,
+    isPaid: activityResult.activity.requirePayment,
+    promoCodes: input.promos,
+  };
+
+  const result = await syncActivityPromoCodes(supabase, input.activityId, draft);
+  if (!result.ok) return result;
+
+  revalidatePath(`/calendar/${input.activityId}`);
+  return { ok: true };
 }

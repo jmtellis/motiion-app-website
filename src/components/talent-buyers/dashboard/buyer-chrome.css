@@ -1,11 +1,17 @@
 .buyer-dashboard-shell {
-  --buyer-shell-rail-height: 3.75rem;
+  --buyer-shell-rail-height: 4rem;
   --buyer-sidebar-home-height: 3.5rem;
 }
 
 .buyer-dashboard-shell--sidebar-collapsed {
   --buyer-shell-rail-height: 3rem;
   --buyer-sidebar-home-height: 2.75rem;
+}
+
+/* Workspace chrome carries a cover thumbnail and lede, so it needs a taller rail. */
+.buyer-dashboard-shell:has(.project-workspace),
+.buyer-dashboard-shell:has(.activity-manage-tabs) {
+  --buyer-shell-rail-height: 5.75rem;
 }
 
 .buyer-chrome-bar {
@@ -30,6 +36,36 @@
   padding: 0 1.25rem;
   border-bottom: 1px solid var(--buyer-line-subtle, rgb(255 255 255 / 0.06));
   background: var(--buyer-bg, #000);
+}
+
+.buyer-dashboard-shell:has(.project-workspace) .buyer-chrome-bar--dashboard,
+.buyer-dashboard-shell:has(.activity-manage-tabs) .buyer-chrome-bar--dashboard {
+  padding-block: 1rem;
+  border-bottom: none;
+}
+
+/* Progress replaces the breadcrumb/page divider line. */
+.buyer-chrome-bar--with-progress {
+  border-bottom-color: transparent;
+}
+
+.buyer-chrome-bar__progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--buyer-line-subtle, rgb(255 255 255 / 0.06));
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.buyer-chrome-bar__progress-bar {
+  display: block;
+  height: 100%;
+  width: var(--buyer-chrome-progress, 0%);
+  background: var(--accent, #00aacc);
+  transition: width 0.3s ease;
 }
 
 @media (min-width: 1024px) {
@@ -66,6 +102,142 @@
   gap: 0.5rem;
   min-height: 2rem;
   min-width: 0;
+}
+
+.buyer-chrome-bar__title-block {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.buyer-chrome-bar__title-block--stacked {
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.buyer-chrome-bar__title-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.buyer-chrome-bar__project-title {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: rgb(255 255 255 / 0.94);
+}
+
+.buyer-chrome-bar__project-lede {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.3;
+  color: rgb(255 255 255 / 0.5);
+}
+
+.buyer-chrome-bar__cover-avatar {
+  position: relative;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 0.5rem;
+  background: var(--buyer-raised, #1e1e1e);
+}
+
+.buyer-chrome-bar__cover-avatar--large {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.625rem;
+}
+
+.buyer-chrome-bar__cover-avatar--xlarge {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 0.75rem;
+}
+
+.buyer-chrome-bar__cover-avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.buyer-chrome-bar__status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.04);
+  padding: 0.3rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgb(255 255 255 / 0.72);
+  white-space: nowrap;
+}
+
+.buyer-chrome-bar__status-chip--draft {
+  border-color: rgb(245 158 11 / 0.35);
+  background: rgb(245 158 11 / 0.1);
+  color: rgb(252 211 77);
+}
+
+.buyer-chrome-bar__status-chip--published {
+  border-color: rgb(255 255 255 / 0.12);
+  color: rgb(255 255 255 / 0.72);
+}
+
+.buyer-chrome-bar__status-chip--button {
+  cursor: pointer;
+  font: inherit;
+  appearance: none;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.buyer-chrome-bar__status-chip--button:hover {
+  border-color: rgb(245 158 11 / 0.5);
+  background: rgb(245 158 11 / 0.16);
+}
+
+.buyer-chrome-bar__edit-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 9999px;
+  background: transparent;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgb(255 255 255 / 0.78);
+  text-decoration: none;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.buyer-chrome-bar__edit-link:hover {
+  border-color: rgb(255 255 255 / 0.22);
+  background: rgb(255 255 255 / 0.06);
+  color: #fafafa;
 }
 
 .buyer-chrome-bar__center {
@@ -501,6 +673,49 @@
   border-color: rgb(255 255 255 / 0.1);
   color: #fafafa;
   box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+}
+
+.buyer-sidebar__link--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.buyer-sidebar__back {
+  margin-bottom: 0.5rem;
+}
+
+.buyer-sidebar__back-title {
+  font-weight: 600;
+  color: var(--buyer-text, #fafafa);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.buyer-sidebar__project-title {
+  margin: 0.15rem 0 0.5rem;
+  padding: 0 0.7rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--buyer-text, #fafafa);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.buyer-sidebar__link-status {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: rgb(255 255 255 / 0.42);
+}
+
+.buyer-sidebar__link--active .buyer-sidebar__link-status {
+  color: rgb(255 255 255 / 0.55);
 }
 
 .buyer-sidebar__link-icon {

@@ -188,6 +188,7 @@ export function ProjectDetailView({
       <ProjectDetailHero
         id={project.id}
         coverImageUrl={project.coverImageUrl}
+        productionCompanyLogoUrl={project.productionCompanyLogoUrl}
         projectType={project.projectType}
         status={project.status}
         showTitle={false}

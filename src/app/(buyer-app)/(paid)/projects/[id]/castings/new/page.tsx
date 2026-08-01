@@ -1,8 +1,17 @@
 import { redirect } from "next/navigation";
 
-import { projectOverviewPath } from "@/lib/talent-buyers/project-routes";
+import { requireHiringAccount } from "@/lib/auth/session";
+import { fetchProjectRecord } from "@/lib/talent-buyers/projects";
+import { projectLandingPath, projectOverviewPath } from "@/lib/talent-buyers/project-routes";
 
 export default async function ProjectCastingCreatePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const profile = await requireHiringAccount();
+  const project = await fetchProjectRecord(id, profile.id);
+
+  if (project) {
+    redirect(projectLandingPath(id, project.project_type));
+  }
+
   redirect(projectOverviewPath(id));
 }

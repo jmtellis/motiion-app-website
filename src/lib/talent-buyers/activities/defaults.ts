@@ -2,6 +2,8 @@ import type {
   ActivityDraft,
   ActivityType,
   DraftEventDay,
+  DraftJobGroup,
+  DraftPromoCode,
   DraftTicketOption,
 } from "@/lib/talent-buyers/activities/types";
 
@@ -51,6 +53,30 @@ export function createDefaultTicketOptions(): DraftTicketOption[] {
   ];
 }
 
+export function createDefaultJobGroup(overrides?: Partial<DraftJobGroup>): DraftJobGroup {
+  return {
+    id: newId(),
+    persistedId: null,
+    name: "",
+    leadInvitees: [],
+    ...overrides,
+  };
+}
+
+export function createDefaultPromoCode(overrides?: Partial<DraftPromoCode>): DraftPromoCode {
+  return {
+    id: newId(),
+    persistedId: null,
+    code: "",
+    discountType: "percent",
+    discountValue: 20,
+    maxRedemptions: null,
+    expiresAt: "",
+    isActive: true,
+    ...overrides,
+  };
+}
+
 export function createDefaultActivityDraft(
   type: ActivityType = "event",
   projectId?: string | null,
@@ -86,6 +112,7 @@ export function createDefaultActivityDraft(
     priceAmount: 25,
     maxGuestSpots: null,
     collaboratorUserIds: [],
+    collaborators: [],
 
     sessionType: "",
     sessionLevel: "",
@@ -106,6 +133,9 @@ export function createDefaultActivityDraft(
     eventAccessibilityInfo: "",
     eventLateEntryPolicy: "",
     eventCancellationPolicy: "",
+    eventSubgroupsEnabled: false,
+    jobGroups: [],
+    promoCodes: [],
   };
 }
 
@@ -133,3 +163,5 @@ export function syncScheduleFromEventDays(draft: ActivityDraft): ActivityDraft {
 export function dollarsToCents(amount: number): number {
   return Math.max(1, Math.round(amount * 100));
 }
+
+export { newId as createLocalId };

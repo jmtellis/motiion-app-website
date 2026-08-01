@@ -67,6 +67,7 @@ export function CastingTalentCarousel({
   emptyActionHref,
   onEmptyAction,
   headerActions,
+  countLabel,
 }: {
   title: string;
   subtitle?: string;
@@ -80,6 +81,8 @@ export function CastingTalentCarousel({
   emptyActionHref?: string;
   onEmptyAction?: () => void;
   headerActions?: ReactNode;
+  /** Noun used in the footer count, e.g. "matched" or "referred". */
+  countLabel?: string;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
 
@@ -127,7 +130,7 @@ export function CastingTalentCarousel({
           </div>
           <div className="casting-find-talent-carousel-section__footer">
             <p className="casting-find-talent-carousel-section__count">
-              {items.length} {title.toLowerCase().includes("referred") ? "referred" : "matched"}
+              {items.length} {countLabel ?? "matched"}
             </p>
             <div className="casting-find-talent-carousel-section__nav">
               <button

@@ -13,7 +13,6 @@ import {
   fetchConnectAccountStatus,
   startStripeConnectOnboarding,
 } from "@/app/(buyer-app)/(paid)/calendar/connect-actions";
-import { AuthButton } from "@/components/auth/ui";
 import { SetupFlowFormPanel } from "@/components/auth/SetupFlowFormPanel";
 import {
   ActivityField,
@@ -24,6 +23,12 @@ import {
   PillSelect,
   StringListEditor,
 } from "@/components/talent-buyers/activities/activity-composer-fields";
+import { ActivityPeoplePicker } from "@/components/talent-buyers/activities/ActivityPeoplePicker";
+import {
+  ActivityCoverField,
+  LeadsStep,
+  PromosStep,
+} from "@/components/talent-buyers/activities/activity-wizard-event-steps";
 import {
   createDefaultEventDay,
   createDefaultTicketOptions,
@@ -172,21 +177,17 @@ export function ActivityCreateWizard({
     <div className="casting-create-wizard activity-create-wizard">
       <aside className="casting-create-wizard__context">
         <div className="casting-create-wizard__context-body">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/45">
-            {mode === "edit" ? "Edit" : "Create"}
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">{config.pageTitle}</h2>
-          <p className="mt-2 text-sm text-white/55">{config.lede}</p>
-          <ol className="mt-8 space-y-2">
+          <p className="activity-create-wizard__eyebrow">{mode === "edit" ? "Edit" : "Create"}</p>
+          <h2 className="activity-create-wizard__title">{config.pageTitle}</h2>
+          <p className="activity-create-wizard__lede">{config.lede}</p>
+          <ol className="activity-create-wizard__steps">
             {steps.map((step, index) => (
               <li key={step}>
                 <button
                   type="button"
                   onClick={() => setStepIndex(index)}
-                  className={`w-full rounded-xl px-3 py-2 text-left text-sm transition ${
-                    index === stepIndex
-                      ? "bg-[color-mix(in_oklab,var(--accent)_12%,transparent)] text-[var(--accent)]"
-                      : "text-white/55 hover:bg-white/5 hover:text-white"
+                  className={`activity-create-wizard__step${
+                    index === stepIndex ? " activity-create-wizard__step--active" : ""
                   }`}
                 >
                   {index + 1}. {stepLabel(step)}
@@ -223,19 +224,30 @@ export function ActivityCreateWizard({
           error={error}
           footer={
             <div className="casting-create-wizard__footer">
+              <div className="casting-create-wizard__scroll-fade" aria-hidden />
               <div className="casting-create-wizard__footer-start">
                 {!isFirst ? (
-                  <AuthButton type="button" variant="secondary" onClick={goBack} disabled={isPending}>
+                  <button
+                    type="button"
+                    className="project-create__btn project-create__btn--secondary"
+                    onClick={goBack}
+                    disabled={isPending}
+                  >
                     <ChevronLeft className="size-4" />
                     Back
-                  </AuthButton>
+                  </button>
                 ) : null}
               </div>
               <div className="casting-create-wizard__footer-end">
-                <AuthButton type="button" onClick={goNext} disabled={isPending}>
+                <button
+                  type="button"
+                  className="project-create__btn project-create__btn--primary"
+                  onClick={goNext}
+                  disabled={isPending}
+                >
                   {isPending ? "Saving…" : isLast ? config.publishLabel : "Continue"}
                   {!isLast ? <ChevronRight className="size-4" /> : null}
-                </AuthButton>
+                </button>
               </div>
             </div>
           }
@@ -256,6 +268,8 @@ export function ActivityCreateWizard({
               onStartConnect={startConnect}
             />
           ) : null}
+          {currentStep === "promos" ? <PromosStep draft={draft} onChange={setDraft} /> : null}
+          {currentStep === "leads" ? <LeadsStep draft={draft} onChange={setDraft} /> : null}
           {currentStep === "experience" ? (
             <ExperienceStep draft={draft} onChange={setDraft} />
           ) : null}
@@ -302,7 +316,7 @@ function TypeStep({
   ];
 
   return (
-    <div className="space-y-3">
+    <div className="project-create__choice-grid">
       {options.map((option) => {
         const selected = draft.type === option.type;
         return (
@@ -310,14 +324,10 @@ function TypeStep({
             key={option.type}
             type="button"
             onClick={() => onSelect(option.type)}
-            className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
-              selected
-                ? "border-[color-mix(in_oklab,var(--accent)_45%,transparent)] bg-[color-mix(in_oklab,var(--accent)_10%,transparent)]"
-                : "border-white/12 bg-black/20 hover:border-white/25"
-            }`}
+            className={`project-create__choice${selected ? " project-create__choice--selected" : ""}`}
           >
-            <p className="text-base font-semibold text-white">{option.title}</p>
-            <p className="mt-1 text-sm text-white/55">{option.body}</p>
+            <span className="project-create__choice-title">{option.title}</span>
+            <p className="project-create__choice-copy">{option.body}</p>
           </button>
         );
       })}
@@ -335,7 +345,8 @@ function BasicsStep({
   const classTypeOptions = classTypeOptionsForHighLevel(draft.category);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 activity-create-wizard__step-panel">
+      <ActivityCoverField draft={draft} onChange={onChange} />
       <ActivityField label="Title">
         <ActivityTextInput
           value={draft.title}
@@ -489,7 +500,7 @@ function DatesStep({
         Add one or more days. Ticket access can cover all days, a fixed set, or a selectable range.
       </p>
       {draft.eventDays.map((day, index) => (
-        <div key={day.id} className="space-y-3 rounded-2xl border border-white/10 p-4">
+        <div key={day.id} className="activity-create-wizard__panel">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-white">Day {index + 1}</p>
             {draft.eventDays.length > 1 ? (
@@ -619,7 +630,7 @@ function TicketsStep({
 
   return (
     <div className="space-y-4">
-      <label className="flex items-center justify-between rounded-2xl border border-white/10 px-4 py-3">
+      <label className="activity-create-wizard__toggle">
         <div>
           <p className="text-sm font-semibold text-white">Accept payments</p>
           <p className="text-xs text-white/50">Sell tickets through Stripe Connect</p>
@@ -645,7 +656,7 @@ function TicketsStep({
 
       {draft.isPaid
         ? draft.ticketOptions.map((ticket, index) => (
-            <div key={ticket.id} className="space-y-3 rounded-2xl border border-white/10 p-4">
+            <div key={ticket.id} className="activity-create-wizard__panel">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-white">Ticket {index + 1}</p>
                 {draft.ticketOptions.length > 1 ? (
@@ -1059,7 +1070,7 @@ function SettingsPublishStep({
     <div className="space-y-4">
       {draft.type === "class" ? (
         <>
-          <label className="flex items-center justify-between rounded-2xl border border-white/10 px-4 py-3">
+          <label className="activity-create-wizard__toggle">
             <div>
               <p className="text-sm font-semibold text-white">Paid class</p>
               <p className="text-xs text-white/50">Charge a single price via Stripe</p>
@@ -1108,7 +1119,7 @@ function SettingsPublishStep({
         </>
       ) : null}
 
-      <label className="flex items-center justify-between rounded-2xl border border-white/10 px-4 py-3">
+      <label className="activity-create-wizard__toggle">
         <div>
           <p className="text-sm font-semibold text-white">Public listing</p>
           <p className="text-xs text-white/50">
@@ -1124,7 +1135,7 @@ function SettingsPublishStep({
       </label>
 
       {draft.type === "session" ? (
-        <label className="flex items-center justify-between rounded-2xl border border-white/10 px-4 py-3">
+        <label className="activity-create-wizard__toggle">
           <div>
             <p className="text-sm font-semibold text-white">Attendees visible</p>
             <p className="text-xs text-white/50">Let attendees see who else is coming</p>
@@ -1139,30 +1150,32 @@ function SettingsPublishStep({
       ) : null}
 
       {draft.type !== "event" || step === "publish" ? (
-        <ActivityField label="Co-organizer user IDs (optional, up to 5)">
-          <ActivityTextArea
-            value={draft.collaboratorUserIds.join("\n")}
-            placeholder="Paste Motiion user UUIDs, one per line"
-            onChange={(event) =>
-              onChange({
-                ...draft,
-                collaboratorUserIds: event.target.value
-                  .split(/\n|,/)
-                  .map((value) => value.trim())
-                  .filter(Boolean)
-                  .slice(0, 5),
-              })
-            }
-          />
-        </ActivityField>
+        <ActivityPeoplePicker
+          label="Co-organizers (optional, up to 5)"
+          selected={draft.collaborators}
+          emptyHint="Search Motiion people to invite as co-organizers."
+          onChange={(collaborators) =>
+            onChange({
+              ...draft,
+              collaborators: collaborators.slice(0, 5),
+              collaboratorUserIds: collaborators.slice(0, 5).map((person) => person.userId),
+            })
+          }
+        />
       ) : null}
 
       {step === "publish" ? (
-        <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/65">
+        <div className="activity-create-wizard__panel text-sm text-white/65">
           <p className="font-semibold text-white">Ready to publish</p>
           <p className="mt-1">
             {draft.title.trim() || "Untitled"} · {draft.type}
             {draft.isPaid ? " · Paid" : " · Free"} · {draft.isPublic ? "Public" : "Private"}
+            {draft.eventSubgroupsEnabled
+              ? ` · ${draft.jobGroups.filter((g) => g.name.trim()).length} subgroup(s)`
+              : ""}
+            {draft.promoCodes.filter((p) => p.code.trim()).length
+              ? ` · ${draft.promoCodes.filter((p) => p.code.trim()).length} promo(s)`
+              : ""}
           </p>
         </div>
       ) : null}

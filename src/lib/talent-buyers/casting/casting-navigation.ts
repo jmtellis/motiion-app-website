@@ -8,14 +8,11 @@ import {
 } from "lucide-react";
 
 import type {
-  CastingAttentionItem,
   CastingCandidate,
-  CastingProgressMetrics,
   CastingProject,
   CastingRole,
   CastingWorkspaceTabId,
 } from "./casting-types";
-import { castingWorkspaceHref } from "./casting-routes";
 
 export type CastingNavItem = {
   id: CastingWorkspaceTabId;
@@ -33,7 +30,7 @@ export const CASTING_WORKSPACE_NAV: CastingNavItem[] = [
   },
   {
     id: "talent-search",
-    label: "Find Talent",
+    label: "Invite",
     icon: Search,
     description: "Browse role-matched talent, review referrals, and invite dancers.",
   },
@@ -102,23 +99,10 @@ export function deriveCastingWorkflowState(input: {
 }
 
 export function getCastingPrimaryAction(
-  tab: CastingWorkspaceTabId | "overview",
+  tab: CastingWorkspaceTabId,
   state: CastingWorkflowState,
 ): CastingPrimaryAction {
   switch (tab) {
-    case "overview":
-      if (!state.hasBreakdown) return { label: "Create breakdown", actionId: "create-breakdown" };
-      if (state.roleCount === 0) return { label: "Add role", actionId: "add-role" };
-      if (state.candidateCount === 0) return { label: "Find talent", actionId: "find-talent" };
-      if (state.newSubmissionCount > 0) {
-        return { label: "Review candidates", actionId: "review-candidates" };
-      }
-      if (state.selectedCount > 0 && state.confirmedCount === 0) {
-        return { label: "Finalize cast", actionId: "finalize-cast" };
-      }
-      if (state.confirmedCount > 0) return { label: "Create job", actionId: "create-job" };
-      return { label: "Find talent", actionId: "find-talent" };
-
     case "breakdown":
       if (state.castingStatus === "draft" || state.castingStatus === "none") {
         return { label: "Publish casting", actionId: "publish-casting" };
@@ -149,22 +133,6 @@ export function getCastingPrimaryAction(
     default:
       return { label: "Continue", actionId: "continue" };
   }
-}
-
-export function getCastingOverviewPrimaryAction(
-  projectId: string,
-  state: CastingWorkflowState,
-): CastingPrimaryAction & { href?: string } {
-  const action = getCastingPrimaryAction("overview", state);
-  const hrefMap: Record<string, string> = {
-    "create-breakdown": castingWorkspaceHref(projectId, "breakdown"),
-    "add-role": castingWorkspaceHref(projectId, "breakdown", { hash: "roles" }),
-    "find-talent": castingWorkspaceHref(projectId, "talent-search"),
-    "review-candidates": castingWorkspaceHref(projectId, "review", { stage: "new" }),
-    "finalize-cast": castingWorkspaceHref(projectId, "cast"),
-    "create-job": castingWorkspaceHref(projectId, "cast"),
-  };
-  return { ...action, href: hrefMap[action.actionId] };
 }
 
 export function getCastingPanelHeader(tab: CastingWorkspaceTabId): { title: string; description: string } {

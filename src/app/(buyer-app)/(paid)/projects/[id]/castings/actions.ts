@@ -221,7 +221,7 @@ export async function saveProjectCastingDraft(
   if (!session.ok) return { ok: false, error: session.error };
 
   const { supabase, userId } = session;
-  const form = { ...parsed.data, projectId };
+const form = { ...parsed.data, projectId };
 
   if (!(await assertProjectAccess(supabase, projectId, userId))) {
     return { ok: false, error: "Project not found." };
@@ -269,6 +269,78 @@ export async function saveProjectCastingDraft(
   return { ok: true, projectId, roleIds: rolesResult.roleIds, castingId };
 }
 
+/**
+ * Saves an existing casting without changing its lifecycle status.
+ * Used by section-level edits so a published or closed casting is not
+ * accidentally converted back into a draft.
+ */
+export async function saveProjectCastingChanges(
+  projectId: string,
+  payload: unknown,
+): Promise<SaveCastingDraftResult> {
+  const parsed = parseCastingDraftForm(payload);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Check casting details." };
+  }
+
+  const session = await requirePosterSession();
+  if (!session.ok) return { ok: false, error: session.error };
+
+  const { supabase, userId } = session;
+  const form = { ...parsed.data, projectId };
+  if (!form.castingId) return { ok: false, error: "Casting not found." };
+
+  if (!(await assertProjectAccess(supabase, projectId, userId))) {
+    return { ok: false, error: "Project not found." };
+  }
+
+  const { data: existing, error: existingError } = await supabase
+    .from("castings")
+    .select("id, status")
+    .eq("id", form.castingId)
+    .eq("project_id", projectId)
+    .maybeSingle();
+
+  if (existingError || !existing) {
+    return { ok: false, error: existingError?.message ?? "Casting not found." };
+  }
+
+  const existingStatus = String(existing.status ?? "draft");
+  const isDraft = existingStatus === "draft";
+  const castingRow = buildChildCastingRow(projectId, form, isDraft);
+  const mobileConfiguration = normalizeCastingConfigurationForMobile(form, isDraft);
+
+  const { error } = await supabase
+    .from("castings")
+    .update({
+      ...castingRow,
+      status: existingStatus,
+      configuration: { ...castingRow.configuration, ...mobileConfiguration },
+    })
+    .eq("id", form.castingId);
+  if (error) return { ok: false, error: error.message };
+
+  const rolesResult = await syncCastingRoles(
+    supabase,
+    userId,
+    projectId,
+    form.castingId,
+    form,
+    isDraft,
+  );
+  if (!rolesResult.ok) return { ok: false, error: rolesResult.error };
+
+  await syncProjectCastingConfiguration(supabase, projectId, mobileConfiguration, isDraft, form);
+  revalidateCastingModulePaths(projectId, form.castingId);
+
+  return {
+    ok: true,
+    projectId,
+    roleIds: rolesResult.roleIds,
+    castingId: form.castingId,
+  };
+}
+
 export async function publishProjectCasting(
   projectId: string,
   payload: unknown,
@@ -287,7 +359,7 @@ export async function publishProjectCasting(
   }
 
   const { supabase, userId } = session;
-  const form = { ...parsed.data, projectId };
+const form = { ...parsed.data, projectId };
 
   if (!(await assertProjectAccess(supabase, projectId, userId))) {
     return { ok: false, error: "Project not found." };

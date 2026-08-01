@@ -4,7 +4,6 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Pencil, Plus, Trash2, Users, X } from "lucide-react";
 
-import { AuthButton } from "@/components/auth/ui";
 import { createDefaultRole } from "@/lib/talent-buyers/casting-composer-defaults";
 import { heightToTotalInches } from "@/lib/search/talent-filter-logic";
 import { ETHNICITY_OPTIONS, GENDER_OPTIONS, UNION_STATUS_OPTIONS } from "@/lib/talent-navigator/filter-options";
@@ -862,22 +861,27 @@ export function CastingRoleStep({
 
             <footer className="casting-schedule-rail__footer">
               {editor.editIndex != null ? (
-                <AuthButton
+                <button
                   type="button"
-                  variant="secondary"
+                  className="project-create__btn project-create__btn--danger"
                   onClick={() => {
                     removeRole(editor.editIndex!);
                     closeEditor();
                   }}
                 >
                   Remove
-                </AuthButton>
+                </button>
               ) : (
                 <span />
               )}
-              <AuthButton type="button" onClick={applyEditor} disabled={!editor.draft.title.trim()}>
+              <button
+                type="button"
+                className="project-create__btn project-create__btn--primary"
+                onClick={applyEditor}
+                disabled={!editor.draft.title.trim()}
+              >
                 Apply
-              </AuthButton>
+              </button>
             </footer>
           </aside>
         </div>,

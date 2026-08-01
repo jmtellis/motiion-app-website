@@ -5,7 +5,7 @@ import { BuyerAppPage } from "@/components/talent-buyers/dashboard/BuyerAppPage"
 import { ProjectWorkspaceCastingBootstrap } from "@/components/talent-buyers/project/ProjectWorkspaceCastingBootstrap";
 import { ProjectWorkspaceProvider } from "@/components/talent-buyers/project/ProjectWorkspaceContext";
 import { ProjectWorkspaceShell } from "@/components/talent-buyers/project/ProjectWorkspaceShell";
-import type { ProjectWorkspaceMeta } from "@/components/talent-buyers/project/ProjectWorkspaceLeftRail";
+import type { ProjectWorkspaceMeta } from "@/components/talent-buyers/project/ProjectWorkspaceContext";
 import { fetchPosterCastingDetail } from "@/lib/talent-buyers/casting-projects";
 import { listProjectCastings } from "@/lib/talent-buyers/castings";
 import { listProjectActivities } from "@/lib/talent-buyers/project-activities";
@@ -114,6 +114,7 @@ export default async function ProjectWorkspaceLayout({
     id,
     title: resolvedProject.title,
     coverImageUrl: resolvedProject.cover_image_url,
+    productionCompanyLogoUrl: resolvedProject.production_company_logo_url,
     projectType: resolvedProject.project_type,
     location: resolvedProject.location,
     productionCompany: resolvedProject.production_company,

@@ -10,16 +10,22 @@
   --ink-soft: rgb(255 255 255 / 0.55);
   --line: rgb(255 255 255 / 0.12);
   --surface-card: #151515;
+  --casting-scroll-fade: 3.5rem;
+}
+
+/* Events (activity) wizard keeps a left step rail; casting is form-only. */
+.activity-create-wizard {
+  flex-direction: column;
 }
 
 @media (min-width: 900px) {
-  .casting-create-wizard {
+  .activity-create-wizard {
     flex-direction: row;
     align-items: stretch;
   }
 }
 
-.casting-create-wizard__context {
+.activity-create-wizard .casting-create-wizard__context {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
@@ -29,34 +35,166 @@
 }
 
 @media (min-width: 900px) {
-  .casting-create-wizard__context {
+  .activity-create-wizard .casting-create-wizard__context {
     flex: 0 0 42%;
-    max-width: 32rem;
+    max-width: 22rem;
     min-height: 0;
     height: 100%;
     border-bottom: none;
     border-right: 1px solid rgb(255 255 255 / 0.12);
-    padding: 2rem 2rem 2.5rem;
+    padding: 2rem 1.75rem 2.5rem;
     overflow-y: auto;
   }
 }
 
-.casting-create-wizard__back {
-  display: none;
-}
-
-.casting-create-wizard__context-body {
+.activity-create-wizard .casting-create-wizard__context-body {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0;
   min-height: 0;
 }
 
-.casting-create-wizard__breakdown-status {
+.activity-create-wizard__eyebrow {
   margin: 0;
-  font-size: 0.8125rem;
-  color: rgb(134 239 172 / 0.9);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.42);
+}
+
+.activity-create-wizard__title {
+  margin: 0.5rem 0 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: rgb(255 255 255 / 0.95);
+}
+
+.activity-create-wizard__lede {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: rgb(255 255 255 / 0.52);
+}
+
+.activity-create-wizard__steps {
+  list-style: none;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.activity-create-wizard__step {
+  display: block;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  background: transparent;
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(255 255 255 / 0.55);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.activity-create-wizard__step:hover {
+  background: rgb(255 255 255 / 0.04);
+  color: rgb(255 255 255 / 0.85);
+}
+
+.activity-create-wizard__step--active {
+  border-color: var(--buyer-accent-border, color-mix(in oklab, var(--accent) 45%, transparent));
+  background: var(--buyer-accent-fill, color-mix(in oklab, var(--accent) 12%, transparent));
+  color: var(--accent);
+}
+
+.activity-create-wizard__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.02);
+}
+
+.activity-create-wizard__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.02);
+}
+
+.activity-create-wizard__cover-drop {
+  position: relative;
+  display: flex;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px dashed rgb(255 255 255 / 0.18);
+  background:
+    radial-gradient(120% 90% at 20% 0%, rgb(45 212 191 / 0.12), transparent 55%),
+    rgb(255 255 255 / 0.03);
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.activity-create-wizard__cover-drop:hover {
+  border-color: rgb(255 255 255 / 0.32);
+  transform: translateY(-1px);
+}
+
+.activity-create-wizard__cover-drop--has-image {
+  border-style: solid;
+}
+
+.activity-create-wizard__cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.activity-create-wizard__cover-empty {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(255 255 255 / 0.65);
+}
+
+.activity-create-wizard__step-panel {
+  animation: activity-wizard-step-in 0.28s ease both;
+}
+
+@keyframes activity-wizard-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .casting-create-wizard__form {
@@ -67,7 +205,7 @@
   min-height: 0;
   height: 100%;
   overflow: hidden;
-  padding: 1.25rem 1.5rem 1.5rem;
+  padding: 1.25rem 1.5rem 0;
 }
 
 .casting-create-wizard__form-top {
@@ -95,7 +233,7 @@
 
 @media (min-width: 900px) {
   .casting-create-wizard__form {
-    padding: 1.75rem 2.5rem 2.5rem;
+    padding: 1.75rem 2.5rem 0;
   }
 }
 
@@ -107,6 +245,7 @@
   max-width: none !important;
   min-height: 0;
   height: 100%;
+  position: relative;
 }
 
 .casting-create-wizard__form .signup-split-form--onboarding {
@@ -122,40 +261,84 @@
 
 /*
  * Scroll owner is `.signup-split-form__main` (Lenis + onboarding CSS).
- * Do not pin `__main` with flex-shrink: 0 — it must shrink so overflow-y engages.
- * Footer is already flex-shrink: 0 below.
+ * Block layout (not flex) so content height can overflow and scroll reliably.
+ * Soft edge fade lives on the footer (`__scroll-fade`) — avoid mask-image here
+ * so sticky step headers (breakdown review) keep working.
  */
 .casting-create-wizard__form .signup-split-form__main {
+  display: block;
   min-height: 0;
   flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.casting-create-wizard__form .signup-split-form__scroll-content {
+  /* Quieter top inset than onboarding; room to clear the footer fade. */
+  padding-top: 0.75rem;
+  padding-bottom: calc(var(--casting-scroll-fade) + 1.25rem);
+}
+
+@media (min-width: 960px) {
+  .casting-create-wizard__form .signup-split-form__scroll-content {
+    padding-top: 1rem;
+  }
 }
 
 .casting-create-wizard__form .signup-split-form__title {
   margin: 0;
-  font-size: 1.875rem;
-  line-height: 1.15;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
   color: rgb(255 255 255 / 0.95);
 }
 
 .casting-create-wizard__form .signup-split-form__subtitle {
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
   max-width: none;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   line-height: 1.6;
   color: rgb(255 255 255 / 0.52);
 }
 
+/* Match project-create field labels (AuthField uses .field > span/legend). */
+.casting-create-wizard .field {
+  --field-label-indent: 0.875rem;
+  gap: 0.5rem;
+}
+
 .casting-create-wizard .field > span,
 .casting-create-wizard .field > legend {
-  color: rgb(255 255 255 / 0.85);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.42);
+  padding-inline-start: var(--field-label-indent);
 }
 
 .casting-create-wizard .field > input,
 .casting-create-wizard .field > textarea,
 .casting-create-wizard .field > select {
-  border-color: rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.06);
-  color: #fff;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.03);
+  color: rgb(255 255 255 / 0.92);
+  font-size: 0.875rem;
+  box-shadow: none;
+}
+
+.casting-create-wizard .field > input,
+.casting-create-wizard .field > select {
+  border-radius: 9999px;
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+}
+
+.casting-create-wizard .field > textarea {
+  border-radius: var(--radius-field, 0.85rem);
+  padding: 0.85rem 1rem;
 }
 
 .casting-create-wizard .field > input::placeholder,
@@ -170,6 +353,7 @@
 .casting-create-wizard .field > textarea:focus-visible,
 .casting-create-wizard .field > select:focus-visible {
   border-color: rgb(255 255 255 / 0.35);
+  background: rgb(255 255 255 / 0.04);
   box-shadow: none;
 }
 
@@ -177,6 +361,12 @@
 .casting-create-wizard .casting-wizard-choice__body .font-semibold,
 .casting-create-wizard .casting-wizard-pill > span {
   color: inherit;
+}
+
+/* Footer actions use project-create button language. */
+.casting-create-wizard__footer .project-create__btn {
+  gap: 0.35rem;
+  min-height: 2.5rem;
 }
 
 .casting-create-wizard__form .signup-split-form__progress {
@@ -190,16 +380,22 @@
 /* Size to content — nested overflow here fights Lenis on `__main`. */
 .casting-create-wizard__form .signup-split-form__body {
   flex: 0 0 auto;
-  margin-top: 2rem;
-  padding-bottom: 2rem;
+  margin-top: 1.25rem;
+  padding-bottom: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 .casting-create-wizard__form--breakdown-review .signup-split-form__body {
   margin-top: 0;
   padding-bottom: 0;
+}
+
+/* When the panel title is omitted (type/visibility owns section titles). */
+.casting-create-wizard__form .signup-split-form__heading:empty + .signup-split-form__body,
+.casting-create-wizard__form .signup-split-form__scroll-content > .signup-split-form__body:first-child {
+  margin-top: 0.5rem;
 }
 
 .casting-create-wizard__form--breakdown-review .casting-breakdown-review {
@@ -213,34 +409,40 @@
 }
 
 .casting-create-wizard__form .signup-split-form__footer {
+  position: relative;
+  z-index: 2;
+  display: block;
   flex-shrink: 0;
   margin-top: auto;
-  padding-top: 1.75rem;
-  border-top: 1px solid rgb(255 255 255 / 0.12);
-  justify-content: stretch;
+  padding: 1.25rem 0 calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  border-top: 0;
+  background: var(--buyer-bg, #000);
 }
 
-.casting-create-wizard__form--with-progress .signup-split-form__footer {
-  position: relative;
-  border-top-color: transparent;
+/* Suppress onboarding hairline — soft fade replaces it. */
+.casting-create-wizard__form .signup-split-form__footer::before,
+.casting-create-wizard__form .signup-split-form__footer::after {
+  content: none;
 }
 
-.casting-create-wizard__form--with-progress .signup-split-form__footer::before,
-.casting-create-wizard__form--with-progress .signup-split-form__footer::after {
+/* Events wizard still draws progress on the footer divider. */
+.activity-create-wizard .casting-create-wizard__form--with-progress .signup-split-form__footer::before,
+.activity-create-wizard .casting-create-wizard__form--with-progress .signup-split-form__footer::after {
   content: "";
   position: absolute;
   top: 0;
   left: 0;
   height: 2px;
   border-radius: 999px;
+  z-index: 1;
 }
 
-.casting-create-wizard__form--with-progress .signup-split-form__footer::before {
+.activity-create-wizard .casting-create-wizard__form--with-progress .signup-split-form__footer::before {
   right: 0;
   background: rgb(255 255 255 / 0.12);
 }
 
-.casting-create-wizard__form--with-progress .signup-split-form__footer::after {
+.activity-create-wizard .casting-create-wizard__form--with-progress .signup-split-form__footer::after {
   width: var(--casting-progress, 0%);
   background: var(--accent);
   transition: width 0.3s ease;
@@ -252,6 +454,24 @@
   justify-content: space-between;
   gap: 1rem;
   width: 100%;
+}
+
+/* iOS-style soft edge: content densifies / fades as it slips behind the footer. */
+.casting-create-wizard__scroll-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: var(--casting-scroll-fade);
+  pointer-events: none;
+  z-index: 1;
+  background: linear-gradient(
+    to top,
+    var(--buyer-bg, #000) 0%,
+    rgb(0 0 0 / 0.82) 28%,
+    rgb(0 0 0 / 0.35) 62%,
+    transparent 100%
+  );
 }
 
 .casting-create-wizard__footer-start,
@@ -955,18 +1175,18 @@
   justify-content: space-between;
   gap: 0.75rem;
   width: 100%;
-  padding: 1rem 1.1rem;
-  border-radius: 0.9rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
-  background: rgb(255 255 255 / 0.03);
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.02);
   text-align: left;
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .casting-wizard-choice:hover {
-  border-color: rgb(255 255 255 / 0.22);
-  background: rgb(255 255 255 / 0.05);
+  border-color: rgb(255 255 255 / 0.18);
+  background: rgb(255 255 255 / 0.04);
 }
 
 .casting-wizard-choice--selected {
@@ -1033,24 +1253,50 @@
   justify-content: space-between;
   gap: 0.75rem;
   width: 100%;
-  padding: 1rem 1.1rem;
-  border-radius: 0.9rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
-  background: rgb(255 255 255 / 0.03);
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.02);
   text-align: left;
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .casting-schedule-step__type-card:hover {
-  border-color: rgb(255 255 255 / 0.22);
-  background: rgb(255 255 255 / 0.05);
+  border-color: rgb(255 255 255 / 0.18);
+  background: rgb(255 255 255 / 0.04);
 }
 
 .casting-schedule-step__type-card--selected {
   border-color: rgb(255 255 255 / 0.42);
   background: rgb(255 255 255 / 0.09);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+
+.casting-wizard-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.casting-wizard-section + .casting-wizard-section {
+  margin-top: 1.75rem;
+}
+
+.casting-wizard-section__title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: rgb(255 255 255 / 0.95);
+}
+
+.casting-wizard-section__subtitle {
+  margin: -0.35rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: rgb(255 255 255 / 0.52);
 }
 
 .casting-schedule-step__type-copy {

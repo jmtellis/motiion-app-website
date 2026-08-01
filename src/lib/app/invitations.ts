@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { bridgeWebInviteToMobile } from "@/lib/talent-buyers/casting/bridge-mobile-invite";
+import { castingAcceptsOutreach } from "@/lib/talent-buyers/casting/casting-display";
 import { trackServerEvent } from "@/lib/analytics/track-server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -144,6 +145,16 @@ export async function inviteTalentToCasting(input: {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Not signed in" };
+
+  const { data: casting } = await supabase
+    .from("castings")
+    .select("status")
+    .eq("id", input.castingId)
+    .maybeSingle<{ status: string | null }>();
+
+  if (!castingAcceptsOutreach(casting?.status)) {
+    return { ok: false, error: "Publish the casting before inviting talent." };
+  }
 
   const { error } = await supabase.from("invitations").upsert(
     {

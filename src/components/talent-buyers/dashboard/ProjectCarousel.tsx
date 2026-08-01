@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { FeatureCarousel } from "@/components/landing/FeatureCarousel";
 import { formatBuyerRelativeDate } from "@/lib/talent-buyers/dashboard-data";
 import { getProjectTypeLabel } from "@/lib/talent-buyers/project-types";
-import { resolveBuyerCoverImage } from "@/lib/talent-buyers/stock-images";
+import { resolveBuyerCoverSrc } from "@/lib/talent-buyers/stock-images";
 import type { ProjectHubSummary } from "@/lib/talent-buyers/projects-hub";
 
 import "./projects-hub.css";
@@ -19,16 +19,33 @@ export function ProjectCarousel({
 }) {
   const slides = useMemo(
     () =>
-      projects.map((project) => ({
-        id: project.id,
-        title: project.title,
-        description: `${getProjectTypeLabel(project.projectType)} · ${project.talentCount} submissions · Updated ${formatBuyerRelativeDate(project.lastUpdated)}`,
-        href: `/projects/${project.id}`,
-        image: {
-          src: resolveBuyerCoverImage(project.id, project.coverImageUrl, "project"),
-          alt: project.title,
-        },
-      })),
+      projects.map((project) => {
+        const typeLabel = getProjectTypeLabel(project.projectType);
+        const statusLabel =
+          project.status === "draft"
+            ? "Draft"
+            : project.status === "archived"
+              ? "Archived"
+              : `${project.talentCount} submissions`;
+        const coverSrc = resolveBuyerCoverSrc(project.coverImageUrl, {
+          fallbackUrl: project.productionCompanyLogoUrl,
+          allowStock: false,
+        });
+        return {
+          id: project.id,
+          title: project.title,
+          description: `${typeLabel} · ${statusLabel} · Updated ${formatBuyerRelativeDate(project.lastUpdated)}`,
+          href: `/projects/${project.id}`,
+          ...(coverSrc
+            ? {
+                image: {
+                  src: coverSrc,
+                  alt: project.title,
+                },
+              }
+            : {}),
+        };
+      }),
     [projects],
   );
 

@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createDefaultActivityDraft } from "@/lib/talent-buyers/activities/defaults";
+import { loadPromoCodesForDraft } from "@/lib/talent-buyers/activities/promo-codes";
+import { loadJobGroupsForDraft } from "@/lib/talent-buyers/activities/subgroups";
 import type {
   ActivityDraft,
   ActivityType,
@@ -35,7 +37,7 @@ export async function loadActivityDraft(
       `
       id, creator_id, type, title, description, location, cover_image_url,
       activity_date, start_time, end_date, end_time, max_attendees, is_private,
-      require_payment, project_id, category, subcategory,
+      require_payment, project_id, root_job_id, category, subcategory,
       price_amount_cents, max_guest_spots, attendees_visible,
       class_what_you_will_learn, class_skill_level, class_focus, class_intensity,
       class_prerequisites, class_dress_code, class_equipment, class_cancellation_policy,
@@ -189,6 +191,15 @@ export async function loadActivityDraft(
         },
       ];
     }
+
+    const rootJobId = (r.root_job_id as string | null) ?? null;
+    if (rootJobId) {
+      const subgroups = await loadJobGroupsForDraft(supabase, rootJobId);
+      draft.eventSubgroupsEnabled = subgroups.enabled;
+      draft.jobGroups = subgroups.groups;
+    }
+
+    draft.promoCodes = await loadPromoCodesForDraft(supabase, activityId);
   }
 
   const { data: collab } = await supabase
@@ -196,9 +207,31 @@ export async function loadActivityDraft(
     .select("invited_user_id")
     .eq("activity_id", activityId)
     .eq("status", "pending");
-  draft.collaboratorUserIds = ((collab ?? []) as { invited_user_id: string }[]).map(
+  const collaboratorIds = ((collab ?? []) as { invited_user_id: string }[]).map(
     (row) => row.invited_user_id,
   );
+  draft.collaboratorUserIds = collaboratorIds;
+
+  if (collaboratorIds.length) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id,display_name,first_name,last_name,headshot_urls")
+      .in("user_id", collaboratorIds);
+    draft.collaborators = ((profiles ?? []) as Record<string, unknown>[]).map((profile) => {
+      const display =
+        String(profile.display_name ?? "").trim() ||
+        [profile.first_name, profile.last_name].filter(Boolean).join(" ").trim() ||
+        "Co-organizer";
+      const urls = profile.headshot_urls as string[] | null;
+      const headshotUrl =
+        Array.isArray(urls) ? urls.find((url) => typeof url === "string" && url.trim()) ?? null : null;
+      return {
+        userId: String(profile.user_id),
+        displayName: display,
+        headshotUrl: headshotUrl?.trim() ?? null,
+      };
+    });
+  }
 
   return { ok: true, draft };
 }

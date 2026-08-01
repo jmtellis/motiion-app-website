@@ -20,14 +20,22 @@ export type BuyerPageChromeConfig = {
   title?: string;
   lede?: string;
   breadcrumbs?: BuyerBreadcrumbItem[];
+  /** Optional leading control (e.g. project cover avatar) before breadcrumbs. */
+  leading?: ReactNode;
   end?: ReactNode;
   /** Bumps chrome re-registration when actions change */
   revision?: string | number;
+  /**
+   * 0–100. When set, the chrome bottom border becomes a progress track.
+   * Pass `null` to clear. Omitted values are preserved across `setChrome`.
+   */
+  progressPercent?: number | null;
 };
 
 type BuyerPageChromeContextValue = {
   chrome: BuyerPageChromeConfig;
   setChrome: (config: BuyerPageChromeConfig) => void;
+  setChromeProgress: (progressPercent: number | null) => void;
   clearChrome: () => void;
 };
 
@@ -37,7 +45,16 @@ export function BuyerPageChromeProvider({ children }: { children: ReactNode }) {
   const [chrome, setChromeState] = useState<BuyerPageChromeConfig>({});
 
   const setChrome = useCallback((config: BuyerPageChromeConfig) => {
-    setChromeState(config);
+    setChromeState((previous) => ({
+      ...config,
+      // Keep live wizard progress unless the caller sets it explicitly.
+      progressPercent:
+        config.progressPercent !== undefined ? config.progressPercent : previous.progressPercent,
+    }));
+  }, []);
+
+  const setChromeProgress = useCallback((progressPercent: number | null) => {
+    setChromeState((previous) => ({ ...previous, progressPercent }));
   }, []);
 
   const clearChrome = useCallback(() => {
@@ -48,9 +65,10 @@ export function BuyerPageChromeProvider({ children }: { children: ReactNode }) {
     () => ({
       chrome,
       setChrome,
+      setChromeProgress,
       clearChrome,
     }),
-    [chrome, setChrome, clearChrome],
+    [chrome, setChrome, setChromeProgress, clearChrome],
   );
 
   return <BuyerPageChromeContext.Provider value={value}>{children}</BuyerPageChromeContext.Provider>;

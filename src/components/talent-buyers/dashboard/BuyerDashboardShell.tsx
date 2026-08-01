@@ -25,7 +25,7 @@ const SIDEBAR_EXPANDED_KEY = "buyer-sidebar-expanded";
 /** Match Find Talent hubs: no top chrome unless the page needs nested crumbs or end actions. */
 function buyerShellNeedsChrome(pathname: string, chrome: BuyerPageChromeConfig) {
   if (pathname.startsWith("/talent")) return false;
-  if (chrome.end != null) return true;
+  if (chrome.end != null || chrome.leading != null) return true;
   const crumbs = chrome.breadcrumbs ?? defaultBuyerChromeBreadcrumbs(pathname);
   return (crumbs?.length ?? 0) > 1;
 }
@@ -111,6 +111,7 @@ export function BuyerDashboardShell({
           <div className="relative h-auto min-h-0 buyer-dashboard-shell__chrome lg:h-full">
             <BuyerChromeBar
               className="buyer-chrome-bar--dashboard h-full"
+              progressPercent={chrome.progressPercent}
               start={
                 <>
                   <button

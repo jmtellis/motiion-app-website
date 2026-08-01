@@ -14,7 +14,7 @@ export function CastingEditChrome({
   useRegisterBuyerChrome({
     breadcrumbs: [
       { label: "Projects", href: `/projects` },
-      { label: projectTitle, href: `/projects/${projectId}/overview` },
+      { label: projectTitle, href: `/projects/${projectId}/workspace/breakdown` },
       { label: castingTitle || "Casting", href: `/projects/${projectId}/workspace/breakdown` },
       { label: "Edit" },
     ],

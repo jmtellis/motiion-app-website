@@ -386,7 +386,7 @@ export function CastingComposer({
         castingId: result.castingId ?? current.castingId,
       }));
       setNotice(isCastingScoped ? "Draft saved." : "Draft saved.");
-      router.push(`/projects/${result.projectId}/overview`);
+      router.push(`/projects/${result.projectId}/workspace/breakdown`);
     });
   }
 
@@ -432,7 +432,7 @@ export function CastingComposer({
           return;
         }
 
-        router.push(`/projects/${result.projectId}/overview`);
+        router.push(`/projects/${result.projectId}/workspace/breakdown`);
       });
     });
   }

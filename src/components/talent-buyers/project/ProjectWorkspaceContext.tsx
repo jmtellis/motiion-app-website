@@ -12,7 +12,17 @@ import type { ProjectActivitySummary } from "@/lib/talent-buyers/project-activit
 import type { CastingWorkflowData } from "@/lib/talent-buyers/casting/casting-types";
 import type { ProjectAttachment } from "@/types/project";
 
-import type { ProjectWorkspaceMeta } from "./ProjectWorkspaceLeftRail";
+export type ProjectWorkspaceMeta = {
+  id: string;
+  title: string;
+  coverImageUrl: string | null;
+  productionCompanyLogoUrl?: string | null;
+  projectType: string | null;
+  location: string | null;
+  productionCompany: string | null;
+  isDraft: boolean;
+  updatedAt: string | null;
+};
 
 export type ProjectWorkspaceData = {
   projectId: string;

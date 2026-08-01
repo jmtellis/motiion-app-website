@@ -4,6 +4,7 @@ import { BuyerAppPage } from "@/components/talent-buyers/dashboard/BuyerAppPage"
 import { CastingCreateShell } from "@/components/talent-buyers/project/CastingCreateShell";
 import { childCastingToComposerForm } from "@/lib/talent-buyers/casting-child-payload";
 import { createDefaultRole } from "@/lib/talent-buyers/casting-composer-defaults";
+import type { CastingWizardStepId } from "@/lib/talent-buyers/casting-create-wizard";
 import { fetchChildCastingDetail } from "@/lib/talent-buyers/castings";
 import { fetchProjectRecord, projectRecordToComposerForm } from "@/lib/talent-buyers/projects";
 import { requireHiringAccount } from "@/lib/auth/session";
@@ -11,13 +12,31 @@ import type { CastingConfiguration } from "@/types/casting";
 
 import { CastingEditChrome } from "./CastingEditChrome";
 
+const EDIT_STEP_IDS = new Set<CastingWizardStepId>([
+  "basics",
+  "type_visibility",
+  "schedule",
+  "where",
+  "compensation",
+  "submission",
+  "roles",
+  "review",
+]);
+
 export default async function EditProjectCastingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string; castingId: string }>;
+  searchParams: Promise<{ step?: string }>;
 }) {
   const profile = await requireHiringAccount();
   const { id, castingId } = await params;
+  const query = await searchParams;
+  const initialStepId =
+    query.step && EDIT_STEP_IDS.has(query.step as CastingWizardStepId)
+      ? (query.step as CastingWizardStepId)
+      : "basics";
   const project = await fetchProjectRecord(id, profile.id);
   if (!project) notFound();
 
@@ -56,6 +75,7 @@ export default async function EditProjectCastingPage({
         initialForm={initialForm}
         initialContainerForm={initialContainerForm}
         mode="edit"
+        initialStepId={initialStepId}
       />
     </BuyerAppPage>
   );

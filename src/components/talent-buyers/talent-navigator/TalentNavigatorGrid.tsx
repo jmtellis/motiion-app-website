@@ -98,6 +98,7 @@ type TalentNavigatorGridProps = {
   onSlideComplete?: () => void;
   onFocusCell: (rowIndex: number, colIndex: number) => void;
   onOpenProfile: (talent: Talent) => void;
+  onSaveTalent?: (talent: Talent) => void | Promise<void>;
   onNavigate?: (direction: "row-up" | "row-down" | "col-left" | "col-right") => void;
 };
 
@@ -162,6 +163,7 @@ export function TalentNavigatorGrid({
   onSlideComplete,
   onFocusCell,
   onOpenProfile,
+  onSaveTalent,
   onNavigate,
 }: TalentNavigatorGridProps) {
   const metrics = useMemo(
@@ -261,6 +263,7 @@ export function TalentNavigatorGrid({
                   tabIndex={isActive ? 0 : -1}
                   onClick={() => onFocusCell(cell.rowIndex, cell.colIndex)}
                   onDoubleClick={() => onOpenProfile(cell.talent)}
+                  onSave={onSaveTalent}
                   ariaLabel={`${cell.talent.name}, row ${cell.rowIndex + 1}, column ${cell.colIndex + 1}${isActive ? ", active" : ""}`}
                 />
               </div>

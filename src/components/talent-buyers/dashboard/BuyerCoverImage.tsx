@@ -5,15 +5,19 @@ import { useState } from "react";
 import { getBuyerStockImage } from "@/lib/talent-buyers/stock-images";
 
 type BuyerCoverImageProps = {
-  src: string;
+  src: string | null | undefined;
   alt?: string;
   aspectRatio?: "16/9" | "4/3" | "21/9";
   overlay?: boolean;
   className?: string;
   fill?: boolean;
-  /** Used when src fails to load (e.g. stale DB URL). */
-  fallbackId: string;
-  fallbackCategory: "project" | "event";
+  /** Used when src fails to load (e.g. stale DB URL) and stock is allowed. */
+  fallbackId?: string;
+  fallbackCategory?: "project" | "event";
+  /** Secondary image (e.g. client logo) tried before stock / solid. */
+  secondarySrc?: string | null;
+  /** When false, empty/broken covers stay a solid color — no Unsplash stock. Default true. */
+  allowStockFallback?: boolean;
 };
 
 const aspectClassNames = {
@@ -42,21 +46,28 @@ function CoverImg({
 }: {
   src: string;
   alt: string;
-  fallbackSrc: string;
+  fallbackSrc: string | null;
 }) {
   const [currentSrc, setCurrentSrc] = useState(src);
+  const [failed, setFailed] = useState(false);
+
+  if (failed && !fallbackSrc) {
+    return null;
+  }
 
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={currentSrc}
+      src={failed && fallbackSrc ? fallbackSrc : currentSrc}
       alt={alt}
       className="absolute inset-0 size-full object-cover"
       decoding="async"
       onError={() => {
-        if (currentSrc !== fallbackSrc) {
+        if (!failed && fallbackSrc && currentSrc !== fallbackSrc) {
           setCurrentSrc(fallbackSrc);
+          return;
         }
+        setFailed(true);
       }}
     />
   );
@@ -70,25 +81,31 @@ export function BuyerCoverImage({
   className = "",
   fill = false,
   fallbackId,
-  fallbackCategory,
+  fallbackCategory = "project",
+  secondarySrc,
+  allowStockFallback = true,
 }: BuyerCoverImageProps) {
-  const fallbackSrc = getBuyerStockImage(fallbackId, fallbackCategory);
+  const primary = src?.trim() || "";
+  const secondary = secondarySrc?.trim() || "";
+  const resolvedSrc = primary || secondary;
+  const stockSrc =
+    allowStockFallback && fallbackId
+      ? getBuyerStockImage(fallbackId, fallbackCategory)
+      : null;
+  const errorFallback = secondary && primary ? secondary : stockSrc;
 
-  if (fill) {
-    return (
-      <div className={`absolute inset-0 overflow-hidden bg-[#1e1e1e] ${className}`.trim()}>
-        <CoverImg src={src} alt={alt} fallbackSrc={fallbackSrc} />
-        {overlay ? <CoverOverlay strong /> : null}
-      </div>
-    );
-  }
+  const shellClass = fill
+    ? `absolute inset-0 overflow-hidden bg-[#1e1e1e] ${className}`.trim()
+    : `relative w-full overflow-hidden bg-[#1e1e1e] ${aspectClassNames[aspectRatio]} ${className}`.trim();
 
   return (
-    <div
-      className={`relative w-full overflow-hidden bg-[#1e1e1e] ${aspectClassNames[aspectRatio]} ${className}`.trim()}
-    >
-      <CoverImg src={src} alt={alt} fallbackSrc={fallbackSrc} />
-      {overlay ? <CoverOverlay /> : null}
+    <div className={shellClass}>
+      {resolvedSrc ? (
+        <CoverImg src={resolvedSrc} alt={alt} fallbackSrc={errorFallback} />
+      ) : stockSrc ? (
+        <CoverImg src={stockSrc} alt={alt} fallbackSrc={null} />
+      ) : null}
+      {overlay ? <CoverOverlay strong={fill} /> : null}
     </div>
   );
 }

@@ -984,6 +984,121 @@
   padding: 1rem;
 }
 
+.buyer-dashboard .bd-project-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.buyer-dashboard .bd-project-card__media {
+  position: relative;
+  overflow: hidden;
+}
+
+.buyer-dashboard .bd-project-card__overlay {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 2.25rem 0.9rem 0.85rem;
+  background: linear-gradient(
+    to top,
+    rgb(0 0 0 / 0.82) 0%,
+    rgb(0 0 0 / 0.35) 55%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.buyer-dashboard .bd-project-card__type-label {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgb(255 255 255 / 0.72);
+}
+
+.buyer-dashboard .bd-project-card__overlay-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: rgb(255 255 255 / 0.96);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.buyer-dashboard .bd-project-card__footer {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.75rem 0.85rem;
+  background: var(--bd-surface, #141414);
+  border-top: 1px solid var(--bd-border);
+}
+
+.buyer-dashboard .bd-project-card__footer-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 0.4rem;
+  color: rgb(255 255 255 / 0.92);
+}
+
+.buyer-dashboard .bd-project-card__footer-icon--accent {
+  background: color-mix(in oklab, var(--accent) 78%, #0b0b0b);
+}
+
+.buyer-dashboard .bd-project-card__footer-icon--warm {
+  background: rgb(217 119 6 / 0.92);
+}
+
+.buyer-dashboard .bd-project-card__footer-icon--green {
+  background: rgb(22 163 74 / 0.92);
+}
+
+.buyer-dashboard .bd-project-card__footer-icon--violet {
+  background: rgb(124 58 237 / 0.9);
+}
+
+.buyer-dashboard .bd-project-card__footer-icon--neutral {
+  background: rgb(255 255 255 / 0.12);
+  color: rgb(255 255 255 / 0.82);
+}
+
+.buyer-dashboard .bd-project-card__footer-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.buyer-dashboard .bd-project-card__footer-title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: rgb(255 255 255 / 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.buyer-dashboard .bd-project-card__footer-meta {
+  margin: 0.1rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  color: rgb(255 255 255 / 0.48);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .buyer-dashboard .bd-project-hero {
   position: relative;
   overflow: hidden;

@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
 import {
   addTalentToProjectRoster,
   fetchNavigatorTalent,
   inviteTalentFromNavigator,
   listBuyerCastingTargets,
   listBuyerOpenRoles,
+  saveTalentForBuyer,
   saveTalentToRoster,
   type CastingInviteTarget,
 } from "@/app/(buyer-app)/(paid)/talent/actions";
@@ -31,16 +32,14 @@ import {
 } from "@/lib/talent-navigator/open-roles";
 import { SegmentedControl } from "@/components/talent-buyers/dashboard/SegmentedControl";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
+import { useIndustryProOptional } from "@/components/talent-buyers/billing/IndustryProContext";
+import { ProChip } from "@/components/talent-buyers/billing/ProChip";
 import { TalentNlChatPanel } from "./TalentNlChatPanel";
 import { TalentNavigatorGrid, NAVIGATOR_STEP_X, NAVIGATOR_STEP_Y } from "./TalentNavigatorGrid";
 import "./talent-navigator.css";
+import "@/components/talent-buyers/billing/upgrade-pro.css";
 
 type NavigatorViewMode = "chat" | "browse";
-
-const NAVIGATOR_VIEW_OPTIONS: Array<{ value: NavigatorViewMode; label: string }> = [
-  { value: "chat", label: "Discover" },
-  { value: "browse", label: "Browse" },
-];
 
 type TalentNavigatorPageProps = {
   initialData: TalentNavigatorInitialData;
@@ -74,10 +73,40 @@ export function TalentNavigatorPage({
   const [savedSearchId, setSavedSearchId] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [viewMode, setViewMode] = useState<NavigatorViewMode>("chat");
+  const [chatSessionActive, setChatSessionActive] = useState(false);
+  /** Chat overlay dismissed → show Discover navigator without Pro Browse gate. */
+  const [chatOverlayDismissed, setChatOverlayDismissed] = useState(false);
   const [openRoles, setOpenRoles] = useState<BuyerOpenRole[]>([]);
   const [selectedOpenRoleId, setSelectedOpenRoleId] = useState(initialOpenRoleId);
   const appliedInitialOpenRoleRef = useRef(false);
   const { showToast } = useToast();
+  const { requirePro, hasIndustryPro, openUpgrade } = useIndustryProOptional();
+
+  const navigatorViewOptions = useMemo(
+    () => [
+      { value: "chat" as const, label: "Discover" },
+      {
+        value: "browse" as const,
+        label: "Browse",
+        badge: !hasIndustryPro ? (
+          <ProChip tone={viewMode === "browse" ? "on-active" : "accent"} />
+        ) : undefined,
+      },
+    ],
+    [hasIndustryPro, viewMode],
+  );
+
+  const handleSaveTalentFromCard = useCallback(
+    async (talent: Talent) => {
+      const result = await saveTalentForBuyer([talent.slug, talent.id].filter(Boolean));
+      if (!result.ok) {
+        showToast({ message: result.error ?? "Could not save talent.", variant: "error" });
+        return;
+      }
+      showToast({ message: `${talent.name} saved to Library`, variant: "success" });
+    },
+    [showToast],
+  );
 
   const rows = useMemo(
     () => buildTalentRows(talentPool, filters, { prefiltered: true, shuffleSalt }),
@@ -163,17 +192,48 @@ export function TalentNavigatorPage({
     return () => window.clearTimeout(handle);
   }, [filters, resetNavigation, showToast]);
 
+  const setNavigatorViewMode = useCallback(
+    (mode: NavigatorViewMode) => {
+      if (mode === "browse" && !requirePro("view_talent_profile")) return;
+      if (mode === "chat") setChatOverlayDismissed(false);
+      setViewMode(mode);
+    },
+    [requirePro],
+  );
+
+  const dismissChatOverlay = useCallback(() => {
+    setChatOverlayDismissed(true);
+  }, []);
+
+  const reopenChatOverlay = useCallback(() => {
+    setChatOverlayDismissed(false);
+    setViewMode("chat");
+  }, []);
+
+  const handleChatSessionChange = useCallback((active: boolean) => {
+    setChatSessionActive(active);
+    if (active) setChatOverlayDismissed(false);
+  }, []);
+
+  useEffect(() => {
+    if (hasIndustryPro || viewMode !== "browse") return;
+    openUpgrade("view_talent_profile");
+    setViewMode("chat");
+  }, [hasIndustryPro, openUpgrade, viewMode]);
+
   const openProfile = useCallback(
     (talent: Talent) => {
+      if (!requirePro("view_talent_profile")) return;
       router.push(getTalentProfileHref(talent));
     },
-    [router],
+    [requirePro, router],
   );
 
   const openCover = useCallback(() => {
+    if (!requirePro("view_talent_profile")) return;
     setFiltersOpen(false);
     setViewMode("browse");
-  }, []);
+  }, [requirePro]);
 
   const handleOpenFromGrid = useCallback(
     (talent: Talent) => {
@@ -307,6 +367,7 @@ export function TalentNavigatorPage({
   }, []);
 
   const handleSaveSearch = useCallback(() => {
+    if (!requirePro("saved_search")) return;
     const label = window.prompt("Name this search");
     const trimmed = label?.trim();
     if (!trimmed) return;
@@ -324,7 +385,7 @@ export function TalentNavigatorPage({
         showToast(result.error ?? "Could not save search");
       }
     });
-  }, [filters, showToast]);
+  }, [filters, requirePro, showToast]);
 
   const handleDeleteSavedSearch = useCallback(() => {
     if (!savedSearchId) return;
@@ -365,6 +426,11 @@ export function TalentNavigatorPage({
         if (filtersOpen) {
           setFiltersOpen(false);
           event.preventDefault();
+          return;
+        }
+        if (viewMode === "chat" && chatSessionActive && !chatOverlayDismissed && !isTyping) {
+          dismissChatOverlay();
+          event.preventDefault();
         }
         return;
       }
@@ -402,6 +468,10 @@ export function TalentNavigatorPage({
         case "S":
           if (activeTalent) {
             event.preventDefault();
+            if (!hasIndustryPro) {
+              void handleSaveTalentFromCard(activeTalent);
+              break;
+            }
             setViewMode("browse");
             setSavePickerOpen(true);
           }
@@ -429,14 +499,18 @@ export function TalentNavigatorPage({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
     activeTalent,
+    chatOverlayDismissed,
+    chatSessionActive,
     contactTalent,
+    dismissChatOverlay,
     filtersOpen,
+    handleSaveTalentFromCard,
+    hasIndustryPro,
     navigate,
-    openInvitePicker,
     openCover,
+    openInvitePicker,
     openProfile,
     rows.length,
-    showToast,
     viewMode,
   ]);
 
@@ -497,6 +571,10 @@ export function TalentNavigatorPage({
       ref={rootRef}
       className={`talent-navigator talent-navigator--${viewMode}${
         viewMode === "browse" ? " talent-navigator--focus-lifted" : ""
+      }${
+        viewMode === "chat" && chatSessionActive && !chatOverlayDismissed
+          ? " talent-navigator--chat-focused"
+          : ""
       }`}
       tabIndex={-1}
     >
@@ -513,9 +591,9 @@ export function TalentNavigatorPage({
               </div>
             ) : (
               <SegmentedControl
-                options={NAVIGATOR_VIEW_OPTIONS}
+                options={navigatorViewOptions}
                 value={viewMode}
-                onChange={setViewMode}
+                onChange={setNavigatorViewMode}
                 ariaLabel="Find talent view"
                 equalWidth
                 activeTone="white"
@@ -523,7 +601,20 @@ export function TalentNavigatorPage({
             )}
           </div>
 
-          <div className="talent-navigator__stage-toolbar-side talent-navigator__stage-toolbar-side--end" />
+          <div className="talent-navigator__stage-toolbar-side talent-navigator__stage-toolbar-side--end">
+            {chatSessionActive &&
+            !filtersOpen &&
+            (viewMode === "browse" || (viewMode === "chat" && chatOverlayDismissed)) ? (
+              <button
+                type="button"
+                className="talent-navigator__search-reopen"
+                onClick={reopenChatOverlay}
+              >
+                <MessageSquare className="size-3.5" aria-hidden />
+                Refine search
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {rows.length > 0 ? (
@@ -539,6 +630,7 @@ export function TalentNavigatorPage({
               onSlideComplete={handleSlideComplete}
               onFocusCell={focusCell}
               onOpenProfile={handleOpenFromGrid}
+              onSaveTalent={handleSaveTalentFromCard}
               onNavigate={navigate}
             />
           </div>
@@ -609,7 +701,9 @@ export function TalentNavigatorPage({
             onDeleteSavedSearch={handleDeleteSavedSearch}
             onApplyFilters={() => setFiltersOpen(false)}
           />
-        ) : (
+        ) : null}
+
+        {!filtersOpen ? (
           <TalentNlChatPanel
             filters={filters}
             filtersOpen={filtersOpen}
@@ -619,10 +713,19 @@ export function TalentNavigatorPage({
             onOpenRoleChange={applyOpenRole}
             onFiltersChange={applyNlFilters}
             onTalentPoolChange={applyNlTalentPool}
+            onDismissChat={dismissChatOverlay}
+            onOpenProfile={(talent) => openProfile(talent as Talent)}
+            onChatSessionChange={handleChatSessionChange}
+            sessionOverlayVisible={
+              viewMode === "chat" && chatSessionActive && !chatOverlayDismissed
+            }
+            composeVisible={
+              viewMode === "chat" && (!chatSessionActive || chatOverlayDismissed)
+            }
             categoryLabel={currentRow?.label ?? (rows.length ? "Browse" : undefined)}
             open
           />
-        )}
+        ) : null}
       </div>
 
       {initialData.usingFallbackData ? (

@@ -8,6 +8,8 @@ export type ActivityComposerStepId =
   | "experience"
   | "dates"
   | "tickets"
+  | "promos"
+  | "leads"
   | "attendees"
   | "extras"
   | "settings"
@@ -43,6 +45,8 @@ const EVENT_STEPS: ActivityComposerStepId[] = [
   "basics",
   "dates",
   "tickets",
+  "promos",
+  "leads",
   "experience",
   "attendees",
   "publish",
@@ -91,8 +95,12 @@ export function stepLabel(step: ActivityComposerStepId): string {
       return "Dates";
     case "tickets":
       return "Tickets";
+    case "promos":
+      return "Promos";
+    case "leads":
+      return "Leads";
     case "attendees":
-      return "Attendees";
+      return "Guests";
     case "extras":
       return "Extras";
     case "settings":

@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
+import { useIndustryProOptional } from "@/components/talent-buyers/billing/IndustryProContext";
 import { createCollectionShare } from "@/lib/talent-buyers/collection-shares";
 import {
   COLLECTION_SHARE_DURATIONS,
@@ -27,6 +28,7 @@ export function CollectionShareModal({
   onShareCreated?: (share: CollectionShareSummary) => void;
 }) {
   const { showToast } = useToast();
+  const { requirePro } = useIndustryProOptional();
   const [isPending, startTransition] = useTransition();
   const [collectionId, setCollectionId] = useState(lockedCollectionId || collections[0]?.id || "");
   const [duration, setDuration] = useState<CollectionShareDuration>("twenty_four_hours");
@@ -44,6 +46,7 @@ export function CollectionShareModal({
   }, [open, collections, lockedCollectionId]);
 
   function handleCreate() {
+    if (!requirePro("roster_write")) return;
     if (!collectionId) {
       showToast({ message: "Create a collection before sharing.", variant: "error" });
       return;

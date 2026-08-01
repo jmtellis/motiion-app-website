@@ -38,13 +38,7 @@ export function ProjectWorkspaceTimelinePanel({
 
   return (
     <>
-      <header className="project-workspace__panel-header">
-        <div>
-          <h2 className="project-workspace__panel-title">Timeline</h2>
-          <p className="project-workspace__panel-description">
-            Meetings, deadlines, rehearsals, fittings, auditions, and other activities.
-          </p>
-        </div>
+      <header className="project-workspace__panel-header project-workspace__panel-header--actions">
         <div className="project-workspace__panel-actions">
           <AddProjectActivityButton projectId={projectId} triggerLabel="Add timeline item" />
         </div>

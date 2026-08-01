@@ -1,6 +1,7 @@
 "use client";
 
 import { AuthField, AuthInput, AuthTextArea } from "@/components/auth/ui";
+import { ProjectCoverPanel } from "@/components/talent-buyers/project/ProjectCoverPanel";
 import type { ClientEntityKind } from "@/lib/clients/types";
 import type { CastingComposerForm } from "@/types/casting";
 
@@ -17,11 +18,23 @@ export function CastingBasicsStep({
   form,
   onFormChange,
   showPrefillBadge,
+  draftSessionId,
+  coverStoragePath,
+  onCoverChange,
+  onCoverError,
+  hideDescription = false,
 }: {
   form: CastingComposerForm;
   onFormChange: (form: CastingComposerForm) => void;
   showPrefillBadge?: boolean;
+  draftSessionId?: string;
+  coverStoragePath?: string | null;
+  onCoverChange?: (url: string, storagePath: string | null) => void;
+  onCoverError?: (message: string | null) => void;
+  /** Hide description for compact surfaces (e.g. Edit Project modal). */
+  hideDescription?: boolean;
 }) {
+  const canUploadCover = Boolean(draftSessionId && onCoverChange && onCoverError);
   const clientKind: ClientEntityKind = form.clientEntityKind ?? "company";
   const descriptionLength = form.description.length;
   const clientUndisclosed = form.configuration.confidential_project_client;
@@ -63,22 +76,24 @@ export function CastingBasicsStep({
         />
       </AuthField>
 
-      <AuthField label="Description">
-        <AuthTextArea
-          value={form.description}
-          maxLength={CASTING_DESCRIPTION_MAX_CHARS}
-          onChange={(event) =>
-            onFormChange({
-              ...form,
-              description: event.target.value.slice(0, CASTING_DESCRIPTION_MAX_CHARS),
-            })
-          }
-          placeholder="What dancers should know about this casting."
-        />
-        <p className="mt-1.5 text-xs text-[var(--ink-soft)] tabular-nums">
-          {descriptionLength} / {CASTING_DESCRIPTION_MAX_CHARS}
-        </p>
-      </AuthField>
+      {hideDescription ? null : (
+        <AuthField label="Description">
+          <AuthTextArea
+            value={form.description}
+            maxLength={CASTING_DESCRIPTION_MAX_CHARS}
+            onChange={(event) =>
+              onFormChange({
+                ...form,
+                description: event.target.value.slice(0, CASTING_DESCRIPTION_MAX_CHARS),
+              })
+            }
+            placeholder="What dancers should know about this casting."
+          />
+          <p className="mt-1.5 text-xs text-[var(--ink-soft)] tabular-nums">
+            {descriptionLength} / {CASTING_DESCRIPTION_MAX_CHARS}
+          </p>
+        </AuthField>
+      )}
 
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -120,6 +135,19 @@ export function CastingBasicsStep({
           />
         )}
       </div>
+
+      {canUploadCover ? (
+        <ProjectCoverPanel
+          draftSessionId={draftSessionId!}
+          coverImageUrl={form.coverImageUrl}
+          coverStoragePath={coverStoragePath ?? null}
+          onCoverChange={onCoverChange!}
+          onError={onCoverError!}
+          placeholderImageUrl={
+            clientUndisclosed ? null : form.productionCompanyLogoUrl || null
+          }
+        />
+      ) : null}
 
       <AuthField label="Project type">
         <div className="flex flex-wrap gap-2">

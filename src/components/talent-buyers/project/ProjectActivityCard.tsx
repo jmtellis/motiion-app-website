@@ -46,9 +46,10 @@ export function ProjectActivityCard({
     >
       <div className="bd-visual-card__media">
         <BuyerCoverImage
-          src={item.coverImageUrl ?? ""}
+          src={item.coverImageUrl}
           alt=""
           aspectRatio="16/9"
+          allowStockFallback={item.kind !== "casting"}
           fallbackId={item.id}
           fallbackCategory="project"
         />

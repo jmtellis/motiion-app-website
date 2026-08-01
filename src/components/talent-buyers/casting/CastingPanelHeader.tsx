@@ -1,46 +1,26 @@
-"use client";
-
 import type { ReactNode } from "react";
 
 import type { CastingPrimaryAction } from "@/lib/talent-buyers/casting/casting-navigation";
 
-export function CastingPanelHeader({
-  title,
-  description,
-  center,
-  primaryAction,
-  onPrimaryAction,
-  overflowActions,
-}: {
-  title: string;
+type CastingPanelHeaderProps = {
+  /** @deprecated Tabs serve as the page title — kept for call-site compatibility. */
+  title?: string;
+  /** @deprecated Tabs serve as the page title — kept for call-site compatibility. */
   description?: string;
   center?: ReactNode;
   primaryAction?: CastingPrimaryAction;
   onPrimaryAction?: (actionId: string) => void;
   overflowActions?: ReactNode;
-}) {
+};
+
+export function CastingPanelHeader({ center }: CastingPanelHeaderProps) {
+  // The tab itself is the page title. Casting-level actions live in the top chrome;
+  // section-specific controls live inside their respective content sections.
+  if (!center) return null;
+
   return (
-    <header className="project-workspace__panel-header">
-      <div className="project-workspace__panel-header-start">
-        <div className="project-workspace__panel-header-title-row">
-          <h2 className="project-workspace__panel-title">{title}</h2>
-          {center ? <div className="project-workspace__panel-header-center">{center}</div> : null}
-        </div>
-        {description ? <p className="project-workspace__panel-description">{description}</p> : null}
-      </div>
-      <div className="project-workspace__panel-actions flex items-center gap-2">
-        {overflowActions}
-        {primaryAction ? (
-          <button
-            type="button"
-            className="bd-btn-accent"
-            disabled={primaryAction.disabled}
-            onClick={() => onPrimaryAction?.(primaryAction.actionId)}
-          >
-            {primaryAction.label}
-          </button>
-        ) : null}
-      </div>
-    </header>
+    <div className="project-workspace__panel-header project-workspace__panel-header--controls">
+      <div className="project-workspace__panel-header-center">{center}</div>
+    </div>
   );
 }

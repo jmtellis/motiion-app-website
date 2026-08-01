@@ -1,8 +1,13 @@
 import Link from "next/link";
 
 import { formatBuyerRelativeDate, labelFromSnake } from "@/lib/talent-buyers/dashboard-data";
+import {
+  getProjectTypeAccent,
+  getProjectTypeIcon,
+  getProjectTypeStockCategory,
+} from "@/lib/talent-buyers/project-type-icons";
 import { getProjectTypeLabel } from "@/lib/talent-buyers/project-types";
-import { resolveBuyerCoverImage } from "@/lib/talent-buyers/stock-images";
+import { resolveBuyerCoverSrc } from "@/lib/talent-buyers/stock-images";
 import type { BuyerProjectSummary } from "@/types/talent-buyer-dashboard";
 
 import { BuyerCoverImage } from "./BuyerCoverImage";
@@ -16,7 +21,16 @@ export function ProjectCard({
 }) {
   const isDashboard = variant === "dashboard";
   const isWorkspace = variant === "workspace";
-  const coverSrc = resolveBuyerCoverImage(project.id, project.coverImageUrl, "project");
+  const stockCategory = getProjectTypeStockCategory(project.projectType);
+  const coverSrc = resolveBuyerCoverSrc(project.coverImageUrl, {
+    fallbackUrl: project.productionCompanyLogoUrl,
+    allowStock: isDashboard,
+    id: project.id,
+    category: stockCategory,
+  });
+  const typeLabel = getProjectTypeLabel(project.projectType);
+  const TypeIcon = getProjectTypeIcon(project.projectType);
+  const typeAccent = getProjectTypeAccent(project.projectType);
 
   if (isWorkspace) {
     return (
@@ -29,8 +43,8 @@ export function ProjectCard({
           alt=""
           fill
           overlay
-          fallbackId={project.id}
-          fallbackCategory="project"
+          secondarySrc={project.productionCompanyLogoUrl}
+          allowStockFallback={false}
         />
 
         <div className="relative z-10 flex min-h-[320px] flex-col justify-between gap-4 p-5">
@@ -40,7 +54,7 @@ export function ProjectCard({
 
           <div>
             <p className="font-mono text-xs font-medium tracking-[0.08em] text-[var(--accent)] uppercase">
-              {getProjectTypeLabel(project.projectType)}
+              {typeLabel}
             </p>
             <h3 className="mt-2 text-xl font-semibold tracking-tight text-white/92 group-hover:text-[var(--accent)]">
               {project.title}
@@ -67,74 +81,86 @@ export function ProjectCard({
     );
   }
 
+  if (isDashboard) {
+    return (
+      <Link href={`/projects/${project.id}`} className="bd-visual-card bd-interactive-card bd-project-card group block">
+        <div className="bd-project-card__media">
+          <BuyerCoverImage
+            src={coverSrc}
+            alt=""
+            aspectRatio="16/9"
+            overlay
+            secondarySrc={project.productionCompanyLogoUrl}
+            fallbackId={project.id}
+            fallbackCategory={stockCategory}
+            allowStockFallback
+          />
+
+          <span className="bd-visual-card__status bd-chip shrink-0 px-2.5 py-1 text-xs font-semibold">
+            {labelFromSnake(project.status)}
+          </span>
+
+          <div className="bd-project-card__overlay">
+            <p className="bd-project-card__type-label">{typeLabel}</p>
+            <h3 className="bd-project-card__overlay-title">{project.title}</h3>
+          </div>
+        </div>
+
+        <div className="bd-project-card__footer">
+          <span
+            className={`bd-project-card__footer-icon bd-project-card__footer-icon--${typeAccent}`}
+            aria-hidden
+          >
+            <TypeIcon className="size-3.5" strokeWidth={2.25} />
+          </span>
+          <div className="bd-project-card__footer-copy">
+            <p className="bd-project-card__footer-title">{project.title}</p>
+            <p className="bd-project-card__footer-meta">
+              Edited {formatBuyerRelativeDate(project.lastUpdated)}
+            </p>
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
   return (
-    <Link
-      href={`/projects/${project.id}`}
-      className={
-        isDashboard
-          ? "bd-visual-card bd-interactive-card group block"
-          : "ui-card-interactive group block overflow-hidden rounded-[var(--radius-card)]"
-      }
-    >
-      <div className={isDashboard ? "bd-visual-card__media" : "relative"}>
+    <Link href={`/projects/${project.id}`} className="ui-card-interactive group block overflow-hidden rounded-[var(--radius-card)]">
+      <div className="relative">
         <BuyerCoverImage
           src={coverSrc}
           alt=""
           aspectRatio="16/9"
-          fallbackId={project.id}
-          fallbackCategory="project"
+          secondarySrc={project.productionCompanyLogoUrl}
+          allowStockFallback={false}
         />
-        <span
-          className={`bd-visual-card__status shrink-0 px-2.5 py-1 text-xs font-semibold ${
-            isDashboard ? "bd-chip" : "ui-chip rounded-[var(--radius-chip)] border text-[var(--ink-soft)]"
-          }`}
-        >
+        <span className="bd-visual-card__status shrink-0 rounded-[var(--radius-chip)] border px-2.5 py-1 text-xs font-semibold text-[var(--ink-soft)] ui-chip">
           {labelFromSnake(project.status)}
         </span>
       </div>
 
-      <div className={isDashboard ? "bd-visual-card__body" : "p-4"}>
-        <p
-          className={`text-xs font-semibold tracking-[0.14em] uppercase ${
-            isDashboard ? "text-white/42" : "text-[var(--accent)]"
-          }`}
-        >
-          {getProjectTypeLabel(project.projectType)}
-        </p>
-        <h3
-          className={`mt-1 text-base font-semibold ${
-            isDashboard ? "text-white/92 group-hover:text-[var(--accent)]" : "text-[var(--ink)]"
-          }`}
-        >
-          {project.title}
-        </h3>
-        <dl className={`mt-4 grid grid-cols-2 gap-3 text-sm ${isDashboard ? "text-white/50" : ""}`}>
+      <div className="p-4">
+        <p className="text-xs font-semibold tracking-[0.14em] text-[var(--accent)] uppercase">{typeLabel}</p>
+        <h3 className="mt-1 text-base font-semibold text-[var(--ink)]">{project.title}</h3>
+        <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
           <div>
-            <dt className={isDashboard ? "text-white/42" : "text-[var(--ink-soft)]"}>Updated</dt>
-            <dd className={`font-medium ${isDashboard ? "text-white/80" : "text-[var(--ink)]"}`}>
-              {formatBuyerRelativeDate(project.lastUpdated)}
-            </dd>
+            <dt className="text-[var(--ink-soft)]">Updated</dt>
+            <dd className="font-medium text-[var(--ink)]">{formatBuyerRelativeDate(project.lastUpdated)}</dd>
           </div>
           <div>
-            <dt className={isDashboard ? "text-white/42" : "text-[var(--ink-soft)]"}>Talent</dt>
-            <dd className={`font-medium ${isDashboard ? "text-white/80" : "text-[var(--ink)]"}`}>
-              {project.talentCount}
-            </dd>
+            <dt className="text-[var(--ink-soft)]">Talent</dt>
+            <dd className="font-medium text-[var(--ink)]">{project.talentCount}</dd>
           </div>
           {project.notesCount != null ? (
             <div>
-              <dt className={isDashboard ? "text-white/42" : "text-[var(--ink-soft)]"}>Notes</dt>
-              <dd className={`font-medium ${isDashboard ? "text-white/80" : "text-[var(--ink)]"}`}>
-                {project.notesCount}
-              </dd>
+              <dt className="text-[var(--ink-soft)]">Notes</dt>
+              <dd className="font-medium text-[var(--ink)]">{project.notesCount}</dd>
             </div>
           ) : null}
           {project.sharedLinksCount != null ? (
             <div>
-              <dt className={isDashboard ? "text-white/42" : "text-[var(--ink-soft)]"}>Shared</dt>
-              <dd className={`font-medium ${isDashboard ? "text-white/80" : "text-[var(--ink)]"}`}>
-                {project.sharedLinksCount}
-              </dd>
+              <dt className="text-[var(--ink-soft)]">Shared</dt>
+              <dd className="font-medium text-[var(--ink)]">{project.sharedLinksCount}</dd>
             </div>
           ) : null}
         </dl>

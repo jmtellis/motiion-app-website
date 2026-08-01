@@ -37,6 +37,35 @@ export type DraftScheduleItem = {
   detail: string;
 };
 
+export type DraftPersonRef = {
+  userId: string;
+  displayName: string;
+  headshotUrl: string | null;
+};
+
+export type DraftJobGroup = {
+  id: string;
+  /** Persisted `job_groups.id` when editing an existing subgroup. */
+  persistedId: string | null;
+  name: string;
+  leadInvitees: DraftPersonRef[];
+};
+
+export type PromoDiscountType = "percent" | "fixed_cents";
+
+export type DraftPromoCode = {
+  id: string;
+  /** Persisted row id when editing. */
+  persistedId: string | null;
+  code: string;
+  discountType: PromoDiscountType;
+  /** Percent 1–100, or dollars when fixed (UI); fixed persists as cents. */
+  discountValue: number;
+  maxRedemptions: number | null;
+  expiresAt: string;
+  isActive: boolean;
+};
+
 export type ActivityDraft = {
   type: ActivityType;
   title: string;
@@ -68,6 +97,7 @@ export type ActivityDraft = {
   priceAmount: number;
   maxGuestSpots: number | null;
   collaboratorUserIds: string[];
+  collaborators: DraftPersonRef[];
 
   // Session
   sessionType: string;
@@ -90,6 +120,9 @@ export type ActivityDraft = {
   eventAccessibilityInfo: string;
   eventLateEntryPolicy: string;
   eventCancellationPolicy: string;
+  eventSubgroupsEnabled: boolean;
+  jobGroups: DraftJobGroup[];
+  promoCodes: DraftPromoCode[];
 };
 
 export type ConnectAccountStatus = {
@@ -116,4 +149,31 @@ export type OrganizerRevenueSummary = {
   paidCount: number;
   grossCents: number;
   currency: string;
+  promoRedemptionCount: number;
+};
+
+export type OrganizerLeadStatus =
+  | "pending_invite"
+  | "accepted_setup_incomplete"
+  | "child_event_linked"
+  | "member";
+
+export type OrganizerLeadRow = {
+  groupId: string;
+  groupName: string;
+  userId: string | null;
+  displayName: string;
+  headshotUrl: string | null;
+  status: OrganizerLeadStatus;
+  inviteId: string | null;
+  memberId: string | null;
+  subgroupActivityId: string | null;
+  subgroupActivityTitle: string | null;
+};
+
+export type OrganizerSubgroup = {
+  id: string;
+  name: string;
+  sortOrder: number;
+  leads: OrganizerLeadRow[];
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useId, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { AccountPill, type AccountPillUser } from "@/components/auth/AccountPill";
@@ -9,6 +9,7 @@ import { MotiionWordmark } from "@/components/brand/MotiionWordmark";
 import { HomeSplitNav } from "@/components/landing/HomeSplitNav";
 import { IosDownloadHeroButton } from "@/components/landing/IosDownloadHeroButton";
 import { MarketingDialog } from "@/components/landing/MarketingDialog";
+import { MarketingHero } from "@/components/marketing/MarketingHero";
 import {
   createAccountHeroCta,
   homeHero,
@@ -16,8 +17,6 @@ import {
 } from "@/lib/marketing/homepage-content";
 
 import "./home-split-landing.css";
-
-const FEATURE_AUTO_MS = 5200;
 
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -103,20 +102,7 @@ export function HomeSplitLanding({
 }: {
   accountUser?: AccountPillUser | null;
 }) {
-  const pillars = homeHero.pillars;
-  const [activeIndex, setActiveIndex] = useState(0);
   const reduceMotion = useReducedMotion();
-  const activePillar = pillars[activeIndex] ?? pillars[0];
-
-  useEffect(() => {
-    if (reduceMotion || pillars.length < 2) return;
-
-    const timer = window.setInterval(() => {
-      setActiveIndex((current) => (current + 1) % pillars.length);
-    }, FEATURE_AUTO_MS);
-
-    return () => window.clearInterval(timer);
-  }, [pillars.length, reduceMotion]);
 
   const enter = reduceMotion
     ? { initial: false as const, animate: { opacity: 1 } }
@@ -191,37 +177,14 @@ export function HomeSplitLanding({
         <HomeSplitFooter />
       </section>
 
-      <section className="home-split__panel home-split__panel--light" aria-label="Product highlights">
+      <section className="home-split__panel home-split__panel--light" aria-label="Product demo">
         <div className="home-split__visual">
           <div className="home-split__login-anchor">
             <LoginControl accountUser={accountUser} onDark />
           </div>
 
-          <motion.div
-            className="home-split__feature"
-            initial={reduceMotion ? false : { opacity: 0, y: 20, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.6, delay: reduceMotion ? 0 : 0.14, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <div
-              className="home-split__product-frame"
-              aria-live="polite"
-              aria-label={activePillar.title}
-            />
-          </motion.div>
-
-          <div className="home-split__dots" role="tablist" aria-label="Product slides">
-            {pillars.map((pillar, index) => (
-              <button
-                key={pillar.title}
-                type="button"
-                role="tab"
-                aria-label={pillar.title}
-                aria-current={index === activeIndex ? "true" : undefined}
-                className="home-split__dot"
-                onClick={() => setActiveIndex(index)}
-              />
-            ))}
+          <div className="home-split__feature">
+            <MarketingHero />
           </div>
         </div>
       </section>

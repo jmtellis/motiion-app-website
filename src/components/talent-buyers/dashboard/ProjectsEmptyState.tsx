@@ -10,9 +10,7 @@ import "./buyer-empty.css";
 
 const EXAMPLE_PROJECTS: Array<{ type: ProjectType; key: string }> = [
   { type: "casting", key: "casting" },
-  { type: "audition", key: "audition" },
-  { type: "job", key: "job" },
-  { type: "class_program", key: "class" },
+  { type: "event", key: "event" },
 ];
 
 function FocusSkeletonCard() {

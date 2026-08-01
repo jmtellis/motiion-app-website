@@ -109,6 +109,8 @@ function NavLink({
   active,
   collapsed,
   badge,
+  statusLabel,
+  disabled,
   onNavigate,
 }: {
   href: string;
@@ -117,18 +119,17 @@ function NavLink({
   active: boolean;
   collapsed: boolean;
   badge?: string | null;
+  statusLabel?: string | null;
+  disabled?: boolean;
   onNavigate?: () => void;
 }) {
-  return (
-    <Link
-      href={href}
-      onClick={onNavigate}
-      title={collapsed ? label : undefined}
-      className={`buyer-sidebar__link ${active ? "buyer-sidebar__link--active" : ""} ${
-        collapsed ? "buyer-sidebar__link--collapsed" : ""
-      }`}
-      aria-current={active ? "page" : undefined}
-    >
+  const title = statusLabel ? `${label} · ${statusLabel}` : label;
+  const className = `buyer-sidebar__link ${active ? "buyer-sidebar__link--active" : ""} ${
+    collapsed ? "buyer-sidebar__link--collapsed" : ""
+  } ${disabled ? "buyer-sidebar__link--disabled" : ""}`;
+
+  const content = (
+    <>
       <Icon className="buyer-sidebar__link-icon" aria-hidden />
       {collapsed ? (
         <>
@@ -138,9 +139,30 @@ function NavLink({
       ) : (
         <>
           <span className="buyer-sidebar__link-label">{label}</span>
+          {statusLabel ? <span className="buyer-sidebar__link-status">{statusLabel}</span> : null}
           {badge ? <span className="buyer-sidebar__badge">{badge}</span> : null}
         </>
       )}
+    </>
+  );
+
+  if (disabled) {
+    return (
+      <span className={className} aria-disabled="true" title={title}>
+        {content}
+      </span>
+    );
+  }
+
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      title={collapsed ? title : statusLabel ? title : undefined}
+      className={className}
+      aria-current={active ? "page" : undefined}
+    >
+      {content}
     </Link>
   );
 }

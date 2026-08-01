@@ -38,6 +38,16 @@ export type Talent = {
     verificationStatus?: string;
   }>;
   matchingCreditCount?: number;
+  /** Evidence-backed reasons this dancer matched the active search intent. */
+  matchReasons?: Array<{
+    category: string;
+    label: string;
+    evidenceType: string;
+    evidenceId?: string;
+    verificationStatus?: string;
+    sourceType?: string;
+    caveat?: string;
+  }>;
 };
 
 export type TalentRow = {

@@ -25,9 +25,12 @@ type EditSectionId =
   | "roles";
 
 const SECTION_CHIP_LABELS: Record<string, { id: EditSectionId; label: string }> = {
+  Overview: { id: "general_info", label: "General Info" },
   "Location & schedule": { id: "where", label: "Location & Schedule" },
+  "Production and schedule": { id: "where", label: "Location & Schedule" },
   Compensation: { id: "compensation", label: "Compensation" },
   "How to apply": { id: "submission", label: "Submission" },
+  "Casting settings": { id: "general_info", label: "Casting Settings" },
   Roles: { id: "roles", label: "Roles" },
 };
 
@@ -50,10 +53,18 @@ export function CastingReviewStep({
   form,
   onFormChange,
   mode = "create",
+  draftSessionId,
+  coverStoragePath,
+  onCoverChange,
+  onCoverError,
 }: {
   form: CastingComposerForm;
   onFormChange: (form: CastingComposerForm) => void;
   mode?: "create" | "edit";
+  draftSessionId?: string;
+  coverStoragePath?: string | null;
+  onCoverChange?: (url: string, storagePath: string | null) => void;
+  onCoverError?: (message: string | null) => void;
 }) {
   const [editing, setEditing] = useState<EditSectionId | null>(null);
   const document = buildCastingBreakdownDocumentFromForm(form);
@@ -105,7 +116,14 @@ export function CastingReviewStep({
 
           {editing === "general_info" ? (
             <div className="space-y-8">
-              <CastingBasicsStep form={form} onFormChange={onFormChange} />
+              <CastingBasicsStep
+                form={form}
+                onFormChange={onFormChange}
+                draftSessionId={draftSessionId}
+                coverStoragePath={coverStoragePath}
+                onCoverChange={onCoverChange}
+                onCoverError={onCoverError}
+              />
               <CastingTypeVisibilityStep
                 form={form}
                 onFormChange={onFormChange}

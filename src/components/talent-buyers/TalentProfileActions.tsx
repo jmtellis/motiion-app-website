@@ -26,6 +26,8 @@ import { Modal } from "./dashboard/Modal";
 import { useToast } from "./dashboard/ToastProvider";
 import { SaveToCollectionPopover } from "./library/SaveToCollectionPopover";
 import { useIndustryIdentityGate } from "./IndustryIdentityGate";
+import { ProLockHint } from "@/components/talent-buyers/billing/ProLockHint";
+import { useIndustryPro } from "@/components/talent-buyers/billing/IndustryProContext";
 import { isIndustryIdentityRequiredError } from "@/lib/talent-buyers/industry-identity-errors";
 
 type TalentProfileActionsProps = {
@@ -37,6 +39,7 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
   const { showToast } = useToast();
   const [isPending, startTransition] = useTransition();
   const { runWithIdentity, gate } = useIndustryIdentityGate("contact");
+  const { requirePro } = useIndustryPro();
 
   const [saveOpen, setSaveOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
@@ -80,6 +83,7 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
   }
 
   function handleInvite(target: CastingInviteTarget) {
+    if (!requirePro("talent_outreach")) return;
     startTransition(async () => {
       const result = await inviteTalentFromNavigator(talentSlug, {
         projectId: target.projectId,
@@ -95,6 +99,7 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
   }
 
   function handleContact() {
+    if (!requirePro("talent_outreach")) return;
     runWithIdentity(() => {
       startTransition(async () => {
         const result = await contactTalentUser(talentUserId);
@@ -119,6 +124,7 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
   }
 
   function handleAvailabilitySubmit() {
+    if (!requirePro("talent_outreach")) return;
     runAction(
       () =>
         askTalentAvailability({
@@ -133,11 +139,21 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
   }
 
   function handleSizeSheetSubmit() {
+    if (!requirePro("talent_outreach")) return;
     runAction(
       () => requestTalentSizeSheet({ talentUserId, message: sizeSheetMessage }),
       `Size sheet request sent to ${displayName}`,
     );
     setSizeSheetModalOpen(false);
+  }
+
+  function openOutreach(setter: (value: boolean) => void) {
+    if (!requirePro("talent_outreach")) return;
+    setter(true);
+  }
+
+  function openSave() {
+    setSaveOpen((value) => !value);
   }
 
   const inputClass =
@@ -162,9 +178,10 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
                     type="button"
                     className="btp-action-btn btp-action-btn--block"
                     disabled={isPending}
-                    onClick={() => setSaveOpen((value) => !value)}
+                    onClick={openSave}
                   >
                     <Bookmark className="size-3.5" aria-hidden />
+                    <ProLockHint />
                     Save to Library
                   </button>
                 }
@@ -173,36 +190,40 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
                 type="button"
                 className="btp-action-btn btp-action-btn--block"
                 disabled={isPending}
-                onClick={() => setInviteModalOpen(true)}
+                onClick={() => openOutreach(setInviteModalOpen)}
               >
                 <CalendarPlus className="size-3.5" aria-hidden />
+                <ProLockHint />
                 Add to Project
               </button>
               <button
                 type="button"
                 className="btp-action-btn btp-action-btn--block"
                 disabled={isPending}
-                onClick={() => setInviteModalOpen(true)}
+                onClick={() => openOutreach(setInviteModalOpen)}
               >
                 <Send className="size-3.5" aria-hidden />
+                <ProLockHint />
                 Just Invite
               </button>
               <button
                 type="button"
                 className="btp-action-btn btp-action-btn--block"
                 disabled={isPending}
-                onClick={() => setAvailabilityModalOpen(true)}
+                onClick={() => openOutreach(setAvailabilityModalOpen)}
               >
                 <CalendarClock className="size-3.5" aria-hidden />
+                <ProLockHint />
                 Ask Availability
               </button>
               <button
                 type="button"
                 className="btp-action-btn btp-action-btn--block"
                 disabled={isPending}
-                onClick={() => setSizeSheetModalOpen(true)}
+                onClick={() => openOutreach(setSizeSheetModalOpen)}
               >
                 <ClipboardList className="size-3.5" aria-hidden />
+                <ProLockHint />
                 Request Size Sheet
               </button>
               {resumeUrl ? (
@@ -234,6 +255,7 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
                 onClick={handleContact}
               >
                 <Mail className="size-3.5" aria-hidden />
+                <ProLockHint />
                 Contact
               </button>
             </div>

@@ -4,6 +4,7 @@ import { Bookmark, FolderPlus, Plus } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { saveTalentForBuyer } from "@/app/(buyer-app)/(paid)/talent/actions";
+import { useIndustryProOptional } from "@/components/talent-buyers/billing/IndustryProContext";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
 import {
   addTalentToCollections,
@@ -38,6 +39,7 @@ export function SaveToCollectionPopover({
   align?: "left" | "right";
 }) {
   const { showToast } = useToast();
+  const { requirePro } = useIndustryProOptional();
   const rootRef = useRef<HTMLDivElement>(null);
   const [collections, setCollections] = useState<LibraryCollectionSummary[]>([]);
   const [creating, setCreating] = useState(false);
@@ -65,6 +67,7 @@ export function SaveToCollectionPopover({
   }, [open, onClose]);
 
   function saveTo(collectionIds: string[], label: string) {
+    if (collectionIds.length && !requirePro("roster_write")) return;
     const keys = talentKeys(talentIdOrSlug);
     if (!keys.length) {
       showToast({ message: "Could not identify this profile.", variant: "error" });
@@ -104,6 +107,7 @@ export function SaveToCollectionPopover({
   }
 
   function handleCreateAndSave() {
+    if (!requirePro("roster_write")) return;
     const name = newName.trim();
     const keys = talentKeys(talentIdOrSlug);
     if (!name || !keys.length) return;
@@ -228,7 +232,10 @@ export function SaveToCollectionPopover({
             <button
               type="button"
               className="library-save-popover__create"
-              onClick={() => setCreating(true)}
+              onClick={() => {
+                if (!requirePro("roster_write")) return;
+                setCreating(true);
+              }}
               disabled={isPending}
             >
               <Plus className="size-3.5" aria-hidden />

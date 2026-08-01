@@ -30,7 +30,7 @@ export async function fetchPosterCastingSummaries(posterId: string): Promise<Buy
   const { data: projects, error } = await supabase
     .from("projects")
     .select(
-      "id, title, is_active, updated_at, created_at, casting_configuration, project_configuration, poster_id, cover_image_url, project_type, enabled_modules",
+      "id, title, is_active, updated_at, created_at, casting_configuration, project_configuration, poster_id, cover_image_url, production_company_logo_url, project_type, enabled_modules",
     )
     .eq("poster_id", posterId)
     .order("updated_at", { ascending: false });
@@ -64,6 +64,7 @@ export async function fetchPosterCastingSummaries(posterId: string): Promise<Buy
       lastUpdated: (project.updated_at as string) ?? (project.created_at as string) ?? new Date().toISOString(),
       talentCount,
       coverImageUrl: (project.cover_image_url as string | null) ?? null,
+      productionCompanyLogoUrl: (project.production_company_logo_url as string | null) ?? null,
     };
   });
 }
@@ -283,6 +284,7 @@ export function mapCastingDetailToSummary(detail: CastingProjectDetail): BuyerPr
       detail.project.updated_at ?? detail.project.created_at ?? new Date().toISOString(),
     talentCount,
     coverImageUrl: detail.project.cover_image_url ?? null,
+    productionCompanyLogoUrl: detail.project.production_company_logo_url ?? null,
   };
 }
 

@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { FREE_INBOX_STORAGE_BYTES, formatBytes } from "@/lib/billing/freemium-limits";
+import { hasIndustryProAccess } from "@/lib/billing/gate";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   extractStorageObjectFromPublicUrl,
@@ -14,6 +16,17 @@ import type { ProjectAttachment } from "@/types/project";
 const PROJECT_MEDIA_BUCKET = "project-media";
 const CASTING_DOCUMENTS_BUCKET = "casting-project-documents";
 const MAX_INBOX_BYTES = 20 * 1024 * 1024;
+
+async function getInboxUsageBytes(
+  supabase: NonNullable<Awaited<ReturnType<typeof createServerSupabaseClient>>>,
+  userId: string,
+): Promise<number> {
+  const { data } = await supabase
+    .from("buyer_file_inbox")
+    .select("size_bytes")
+    .eq("owner_id", userId);
+  return (data ?? []).reduce((sum, row) => sum + (Number(row.size_bytes) || 0), 0);
+}
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 type UploadInboxResult =
@@ -173,6 +186,16 @@ export async function uploadInboxFile(formData: FormData): Promise<UploadInboxRe
 
     if (file.size > MAX_INBOX_BYTES) {
       return { ok: false, error: "File must be under 20 MB." };
+    }
+
+    if (!(await hasIndustryProAccess(userId))) {
+      const used = await getInboxUsageBytes(supabase, userId);
+      if (used + file.size > FREE_INBOX_STORAGE_BYTES) {
+        return {
+          ok: false,
+          error: `Free plans include ${formatBytes(FREE_INBOX_STORAGE_BYTES)} of file storage. Upgrade to Industry Pro for more room.`,
+        };
+      }
     }
 
     const fileId = crypto.randomUUID();

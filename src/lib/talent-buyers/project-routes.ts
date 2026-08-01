@@ -1,6 +1,11 @@
 import { getNormalizedProjectType, type ProjectType } from "./project-types";
 import { getProjectWorkspaceConfig } from "./project-workspace-config";
 
+type ProjectNavLookup = {
+  project: Array<{ id: string }>;
+  workspace: Array<{ id: string }>;
+};
+
 export type ProjectTabId = "overview" | "files";
 
 export const PROJECT_TAB_IDS: ProjectTabId[] = ["overview", "files"];
@@ -19,6 +24,17 @@ export function projectOverviewPath(projectId: string) {
   return projectPath(projectId, "overview");
 }
 
+/** Default landing path for a project by type (casting → Breakdown). */
+export function projectLandingPath(
+  projectId: string,
+  rawType: string | null | undefined,
+): string {
+  if (getNormalizedProjectType(rawType) === "casting") {
+    return projectWorkspacePath(projectId, "breakdown");
+  }
+  return projectOverviewPath(projectId);
+}
+
 export function projectOverviewTalentPath(projectId: string) {
   return `${projectOverviewPath(projectId)}#talent`;
 }
@@ -35,6 +51,58 @@ export function isProjectTabId(value: string): value is ProjectTabId {
   return (PROJECT_TAB_IDS as string[]).includes(value);
 }
 
+/** Routes under `(workspace)` for project workspace views. */
+const PROJECT_WORKSPACE_PATH_SEGMENTS = new Set([
+  "overview",
+  "files",
+  "workspace",
+  "messages",
+  "timeline",
+  "talent",
+]);
+
+/** True for routes that render inside the project workspace shell. */
+export function isProjectWorkspacePath(pathname: string): boolean {
+  const parts = pathname.split("/").filter(Boolean);
+  if (parts[0] !== "projects") return false;
+  const projectId = parts[1];
+  if (!projectId || projectId === "new") return false;
+  const segment = parts[2];
+  if (!segment) return false;
+  return PROJECT_WORKSPACE_PATH_SEGMENTS.has(segment);
+}
+
+/** Resolve which project / workspace nav item is active for the current path. */
+export function resolveProjectNavActive(
+  pathname: string,
+  projectId: string,
+  navigation?: ProjectNavLookup | null,
+): { section: "project" | "workspace"; id: string } {
+  const base = `/projects/${projectId}`;
+  let id: string;
+  let fallbackSection: "project" | "workspace" = "project";
+
+  if (pathname.startsWith(`${base}/workspace/`)) {
+    id = pathname.slice(`${base}/workspace/`.length).split("/")[0] ?? "";
+    fallbackSection = "workspace";
+  } else {
+    const segment = pathname.slice(base.length + 1).split("/")[0] ?? "overview";
+    id =
+      segment === "activities" || segment === "timeline" || segment === "talent"
+        ? "overview"
+        : segment || "overview";
+  }
+
+  if (navigation?.workspace.some((item) => item.id === id)) {
+    return { section: "workspace", id };
+  }
+  if (navigation?.project.some((item) => item.id === id)) {
+    return { section: "project", id };
+  }
+
+  return { section: fallbackSection, id };
+}
+
 export function parseLegacyProjectTab(value: string | null | undefined): ProjectTabId | null {
   if (!value) return null;
   if (value === "timeline" || value === "activities" || value === "talent") {
@@ -43,8 +111,26 @@ export function parseLegacyProjectTab(value: string | null | undefined): Project
   return LEGACY_TAB_MAP[value] ?? null;
 }
 
-export function resolveLegacyProjectHref(projectId: string, tab: string | null | undefined): string {
+export function resolveLegacyProjectHref(
+  projectId: string,
+  tab: string | null | undefined,
+  rawType?: string | null,
+): string {
   if (tab === "messages") return "/messages";
+
+  const isCasting = getNormalizedProjectType(rawType) === "casting";
+  if (isCasting) {
+    if (tab === "talent") return projectWorkspacePath(projectId, "talent-search");
+    if (tab === "files") return projectWorkspacePath(projectId, "breakdown");
+    if (tab === "overview" || tab === "timeline" || tab === "activities" || !tab) {
+      return projectWorkspacePath(projectId, "breakdown");
+    }
+    if (isValidWorkspaceRoute("casting", tab)) {
+      return projectWorkspacePath(projectId, tab);
+    }
+    return projectWorkspacePath(projectId, "breakdown");
+  }
+
   if (tab === "talent") return projectOverviewTalentPath(projectId);
   if (tab === "timeline" || tab === "activities") return projectOverviewPath(projectId);
   const parsed = parseLegacyProjectTab(tab);
@@ -68,10 +154,10 @@ export function resolveProjectHref(
     if (isValidWorkspaceRoute(opts.projectType, opts.workspaceTab)) {
       return projectWorkspacePath(projectId, opts.workspaceTab);
     }
-    return projectOverviewPath(projectId);
+    return projectLandingPath(projectId, opts.projectType);
   }
 
-  return resolveLegacyProjectHref(projectId, opts.tab);
+  return resolveLegacyProjectHref(projectId, opts.tab, opts.projectType);
 }
 
 export function getDefaultWorkspaceTab(rawType: string | null | undefined): string | null {
@@ -80,6 +166,9 @@ export function getDefaultWorkspaceTab(rawType: string | null | undefined): stri
 }
 
 export function projectCreateLandingPath(projectId: string, rawType: string | null | undefined) {
+  if (getNormalizedProjectType(rawType) === "casting") {
+    return projectWorkspacePath(projectId, "breakdown");
+  }
   const tab = getDefaultWorkspaceTab(rawType);
   if (tab) return projectWorkspacePath(projectId, tab);
   return projectOverviewPath(projectId);
@@ -93,5 +182,9 @@ export function assertWorkspaceTabForType(
   if (isValidWorkspaceRoute(projectType, workspaceTab)) {
     return { ok: true, projectType };
   }
-  return { ok: false, redirectTo: "overview", projectId: "" };
+  return {
+    ok: false,
+    redirectTo: projectType === "casting" ? "breakdown" : "overview",
+    projectId: "",
+  };
 }

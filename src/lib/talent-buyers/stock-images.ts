@@ -56,3 +56,29 @@ export function resolveBuyerCoverImage(
   if (trimmed && isHttpUrl(trimmed)) return trimmed;
   return getBuyerStockImage(id, category);
 }
+
+/**
+ * Prefer explicit cover, then optional client/brand image, then (optionally) stock.
+ * Returns null when nothing should be shown — callers should use a solid color panel.
+ */
+export function resolveBuyerCoverSrc(
+  coverImageUrl: string | null | undefined,
+  options?: {
+    fallbackUrl?: string | null;
+    allowStock?: boolean;
+    id?: string;
+    category?: "project" | "event";
+  },
+): string | null {
+  const trimmed = coverImageUrl?.trim();
+  if (trimmed && isHttpUrl(trimmed)) return trimmed;
+
+  const fallback = options?.fallbackUrl?.trim();
+  if (fallback && isHttpUrl(fallback)) return fallback;
+
+  if (options?.allowStock && options.id && options.category) {
+    return getBuyerStockImage(options.id, options.category);
+  }
+
+  return null;
+}

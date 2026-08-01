@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { CastingReferralForm } from "@/components/talent-buyers/casting/CastingReferralForm";
 import { ToastProvider } from "@/components/talent-buyers/dashboard/ToastProvider";
 import { requireCompleteProfile } from "@/lib/auth/session";
+import { castingAcceptsOutreach } from "@/lib/talent-buyers/casting/casting-display";
 import {
   dedupeReferralRoles,
   type ReferralRoleOption,
@@ -28,7 +29,7 @@ export default async function CastingReferralPage({
     .eq("id", castingId)
     .maybeSingle();
 
-  if (!casting || !["open", "published"].includes((casting.status as string) ?? "")) {
+  if (!casting || !castingAcceptsOutreach(casting.status as string | null)) {
     notFound();
   }
 

@@ -257,13 +257,13 @@ export const ANALYTICS_EVENTS: Record<string, AnalyticsEventDefinition> = {
     name: "paywall_viewed",
     label: "Paywall viewed",
     category: "subscription",
-    description: "Dancer paywall presented",
+    description: "Industry Pro upgrade surface shown (feature key in properties)",
   },
   paywall_cta_tapped: {
     name: "paywall_cta_tapped",
     label: "Paywall CTA tapped",
     category: "subscription",
-    description: "User tapped subscribe on paywall",
+    description: "User tapped upgrade/checkout on a paywall (feature key in properties)",
   },
   talent_navigator_search_submitted: {
     name: "talent_navigator_search_submitted",
@@ -306,6 +306,18 @@ export const ANALYTICS_EVENTS: Record<string, AnalyticsEventDefinition> = {
     label: "Talent Navigator search zero results",
     category: "marketplace",
     description: "Credit or profile search returned no dancers",
+  },
+  talent_navigator_clarification_shown: {
+    name: "talent_navigator_clarification_shown",
+    label: "Talent Navigator clarification shown",
+    category: "marketplace",
+    description: "Planning-style clarification chips shown for an NL search",
+  },
+  talent_navigator_clarification_answered: {
+    name: "talent_navigator_clarification_answered",
+    label: "Talent Navigator clarification answered",
+    category: "marketplace",
+    description: "User answered a clarification chip and search was re-run",
   },
   talent_credit_added: {
     name: "talent_credit_added",

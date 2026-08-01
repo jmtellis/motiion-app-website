@@ -41,10 +41,10 @@ export function UnderlineTabs<T extends string>({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(option.value)}
-            className={`relative whitespace-nowrap px-2.5 pb-2 pt-1 text-[1.125rem] leading-[1.2] tracking-[-0.02em] transition-[color,font-weight] duration-200 ease-out ${
+            className={`relative whitespace-nowrap px-2.5 pb-2 pt-1 text-[0.9375rem] font-medium tracking-[-0.01em] transition-[color,font-weight] duration-200 ease-out ${
               active
                 ? "font-semibold text-white"
-                : "font-normal text-[var(--buyer-text-soft,rgb(255_255_255/0.55))] hover:text-[#eaeaea]"
+                : "text-[var(--buyer-text-soft,rgb(255_255_255/0.55))] hover:text-[#eaeaea]"
             }`}
           >
             {displayLabel}

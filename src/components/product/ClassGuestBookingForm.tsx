@@ -39,6 +39,8 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
     return null;
   });
   const [selectedEventDayIds, setSelectedEventDayIds] = useState<string[]>([]);
+  const [promoCode, setPromoCode] = useState("");
+  const [quoteLabel, setQuoteLabel] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [accountExists, setAccountExists] = useState(false);
@@ -59,6 +61,43 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
     setSelectedEventDayIds((current) =>
       current.includes(dayId) ? current.filter((id) => id !== dayId) : [...current, dayId],
     );
+  }
+
+  async function refreshQuote() {
+    if (!activity.requirePayment || !promoCode.trim()) {
+      setQuoteLabel(null);
+      return;
+    }
+    try {
+      const quote = await callSupabaseFunction<{
+        totalAmountCents: number;
+        currency: string;
+        promoDiscountCents?: number;
+        originalBaseAmountCents?: number;
+        baseAmountCents: number;
+      }>("payments-checkout-quote", {
+        classId: activity.id,
+        ...(ticketOptionId
+          ? { ticketOptionId, pricingTierId: ticketOptionId }
+          : {}),
+        ...(selectedEventDayIds.length ? { selectedEventDayIds } : {}),
+        promoCode: promoCode.trim(),
+      });
+      if (quote.promoDiscountCents && quote.promoDiscountCents > 0) {
+        setQuoteLabel(
+          `Promo applied — ticket ${formatMoney(quote.baseAmountCents, quote.currency)} (was ${formatMoney(
+            quote.originalBaseAmountCents ?? quote.baseAmountCents + quote.promoDiscountCents,
+            quote.currency,
+          )}), total ${formatMoney(quote.totalAmountCents, quote.currency)}`,
+        );
+        setError(null);
+      } else {
+        setQuoteLabel(null);
+      }
+    } catch (err) {
+      setQuoteLabel(null);
+      setError(err instanceof Error ? err.message : "Could not apply promo code.");
+    }
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -102,6 +141,7 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
             : { pricingTierId: ticketOptionId }
           : {}),
         ...(selectedEventDayIds.length ? { selectedEventDayIds } : {}),
+        ...(promoCode.trim() ? { promoCode: promoCode.trim() } : {}),
       });
 
       if ("checkoutUrl" in data && data.checkoutUrl) {
@@ -284,6 +324,33 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
               .map((day) => day.label || day.dayDate)
               .join(", ")}
           </p>
+        ) : null}
+
+        {activity.requirePayment ? (
+          <FormField label="Promo code">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
+              <input
+                className="public-review-field-input"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                placeholder="Optional"
+                autoComplete="off"
+              />
+              <button
+                type="button"
+                className="casting-page-cta casting-page-cta--secondary"
+                onClick={() => void refreshQuote()}
+                disabled={!promoCode.trim()}
+              >
+                Apply
+              </button>
+            </div>
+            {quoteLabel ? (
+              <p className="casting-body-copy" style={{ marginTop: 8 }}>
+                {quoteLabel}
+              </p>
+            ) : null}
+          </FormField>
         ) : null}
 
         {error ? <p className="public-review-error">{error}</p> : null}

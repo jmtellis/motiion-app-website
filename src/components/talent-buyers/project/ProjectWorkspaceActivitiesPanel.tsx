@@ -37,8 +37,7 @@ export function ProjectWorkspaceActivitiesPanel({
 
   return (
     <>
-      <header className="project-workspace__panel-header">
-        <h2 className="project-workspace__panel-title">Activities</h2>
+      <header className="project-workspace__panel-header project-workspace__panel-header--actions">
         <div className="project-workspace__panel-actions">
           <AddProjectActivityButton projectId={projectId} triggerLabel="Add" />
         </div>

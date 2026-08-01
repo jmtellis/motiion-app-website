@@ -5,6 +5,8 @@ import {
   locationDisplayString,
   syncScheduleFromEventDays,
 } from "@/lib/talent-buyers/activities/defaults";
+import { syncActivityPromoCodes } from "@/lib/talent-buyers/activities/promo-codes";
+import { syncEventSubgroups } from "@/lib/talent-buyers/activities/subgroups";
 import type { ActivityDraft, DraftTicketOption } from "@/lib/talent-buyers/activities/types";
 import { validateActivityDraft } from "@/lib/talent-buyers/activities/validate-draft";
 
@@ -88,17 +90,34 @@ async function replaceTicketOptions(
     .eq("activity_id", activityId);
 
   const existingIds = ((existing ?? []) as { id: string }[]).map((r) => r.id);
+
+  const { count: paidCount } = await supabase
+    .from("enrollments")
+    .select("id", { count: "exact", head: true })
+    .eq("activity_id", activityId)
+    .eq("status", "paid");
+
+  const hasPaidSales = (paidCount ?? 0) > 0;
+
   if (existingIds.length) {
     await supabase.from("activity_ticket_option_days").delete().in("ticket_option_id", existingIds);
   }
 
-  const { error: deleteError } = await supabase
-    .from("activity_ticket_options")
-    .delete()
-    .eq("activity_id", activityId);
-  if (deleteError) {
-    console.error("[activities] replaceTicketOptions delete", deleteError.message);
-    return { ok: false, error: "Could not save ticket types." };
+  if (hasPaidSales && existingIds.length) {
+    // Soft-deactivate sold ticket products so historical enrollments keep their FK.
+    await supabase
+      .from("activity_ticket_options")
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .in("id", existingIds);
+  } else {
+    const { error: deleteError } = await supabase
+      .from("activity_ticket_options")
+      .delete()
+      .eq("activity_id", activityId);
+    if (deleteError) {
+      console.error("[activities] replaceTicketOptions delete", deleteError.message);
+      return { ok: false, error: "Could not save ticket types." };
+    }
   }
 
   if (!draft.isPaid) return { ok: true };
@@ -108,24 +127,39 @@ async function replaceTicketOptions(
   );
   if (!options.length) return { ok: true };
 
-  const optionRows = options.map((ticket, index) => ({
-    id: ticket.id,
-    activity_id: activityId,
-    label: ticket.label.trim(),
-    amount_cents: dollarsToCents(ticket.priceAmount),
-    currency: "USD",
-    access_mode: ticket.accessMode,
-    min_days: ticket.accessMode === "select_days" ? (ticket.minDays ?? 1) : null,
-    max_days: ticket.accessMode === "select_days" ? (ticket.maxDays ?? ticket.minDays ?? 1) : null,
-    max_sales: ticket.maxSales,
-    sort_order: index,
-    is_active: true,
-  }));
+  for (let index = 0; index < options.length; index += 1) {
+    const ticket = options[index];
+    const optionRow = {
+      id: ticket.id,
+      activity_id: activityId,
+      label: ticket.label.trim(),
+      amount_cents: dollarsToCents(ticket.priceAmount),
+      currency: "USD",
+      access_mode: ticket.accessMode,
+      min_days: ticket.accessMode === "select_days" ? (ticket.minDays ?? 1) : null,
+      max_days: ticket.accessMode === "select_days" ? (ticket.maxDays ?? ticket.minDays ?? 1) : null,
+      max_sales: ticket.maxSales,
+      sort_order: index,
+      is_active: true,
+      updated_at: new Date().toISOString(),
+    };
 
-  const { error } = await supabase.from("activity_ticket_options").insert(optionRows);
-  if (error) {
-    console.error("[activities] replaceTicketOptions insert", error.message);
-    return { ok: false, error: "Could not save ticket types." };
+    if (hasPaidSales && existingIds.includes(ticket.id)) {
+      const { error } = await supabase
+        .from("activity_ticket_options")
+        .update(optionRow)
+        .eq("id", ticket.id);
+      if (error) {
+        console.error("[activities] replaceTicketOptions update", error.message);
+        return { ok: false, error: "Could not save ticket types." };
+      }
+    } else {
+      const { error } = await supabase.from("activity_ticket_options").upsert(optionRow);
+      if (error) {
+        console.error("[activities] replaceTicketOptions upsert", error.message);
+        return { ok: false, error: "Could not save ticket types." };
+      }
+    }
   }
 
   const dayLinks = options.flatMap((ticket) =>
@@ -332,10 +366,28 @@ export async function persistNewActivity(
     if (!daysResult.ok) return daysResult;
     const ticketsResult = await replaceTicketOptions(supabase, activityId, draft);
     if (!ticketsResult.ok) return ticketsResult;
+
+    if (rootJobId) {
+      const subgroupResult = await syncEventSubgroups(
+        supabase,
+        userId,
+        rootJobId,
+        activityId,
+        draft,
+      );
+      if (!subgroupResult.ok) return subgroupResult;
+    }
+
+    const promoResult = await syncActivityPromoCodes(supabase, activityId, draft);
+    if (!promoResult.ok) return promoResult;
   }
 
-  if (draft.collaboratorUserIds.length) {
-    await syncCollaborators(supabase, activityId, draft.collaboratorUserIds, userId);
+  const collaboratorIds =
+    draft.collaborators.length > 0
+      ? draft.collaborators.map((person) => person.userId)
+      : draft.collaboratorUserIds;
+  if (collaboratorIds.length) {
+    await syncCollaborators(supabase, activityId, collaboratorIds, userId);
   }
 
   return { ok: true, id: activityId };
@@ -497,9 +549,25 @@ export async function persistUpdatedActivity(
           cover_image_url: trimOrNull(draft.coverImageUrl),
         })
         .eq("id", rootJobId);
+
+      const subgroupResult = await syncEventSubgroups(
+        supabase,
+        userId,
+        rootJobId,
+        activityId,
+        draft,
+      );
+      if (!subgroupResult.ok) return subgroupResult;
     }
+
+    const promoResult = await syncActivityPromoCodes(supabase, activityId, draft);
+    if (!promoResult.ok) return promoResult;
   }
 
-  await syncCollaborators(supabase, activityId, draft.collaboratorUserIds, userId);
+  const collaboratorIds =
+    draft.collaborators.length > 0
+      ? draft.collaborators.map((person) => person.userId)
+      : draft.collaboratorUserIds;
+  await syncCollaborators(supabase, activityId, collaboratorIds, userId);
   return { ok: true, id: activityId };
 }

@@ -12,6 +12,7 @@
           "/event/*",
           "/casting/*",
           "/refer/*",
+          "/join/*",
           "/shortlist/*",
           "/t/*",
           "/u/*"

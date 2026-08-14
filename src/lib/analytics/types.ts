@@ -98,6 +98,37 @@ export type AnalyticsProductHealth = {
   talentFavorites: number;
 };
 
+export type AnalyticsReferralSource = "deep_link" | "manual_code";
+
+export type AnalyticsTopReferrer = {
+  userId: string;
+  displayName: string;
+  username: string | null;
+  email: string | null;
+  avatarUrl: string | null;
+  referralCount: number;
+};
+
+export type AnalyticsRecentReferral = {
+  id: string;
+  createdAt: string;
+  source: AnalyticsReferralSource | string;
+  referralCode: string;
+  referrerUserId: string;
+  referrerDisplayName: string;
+  referrerUsername: string | null;
+  refereeUserId: string;
+  refereeDisplayName: string;
+  refereeUsername: string | null;
+  refereeEmail: string | null;
+};
+
+export type AnalyticsReferralsData = {
+  referredSignups: number;
+  topReferrers: AnalyticsTopReferrer[];
+  recentReferrals: AnalyticsRecentReferral[];
+};
+
 export type AnalyticsDashboardData = {
   range: {
     key: AnalyticsDateRangeKey;
@@ -115,6 +146,7 @@ export type AnalyticsDashboardData = {
   retention: AnalyticsRetentionPoint[];
   recentEvents: AnalyticsRecentEvent[];
   productHealth: AnalyticsProductHealth;
+  referrals: AnalyticsReferralsData;
   searchResults: AnalyticsUserSummary[];
   selectedUser: AnalyticsUserSummary | null;
   userTimeline: AnalyticsUserTimelineEvent[];

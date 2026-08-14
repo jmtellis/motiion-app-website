@@ -145,6 +145,12 @@ export const ANALYTICS_EVENTS: Record<string, AnalyticsEventDefinition> = {
     category: "deep_link",
     description: "App opened from a universal link",
   },
+  referral_link_opened: {
+    name: "referral_link_opened",
+    label: "Referral link opened",
+    category: "deep_link",
+    description: "App signup referral landing page viewed",
+  },
   user_signed_up: {
     name: "user_signed_up",
     label: "User signed up",

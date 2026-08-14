@@ -10,8 +10,11 @@ import type {
   AnalyticsPlatform,
   AnalyticsProductHealth,
   AnalyticsRecentEvent,
+  AnalyticsRecentReferral,
+  AnalyticsReferralsData,
   AnalyticsRetentionPoint,
   AnalyticsTimeSeriesPoint,
+  AnalyticsTopReferrer,
   AnalyticsUserSummary,
   AnalyticsUserTimelineEvent,
 } from "@/lib/analytics/types";
@@ -139,6 +142,62 @@ function buildMetrics(raw: Record<string, number>): AnalyticsMetricCard[] {
   ];
 }
 
+function mapTopReferrer(raw: Record<string, unknown>): AnalyticsTopReferrer {
+  return {
+    userId: String(raw.userId ?? raw.user_id ?? ""),
+    displayName: String(raw.displayName ?? raw.display_name ?? "Motiion User"),
+    username: raw.username ? String(raw.username) : null,
+    email: raw.email ? String(raw.email) : null,
+    avatarUrl: raw.avatarUrl ? String(raw.avatarUrl) : raw.avatar_url ? String(raw.avatar_url) : null,
+    referralCount: Number(raw.referral_count ?? raw.referralCount ?? 0),
+  };
+}
+
+function mapRecentReferral(raw: Record<string, unknown>): AnalyticsRecentReferral {
+  return {
+    id: String(raw.id ?? ""),
+    createdAt: String(raw.createdAt ?? raw.created_at ?? ""),
+    source: String(raw.source ?? ""),
+    referralCode: String(raw.referralCode ?? raw.referral_code ?? ""),
+    referrerUserId: String(raw.referrerUserId ?? raw.referrer_user_id ?? ""),
+    referrerDisplayName: String(raw.referrerDisplayName ?? raw.referrer_display_name ?? "Motiion User"),
+    referrerUsername: raw.referrerUsername
+      ? String(raw.referrerUsername)
+      : raw.referrer_username
+        ? String(raw.referrer_username)
+        : null,
+    refereeUserId: String(raw.refereeUserId ?? raw.referee_user_id ?? ""),
+    refereeDisplayName: String(raw.refereeDisplayName ?? raw.referee_display_name ?? "Motiion User"),
+    refereeUsername: raw.refereeUsername
+      ? String(raw.refereeUsername)
+      : raw.referee_username
+        ? String(raw.referee_username)
+        : null,
+    refereeEmail: raw.refereeEmail
+      ? String(raw.refereeEmail)
+      : raw.referee_email
+        ? String(raw.referee_email)
+        : null,
+  };
+}
+
+function mapReferrals(raw: Record<string, unknown> | null): AnalyticsReferralsData {
+  const topRaw = raw?.topReferrers ?? raw?.top_referrers;
+  const recentRaw = raw?.recentReferrals ?? raw?.recent_referrals;
+  const topReferrers = Array.isArray(topRaw)
+    ? topRaw.map((item) => mapTopReferrer(item as Record<string, unknown>))
+    : [];
+  const recentReferrals = Array.isArray(recentRaw)
+    ? recentRaw.map((item) => mapRecentReferral(item as Record<string, unknown>))
+    : [];
+
+  return {
+    referredSignups: Number(raw?.referredSignups ?? raw?.referred_signups ?? 0),
+    topReferrers,
+    recentReferrals,
+  };
+}
+
 function buildFunnel(raw: Array<Record<string, unknown>>): AnalyticsFunnelStep[] {
   let previousUnique = 0;
 
@@ -186,6 +245,7 @@ export async function fetchAnalyticsDashboard(
     accountTypeSplitResult,
     recentResult,
     productHealthResult,
+    referralsResult,
     searchResult,
     selectedUserResult,
     userTimelineResult,
@@ -205,6 +265,7 @@ export async function fetchAnalyticsDashboard(
     }),
     callRpc<Array<Record<string, unknown>>>("admin_analytics_recent_events", { p_since: since, p_limit: 50 }),
     callRpc<AnalyticsProductHealth>("admin_analytics_product_health", { p_since: since }),
+    callRpc<Record<string, unknown>>("admin_analytics_referrals", { p_since: since }),
     params.query
       ? callRpc<Array<Record<string, unknown>>>("admin_analytics_search_users", {
           p_query: params.query,
@@ -229,6 +290,10 @@ export async function fetchAnalyticsDashboard(
   if (metricsResult.error) {
     console.error("fetchAnalyticsDashboard error:", metricsResult.error);
     return null;
+  }
+
+  if (referralsResult.error) {
+    console.error("admin_analytics_referrals error:", referralsResult.error);
   }
 
   const topEvents = (topEventsResult.data ?? []).map((item) => ({
@@ -265,6 +330,7 @@ export async function fetchAnalyticsDashboard(
       recentlyViewedRows: 0,
       talentFavorites: 0,
     },
+    referrals: mapReferrals(referralsResult.data),
     searchResults: (searchResult.data ?? []).map(mapUserSummary),
     selectedUser: selectedUserResult.data ? mapUserSummary(selectedUserResult.data) : null,
     userTimeline: (userTimelineResult.data ?? []).map(

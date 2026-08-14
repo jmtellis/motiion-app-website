@@ -17,6 +17,7 @@ import {
   AnalyticsRecentEventsTable,
   AnalyticsUserTimeline,
 } from "@/components/analytics/dashboard/AnalyticsRecentEvents";
+import { AnalyticsReferralsPanel } from "@/components/analytics/dashboard/AnalyticsReferralsPanel";
 import { AnalyticsUserTable } from "@/components/analytics/dashboard/AnalyticsUserTable";
 import { fetchAnalyticsDashboard } from "@/lib/analytics/queries";
 import { fetchKpiDashboard } from "@/lib/analytics/kpi-queries";
@@ -224,6 +225,16 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
             <Panel title="Most active users" description="Users with the highest event volume.">
               <AnalyticsUserTable users={dashboard.topUsers} range={dashboard.range.key} />
             </Panel>
+          </section>
+
+          <section className="mt-8 space-y-4">
+            <div>
+              <h2 className="text-lg font-semibold text-[var(--ink)]">App referrals</h2>
+              <p className="mt-1 text-sm text-[var(--ink-soft)]">
+                First-party signup attribution from user_referrals for the selected window.
+              </p>
+            </div>
+            <AnalyticsReferralsPanel data={dashboard.referrals} range={dashboard.range.key} />
           </section>
 
           <section className="mt-8">

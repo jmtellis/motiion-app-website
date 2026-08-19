@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
@@ -129,34 +129,83 @@ function NavDropdown({
   );
 }
 
-export function HomeSplitNav({ mobile = false }: { mobile?: boolean }) {
-  const [openId, setOpenId] = useState<string | null>(null);
+export function HomeSplitMobileMenu({ align = "start" }: { align?: "start" | "end" }) {
+  const [open, setOpen] = useState(false);
+  const menuId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
-  if (mobile) {
-    return (
-      <nav className="home-split__nav home-split__nav--mobile" aria-label="Primary">
-        {homeSplitNav.map((group) => (
-          <details key={group.id} className="home-split__nav-details">
-            <summary className="home-split__nav-summary">
-              {group.label}
-              <ChevronDown className="home-split__nav-chevron" aria-hidden strokeWidth={2} />
-            </summary>
-            <div className="home-split__nav-details-list">
-              {group.items.map((item) => (
-                <Link
-                  key={item.href + item.label}
-                  href={item.href}
-                  className="home-split__nav-details-link"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          </details>
-        ))}
-      </nav>
-    );
-  }
+  useEffect(() => {
+    if (!open) return;
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="home-split__mobile-menu">
+      <button
+        ref={triggerRef}
+        type="button"
+        className="home-split__hamburger"
+        aria-expanded={open}
+        aria-controls={menuId}
+        aria-label={open ? "Close menu" : "Open menu"}
+        onClick={() => setOpen((current) => !current)}
+      >
+        {open ? <X className="size-6" aria-hidden /> : <Menu className="size-6" aria-hidden />}
+      </button>
+
+      {open ? (
+        <div
+          id={menuId}
+          className={cn(
+            "home-split__mobile-menu-panel",
+            align === "end" && "home-split__mobile-menu-panel--end",
+          )}
+        >
+          <nav aria-label="Primary" className="home-split__mobile-menu-nav">
+            {homeSplitNav.map((group) => (
+              <div key={group.id} className="home-split__mobile-menu-group">
+                <p className="home-split__mobile-menu-heading">{group.label}</p>
+                {group.items.map((item) => (
+                  <Link
+                    key={item.href + item.label}
+                    href={item.href}
+                    className="home-split__mobile-menu-link"
+                    onClick={() => setOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </nav>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export function HomeSplitNav() {
+  const [openId, setOpenId] = useState<string | null>(null);
 
   return (
     <nav className="home-split__nav" aria-label="Primary">

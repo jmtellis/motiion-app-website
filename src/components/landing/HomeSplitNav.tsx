@@ -204,8 +204,12 @@ export function HomeSplitMobileMenu({ align = "start" }: { align?: "start" | "en
   );
 }
 
-export function HomeSplitNav() {
+export function HomeSplitNav({ mobile = false }: { mobile?: boolean }) {
   const [openId, setOpenId] = useState<string | null>(null);
+
+  if (mobile) {
+    return <HomeSplitMobileMenu />;
+  }
 
   return (
     <nav className="home-split__nav" aria-label="Primary">

@@ -193,12 +193,12 @@ export const homeSplitNav: HomeSplitNavGroup[] = [
 ];
 
 export const homeHero = {
-  eyebrow: "Professional Dance Talent",
+  eyebrow: "Professional dance, connected",
   headline: {
-    parts: ["Hire dancers without the chaos"] as EditorialPart[],
+    parts: ["Discover the dancers behind the performance"] as EditorialPart[],
   },
   subtext:
-    "Search verified profiles and book dancers for your commercial, music video, television/film project, print campaign, or stage performance.",
+    "Motiion makes it easier for the industry to discover and hire professional dance talent by connecting dancers and choreographers to the performances, projects, and opportunities they're part of.",
   pillars: [
     {
       title: "Casting",
@@ -264,6 +264,43 @@ export const homeHero = {
     },
   ],
 };
+
+export type HomeHeroPortrait = {
+  id: string;
+  title: string;
+  src: string;
+  alt: string;
+  objectPosition: string;
+  durationMs: number;
+};
+
+/** Split-landing visual — three transitioning dancer portraits. */
+export const homeHeroPortraits: HomeHeroPortrait[] = [
+  {
+    id: "dancer-01",
+    title: "Professional dancer portrait",
+    src: "/marketing/hero/dancer-01.png",
+    alt: "Professional dancer in a tiger-print top and striped trousers against a light studio backdrop",
+    objectPosition: "50% 50%",
+    durationMs: 5200,
+  },
+  {
+    id: "dancer-02",
+    title: "Professional dancer portrait",
+    src: "/marketing/hero/dancer-02.png",
+    alt: "Professional dancer with pink hair and silver jewelry against a teal studio backdrop",
+    objectPosition: "50% 50%",
+    durationMs: 5200,
+  },
+  {
+    id: "dancer-03",
+    title: "Professional dancer portrait",
+    src: "/marketing/hero/dancer-03.png",
+    alt: "Professional dancer in a lace top and strapped leggings against a monochrome studio backdrop",
+    objectPosition: "50% 50%",
+    durationMs: 5200,
+  },
+];
 
 /** Outline scroll marquees — `belowHero` sits directly under the home hero. */
 export const landingMarquees = {

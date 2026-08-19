@@ -6,7 +6,7 @@ import { motion, useReducedMotion } from "motion/react";
 
 import { AccountPill, type AccountPillUser } from "@/components/auth/AccountPill";
 import { MotiionWordmark } from "@/components/brand/MotiionWordmark";
-import { HomeSplitNav } from "@/components/landing/HomeSplitNav";
+import { HomeSplitMobileMenu, HomeSplitNav } from "@/components/landing/HomeSplitNav";
 import { IosDownloadHeroButton } from "@/components/landing/IosDownloadHeroButton";
 import { MarketingDialog } from "@/components/landing/MarketingDialog";
 import { MarketingHero } from "@/components/marketing/MarketingHero";
@@ -115,14 +115,15 @@ export function HomeSplitLanding({
     <div className="home-split">
       <div className="home-split__grain" aria-hidden />
 
-      <section className="home-split__panel home-split__panel--dark" aria-label="Motiion">
-        <div className="home-split__mobile-bar">
-          <Link href="/" className="inline-flex items-center" aria-label="Motiion home">
-            <MotiionWordmark priority height={11} />
-          </Link>
-          <LoginControl accountUser={accountUser} onDark />
-        </div>
+      <div className="home-split__mobile-bar">
+        <HomeSplitMobileMenu />
+        <Link href="/" className="inline-flex items-center justify-self-center" aria-label="Motiion home">
+          <MotiionWordmark priority height={11} />
+        </Link>
+        <LoginControl accountUser={accountUser} onDark />
+      </div>
 
+      <section className="home-split__panel home-split__panel--dark" aria-label="Motiion">
         <div className="home-split__header-row home-split__header-row--dark">
           <div className="home-split__brand-nav">
             <Link
@@ -137,8 +138,6 @@ export function HomeSplitLanding({
         </div>
 
         <div className="home-split__content">
-          <HomeSplitNav mobile />
-
           <motion.div
             className="home-split__copy"
             initial={enter.initial}
@@ -177,13 +176,13 @@ export function HomeSplitLanding({
         <HomeSplitFooter />
       </section>
 
-      <section className="home-split__panel home-split__panel--light" aria-label="Product demo">
-        <div className="home-split__visual">
+      <section className="home-split__panel home-split__panel--light" aria-label="Featured dancers">
+        <div className="home-split__visual home-split__visual--portraits">
           <div className="home-split__login-anchor">
             <LoginControl accountUser={accountUser} onDark />
           </div>
 
-          <div className="home-split__feature">
+          <div className="home-split__feature home-split__feature--portraits">
             <MarketingHero />
           </div>
         </div>

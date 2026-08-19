@@ -1,3 +1,10 @@
+/* iOS status bar / overscroll use html+body, not the page wrapper. */
+html:has(.home-split),
+html:has(.home-split) body {
+  background-color: #111111;
+  color-scheme: dark;
+}
+
 .home-split {
   --home-split-dark: #111111;
   --home-split-light: #111111;
@@ -547,9 +554,10 @@
 
 @media (max-width: 959px) {
   .home-split {
-    height: 100svh;
-    max-height: 100svh;
-    overflow: hidden;
+    height: auto;
+    min-height: 100lvh;
+    max-height: none;
+    overflow: visible;
     grid-template-areas:
       "header"
       "visual"
@@ -567,9 +575,11 @@
   }
 
   .home-split__panel--dark {
+    display: grid;
     grid-area: copy;
+    grid-template-rows: minmax(0, 1fr) auto;
     min-height: 0;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .home-split__header-row--dark {
@@ -606,10 +616,11 @@
   }
 
   .home-split__content {
-    flex: 1 1 auto;
+    flex: unset;
     justify-content: space-between;
     gap: 1.5rem;
     min-height: 0;
+    overflow: visible;
     padding: 1.6rem var(--home-split-pad-x, 1.5rem) 0.85rem;
   }
 
@@ -633,6 +644,7 @@
   }
 
   .home-split__ctas {
+    flex-shrink: 0;
     flex-direction: column;
   }
 
@@ -668,8 +680,8 @@
 
   .home-split__footer {
     justify-content: center;
-    margin-top: auto;
-    padding: 0.7rem var(--home-split-pad-x, 1.5rem) max(0.75rem, env(safe-area-inset-bottom));
+    margin-top: 0;
+    padding: 0.75rem var(--home-split-pad-x, 1.5rem) max(1.25rem, env(safe-area-inset-bottom, 0px));
     text-align: center;
   }
 }

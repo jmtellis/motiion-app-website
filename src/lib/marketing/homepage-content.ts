@@ -198,7 +198,7 @@ export const homeHero = {
     parts: ["Discover the dancers behind the performance"] as EditorialPart[],
   },
   subtext:
-    "Motiion makes it easier for the industry to discover and hire professional dance talent by connecting dancers and choreographers to the performances, projects, and opportunities they're part of.",
+    "Motiion makes it easier for the industry to discover and hire professional dancers by connecting the talent to the projects they're part of.",
   pillars: [
     {
       title: "Casting",

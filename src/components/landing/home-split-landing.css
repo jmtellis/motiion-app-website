@@ -554,7 +554,7 @@
       "header"
       "visual"
       "copy";
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto minmax(0, 1fr);
   }
 
   .home-split__mobile-bar {
@@ -578,7 +578,7 @@
 
   .home-split__mobile-bar {
     display: grid;
-    grid-template-columns: 2.5rem 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
     gap: 0.75rem;
     padding: max(0.75rem, env(safe-area-inset-top)) 1.25rem 0.65rem;
@@ -588,6 +588,13 @@
   .home-split__mobile-bar .home-split__mobile-menu,
   .home-split__brand-nav .home-split__mobile-menu {
     display: block;
+    justify-self: start;
+  }
+
+  .home-split__mobile-bar-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-self: center;
   }
 
   .home-split__mobile-bar .home-split__login {
@@ -599,14 +606,21 @@
   }
 
   .home-split__content {
-    flex: 0 0 auto;
-    justify-content: flex-start;
-    gap: 1.15rem;
-    padding: 0.85rem var(--home-split-pad-x, 1.5rem) 0.65rem;
+    flex: 1 1 auto;
+    justify-content: space-between;
+    gap: 1.5rem;
+    min-height: 0;
+    padding: 1.6rem var(--home-split-pad-x, 1.5rem) 0.85rem;
   }
 
   .home-split__copy {
+    align-items: center;
     gap: 0.75rem;
+    text-align: center;
+  }
+
+  .home-split__eyebrow {
+    justify-content: center;
   }
 
   .home-split__headline {
@@ -639,15 +653,24 @@
   }
 
   .home-split__visual--portraits {
+    position: relative;
+    inset: auto;
+    height: auto;
     padding: 0;
   }
 
   .home-split__feature--portraits {
+    position: relative;
+    inset: auto;
     width: 100%;
+    height: auto;
   }
 
   .home-split__footer {
+    justify-content: center;
+    margin-top: auto;
     padding: 0.7rem var(--home-split-pad-x, 1.5rem) max(0.75rem, env(safe-area-inset-bottom));
+    text-align: center;
   }
 }
 

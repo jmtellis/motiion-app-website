@@ -117,7 +117,7 @@ export function HomeSplitLanding({
 
       <div className="home-split__mobile-bar">
         <HomeSplitMobileMenu />
-        <Link href="/" className="inline-flex items-center justify-self-center" aria-label="Motiion home">
+        <Link href="/" className="home-split__mobile-bar-logo" aria-label="Motiion home">
           <MotiionWordmark priority height={11} />
         </Link>
         <LoginControl accountUser={accountUser} onDark />

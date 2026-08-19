@@ -1579,9 +1579,20 @@
     max-height: min(36svh, 17rem);
   }
 
+  .marketing-hero--portraits {
+    height: auto;
+  }
+
+  .marketing-hero--portraits .marketing-hero__stage {
+    flex: none;
+  }
+
   .marketing-hero--portraits .marketing-hero__window {
+    width: 100%;
     max-width: none;
+    height: auto;
     max-height: none;
+    aspect-ratio: 5 / 4;
   }
 
   .marketing-hero__caption {

@@ -13,6 +13,8 @@
           "/casting/*",
           "/refer/*",
           "/join/*",
+          "/job/*",
+          "/featured-invite/*",
           "/shortlist/*",
           "/t/*",
           "/u/*"
@@ -28,7 +30,8 @@
       {
         "appID": "9NF3WG298D.com.jaymtellis.Motiion.Clip",
         "paths": [
-          "/shortlist/*"
+          "/shortlist/*",
+          "/event/*/program"
         ]
       }
     ]

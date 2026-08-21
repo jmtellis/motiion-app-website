@@ -99,3 +99,7 @@ export function formatMoney(cents: number | null | undefined, currency = "usd"):
     currency: currency.toUpperCase(),
   }).format(cents / 100);
 }
+
+export function eventProgramPath(eventId: string): string {
+  return `/event/${encodeURIComponent(eventId)}/program`;
+}

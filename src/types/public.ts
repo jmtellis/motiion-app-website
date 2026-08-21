@@ -107,6 +107,16 @@ export type PublicTicketOption = {
   includedEventDayIds: string[];
 };
 
+export type PublicFeaturedTalent = {
+  id: string;
+  userId: string;
+  displayName: string;
+  headshotUrl: string | null;
+  username: string | null;
+  videoUrl: string | null;
+  children: PublicFeaturedTalent[];
+};
+
 export type PublicActivity = {
   id: string;
   title: string;
@@ -126,6 +136,7 @@ export type PublicActivity = {
   pricingTiers: PublicPricingTier[] | null;
   eventDays?: PublicEventDay[] | null;
   ticketOptions?: PublicTicketOption[] | null;
+  featuredTalent?: PublicFeaturedTalent[] | null;
   organizerDisplayName: string | null;
   organizerHeadshotURL: string | null;
   isEligibleForBooking: boolean;

@@ -104,3 +104,11 @@ export async function requirePlatformAdmin() {
   if (!isAdmin) redirect("/home");
   return profile;
 }
+
+/** Session-gated admin check for JSON routes (no redirect). */
+export async function getPlatformAdminProfile() {
+  const profile = await getCurrentUserProfile();
+  if (!profile) return null;
+  const isAdmin = await isPlatformAdmin();
+  return isAdmin ? profile : null;
+}

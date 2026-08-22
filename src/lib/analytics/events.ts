@@ -161,13 +161,20 @@ export const ANALYTICS_EVENTS: Record<string, AnalyticsEventDefinition> = {
     name: "class_created",
     label: "Class created",
     category: "marketplace",
-    description: "Organizer published a class",
+    description: "Organizer published a class (canonical; web also emits activity_created)",
   },
   session_created: {
     name: "session_created",
     label: "Session created",
     category: "marketplace",
-    description: "Organizer published a session",
+    description: "Organizer published a session (canonical; web also emits activity_created)",
+  },
+  activity_created: {
+    name: "activity_created",
+    label: "Activity created",
+    category: "marketplace",
+    description:
+      "Web alias for class_created / session_created / event create. Prefer the canonical name by activity_type.",
   },
   casting_created: {
     name: "casting_created",
@@ -179,19 +186,43 @@ export const ANALYTICS_EVENTS: Record<string, AnalyticsEventDefinition> = {
     name: "class_registration_completed",
     label: "Class registration completed",
     category: "kpi",
-    description: "Dancer registered for a class",
+    description: "Dancer registered for a class (canonical; web historically used class_guest_enrolled)",
+  },
+  class_guest_enrolled: {
+    name: "class_guest_enrolled",
+    label: "Class guest enrolled",
+    category: "kpi",
+    description: "Web alias for class_registration_completed on the public guest booking form",
   },
   session_rsvp_completed: {
     name: "session_rsvp_completed",
     label: "Session RSVP completed",
     category: "kpi",
-    description: "Dancer requested or joined a session",
+    description: "Dancer requested or joined a session (canonical; web historically used rsvp_submitted)",
+  },
+  rsvp_submitted: {
+    name: "rsvp_submitted",
+    label: "RSVP submitted",
+    category: "kpi",
+    description: "Web alias for session_rsvp_completed",
   },
   casting_submission_completed: {
     name: "casting_submission_completed",
     label: "Casting submission completed",
     category: "kpi",
     description: "Talent submitted to a casting",
+  },
+  shortlist_share_created: {
+    name: "shortlist_share_created",
+    label: "Shortlist share created",
+    category: "shortlist",
+    description: "Client review link created for shortlisted talent",
+  },
+  casting_candidate_shortlisted: {
+    name: "casting_candidate_shortlisted",
+    label: "Casting candidate shortlisted",
+    category: "shortlist",
+    description: "Buyer moved a casting candidate to shortlisted",
   },
   talent_saved_to_list: {
     name: "talent_saved_to_list",
@@ -345,7 +376,35 @@ export const ANALYTICS_EVENTS: Record<string, AnalyticsEventDefinition> = {
   },
 };
 
-/** Events that contribute to the North Star metric when tracked in analytics_events. */
+/**
+ * Web names that historically diverged from the iOS/canonical KPI catalog.
+ * Class/session create now also emits the canonical name. RSVP and guest
+ * enrollment stay on the web alias to avoid double-counting MAPO table+event
+ * composites; weekly scorecard documents both names.
+ */
+export const WEB_IOS_EVENT_ALIASES: Record<string, string> = {
+  activity_created: "class_created | session_created (by activity_type)",
+  rsvp_submitted: "session_rsvp_completed",
+  class_guest_enrolled: "class_registration_completed",
+};
+
+/** July 29 weekly scorecard contributors in analytics_events (canonical + web aliases). */
+export const WEEKLY_SCORECARD_EVENT_NAMES = {
+  qualifiedDiscovery: [
+    "talent_navigator_search_submitted",
+    "talent_navigator_search_returned_results",
+    "profile_viewed",
+  ],
+  submissions: ["casting_submission_completed"],
+  shortlists: [
+    "shortlist_submitted",
+    "shortlist_share_created",
+    "casting_candidate_shortlisted",
+  ],
+  bookings: ["booking_request_sent"],
+} as const;
+
+/** Events that contribute to MAPO (marketplace momentum) when tracked in analytics_events. */
 export const NORTH_STAR_EVENT_NAMES = [
   "casting_submission_completed",
   "class_registration_completed",

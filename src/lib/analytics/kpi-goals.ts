@@ -1,8 +1,11 @@
-/** End-of-year and monthly KPI targets from the Motiion business plan. */
+/** End-of-year and monthly KPI targets from the Motiion business plan + Notion north stars. */
 export const KPI_GOALS = {
   proSubscribers: 1_000,
   mrrCents: 3_000_000,
   arrCents: 36_000_000,
+  verifiedProfessionals: 5_000,
+  trialToPaidPct: 20,
+  churnRatePct: 5,
   annualClasses: 100,
   annualSessions: 100,
   annualCastings: 100,
@@ -14,9 +17,20 @@ export const KPI_GOALS = {
   northStarMonthly: null as number | null,
 } as const;
 
-export function progressPct(current: number, target: number | null): number | null {
+export type KpiDirection = "up" | "down";
+
+export function progressPct(
+  current: number,
+  target: number | null,
+  direction: KpiDirection = "up",
+): number | null {
   if (target == null || target <= 0) {
     return null;
+  }
+
+  if (direction === "down") {
+    if (current <= target) return 100;
+    return Math.min(100, Math.round((target / current) * 100));
   }
 
   return Math.min(100, Math.round((current / target) * 100));

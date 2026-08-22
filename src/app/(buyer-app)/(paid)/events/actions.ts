@@ -116,6 +116,12 @@ const connect = await fetchConnectAccountStatus();
     activity_id: result.id,
     activity_type: draft.type,
   });
+  if (draft.type === "class" || draft.type === "session") {
+    await trackServerEvent(draft.type === "class" ? "class_created" : "session_created", {
+      activity_id: result.id,
+      activity_type: draft.type,
+    });
+  }
 
   revalidateActivityPaths(result.id, draft.projectId);
   return { ok: true, id: result.id };

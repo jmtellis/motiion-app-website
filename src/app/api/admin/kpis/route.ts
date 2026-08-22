@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { fetchKpiDashboard } from "@/lib/analytics/kpi-queries";
 import { getCurrentUserProfile, isPlatformAdmin } from "@/lib/auth/session";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const profile = await getCurrentUserProfile();
   if (!profile) {

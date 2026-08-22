@@ -1,14 +1,23 @@
-import { KPI_GOALS, progressPct } from "@/lib/analytics/kpi-goals";
+import { WEEKLY_SCORECARD_EVENT_NAMES } from "@/lib/analytics/events";
+import { KPI_GOALS } from "@/lib/analytics/kpi-goals";
 import type {
   KpiBusinessPayload,
   KpiDashboardData,
   KpiDemandPayload,
-  KpiMetric,
   KpiNorthStarPayload,
   KpiRetentionPayload,
   KpiSupplyPayload,
   KpiTalentPayload,
+  KpiVerifiedProfessionals,
 } from "@/lib/analytics/kpi-types";
+import {
+  buildNorthStarGoals,
+  buildWeeklyScorecard,
+  emptyWeeklyScorecard,
+  flattenNorthStarMetrics,
+  metric,
+  utcIsoWeekBounds,
+} from "@/lib/analytics/kpi-v1";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 function num(raw: unknown, fallback = 0): number {
@@ -121,80 +130,162 @@ function mapRetention(raw: Record<string, unknown>): KpiRetentionPayload {
   };
 }
 
-function metric(
-  key: string,
-  label: string,
-  current: number,
-  target: number | null,
-  format: KpiMetric["format"],
-  periodLabel: string,
-  hint?: string,
-): KpiMetric {
+async function countExact(
+  table: string,
+  column: string,
+  filters: Array<{
+    op: "eq" | "gte" | "lt" | "not_null";
+    col: string;
+    value?: string | boolean | number;
+  }> = [],
+): Promise<{ count: number; error: string | null }> {
+  const supabase = createAdminSupabaseClient();
+  if (!supabase) {
+    return { count: 0, error: "Supabase admin client is not configured." };
+  }
+
+  let query = supabase.from(table).select(column, { count: "exact", head: true });
+  for (const filter of filters) {
+    if (filter.op === "not_null") {
+      query = query.not(filter.col, "is", null);
+      continue;
+    }
+    if (filter.value === undefined) continue;
+    if (filter.op === "eq") query = query.eq(filter.col, filter.value);
+    else if (filter.op === "gte") query = query.gte(filter.col, filter.value);
+    else query = query.lt(filter.col, filter.value);
+  }
+
+  const { count, error } = await query;
+  if (error) {
+    return { count: 0, error: error.message };
+  }
+  return { count: count ?? 0, error: null };
+}
+
+async function countEvents(
+  names: readonly string[],
+  sinceIso: string,
+  untilIso: string,
+): Promise<{ count: number; error: string | null }> {
+  const supabase = createAdminSupabaseClient();
+  if (!supabase) {
+    return { count: 0, error: "Supabase admin client is not configured." };
+  }
+
+  const { count, error } = await supabase
+    .from("analytics_events")
+    .select("id", { count: "exact", head: true })
+    .in("event_name", [...names])
+    .gte("created_at", sinceIso)
+    .lt("created_at", untilIso);
+
+  if (error) {
+    return { count: 0, error: error.message };
+  }
+  return { count: count ?? 0, error: null };
+}
+
+export async function fetchVerifiedProfessionals(): Promise<{
+  data: KpiVerifiedProfessionals | null;
+  error: string | null;
+}> {
+  const [talent, industry] = await Promise.all([
+    countExact("professional_profiles", "user_id", [{ op: "eq", col: "is_verified", value: true }]),
+    countExact("industry_identity_verifications", "user_id", [
+      { op: "eq", col: "status", value: "verified" },
+    ]),
+  ]);
+
+  const errors = [talent.error, industry.error].filter(Boolean);
+  if (errors.length === 2) {
+    return { data: null, error: errors[0] ?? null };
+  }
+
   return {
-    key,
-    label,
-    current,
-    target,
-    progressPct: progressPct(current, target),
-    periodLabel,
-    format,
-    hint,
+    data: {
+      total: talent.count + industry.count,
+      talentVerifiedProfiles: talent.count,
+      industryIdentityVerified: industry.count,
+      source:
+        "professional_profiles.is_verified + industry_identity_verifications.status=verified (sum; rare overlap counted twice)",
+    },
+    error: errors[0] ?? null,
   };
 }
 
-function buildExecutiveMetrics(
-  northStar: KpiNorthStarPayload | null,
-  business: KpiBusinessPayload | null,
-  supply: KpiSupplyPayload | null,
-  demand: KpiDemandPayload | null,
-  retention: KpiRetentionPayload | null,
-): KpiMetric[] {
-  const period = northStar?.periodLabel ?? "This month";
-  return [
-    metric(
-      "pro_subscribers",
-      "Pro subscribers",
-      business?.proSubscribers ?? 0,
-      KPI_GOALS.proSubscribers,
-      "number",
-      "Active",
-      "Paying Pro dancers",
-    ),
-    metric(
-      "mrr",
-      "MRR",
-      business?.mrrCents ?? 0,
-      KPI_GOALS.mrrCents,
-      "currency",
-      period,
-    ),
-    metric(
-      "ytd_opportunities",
-      "YTD opportunities",
-      supply?.totalOpportunitiesYtd ?? 0,
-      KPI_GOALS.annualOpportunities,
-      "number",
-      "Year to date",
-      "Classes + sessions + castings",
-    ),
-    metric(
-      "engagement_rate",
-      "Engagement rate",
-      demand?.engagementRatePct ?? 0,
-      KPI_GOALS.engagementRatePct,
-      "percent",
-      period,
-    ),
-    metric(
-      "mapu",
-      "MAPU",
-      retention?.mapu ?? 0,
-      null,
-      "number",
-      period,
-      "Monthly active paying users",
-    ),
-  ];
+export async function fetchWeeklyScorecardCounts(now = new Date()) {
+  const bounds = utcIsoWeekBounds(now);
+  const since = bounds.start.toISOString();
+  const until = bounds.end.toISOString();
+
+  const [
+    accounts,
+    completed,
+    talentVerified,
+    industryVerified,
+    discovery,
+    submissionsTable,
+    submissionsEvents,
+    shortlistEvents,
+    shortlistShares,
+    bookings,
+  ] = await Promise.all([
+    countExact("profiles", "user_id", [{ op: "gte", col: "created_at", value: since }, { op: "lt", col: "created_at", value: until }]),
+    countExact("profiles", "user_id", [
+      { op: "gte", col: "onboarding_completed_at", value: since },
+      { op: "lt", col: "onboarding_completed_at", value: until },
+    ]),
+    countExact("professional_profiles", "user_id", [
+      { op: "eq", col: "is_verified", value: true },
+      { op: "gte", col: "verified_at", value: since },
+      { op: "lt", col: "verified_at", value: until },
+    ]),
+    countExact("industry_identity_verifications", "user_id", [
+      { op: "eq", col: "status", value: "verified" },
+      { op: "gte", col: "verified_at", value: since },
+      { op: "lt", col: "verified_at", value: until },
+    ]),
+    countEvents(WEEKLY_SCORECARD_EVENT_NAMES.qualifiedDiscovery, since, until),
+    countExact("submissions", "id", [
+      { op: "gte", col: "created_at", value: since },
+      { op: "lt", col: "created_at", value: until },
+    ]),
+    countEvents(WEEKLY_SCORECARD_EVENT_NAMES.submissions, since, until),
+    countEvents(WEEKLY_SCORECARD_EVENT_NAMES.shortlists, since, until),
+    countExact("casting_shortlist_shares", "id", [
+      { op: "gte", col: "created_at", value: since },
+      { op: "lt", col: "created_at", value: until },
+    ]),
+    countEvents(WEEKLY_SCORECARD_EVENT_NAMES.bookings, since, until),
+  ]);
+
+  const errors = [
+    accounts.error,
+    completed.error,
+    talentVerified.error,
+    industryVerified.error,
+    discovery.error,
+    submissionsTable.error && submissionsEvents.error
+      ? submissionsTable.error
+      : null,
+    shortlistEvents.error,
+    bookings.error,
+  ].filter(Boolean);
+
+  return {
+    bounds,
+    counts: {
+      accountsCreated: accounts.count,
+      profilesCompleted: completed.count,
+      verifiedProfiles: talentVerified.count + industryVerified.count,
+      qualifiedDiscoveryActions: discovery.count,
+      submissions: submissionsTable.error ? submissionsEvents.count : submissionsTable.count,
+      shortlists: shortlistEvents.count + (shortlistShares.error ? 0 : shortlistShares.count),
+      bookings: bookings.count,
+    },
+    error: errors[0] ?? null,
+  };
 }
 
 export async function fetchKpiDashboard(): Promise<KpiDashboardData> {
@@ -205,6 +296,8 @@ export async function fetchKpiDashboard(): Promise<KpiDashboardData> {
     demandResult,
     talentResult,
     retentionResult,
+    verifiedResult,
+    weeklyResult,
   ] = await Promise.all([
     callKpiRpc<Record<string, unknown>>("kpi_north_star_monthly"),
     callKpiRpc<Record<string, unknown>>("kpi_business_summary"),
@@ -212,6 +305,8 @@ export async function fetchKpiDashboard(): Promise<KpiDashboardData> {
     callKpiRpc<Record<string, unknown>>("kpi_marketplace_demand"),
     callKpiRpc<Record<string, unknown>>("kpi_talent_success"),
     callKpiRpc<Record<string, unknown>>("kpi_retention_summary"),
+    fetchVerifiedProfessionals(),
+    fetchWeeklyScorecardCounts(),
   ]);
 
   const errors = [
@@ -221,25 +316,53 @@ export async function fetchKpiDashboard(): Promise<KpiDashboardData> {
     demandResult.error,
     talentResult.error,
     retentionResult.error,
+    verifiedResult.error,
+    weeklyResult.error,
   ].filter(Boolean);
 
-  const northStar = northStarResult.data ? mapNorthStar(northStarResult.data) : null;
+  const mapo = northStarResult.data ? mapNorthStar(northStarResult.data) : null;
   const business = businessResult.data ? mapBusiness(businessResult.data) : null;
   const supply = supplyResult.data ? mapSupply(supplyResult.data) : null;
   const demand = demandResult.data ? mapDemand(demandResult.data) : null;
   const talent = talentResult.data ? mapTalent(talentResult.data) : null;
   const retention = retentionResult.data ? mapRetention(retentionResult.data) : null;
+  const verifiedProfessionals = verifiedResult.data;
 
-  const period = northStar?.periodLabel ?? "This month";
+  const period = mapo?.periodLabel ?? "This month";
+  const northStars = buildNorthStarGoals({
+    periodLabel: period,
+    retention,
+    talent,
+    verified: verifiedProfessionals,
+    supply,
+    mapo,
+    business,
+  });
+  const weeklyScorecard = weeklyResult.counts
+    ? buildWeeklyScorecard(weeklyResult.counts, weeklyResult.bounds)
+    : emptyWeeklyScorecard();
 
   return {
-    northStar,
+    version: "v1",
+    northStars,
+    weeklyScorecard,
+    mapo,
+    northStar: mapo,
+    verifiedProfessionals,
     business,
     supply,
     demand,
     talent,
     retention,
-    executiveMetrics: buildExecutiveMetrics(northStar, business, supply, demand, retention),
+    executiveMetrics: flattenNorthStarMetrics(northStars).filter((item) =>
+      [
+        "monthly_active_professionals",
+        "verified_professionals",
+        "opportunities_created",
+        "mrr",
+        "pro_subscribers",
+      ].includes(item.key),
+    ),
     growthMetrics: [
       metric("total_users", "Total users", business?.totalUsers ?? 0, null, "number", "All time"),
       metric("dancers", "Dancers", business?.dancers ?? 0, null, "number", "All time"),
@@ -251,22 +374,8 @@ export async function fetchKpiDashboard(): Promise<KpiDashboardData> {
         "number",
         "Starter + Pro",
       ),
-      metric(
-        "arr",
-        "ARR",
-        business?.arrCents ?? 0,
-        KPI_GOALS.arrCents,
-        "currency",
-        "Projected",
-      ),
-      metric(
-        "new_subs",
-        "New subs (month)",
-        business?.newSubsThisMonth ?? 0,
-        null,
-        "number",
-        period,
-      ),
+      metric("arr", "ARR", business?.arrCents ?? 0, KPI_GOALS.arrCents, "currency", "Projected"),
+      metric("new_subs", "New subs (month)", business?.newSubsThisMonth ?? 0, null, "number", period),
       metric(
         "trial_conversions",
         "Trial → paid",
@@ -279,9 +388,11 @@ export async function fetchKpiDashboard(): Promise<KpiDashboardData> {
         "churn",
         "Churn rate",
         business?.churnRatePct ?? 0,
-        null,
+        KPI_GOALS.churnRatePct,
         "percent",
         period,
+        "Lower is better. Notion target <5%/mo.",
+        { direction: "down", source: "kpi_business_summary.churnRatePct" },
       ),
     ],
     supplyMetrics: [

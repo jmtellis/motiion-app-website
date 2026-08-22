@@ -5,27 +5,29 @@ type Props = {
   northStar: KpiNorthStarPayload | null;
 };
 
-export function AnalyticsNorthStarCard({ northStar }: Props) {
+/** MAPO composite — marketplace momentum under Healthy Marketplace, not a Notion north star. */
+export function AnalyticsMapoMomentumCard({ northStar }: Props) {
   const count = northStar?.count ?? 0;
   const periodLabel = northStar?.periodLabel ?? "This month";
   const breakdown = northStar?.breakdown;
 
   return (
-    <article className="ui-panel border-[var(--accent)]/30 p-5">
+    <article className="ui-card p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent-dark)]">
-            North Star
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--ink-soft)]">
+            Marketplace momentum
           </p>
           <h2 className="mt-2 text-xl font-semibold text-[var(--ink)]">
-            Monthly Active Professional Opportunities
+            MAPO — Monthly Active Professional Opportunities
           </h2>
           <p
             className="mt-2 max-w-2xl text-sm text-[var(--ink-soft)]"
             title="Submissions, registrations, RSVPs, saves, booking requests, profile shares, and talent contact events in the current month."
           >
-            Professional interactions that indicate marketplace momentum — submissions, registrations,
-            RSVPs, saves, bookings, shares, and outreach.
+            Supporting Healthy Marketplace only. This MAPO composite is not a Notion north star.
+            Professional interactions this month — submissions, registrations, RSVPs, saves,
+            bookings, shares, and outreach.
           </p>
         </div>
         <div className="text-right">
@@ -48,7 +50,10 @@ export function AnalyticsNorthStarCard({ northStar }: Props) {
             { label: "Messages", value: breakdown.messages },
             { label: "Tracked events", value: breakdown.analyticsEvents },
           ].map((item) => (
-            <div key={item.label} className="rounded-[var(--radius-chip)] border border-[var(--line)] bg-[#151515] px-3 py-2">
+            <div
+              key={item.label}
+              className="rounded-[var(--radius-chip)] border border-[var(--line)] bg-[#151515] px-3 py-2"
+            >
               <dt className="text-xs text-[var(--ink-soft)]">{item.label}</dt>
               <dd className="text-lg font-semibold text-[var(--ink)]">
                 {formatKpiValue(item.value, "number")}
@@ -62,3 +67,6 @@ export function AnalyticsNorthStarCard({ northStar }: Props) {
     </article>
   );
 }
+
+/** @deprecated Use AnalyticsMapoMomentumCard. Kept so existing imports keep compiling. */
+export const AnalyticsNorthStarCard = AnalyticsMapoMomentumCard;

@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     ...(appStoreId
       ? {
           other: {
-            "apple-itunes-app": `app-id=${appStoreId}, app-clip-bundle-id=${APP_CLIP_BUNDLE_ID}, app-argument=${pageUrl}`,
+            "apple-itunes-app": `app-id=${appStoreId}, app-clip-bundle-id=${APP_CLIP_BUNDLE_ID}, app-argument=${pageUrl}, app-clip-display=card`,
           },
         }
       : {}),

@@ -46,11 +46,22 @@ export default function EventProgramPageClient({
   const analyticsPath = sharePath.startsWith("/") ? sharePath : `/${sharePath}`;
 
   useEffect(() => {
+    document.documentElement.classList.add("event-program-page");
+    return () => {
+      document.documentElement.classList.remove("event-program-page");
+    };
+  }, []);
+
+  useEffect(() => {
     function updatePoweredByOpacity() {
-      const remaining = Math.max(
-        0,
-        document.documentElement.scrollHeight - window.scrollY - window.innerHeight,
-      );
+      const doc = document.documentElement;
+      const remaining = Math.max(0, doc.scrollHeight - window.scrollY - window.innerHeight);
+
+      if (doc.scrollHeight - window.innerHeight <= 8) {
+        setPoweredByOpacity(1);
+        return;
+      }
+
       const opacity = 1 - Math.min(1, remaining / POWERED_BY_REVEAL_HEIGHT);
       setPoweredByOpacity((current) =>
         Math.abs(current - opacity) > 0.01 ? opacity : current,
@@ -131,27 +142,27 @@ export default function EventProgramPageClient({
           )}
         </section>
 
-        <div className="event-program-powered-by-region">
-          <div
-            className="event-program-powered-by"
-            style={{ opacity: poweredByOpacity }}
-            aria-label="Powered by Motiion"
-            aria-hidden={poweredByOpacity < 0.2}
-          >
-            <p>Powered by</p>
-            <MotiionWordmark height={10} />
-          </div>
-        </div>
+        <div className="event-program-scroll-tail" aria-hidden />
       </article>
 
-      <div className="event-program-sticky-cta">
+      <div
+        className="event-program-powered-by"
+        style={{ opacity: poweredByOpacity }}
+        aria-label="Powered by Motiion"
+        aria-hidden={poweredByOpacity < 0.2}
+      >
+        <p>Powered by</p>
+        <MotiionWordmark height={10} />
+      </div>
+
+      <div className="event-program-fixed-cta">
         <a
           className="event-program-cta-glass event-program-cta-button"
           href={appStoreUrl}
           target="_blank"
           rel="noreferrer"
         >
-          Get Motiion
+          Download the app
         </a>
       </div>
 

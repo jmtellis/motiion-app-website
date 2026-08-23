@@ -162,7 +162,7 @@ export default function EventProgramPageClient({
           target="_blank"
           rel="noreferrer"
         >
-          Download the app
+          Create your talent profile
         </a>
       </div>
 

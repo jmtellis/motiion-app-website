@@ -1,14 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { MotiionWordmark } from "@/components/brand/MotiionWordmark";
 import { EventProgramShell } from "@/components/event/EventProgramShell";
 import { PublicPageAnalytics } from "@/components/analytics/PublicPageAnalytics";
-import { formatActivityDateTime } from "@/lib/publicActivity";
+import { formatFeaturedPerformerMetaLine, formatProgramDateTime } from "@/lib/publicActivity";
 import { getIosAppStoreUrl } from "@/lib/referrals/app-store";
 import type { PublicActivity, PublicFeaturedTalent } from "@/types/public";
 
 import "@/app/casting/casting.css";
+
+const POWERED_BY_REVEAL_HEIGHT = 56;
 
 function heroImageUrl(activity: PublicActivity): string | null {
   const cover = activity.coverImageURL?.trim();
@@ -16,6 +19,14 @@ function heroImageUrl(activity: PublicActivity): string | null {
   const headshot = activity.featuredTalent?.[0]?.headshotUrl?.trim();
   if (headshot) return headshot;
   return null;
+}
+
+function featuredPerformerMetaLine(talent: PublicFeaturedTalent): string | null {
+  const raw = talent as PublicFeaturedTalent & { talent_types?: string[] | null };
+  return formatFeaturedPerformerMetaLine(
+    talent.talentTypes ?? raw.talent_types,
+    talent.representation,
+  );
 }
 
 export default function EventProgramPageClient({
@@ -27,11 +38,33 @@ export default function EventProgramPageClient({
 }) {
   const [selected, setSelected] = useState<PublicFeaturedTalent | null>(null);
   const featured = activity.featuredTalent ?? [];
-  const whenLine = formatActivityDateTime(activity);
+  const dateLine = formatProgramDateTime(activity);
   const appStoreUrl = getIosAppStoreUrl();
   const heroUrl = heroImageUrl(activity);
+  const [poweredByOpacity, setPoweredByOpacity] = useState(0);
 
   const analyticsPath = sharePath.startsWith("/") ? sharePath : `/${sharePath}`;
+
+  useEffect(() => {
+    function updatePoweredByOpacity() {
+      const remaining = Math.max(
+        0,
+        document.documentElement.scrollHeight - window.scrollY - window.innerHeight,
+      );
+      const opacity = 1 - Math.min(1, remaining / POWERED_BY_REVEAL_HEIGHT);
+      setPoweredByOpacity((current) =>
+        Math.abs(current - opacity) > 0.01 ? opacity : current,
+      );
+    }
+
+    updatePoweredByOpacity();
+    window.addEventListener("scroll", updatePoweredByOpacity, { passive: true });
+    window.addEventListener("resize", updatePoweredByOpacity);
+    return () => {
+      window.removeEventListener("scroll", updatePoweredByOpacity);
+      window.removeEventListener("resize", updatePoweredByOpacity);
+    };
+  }, []);
 
   return (
     <EventProgramShell>
@@ -41,30 +74,22 @@ export default function EventProgramPageClient({
         path={analyticsPath}
       />
 
-      <article
-        className="event-program-page"
-        style={
-          heroUrl
-            ? ({
-                "--event-program-bg-image": `url("${heroUrl}")`,
-              } as React.CSSProperties)
-            : undefined
-        }
-      >
-        <div className="event-program-hero">
+      <article className="event-program-page">
+        <div className="event-program-showcase-hero">
           {heroUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={heroUrl} alt="" />
           ) : (
-            <div className="event-program-hero-fallback">
+            <div className="event-program-showcase-hero-fallback">
               {activity.title.slice(0, 1).toUpperCase()}
             </div>
           )}
-        </div>
-
-        <div className="event-program-title">
-          <h1>{activity.title}</h1>
-          {whenLine ? <p>{whenLine}</p> : null}
+          <div className="event-program-showcase-hero-overlay" />
+          <div className="event-program-showcase-hero-content">
+            <p className="event-program-eyebrow">Event</p>
+            <h1 className="event-program-showcase-title">{activity.title}</h1>
+            {dateLine ? <p className="event-program-showcase-date">{dateLine}</p> : null}
+          </div>
         </div>
 
         <section className="event-program-cast-section">
@@ -106,13 +131,26 @@ export default function EventProgramPageClient({
           )}
         </section>
 
-        <p className="event-program-powered-by">
-          Powered by <strong>Motiion</strong>
-        </p>
+        <div className="event-program-powered-by-region">
+          <div
+            className="event-program-powered-by"
+            style={{ opacity: poweredByOpacity }}
+            aria-label="Powered by Motiion"
+            aria-hidden={poweredByOpacity < 0.2}
+          >
+            <p>Powered by</p>
+            <MotiionWordmark height={10} />
+          </div>
+        </div>
       </article>
 
       <div className="event-program-sticky-cta">
-        <a className="product-btn-primary event-program-cta-button" href={appStoreUrl}>
+        <a
+          className="event-program-cta-glass event-program-cta-button"
+          href={appStoreUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
           Get Motiion
         </a>
       </div>
@@ -138,7 +176,6 @@ function ProgramTalentSheet({
   onClose: () => void;
 }) {
   const videoUrl = talent.videoUrl?.trim() ?? "";
-
   const children = useMemo(() => talent.children ?? [], [talent.children]);
 
   return (
@@ -146,97 +183,93 @@ function ProgramTalentSheet({
       role="dialog"
       aria-modal="true"
       aria-labelledby="program-talent-title"
-      className="casting-modal-backdrop"
+      className="event-program-modal-backdrop"
       onClick={onClose}
     >
-      <div
-        className="casting-modal-card"
-        onClick={(event) => event.stopPropagation()}
-        style={{ maxHeight: "85vh", overflowY: "auto" }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-          <div style={{ minWidth: 0 }}>
-            <p className="casting-section-title">Featured Talent</p>
-            <h2 id="program-talent-title" className="casting-page-title" style={{ fontSize: 24 }}>
-              {talent.displayName}
-            </h2>
-            <p className="casting-page-subtitle">Featured at {eventTitle}</p>
-          </div>
-          <button type="button" className="casting-modal-dismiss" onClick={onClose}>
+      <div className="event-program-modal" onClick={(event) => event.stopPropagation()}>
+        <div className="event-program-modal-top">
+          <p className="event-program-modal-eyebrow">Featured Talent</p>
+          <button type="button" className="event-program-modal-close" onClick={onClose}>
             Close
           </button>
         </div>
 
-        <div style={{ display: "flex", gap: 14, marginTop: 16, alignItems: "center" }}>
-          {talent.headshotUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={talent.headshotUrl}
-              alt=""
-              width={72}
-              height={72}
-              style={{ width: 72, height: 72, borderRadius: 12, objectFit: "cover" }}
-            />
-          ) : (
-            <div
-              style={{
-                width: 72,
-                height: 72,
-                borderRadius: 12,
-                background: "rgba(255,255,255,0.1)",
-                display: "grid",
-                placeItems: "center",
-                fontWeight: 700,
-              }}
-            >
-              {talent.displayName.slice(0, 1).toUpperCase()}
+        <div className="event-program-modal-scroll">
+          <div className="event-program-modal-profile">
+            {talent.headshotUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={talent.headshotUrl}
+                alt=""
+                className="event-program-modal-avatar"
+              />
+            ) : (
+              <div className="event-program-modal-avatar event-program-modal-avatar-fallback">
+                {talent.displayName.slice(0, 1).toUpperCase()}
+              </div>
+            )}
+            <div className="event-program-modal-profile-copy">
+              <h2 id="program-talent-title" className="event-program-modal-name">
+                {talent.displayName}
+              </h2>
+              <p className="event-program-modal-subtitle">Featured at {eventTitle}</p>
             </div>
-          )}
+          </div>
+
           {videoUrl ? (
             <a
               href={videoUrl}
               target="_blank"
               rel="noreferrer"
-              className="casting-inline-link"
-              style={{ fontWeight: 600 }}
+              className="event-program-modal-video-cta"
             >
               Watch showcase
             </a>
           ) : null}
-        </div>
 
-        <section style={{ marginTop: 24 }}>
-          <h3 className="casting-section-title">In this piece</h3>
-          {children.length === 0 ? (
-            <p className="casting-body-copy" style={{ marginTop: 10 }}>
-              No additional featured talent listed for this piece yet.
-            </p>
-          ) : (
-            <div style={{ marginTop: 8 }}>
-              {children.map((child) => (
-                <div key={child.id} className="featured-performer-row">
-                  {child.headshotUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={child.headshotUrl}
-                      alt=""
-                      className="featured-talent-avatar"
-                      style={{ width: 48, height: 48 }}
-                    />
-                  ) : (
-                    <span
-                      className="featured-talent-avatar featured-talent-avatar-fallback"
-                      style={{ width: 48, height: 48 }}
-                    >
-                      {child.displayName.slice(0, 1).toUpperCase()}
-                    </span>
-                  )}
-                  <p style={{ margin: 0, fontWeight: 600 }}>{child.displayName}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+          <section className="event-program-modal-section">
+            <h3 className="event-program-modal-section-title">In this piece</h3>
+            {children.length === 0 ? (
+              <p className="event-program-modal-empty-copy">
+                No additional featured talent listed for this piece yet.
+              </p>
+            ) : (
+              <div className="event-program-modal-performer-list">
+                {children.map((child, index) => {
+                  const metaLine = featuredPerformerMetaLine(child);
+
+                  return (
+                    <div key={child.id}>
+                      <div className="event-program-modal-performer-row">
+                        {child.headshotUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={child.headshotUrl}
+                            alt=""
+                            className="event-program-modal-performer-avatar"
+                          />
+                        ) : (
+                          <div className="event-program-modal-performer-avatar event-program-modal-performer-avatar-fallback">
+                            {child.displayName.slice(0, 1).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="event-program-modal-performer-copy">
+                          <p className="event-program-modal-performer-name">{child.displayName}</p>
+                          {metaLine ? (
+                            <p className="event-program-modal-performer-meta">{metaLine}</p>
+                          ) : null}
+                        </div>
+                      </div>
+                      {index < children.length - 1 ? (
+                        <div className="event-program-modal-divider" />
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
       </div>
     </div>
   );

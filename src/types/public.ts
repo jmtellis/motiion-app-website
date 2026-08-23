@@ -34,6 +34,12 @@ export type ProfileExperience = {
   choreographers?: string[] | null;
   associate_choreographers?: string[] | null;
   assistants?: string[] | null;
+  shared_credit_id?: string | null;
+  source_job_id?: string | null;
+  choreographer_user_ids?: string[] | null;
+  assistant_user_ids?: string[] | null;
+  dancer_user_ids?: string[] | null;
+  industry_professional_user_id?: string | null;
   live_stage_subtype?: string | null;
   entity_image_status?: string | null;
 };
@@ -113,14 +119,29 @@ export type PublicFeaturedTalent = {
   displayName: string;
   headshotUrl: string | null;
   username: string | null;
+  talentTypes?: string[] | null;
+  representation?: string | null;
   videoUrl: string | null;
   children: PublicFeaturedTalent[];
+};
+
+export type PublicEventHost = {
+  userId: string;
+  displayName: string;
+  headshotUrl: string | null;
+};
+
+export type PublicEventScheduleItem = {
+  id: string;
+  time: string | null;
+  title: string;
 };
 
 export type PublicActivity = {
   id: string;
   title: string;
   kind: PublicActivityKind;
+  category?: string | null;
   description: string | null;
   coverImageURL: string | null;
   location: string | null;
@@ -136,7 +157,18 @@ export type PublicActivity = {
   pricingTiers: PublicPricingTier[] | null;
   eventDays?: PublicEventDay[] | null;
   ticketOptions?: PublicTicketOption[] | null;
+  externalTicketUrl?: string | null;
   featuredTalent?: PublicFeaturedTalent[] | null;
+  hosts?: PublicEventHost[] | null;
+  eventHighlights?: string[] | null;
+  eventLineup?: string[] | null;
+  eventScheduleItems?: PublicEventScheduleItem[] | null;
+  eventDressCode?: string | null;
+  eventArrivalNotes?: string | null;
+  eventFoodDrinksInfo?: string | null;
+  eventAccessibilityInfo?: string | null;
+  eventLateEntryPolicy?: string | null;
+  eventCancellationPolicy?: string | null;
   organizerDisplayName: string | null;
   organizerHeadshotURL: string | null;
   isEligibleForBooking: boolean;

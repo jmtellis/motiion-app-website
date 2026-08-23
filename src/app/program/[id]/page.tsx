@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
 
 import EventProgramPageClient from "@/app/event/[id]/program/event-program-page-client";
-import { buildEventProgramMetadata } from "@/lib/eventProgramPage";
-import { eventProgramPath, fetchPublicActivity } from "@/lib/publicActivity";
+import {
+  buildEventProgramMetadata,
+  eventProgramWebSharePath,
+} from "@/lib/eventProgramPage";
+import { fetchPublicActivity } from "@/lib/publicActivity";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -10,10 +13,10 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps) {
   const { id } = await params;
-  return buildEventProgramMetadata(id, eventProgramPath(id));
+  return buildEventProgramMetadata(id, eventProgramWebSharePath(id));
 }
 
-export default async function EventProgramPage({ params }: PageProps) {
+export default async function EventProgramWebPage({ params }: PageProps) {
   const { id } = await params;
   const activity = await fetchPublicActivity(id);
   if (!activity || activity.kind !== "event") {
@@ -21,6 +24,9 @@ export default async function EventProgramPage({ params }: PageProps) {
   }
 
   return (
-    <EventProgramPageClient activity={activity} sharePath={eventProgramPath(activity.id)} />
+    <EventProgramPageClient
+      activity={activity}
+      sharePath={eventProgramWebSharePath(activity.id)}
+    />
   );
 }

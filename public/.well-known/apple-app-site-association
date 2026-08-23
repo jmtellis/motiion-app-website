@@ -9,6 +9,7 @@
           "/activity/*",
           "/class/*",
           "/session/*",
+          "NOT /event/*/program",
           "/event/*",
           "/casting/*",
           "/refer/*",

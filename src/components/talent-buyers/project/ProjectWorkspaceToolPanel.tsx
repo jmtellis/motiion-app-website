@@ -38,6 +38,10 @@ export function ProjectWorkspaceToolPanel({ workspaceTab }: { workspaceTab: stri
       setCastingOpen(true);
       return;
     }
+    if (actionId === "create-showcase-event") {
+      router.push(`/calendar/new?type=event&projectId=${projectId}`);
+      return;
+    }
     if (actionId === "add-talent") {
       router.push(`/talent?projectId=${projectId}`);
       return;

@@ -9,6 +9,7 @@ import {
   PROFILE_SLUG_UUID_RE,
 } from "@/lib/profileOg";
 import { fetchPublicTalentProfile } from "@/lib/publicProfile";
+import { getIosAppStoreId } from "@/lib/referrals/app-store";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -43,6 +44,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         ]
       : undefined;
 
+  const appStoreId = getIosAppStoreId();
+
   return {
     title,
     description,
@@ -61,6 +64,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       ...(ogImage ? { images: [ogImage] } : {}),
     },
+    ...(appStoreId
+      ? {
+          other: {
+            "apple-itunes-app": `app-id=${appStoreId}`,
+          },
+        }
+      : {}),
   };
 }
 

@@ -20,13 +20,17 @@ export function ProjectCarousel({
   const slides = useMemo(
     () =>
       projects.map((project) => {
-        const typeLabel = getProjectTypeLabel(project.projectType);
+        const typeLabel = project.workTypeLabel ?? getProjectTypeLabel(project.projectType);
         const statusLabel =
           project.status === "draft"
             ? "Draft"
             : project.status === "archived"
               ? "Archived"
-              : `${project.talentCount} submissions`;
+              : project.workKind === "activity"
+                ? `${project.talentCount} guests`
+                : project.workKind === "job"
+                  ? `${project.talentCount} people`
+                  : `${project.talentCount} submissions`;
         const coverSrc = resolveBuyerCoverSrc(project.coverImageUrl, {
           fallbackUrl: project.productionCompanyLogoUrl,
           allowStock: false,
@@ -35,7 +39,7 @@ export function ProjectCarousel({
           id: project.id,
           title: project.title,
           description: `${typeLabel} · ${statusLabel} · Updated ${formatBuyerRelativeDate(project.lastUpdated)}`,
-          href: `/projects/${project.id}`,
+          href: project.href ?? `/projects/${project.id}`,
           ...(coverSrc
             ? {
                 image: {

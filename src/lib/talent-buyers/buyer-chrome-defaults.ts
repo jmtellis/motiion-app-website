@@ -4,8 +4,10 @@ import { getProjectCreateConfig } from "./project-create-registry";
 import { isProjectType } from "./project-types";
 
 export function defaultBuyerChromeTitle(pathname: string): string {
+  if (pathname === "/jobs/new") return "Create a Job";
+  if (pathname.startsWith("/jobs/")) return "Job";
   if (pathname === "/projects" || pathname.startsWith("/projects/")) {
-    if (pathname === "/projects/new") return "Create project";
+    if (pathname === "/projects/new") return "Create";
     const typedCreateMatch = pathname.match(/^\/projects\/new\/([^/]+)$/);
     if (typedCreateMatch?.[1]) {
       const type = typedCreateMatch[1];
@@ -16,7 +18,7 @@ export function defaultBuyerChromeTitle(pathname: string): string {
     if (pathname.match(/^\/projects\/[^/]+\/edit$/)) return "Edit project";
     return "Projects";
   }
-  if (pathname === "/events") return "Events";
+  if (pathname === "/events") return "Calendar";
   if (pathname.startsWith("/library")) return "Roster";
   if (pathname === "/messages") return "Inbox";
   if (pathname === "/notifications") return "Notifications";
@@ -27,19 +29,32 @@ export function defaultBuyerChromeTitle(pathname: string): string {
 
 export function defaultBuyerChromeLede(pathname: string): string | undefined {
   if (pathname === "/projects") {
-    return "Manage castings, classes, and sessions from one workspace.";
+    return "Jobs, castings, events, classes, and sessions in one place.";
   }
   return undefined;
 }
 
 export function defaultBuyerChromeBreadcrumbs(pathname: string): BuyerBreadcrumbItem[] | undefined {
+  if (pathname === "/jobs/new") {
+    return [
+      { label: "Projects", href: "/projects" },
+      { label: "Create", href: "/projects?create=1" },
+      { label: "Job" },
+    ];
+  }
+  if (pathname.match(/^\/jobs\/[^/]+$/)) {
+    return [
+      { label: "Projects", href: "/projects" },
+      { label: "Job" },
+    ];
+  }
   if (pathname === "/projects") {
     return [{ label: "Projects" }];
   }
   if (pathname === "/projects/new") {
     return [
       { label: "Projects", href: "/projects" },
-      { label: "Create project" },
+      { label: "Create" },
     ];
   }
   const typedCreateMatch = pathname.match(/^\/projects\/new\/([^/]+)$/);
@@ -47,7 +62,7 @@ export function defaultBuyerChromeBreadcrumbs(pathname: string): BuyerBreadcrumb
     const config = getProjectCreateConfig(typedCreateMatch[1]);
     return [
       { label: "Projects", href: "/projects" },
-      { label: "Create project", href: "/projects?create=1" },
+      { label: "Create", href: "/projects?create=1" },
       { label: config.breadcrumbLabel },
     ];
   }
@@ -63,7 +78,7 @@ export function defaultBuyerChromeBreadcrumbs(pathname: string): BuyerBreadcrumb
     return [{ label: "Roster", href: "/library" }];
   }
   if (pathname === "/events") {
-    return [{ label: "Events" }];
+    return [{ label: "Calendar" }];
   }
   if (pathname === "/messages") {
     return [{ label: "Inbox" }];

@@ -47,8 +47,8 @@ const PROJECT_ADD_OPTIONS_UNSORTED: ProjectAddOption[] = [
   },
   {
     id: "event",
-    label: "Event",
-    description: "Add a performance, showcase, or event",
+    label: "Showcase event",
+    description: "Tickets, guest list, check-in, and free lead invites",
     icon: "calendar",
     action: { kind: "scheduled-activity", activityType: "event" },
     order: 40,

@@ -22,7 +22,7 @@ type OAuthButtonsProps = {
 export function OAuthButtons({
   flow,
   signupPath = "talent",
-  talentSubtype = "dancer",
+  talentSubtype,
   nonTalentType = "casting_director",
   companyName = "",
   disabled = false,

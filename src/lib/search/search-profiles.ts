@@ -32,7 +32,7 @@ type ProfessionalProfileRow = {
   agency_name: string | null;
 };
 
-const TALENT_SUBTYPES = ["dancer", "choreographer"] as const;
+const TALENT_SUBTYPES = ["dancer", "choreographer", "instructor"] as const;
 
 function titleCaseSlug(slug: string): string {
   return slug
@@ -97,7 +97,9 @@ function mapProfessionalProfileRow(
 
   const subtype = row.subtype?.trim().toLowerCase() ?? "";
   const talentTypes =
-    subtype === "dancer" || subtype === "choreographer" ? [subtype] : [];
+    subtype === "dancer" || subtype === "choreographer" || subtype === "instructor"
+      ? [subtype]
+      : [];
 
   return normalizeSearchProfile({
     id: row.user_id,

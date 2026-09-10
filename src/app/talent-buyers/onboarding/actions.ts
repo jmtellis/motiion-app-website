@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { trackServerEvent } from "@/lib/analytics/track-server";
+import { buildAuthDisplayNameMetadata } from "@/lib/auth/profile";
 import {
   defaultBuyerNotificationPreferences,
   deriveLegacyPrimaryGoal,
@@ -398,6 +399,11 @@ export async function completeTalentBuyerOnboarding(
   await supabase.auth.updateUser({
     data: {
       has_completed_onboarding: true,
+      ...buildAuthDisplayNameMetadata({
+        firstName,
+        lastName,
+        displayName: fullName,
+      }),
     },
   });
 

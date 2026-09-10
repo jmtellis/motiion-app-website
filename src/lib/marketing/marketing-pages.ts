@@ -2,10 +2,16 @@ import type { FaqItem } from "@/lib/marketing/homepage-content";
 import type { AudiencePricingContent } from "@/lib/marketing/audience-pricing";
 import { industryPricingContent, talentPricingContent } from "@/lib/marketing/audience-pricing";
 
-export type MarketingTab = "talent" | "casting";
+export type MarketingTab = "community" | "talent" | "casting";
 
 export const JOIN_BETA_CTA = { label: "Sign up", href: "/signup" } as const;
-export const INDUSTRY_PRO_SIGNUP_CTA = { label: "Sign up", href: "/talent-buyers/signup" } as const;
+export const INDUSTRY_PRO_SIGNUP_CTA = { label: "Sign up", href: "/signup" } as const;
+
+export const marketingAudienceTabs: { id: MarketingTab; label: string; href: string }[] = [
+  { id: "community", label: "Community", href: "/community" },
+  { id: "talent", label: "Talent", href: "/for-talent" },
+  { id: "casting", label: "Industry Professionals", href: "/for-casting" },
+];
 
 /** Root landing and other pages where no audience tab is selected. */
 export type MarketingHeaderTab = MarketingTab | null;
@@ -53,7 +59,7 @@ export type AudiencePageContent = {
   trustTitle: string;
   trustPoints: string[];
   faq: FaqItem[];
-  pricing: AudiencePricingContent;
+  pricing?: AudiencePricingContent;
 };
 
 export const talentPageContent: AudiencePageContent = {
@@ -228,4 +234,90 @@ export const castingPageContent: AudiencePageContent = {
     },
   ],
   pricing: industryPricingContent,
+};
+
+export const communityPageContent: AudiencePageContent = {
+  eyebrow: "Community",
+  headline: "Find the rooms, classes, and programs around you.",
+  summary:
+    "Motiion helps the dance community discover events, take class, and join programs—so showing up and staying connected does not depend on a group chat or a flyer.",
+  heroCtas: {
+    primary: JOIN_BETA_CTA,
+  },
+  benefitsTitle: "Why the community is on Motiion",
+  benefits: [
+    {
+      title: "Events nearby",
+      description:
+        "See live appearances, activations, and gatherings in one place instead of piecing nights together across stories and texts.",
+      icon: "sparkles",
+      featured: true,
+    },
+    {
+      title: "Classes and training",
+      description:
+        "Find open classes, sessions, and studios when you want to train—not only when someone happens to post.",
+      icon: "users",
+      featured: true,
+    },
+    {
+      title: "Programs that develop you",
+      description:
+        "Discover intensives, workshops, and longer programs without hunting through a dozen organizers.",
+      icon: "images",
+    },
+    {
+      title: "One place to follow along",
+      description:
+        "Keep events, classes, and programs in the same network the industry already uses to find dancers.",
+      icon: "layout-dashboard",
+    },
+    {
+      title: "Show up with context",
+      description:
+        "RSVP and get the details that matter—who is hosting, where it is, and what to expect—before you walk in.",
+      icon: "mail",
+    },
+    {
+      title: "Grow with the scene",
+      description:
+        "Stay connected to the people and rooms that shape your practice, whether you are just starting or already working.",
+      icon: "user-circle",
+    },
+  ],
+  workflowTitle: "How it works for the community",
+  workflowSteps: [
+    "Create a free Motiion account and tell us you are here for the community.",
+    "Browse events, classes, and programs happening around you.",
+    "Save what you care about and get the details before you go.",
+    "Keep coming back as the calendar, the rooms, and the people change.",
+  ],
+  workflowAside: "blank",
+  trustTitle: "Built for people who show up",
+  trustPoints: [
+    "Made for dancers, students, and fans who want a clearer way into the scene.",
+    "Keeps community discovery on the same platform hiring teams already use.",
+    "Grows from events and class into a longer relationship with the work.",
+  ],
+  faq: [
+    {
+      question: "Who is the community experience for?",
+      answer:
+        "Anyone who wants to find dance events, classes, and programs—students, working dancers, and people who love the scene but are not hiring or building a booking profile yet.",
+    },
+    {
+      question: "How is this different from a talent profile?",
+      answer:
+        "Community is for discovery and showing up. A talent profile is for getting hired. You can start in the community and add a professional profile later if you want to be discovered for work.",
+    },
+    {
+      question: "Do I need an industry account to browse?",
+      answer:
+        "No. Community accounts are for finding events, classes, and programs—not for running castings or hiring.",
+    },
+    {
+      question: "Is there a cost to join?",
+      answer: "You can create a free community account and start exploring from there.",
+    },
+  ],
 };

@@ -1,39 +1,72 @@
 @import "tailwindcss";
 @import "../components/landing/marketing-atmosphere.css";
 
-/* docs/design.md — dark-first design system tokens */
+/* Product design tokens — perceptual parity with iOS MotiionDesignSystem (dark product shell). */
 :root {
   --ds-background: #0a0a0a;
   --ds-surface: #151515;
+  --ds-surface-default: #111111;
+  --ds-surface-high: #000000;
+  --ds-surface-low: #1e1e1e;
   --ds-surface-raised: #1e1e1e;
+  --ds-surface-tint: #42424266;
+  --ds-surface-accent: #001f29;
   --ds-overlay: #000000;
   --ds-border: #262626;
+  --ds-border-low: #323232;
   --ds-border-strong: #3a3a3a;
   --ds-primary: #fafafa;
   --ds-on-primary: #0a0a0a;
   --ds-accent: #00aacc;
+  --ds-accent-bright: #00d4f0;
   --ds-on-accent: #042028;
   --ds-accent-soft: #0a2a32;
   --ds-on-background: #fafafa;
   --ds-on-surface: #eaeaea;
+  --ds-text-default: #ffffff;
+  --ds-text-low: #dbdbdb;
+  --ds-text-disabled: #646464;
   --ds-muted: #8a8a8a;
   --ds-subtle: #5a5a5a;
   --ds-success: #3fb950;
   --ds-warning: #e3a008;
   --ds-error: #f04438;
   --ds-info: #4a9eff;
-  --ds-radius-sm: 6px;
-  --ds-radius-md: 8px;
-  --ds-radius-lg: 14px;
-  --ds-radius-xl: 20px;
+  /* iOS MotiionRadius: sm=8, md=12, card=16, button=14, sheet=26 */
+  --ds-radius-sm: 8px;
+  --ds-radius-md: 12px;
+  --ds-radius-button: 14px;
+  --ds-radius-lg: 16px;
+  --ds-radius-card: 16px;
+  --ds-radius-sheet: 26px;
+  --ds-radius-xl: 26px;
+  --ds-radius-full: 9999px;
+  /* iOS MotiionSpacing: xs=4 … xxxl=40 */
+  --ds-space-xs: 4px;
+  --ds-space-sm: 8px;
+  --ds-space-md: 12px;
+  --ds-space-lg: 16px;
+  --ds-space-xl: 24px;
+  --ds-space-xxl: 32px;
+  --ds-space-xxxl: 40px;
   --ds-space-1: 4px;
   --ds-space-2: 8px;
   --ds-space-3: 12px;
   --ds-space-4: 16px;
   --ds-space-5: 24px;
   --ds-space-6: 32px;
-  --ds-space-7: 48px;
+  --ds-space-7: 40px;
   --ds-space-8: 64px;
+  --ds-control-height: 44px;
+  --ds-control-height-compact: 40px;
+  --ds-font-product: var(--font-montserrat), var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Signed-in talent / industry product shell */
+.theme-product {
+  font-family: var(--ds-font-product);
+  background: var(--ds-background);
+  color: var(--ds-text-default);
 }
 
 :root {
@@ -60,8 +93,8 @@
   --radius-button: 9999px;
   --radius-field: 12px;
   --radius-chip: 9999px;
-  --radius-card: 14px;
-  --radius-panel: 18px;
+  --radius-card: var(--ds-radius-card);
+  --radius-panel: var(--ds-radius-sheet);
   --surface-card: #ffffff;
   --surface-muted: color-mix(in oklab, var(--tone), white 35%);
   --surface-panel: color-mix(in oklab, var(--paper), var(--tone) 28%);
@@ -122,6 +155,7 @@
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --font-brand: var(--font-inter), var(--font-geist-sans), system-ui, sans-serif;
+  --font-product: var(--font-montserrat), var(--font-geist-sans), system-ui, sans-serif;
   --radius-sm: var(--ds-radius-sm);
   --radius-md: var(--ds-radius-md);
   --radius-lg: var(--ds-radius-lg);

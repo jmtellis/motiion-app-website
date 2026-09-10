@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import ActivityPageClient from "@/app/activity/[id]/activity-page-client";
+import { resolveExternalTicketProvider } from "@/lib/external-ticket-provider";
 import { activityKindLabel, fetchPublicActivity } from "@/lib/publicActivity";
 
 type PageProps = {
@@ -57,10 +58,14 @@ export default async function ActivityPage({ params }: PageProps) {
     notFound();
   }
 
+  const ticketProvider = resolveExternalTicketProvider(activity.externalTicketUrl);
+
   return (
     <ActivityPageClient
       activity={activity}
       sharePath={`/activity/${encodeURIComponent(id)}`}
+      ticketProviderName={ticketProvider?.displayName ?? null}
+      ticketProviderLogoUrl={ticketProvider?.logoURL ?? null}
     />
   );
 }

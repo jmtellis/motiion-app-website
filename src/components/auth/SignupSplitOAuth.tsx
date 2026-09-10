@@ -36,7 +36,6 @@ export function SignupSplitOAuth({
     const redirectTo = buildOAuthRedirectUrl({
       flow,
       accountType: signupPath === "talent" ? "talent" : "lookingForTalent",
-      talentSubtype: signupPath === "talent" ? "dancer" : undefined,
       nonTalentType: signupPath === "hiring" ? "casting_director" : undefined,
     });
 

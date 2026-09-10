@@ -1,4 +1,4 @@
-export type TalentSubtype = "dancer" | "choreographer";
+export type TalentSubtype = "dancer" | "choreographer" | "instructor";
 
 export type ProfileHighlight = {
   title: string;

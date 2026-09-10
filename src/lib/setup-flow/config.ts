@@ -3,7 +3,7 @@ import { roleOptions } from "@/lib/talent-buyers/onboarding";
 
 export type SetupFlowAudience = "talent" | "industry";
 
-export type SetupFlowPhase = "signup" | "onboarding" | "finishing" | "complete";
+export type SetupFlowPhase = "signup" | "checkEmail" | "onboarding" | "finishing" | "complete";
 
 type SetupFlowAudienceConfig = {
   audienceLabel: string;
@@ -14,37 +14,41 @@ type SetupFlowAudienceConfig = {
 
 export const setupFlowConfig: Record<SetupFlowAudience, SetupFlowAudienceConfig> = {
   talent: {
-    audienceLabel: "Talent",
+    audienceLabel: "Motiion",
     headlines: {
-      signup: "Create your talent profile",
-      onboarding: "Build your talent profile",
+      signup: "Create your Motiion account",
+      checkEmail: "Check your email",
+      onboarding: "Set up your Motiion profile",
       finishing: "Finish your profile",
       complete: "You're ready to go",
     },
     subtexts: {
       signup:
-        "For dancers and choreographers. Build a living profile, get discovered by industry teams, and book work on Motiion.",
-      onboarding:
-        "Add the details that help casting teams and choreographers find you and book you for work.",
-      finishing: "Review everything, then start getting discovered on Motiion.",
-      complete: "Your talent profile is live. Get discovered and book work.",
+        "One account for talent, industry, and community. After you sign up, tell us what brings you to Motiion.",
+      checkEmail: "Open the confirmation link to continue setting up your account.",
+      onboarding: "Tell us what brings you to Motiion, then we’ll tailor the rest.",
+      finishing: "Review everything, then enter Motiion.",
+      complete: "Your Motiion account is ready.",
     },
     macroStepLabels: [
       "Create your account",
-      "Build your talent profile",
-      "Get discovered and book work",
+      "Tell us what brings you here",
+      "Enter Motiion",
     ],
   },
   industry: {
     audienceLabel: "Industry Professional",
     headlines: {
-      signup: "Build your hiring workspace",
+      signup: "Create your Motiion account",
+      checkEmail: "Check your email",
       onboarding: "Set up your workspace",
       finishing: "Finish your workspace",
       complete: "Start discovering talent",
     },
     subtexts: {
-      signup: "Discover talent, manage rosters, and run projects in one place.",
+      signup:
+        "One account for talent, industry, and community. After you sign up, tell us what brings you to Motiion.",
+      checkEmail: "Open the confirmation link to continue setting up your account.",
       onboarding: "A few details so we can tailor your workspace.",
       finishing: "Connect your setup, then start hiring.",
       complete: "Your workspace is ready.",
@@ -82,7 +86,7 @@ export const industryOnboardingCoverCopy: Record<
 
 export const signupSplitMarquees = {
   talent: {
-    segments: ["Choreographers", "Dancers"],
+    segments: ["Dancers", "Choreographers", "Industry", "Community"],
     direction: "right" as const,
   },
   industry: {
@@ -107,11 +111,12 @@ export function resolveSetupFlowPhase({
   microStep,
   isSuccess = false,
 }: {
-  surface: "signup" | "onboarding";
+  surface: "signup" | "checkEmail" | "onboarding";
   microStep?: string;
   isSuccess?: boolean;
 }): SetupFlowPhase {
   if (surface === "signup") return "signup";
+  if (surface === "checkEmail") return "checkEmail";
   if (isSuccess) return "complete";
 
   if (
@@ -133,7 +138,7 @@ export function buildMacroSteps(
 ): SignupSplitStep[] {
   const { macroStepLabels } = setupFlowConfig[audience];
   const statuses: SignupSplitStep["status"][] =
-    phase === "signup"
+    phase === "signup" || phase === "checkEmail"
       ? ["active", "pending", "pending"]
       : phase === "onboarding"
         ? ["completed", "active", "pending"]
@@ -155,7 +160,7 @@ export function getSetupFlowShellProps({
   isSuccess = false,
 }: {
   audience: SetupFlowAudience;
-  surface: "signup" | "onboarding";
+  surface: "signup" | "checkEmail" | "onboarding";
   microStep?: string;
   isSuccess?: boolean;
 }) {
@@ -165,24 +170,24 @@ export function getSetupFlowShellProps({
     audience === "industry" && surface === "onboarding" && microStep
       ? industryOnboardingCoverCopy[microStep]
       : undefined;
+  const isAccountSurface = surface === "signup" || surface === "checkEmail";
 
   return {
     headline: industryCover?.headline ?? config.headlines[phase],
     subtext: industryCover?.subtext ?? config.subtexts[phase],
     steps: buildMacroSteps(audience, phase),
     showSteps: false,
-    showNav: surface === "signup",
-    showWordmark: surface === "signup",
-    mediaCover: surface === "signup",
-    marquee: surface === "signup" ? signupSplitMarquees[audience] : undefined,
+    showNav: isAccountSurface,
+    showWordmark: isAccountSurface,
+    mediaCover: isAccountSurface,
+    marquee: isAccountSurface ? signupSplitMarquees[audience] : undefined,
   };
 }
 
 export function getLoginShellProps() {
   return {
     headline: "Welcome back",
-    subtext:
-      "Sign in to your talent profile or industry workspace to pick up where you left off.",
+    subtext: "Sign in to pick up where you left off on Motiion.",
     steps: [] as SignupSplitStep[],
     showSteps: false,
     showNav: true,

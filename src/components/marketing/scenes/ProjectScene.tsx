@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { FileText, LayoutGrid } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
 
 import { MarketingScene, type MarketingSceneProps } from "@/components/marketing/MarketingScene";
 import { MockArtboard } from "@/components/marketing/MockArtboard";
@@ -19,10 +19,11 @@ const STEPS = [
   { at: 5600, set: "hold" },
 ];
 
-const TABS = [
+const HUB_TABS = ["All Projects", "Active", "Archived"];
+const WORKSPACE_TABS = [
   { id: "overview", label: "Overview" },
   { id: "files", label: "Files", badge: 4 },
-  { id: "dates", label: "Tour Dates" },
+  { id: "tour-dates", label: "Tour Dates" },
   { id: "cities", label: "Cities" },
   { id: "rehearsals", label: "Rehearsals" },
   { id: "travel", label: "Travel" },
@@ -31,13 +32,13 @@ const TABS = [
 const FILES = [
   { title: "Casting brief.pdf", kind: "pdf" as const, url: null },
   {
-    title: "Look references",
+    title: "Look references.jpg",
     kind: "image" as const,
     url: demoDancers[0]?.imageUrl ?? null,
   },
   { title: "Schedule.xlsx", kind: "sheet" as const, url: null },
   {
-    title: "Wardrobe notes",
+    title: "Wardrobe notes.jpg",
     kind: "image" as const,
     url: demoDancers[1]?.imageUrl ?? null,
   },
@@ -55,14 +56,57 @@ export function ProjectScene({ play, reduceMotion = false, playKey }: MarketingS
   return (
     <MarketingScene>
       <MockArtboard>
-        <header className="md-mock__chrome">
-          <p className="md-mock__title">{showWorkspace ? active?.title : "Projects"}</p>
+        <header className="md-mock__chrome md-mock__chrome--stack">
           {!showWorkspace ? (
-            <span className="md-mock__pill">
-              <LayoutGrid className="size-3.5" aria-hidden />
-              Grid
-            </span>
-          ) : null}
+            <>
+              <div className="md-mock__segment" aria-hidden>
+                <span className="md-mock__segment-item">Focus</span>
+                <span className="md-mock__segment-item md-mock__segment-item--active">Browse</span>
+              </div>
+              <div className="md-mock__chrome-row">
+                <div className="md-mock__underline-tabs">
+                  {HUB_TABS.map((tab, index) => (
+                    <span
+                      key={tab}
+                      className={`md-mock__underline-tab${index === 0 ? " md-mock__underline-tab--active" : ""}`}
+                    >
+                      {tab}
+                    </span>
+                  ))}
+                </div>
+                <span className="md-mock__btn md-mock__btn--sm">
+                  <Plus className="size-3.5" aria-hidden />
+                  Create
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="md-mock__chrome-row">
+                <div className="md-mock__project-chrome-identity">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={active?.coverUrl} alt="" />
+                  <div>
+                    <p className="md-mock__title">{active?.title}</p>
+                    <p className="md-mock__eyebrow">{active?.type}</p>
+                  </div>
+                </div>
+              </div>
+              <nav className="md-mock__underline-tabs md-mock__underline-tabs--workspace">
+                {WORKSPACE_TABS.map((tab) => (
+                  <span
+                    key={tab.id}
+                    className={`md-mock__underline-tab${
+                      tab.id === activeTab ? " md-mock__underline-tab--active" : ""
+                    }`}
+                  >
+                    {tab.label}
+                    {tab.badge ? <span className="md-mock__badge">{tab.badge}</span> : null}
+                  </span>
+                ))}
+              </nav>
+            </>
+          )}
         </header>
 
         <div className="md-mock__body">
@@ -76,33 +120,8 @@ export function ProjectScene({ play, reduceMotion = false, playKey }: MarketingS
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.4, ease: EASE }}
               >
-                <nav className="md-mock__workspace-tabs" aria-label="Project sections">
-                  {TABS.map((tab) => (
-                    <span
-                      key={tab.id}
-                      className={`md-mock__workspace-tab${
-                        tab.id === activeTab ? " md-mock__workspace-tab--active" : ""
-                      }`}
-                    >
-                      {tab.label}
-                      {tab.badge ? <span className="md-mock__badge">{tab.badge}</span> : null}
-                    </span>
-                  ))}
-                </nav>
-
                 {!showFiles ? (
                   <>
-                    <article className="md-mock__project-card" style={{ maxWidth: 520 }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={active.coverUrl} alt="" />
-                      <div className="md-mock__project-card-body">
-                        <p className="md-mock__eyebrow">{active.type}</p>
-                        <h3>{active.title}</h3>
-                        <p>
-                          {active.client} · {active.talentCount} talent
-                        </p>
-                      </div>
-                    </article>
                     <dl className="md-mock__meta-row">
                       <div>
                         <dt>Type</dt>
@@ -116,35 +135,46 @@ export function ProjectScene({ play, reduceMotion = false, playKey }: MarketingS
                         <dt>Status</dt>
                         <dd>{active.status}</dd>
                       </div>
+                      <div>
+                        <dt>Talent</dt>
+                        <dd>{active.talentCount}</dd>
+                      </div>
                     </dl>
+                    <div className="md-mock__project-cover-wide">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={active.coverUrl} alt="" />
+                    </div>
                   </>
                 ) : (
-                  <div className="md-mock__files">
-                    {FILES.map((file, index) => (
-                      <motion.div
-                        key={file.title}
-                        className="md-mock__file"
-                        initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.35, delay: index * 0.06, ease: EASE }}
-                      >
+                  <>
+                    <div className="md-mock__files">
+                      {FILES.map((file, index) => (
+                        <motion.div
+                          key={file.title}
+                          className="md-mock__file"
+                          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.35, delay: index * 0.06, ease: EASE }}
+                        >
+                          <div className="md-mock__file-thumb">
+                            {file.kind === "image" && file.url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={file.url} alt="" />
+                            ) : (
+                              <FileText className="size-6" aria-hidden />
+                            )}
+                          </div>
+                          <p>{file.title}</p>
+                        </motion.div>
+                      ))}
+                      <div className="md-mock__file md-mock__file--add">
                         <div className="md-mock__file-thumb">
-                          {file.kind === "image" && file.url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={file.url} alt="" />
-                          ) : (
-                            <>
-                              <FileText className="size-5" aria-hidden />
-                              <span style={{ marginTop: 6 }}>
-                                {file.kind === "pdf" ? "PDF" : "XLSX"}
-                              </span>
-                            </>
-                          )}
+                          <Plus className="size-5" aria-hidden />
                         </div>
-                        <p>{file.title}</p>
-                      </motion.div>
-                    ))}
-                  </div>
+                        <p>Add attachment</p>
+                      </div>
+                    </div>
+                  </>
                 )}
               </motion.div>
             ) : (
@@ -163,14 +193,14 @@ export function ProjectScene({ play, reduceMotion = false, playKey }: MarketingS
                       highlight && index === 0 ? " md-mock__project-card--highlight" : ""
                     }`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={project.coverUrl} alt="" />
+                    <div className="md-mock__project-card-media">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={project.coverUrl} alt="" />
+                      <span>{project.type}</span>
+                    </div>
                     <div className="md-mock__project-card-body">
-                      <p className="md-mock__eyebrow">{project.type}</p>
                       <h3>{project.title}</h3>
-                      <p>
-                        {project.status} · Edited 2h ago
-                      </p>
+                      <p>Edited 2h ago</p>
                     </div>
                   </article>
                 ))}

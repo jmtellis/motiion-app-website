@@ -75,7 +75,12 @@ export function ProjectsHubView({
   const isEmpty = allProjects.length === 0;
   const hasVisibleProjects =
     viewMode === "browse" ? browseProjects.length > 0 : focusProjects.length > 0;
-  const focusProjectId = focusProjects[focusIndex]?.id ?? focusProjects[0]?.id ?? null;
+  const focusItem = focusProjects[focusIndex] ?? focusProjects[0] ?? null;
+  // File inbox attaches to project rows only — skip activity cards.
+  const focusProjectId =
+    focusItem && focusItem.workKind !== "activity" && focusItem.workKind !== "job"
+      ? focusItem.id
+      : null;
 
   const openCreatePicker = useCallback(() => {
     setCreatePickerOpen(true);
@@ -124,7 +129,7 @@ export function ProjectsHubView({
           className="buyer-chrome-bar__cta projects-hub__new-project"
           onClick={openCreatePicker}
         >
-          New project
+          Create
         </button>
       </div>
 

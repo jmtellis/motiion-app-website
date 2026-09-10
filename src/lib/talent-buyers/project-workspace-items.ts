@@ -52,7 +52,7 @@ export function buildProjectWorkspaceItems(
     updatedAt: activity.dateTime,
     coverImageUrl: activity.coverImageUrl ?? null,
     subtitle: `${activity.attendeeCount} attendee${activity.attendeeCount === 1 ? "" : "s"}`,
-    href: `/calendar`,
+    href: `/calendar/${activity.id}`,
   }));
 
   return [...castingItems, ...activityItems].sort(

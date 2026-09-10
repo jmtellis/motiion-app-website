@@ -2,16 +2,13 @@
 
 import { useRouter } from "next/navigation";
 
-import { projectCreatePath } from "@/lib/talent-buyers/project-create-registry";
-import type { ProjectType } from "@/lib/talent-buyers/project-types";
+import {
+  BUYER_CREATE_INTENT_OPTIONS,
+  createIntentPath,
+} from "@/lib/talent-buyers/create-intent";
 
 import type { ProjectsViewMode } from "./ProjectsViewModeContext";
 import "./buyer-empty.css";
-
-const EXAMPLE_PROJECTS: Array<{ type: ProjectType; key: string }> = [
-  { type: "casting", key: "casting" },
-  { type: "event", key: "event" },
-];
 
 function FocusSkeletonCard() {
   return (
@@ -40,31 +37,23 @@ function BrowseEmptyState() {
 
   return (
     <div className="buyer-empty">
-      <ul className="buyer-empty__grid" aria-label="Example project layout">
-        {EXAMPLE_PROJECTS.map((example) => (
-          <li key={example.key}>
+      <ul className="buyer-empty__grid" aria-label="Create a casting, event, class, or session">
+        {BUYER_CREATE_INTENT_OPTIONS.map((option) => (
+          <li key={option.value}>
             <button
               type="button"
               className="buyer-empty__card buyer-empty__card--interactive"
-              onClick={() => router.push(projectCreatePath(example.type))}
-              aria-label={`Start a ${example.type.replaceAll("_", " ")} project`}
+              onClick={() => router.push(createIntentPath(option.value))}
+              aria-label={`Start a ${option.label.toLowerCase()}`}
             >
               <div className="buyer-empty__card-media" aria-hidden>
                 <span className="buyer-empty__bone buyer-empty__bone--chip" />
               </div>
-              <div className="buyer-empty__card-body" aria-hidden>
-                <span className="buyer-empty__bone buyer-empty__bone--type" />
-                <span className="buyer-empty__bone buyer-empty__bone--title" />
-                <div className="buyer-empty__card-meta">
-                  <div className="buyer-empty__card-meta-col">
-                    <span className="buyer-empty__bone buyer-empty__bone--label" />
-                    <span className="buyer-empty__bone buyer-empty__bone--value" />
-                  </div>
-                  <div className="buyer-empty__card-meta-col">
-                    <span className="buyer-empty__bone buyer-empty__bone--label" />
-                    <span className="buyer-empty__bone buyer-empty__bone--value" />
-                  </div>
-                </div>
+              <div className="buyer-empty__card-body">
+                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-white/45">
+                  {option.label}
+                </span>
+                <p className="mt-2 text-sm text-white/55">{option.description}</p>
               </div>
             </button>
           </li>
@@ -91,12 +80,12 @@ function FocusEmptyState({ onCreateProject }: { onCreateProject: () => void }) {
                 onClick={onCreateProject}
               >
                 <span className="projects-hub__focus-empty-cta">
-                  <span className="projects-hub__focus-empty-headline">Your next project</span>
+                  <span className="projects-hub__focus-empty-headline">Create something</span>
                   <span className="projects-hub__focus-empty-copy">
-                    Cast it, staff it, or run the room — give it a name and bring it into focus.
+                    Start a casting, event, class, or session — one object, one workspace.
                   </span>
                   <span className="buyer-chrome-bar__cta projects-hub__focus-empty-button">
-                    Create project
+                    Create
                   </span>
                 </span>
               </button>

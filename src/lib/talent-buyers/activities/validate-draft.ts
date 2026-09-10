@@ -77,17 +77,21 @@ export function validateActivityDraft(draft: ActivityDraft): string | null {
   }
 
   if (draft.type === "event") {
-    if (!isOneOf(draft.subcategory, EVENT_TYPES)) {
-      return "Pick an event type.";
+    if (draft.subcategory && !isOneOf(draft.subcategory, EVENT_TYPES)) {
+      return "Pick a valid event type.";
     }
-    if (draft.eventDays.length < 1) return "Add at least one event day.";
+    if (draft.eventDays.length < 1) return "Add a date and time for the event.";
     for (const day of draft.eventDays) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(day.dayDate)) return "Each day needs a valid date.";
       if (!/^\d{2}:\d{2}/.test(day.startTime) || !/^\d{2}:\d{2}/.test(day.endTime)) {
         return "Each day needs start and end times.";
       }
     }
-    if (draft.isPaid) {
+    const ticketUrl = draft.externalTicketUrl.trim();
+    if (ticketUrl && !/^https?:\/\//i.test(ticketUrl)) {
+      return "Ticket link must start with http:// or https://.";
+    }
+    if (draft.sellTicketsOnMotiion && draft.isPaid) {
       const validTickets = draft.ticketOptions.filter(
         (t) => t.label.trim().length > 0 && t.priceAmount >= 0.5,
       );

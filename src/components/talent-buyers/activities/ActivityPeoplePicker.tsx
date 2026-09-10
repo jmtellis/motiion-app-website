@@ -4,20 +4,24 @@ import { useEffect, useState, useTransition } from "react";
 import { Search, X } from "lucide-react";
 
 import { searchActivityPeople } from "@/app/(buyer-app)/(paid)/calendar/activity-people-actions";
+import { searchFeaturedTalentPeople } from "@/app/(buyer-app)/(paid)/calendar/featured-talent-actions";
 import type { DraftPersonRef } from "@/lib/talent-buyers/activities/types";
 
 export function ActivityPeoplePicker({
   selected,
   onChange,
   label = "People",
-  placeholder = "Search by name or username",
+  placeholder = "Search Motiion members by name or username",
   emptyHint = "No one selected yet.",
+  talentOnly = false,
 }: {
   selected: DraftPersonRef[];
   onChange: (people: DraftPersonRef[]) => void;
   label?: string;
   placeholder?: string;
   emptyHint?: string;
+  /** When true, only talent account profiles are returned. */
+  talentOnly?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<DraftPersonRef[]>([]);
@@ -32,7 +36,9 @@ export function ActivityPeoplePicker({
     }
     const handle = window.setTimeout(() => {
       startTransition(async () => {
-        const response = await searchActivityPeople(trimmed);
+        const response = talentOnly
+          ? await searchFeaturedTalentPeople(trimmed)
+          : await searchActivityPeople(trimmed);
         if (!response.ok) {
           setError(response.error);
           setResults([]);
@@ -44,7 +50,7 @@ export function ActivityPeoplePicker({
       });
     }, 220);
     return () => window.clearTimeout(handle);
-  }, [query, selected]);
+  }, [query, selected, talentOnly]);
 
   function addPerson(person: DraftPersonRef) {
     if (selected.some((row) => row.userId === person.userId)) return;

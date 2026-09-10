@@ -11,18 +11,19 @@ import type {
   ProfileVisual,
   PublicTalentProfile,
 } from "@/types/public";
-import { TalentCreditsManager } from "@/components/talent/TalentCreditsManager";
+import { ExperiencesCreditsManager } from "@/components/talent/ExperiencesCreditsManager";
+import { PortfolioEditProfile } from "@/components/talent/PortfolioEditProfile";
 
-type ProfileTab = "about" | "resume" | "credits" | "visuals";
+type ProfileTab = "about" | "resume" | "visuals";
 
 const TABS: { id: ProfileTab; label: string }[] = [
   { id: "about", label: "About" },
   { id: "resume", label: "Resume" },
-  { id: "credits", label: "Credits" },
   { id: "visuals", label: "Visuals" },
 ];
 
-const monoLabelClass = "font-mono text-xs font-medium tracking-[0.08em] text-[#8a8a8a] uppercase";
+const monoLabelClass =
+  "font-mono text-xs font-medium tracking-[0.08em] text-[var(--ds-muted)] uppercase";
 
 export function PortfolioView({ profile }: { profile: PublicTalentProfile }) {
   const [tab, setTab] = useState<ProfileTab>("about");
@@ -36,34 +37,37 @@ export function PortfolioView({ profile }: { profile: PublicTalentProfile }) {
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-col gap-6 border-b border-[#262626] pb-6 sm:flex-row sm:items-end sm:justify-between">
+      <header className="flex flex-col gap-6 border-b border-[var(--ds-border)] pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex gap-5">
           <Headshot url={headshot} name={displayName} />
           <div className="min-w-0">
-            <p className="font-mono text-xs font-medium tracking-[0.08em] text-[#5a5a5a] uppercase">
+            <p className="font-mono text-xs font-medium tracking-[0.08em] text-[var(--ds-subtle)] uppercase">
               Portfolio
             </p>
-            <h1 className="mt-1.5 text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.02em] text-[#fafafa]">
+            <h1 className="mt-1.5 text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.02em] text-[var(--ds-text-default)]">
               {displayName}
             </h1>
-            <p className="mt-1.5 font-mono text-xs text-[#5a5a5a]">
+            <p className="mt-1.5 font-mono text-xs text-[var(--ds-subtle)]">
               {[profile.username ? `@${profile.username}` : null, profile.location]
                 .filter(Boolean)
                 .join("  ·  ")}
             </p>
           </div>
         </div>
-        {profile.username ? (
-          <Link
-            href={`/profile/${profile.username}`}
-            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-[#262626] bg-[#1e1e1e] px-4 text-sm font-medium text-[#eaeaea] transition-colors hover:bg-[#2a2a2a]"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            View public page
-            <ArrowUpRight className="size-3.5 text-[#8a8a8a]" aria-hidden />
-          </Link>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          <PortfolioEditProfile profile={profile} />
+          {profile.username ? (
+            <Link
+              href={`/profile/${profile.username}`}
+              className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-[var(--ds-border)] bg-[var(--ds-surface-raised)] px-4 text-sm font-medium text-[var(--ds-on-surface)] transition-colors hover:bg-[var(--ds-border-strong)]"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View public page
+              <ArrowUpRight className="size-3.5 text-[var(--ds-muted)]" aria-hidden />
+            </Link>
+          ) : null}
+        </div>
       </header>
 
       <nav aria-label="Portfolio sections" className="flex flex-wrap gap-1">
@@ -74,8 +78,8 @@ export function PortfolioView({ profile }: { profile: PublicTalentProfile }) {
             onClick={() => setTab(item.id)}
             className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
               tab === item.id
-                ? "bg-[#1e1e1e] text-[#fafafa]"
-                : "text-[#8a8a8a] hover:bg-[#151515] hover:text-[#eaeaea]"
+                ? "bg-[var(--ds-surface-raised)] text-[var(--ds-text-default)]"
+                : "text-[var(--ds-muted)] hover:bg-[var(--ds-surface)] hover:text-[var(--ds-on-surface)]"
             }`}
             aria-pressed={tab === item.id}
           >
@@ -97,14 +101,39 @@ export function PortfolioView({ profile }: { profile: PublicTalentProfile }) {
 
       {tab === "about" ? <AboutPanel profile={profile} styleTags={styleTags} /> : null}
       {tab === "resume" ? (
-        <ResumePanel
-          experiences={profile.experiences ?? []}
-          training={profile.training ?? []}
-          resumeUrl={profile.resume_url}
-        />
+        <div className="space-y-8">
+          <ExperiencesCreditsManager
+            initialExperiences={(profile.experiences ?? []).map((item, index) => ({
+              id: `seed_${index}`,
+              title: item.title,
+              role: item.role ?? undefined,
+              credits: item.credits ?? undefined,
+            }))}
+          />
+          <ResumePanel
+            experiences={profile.experiences ?? []}
+            training={profile.training ?? []}
+            resumeUrl={profile.resume_url}
+            hideExperiences
+          />
+        </div>
       ) : null}
-      {tab === "credits" ? <TalentCreditsManager /> : null}
-      {tab === "visuals" ? <VisualsPanel visuals={orderVisuals(profile.profile_visuals ?? [])} /> : null}
+      {tab === "visuals" ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-[var(--ds-muted)]">
+              Manage headshots and media from Complete Profile for now.
+            </p>
+            <Link
+              href="/profile/setup"
+              className="text-sm font-medium text-[var(--ds-accent)] hover:opacity-90"
+            >
+              Manage media
+            </Link>
+          </div>
+          <VisualsPanel visuals={orderVisuals(profile.profile_visuals ?? [])} />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -205,10 +234,12 @@ function ResumePanel({
   experiences,
   training,
   resumeUrl,
+  hideExperiences = false,
 }: {
   experiences: ProfileExperience[];
   training: PublicTalentProfile["training"];
   resumeUrl: string | null;
+  hideExperiences?: boolean;
 }) {
   return (
     <section className="space-y-6">
@@ -217,46 +248,57 @@ function ResumePanel({
           href={resumeUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-10 items-center gap-1.5 rounded-full border border-[#262626] bg-[#1e1e1e] px-4 text-sm font-medium text-[#eaeaea] transition-colors hover:bg-[#2a2a2a]"
+          className="inline-flex h-10 items-center gap-1.5 rounded-full border border-[var(--ds-border)] bg-[var(--ds-surface-raised)] px-4 text-sm font-medium text-[var(--ds-on-surface)] transition-colors hover:bg-[var(--ds-border-strong)]"
         >
           Open resume PDF
-          <ArrowUpRight className="size-3.5 text-[#8a8a8a]" aria-hidden />
+          <ArrowUpRight className="size-3.5 text-[var(--ds-muted)]" aria-hidden />
         </a>
       ) : null}
-      <div className="rounded-[14px] border border-[#262626] bg-[#151515] p-6">
-        <h2 className={monoLabelClass}>Experience</h2>
-        {experiences.length ? (
-          <ul className="mt-4 divide-y divide-[#262626]">
-            {experiences.map((item, index) => (
-              <li key={`${item.title}-${index}`} className="py-4 first:pt-0 last:pb-0">
-                <p className="text-sm font-medium text-[#fafafa]">{item.title}</p>
-                {item.role ? <p className="mt-0.5 text-sm text-[#8a8a8a]">{item.role}</p> : null}
-                {item.credits ? <p className="mt-1 text-sm text-[#8a8a8a]">{item.credits}</p> : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-3 text-sm text-[#5a5a5a]">No credits added yet.</p>
-        )}
-      </div>
-      <div className="rounded-[14px] border border-[#262626] bg-[#151515] p-6">
+      {!hideExperiences ? (
+        <div className="rounded-[var(--ds-radius-card)] border border-[var(--ds-border)] bg-[var(--ds-surface)] p-6">
+          <h2 className={monoLabelClass}>Experience</h2>
+          {experiences.length ? (
+            <ul className="mt-4 divide-y divide-[var(--ds-border)]">
+              {experiences.map((item, index) => (
+                <li key={`${item.title}-${index}`} className="py-4 first:pt-0 last:pb-0">
+                  <p className="text-sm font-medium text-[var(--ds-text-default)]">{item.title}</p>
+                  {item.role ? (
+                    <p className="mt-0.5 text-sm text-[var(--ds-muted)]">{item.role}</p>
+                  ) : null}
+                  {item.credits ? (
+                    <p className="mt-1 text-sm text-[var(--ds-muted)]">{item.credits}</p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-[var(--ds-subtle)]">No credits added yet.</p>
+          )}
+        </div>
+      ) : null}
+      <div className="rounded-[var(--ds-radius-card)] border border-[var(--ds-border)] bg-[var(--ds-surface)] p-6">
         <h2 className={monoLabelClass}>Training</h2>
         {training?.length ? (
-          <ul className="mt-4 divide-y divide-[#262626]">
+          <ul className="mt-4 divide-y divide-[var(--ds-border)]">
             {training.map((item, index) => (
-              <li key={`${item.title ?? item.organization ?? "training"}-${index}`} className="py-3 first:pt-0 last:pb-0">
-                <p className="text-sm font-medium text-[#fafafa]">
+              <li
+                key={`${item.title ?? item.organization ?? "training"}-${index}`}
+                className="py-3 first:pt-0 last:pb-0"
+              >
+                <p className="text-sm font-medium text-[var(--ds-text-default)]">
                   {item.title ?? item.organization ?? "Training"}
                 </p>
                 {item.organization && item.title ? (
-                  <p className="mt-0.5 text-sm text-[#8a8a8a]">{item.organization}</p>
+                  <p className="mt-0.5 text-sm text-[var(--ds-muted)]">{item.organization}</p>
                 ) : null}
-                {item.year ? <p className="mt-0.5 font-mono text-xs text-[#5a5a5a]">{item.year}</p> : null}
+                {item.year ? (
+                  <p className="mt-0.5 font-mono text-xs text-[var(--ds-subtle)]">{item.year}</p>
+                ) : null}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="mt-3 text-sm text-[#5a5a5a]">No training listed yet.</p>
+          <p className="mt-3 text-sm text-[var(--ds-subtle)]">No training listed yet.</p>
         )}
       </div>
     </section>

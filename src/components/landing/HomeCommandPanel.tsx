@@ -6,8 +6,9 @@ import { ArrowUpRight } from "lucide-react";
 import { HeroSearchBar } from "@/components/landing/HeroSearchBar";
 
 const quickPaths = [
+  { label: "Community", href: "/community" },
   { label: "For talent", href: "/for-talent" },
-  { label: "For casting", href: "/for-casting" },
+  { label: "For industry", href: "/for-casting" },
   { label: "Browse talent", href: "/search" },
 ] as const;
 

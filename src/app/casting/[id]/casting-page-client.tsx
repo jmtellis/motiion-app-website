@@ -189,7 +189,11 @@ export default function CastingPageClient({ casting }: { casting: PublicCasting 
         ) : null}
       </article>
 
-      <OpenInAppBar href={openInAppPath} label="Open in the Motiion app" />
+      <OpenInAppBar
+        href={openInAppPath}
+        label="Open in Motiion"
+        hint="Download Motiion to submit and track casting opportunities."
+      />
 
       {showActionBar ? (
         <div className="casting-submit-bar">

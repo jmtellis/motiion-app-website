@@ -446,18 +446,20 @@ export const PROJECT_WORKSPACE_CONFIG: Record<ProjectType, ProjectWorkspaceConfi
       item("staffing", "Staffing", Briefcase),
     ],
     quickActions: [
-      { id: "add-schedule-item", label: "Add schedule item", action: { kind: "timeline-item" } },
+      {
+        id: "create-showcase-event",
+        label: "Create showcase event",
+        description: "Tickets, leads, guests, and check-in (free)",
+        action: { kind: "navigate", href: "calendar-new-event" },
+      },
       { id: "build-run-of-show", label: "Build run of show", action: { kind: "placeholder" } },
       { id: "add-venue", label: "Add venue details", action: { kind: "placeholder" } },
-      { id: "invite-guest", label: "Invite guest", action: { kind: "add-talent" } },
-      { id: "create-check-in", label: "Create check-in link", action: { kind: "placeholder" } },
-      { id: "assign-talent", label: "Assign talent or staff", action: { kind: "add-talent" } },
       { id: "add-timeline-item", label: "Add activity", action: { kind: "timeline-item" } },
     ],
     emptyStates: {
       "event-details": {
         title: "No event details yet",
-        description: "Capture the concept, timing, and goals for this event.",
+        description: "Capture the concept, timing, and goals for this event project.",
         actionLabel: "Add details",
       },
       "run-of-show": {
@@ -471,21 +473,25 @@ export const PROJECT_WORKSPACE_CONFIG: Record<ProjectType, ProjectWorkspaceConfi
         actionLabel: "Add venue details",
       },
       guests: {
-        title: "No guests yet",
-        description: "Invite guests or manage the guest list.",
-        actionLabel: "Invite guest",
-        actionId: "add-talent",
+        title: "This Event project is a legacy shell",
+        description:
+          "Guests, leads, and check-in live on the Event activity. Create one to continue — or open it from Projects if it already exists.",
+        actionLabel: "Create event",
+        actionId: "create-showcase-event",
       },
       "check-in": {
-        title: "No check-in yet",
-        description: "Create a check-in link for arrivals.",
-        actionLabel: "Create check-in link",
+        title: "This Event project is a legacy shell",
+        description:
+          "Check-in runs on the Event activity organizer page after you create and publish the event.",
+        actionLabel: "Create event",
+        actionId: "create-showcase-event",
       },
       staffing: {
-        title: "No staffing assigned",
-        description: "Assign talent and staff roles for the event.",
-        actionLabel: "Assign talent or staff",
-        actionId: "add-talent",
+        title: "This Event project is a legacy shell",
+        description:
+          "Invite leads on the Event activity (Leads tab) by Motiion name — free on every plan.",
+        actionLabel: "Create event",
+        actionId: "create-showcase-event",
       },
     },
   },

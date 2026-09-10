@@ -14,7 +14,7 @@ import {
   createDefaultPromoCode,
   createLocalId,
 } from "@/lib/talent-buyers/activities/defaults";
-import type { ActivityDraft } from "@/lib/talent-buyers/activities/types";
+import type { ActivityDraft, DraftPersonRef } from "@/lib/talent-buyers/activities/types";
 
 export function ActivityCoverField({
   draft,
@@ -240,6 +240,109 @@ export function PromosStep({
   );
 }
 
+export function FeaturedTalentStep({
+  draft,
+  onChange,
+}: {
+  draft: ActivityDraft;
+  onChange: (draft: ActivityDraft) => void;
+}) {
+  const level1 = draft.featuredTalentInvites.filter((invite) => !invite.parentLocalId);
+  const selectedLevel1: DraftPersonRef[] = level1.map((invite) => ({
+    userId: invite.talentUserId,
+    displayName: invite.displayName,
+    headshotUrl: invite.headshotUrl,
+  }));
+
+  function setLevel1People(people: DraftPersonRef[]) {
+    const keptLocalIds = new Set(
+      level1
+        .filter((invite) => people.some((person) => person.userId === invite.talentUserId))
+        .map((invite) => invite.localId),
+    );
+    const existingByUser = new Map(level1.map((invite) => [invite.talentUserId, invite]));
+    const nextLevel1 = people.map((person) => {
+      const existing = existingByUser.get(person.userId);
+      if (existing) return existing;
+      return {
+        localId: createLocalId(),
+        talentUserId: person.userId,
+        displayName: person.displayName,
+        headshotUrl: person.headshotUrl,
+        parentLocalId: null,
+      };
+    });
+    const children = draft.featuredTalentInvites.filter(
+      (invite) => invite.parentLocalId && keptLocalIds.has(invite.parentLocalId),
+    );
+    onChange({ ...draft, featuredTalentInvites: [...nextLevel1, ...children] });
+  }
+
+  function setChildrenForParent(parentLocalId: string, people: DraftPersonRef[]) {
+    const others = draft.featuredTalentInvites.filter(
+      (invite) => invite.parentLocalId !== parentLocalId,
+    );
+    const children = people.map((person) => ({
+      localId: createLocalId(),
+      talentUserId: person.userId,
+      displayName: person.displayName,
+      headshotUrl: person.headshotUrl,
+      parentLocalId,
+    }));
+    onChange({ ...draft, featuredTalentInvites: [...others, ...children] });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="activity-create-wizard__panel space-y-2 text-sm text-white/60">
+        <p className="font-semibold text-white">Featured talent</p>
+        <p>
+          Invite talent who will be featured at this event. They must accept before appearing on
+          the public page. Featured talent can then invite supporting talent under them.
+        </p>
+      </div>
+
+      <ActivityPeoplePicker
+        label="Featured talent"
+        talentOnly
+        selected={selectedLevel1}
+        emptyHint="Search talent by name or username."
+        placeholder="Search talent by name or username"
+        onChange={setLevel1People}
+      />
+
+      {level1.map((parent) => {
+        const children = draft.featuredTalentInvites.filter(
+          (invite) => invite.parentLocalId === parent.localId,
+        );
+        const selectedChildren: DraftPersonRef[] = children.map((invite) => ({
+          userId: invite.talentUserId,
+          displayName: invite.displayName,
+          headshotUrl: invite.headshotUrl,
+        }));
+        return (
+          <div key={parent.localId} className="activity-create-wizard__panel space-y-3">
+            <p className="text-sm font-semibold text-white">
+              Under {parent.displayName}
+            </p>
+            <p className="text-xs text-white/50">
+              Optional — dancers or other talent performing in their showcase.
+            </p>
+            <ActivityPeoplePicker
+              label="Supporting talent"
+              talentOnly
+              selected={selectedChildren}
+              emptyHint="No supporting talent yet."
+              placeholder="Search talent to add under them"
+              onChange={(people) => setChildrenForParent(parent.localId, people)}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function LeadsStep({
   draft,
   onChange,
@@ -249,11 +352,20 @@ export function LeadsStep({
 }) {
   return (
     <div className="space-y-4">
+      <div className="activity-create-wizard__panel space-y-2 text-sm text-white/60">
+        <p className="font-semibold text-white">Add leads to this event</p>
+        <p>
+          Invite Motiion members as cast or subgroup leads. Search by their name or username below
+          — you do not need Talent Search. They accept in the Motiion app, get a compsed main-event
+          ticket, then set up their own private satellite event.
+        </p>
+      </div>
+
       <label className="activity-create-wizard__toggle">
         <div>
-          <p className="text-sm font-semibold text-white">Subgroup leads</p>
+          <p className="text-sm font-semibold text-white">Invite leads now</p>
           <p className="text-xs text-white/50">
-            Assign leads who facilitate their own private satellite event in the Motiion app
+            Optional — you can also add leads anytime after publishing from the event Leads tab.
           </p>
         </div>
         <input
@@ -276,14 +388,10 @@ export function LeadsStep({
 
       {draft.eventSubgroupsEnabled ? (
         <>
-          <p className="text-sm text-white/55">
-            Leads accept in the Motiion app, get a compsed main-event ticket, then set up their own
-            private subgroup event for dancers they invite.
-          </p>
           {draft.jobGroups.map((group, index) => (
             <div key={group.id} className="activity-create-wizard__panel space-y-3">
               <div className="flex items-center justify-between gap-2">
-                <ActivityField label={`Subgroup ${index + 1}`}>
+                <ActivityField label={`Group ${index + 1}`}>
                   <ActivityTextInput
                     value={group.name}
                     placeholder="e.g. Featured, Ensemble"
@@ -310,9 +418,9 @@ export function LeadsStep({
                 ) : null}
               </div>
               <ActivityPeoplePicker
-                label="Invite leads"
+                label="Add leads"
                 selected={group.leadInvitees}
-                emptyHint="Search and add leads for this subgroup."
+                emptyHint="Type a Motiion member's name, then select them to add."
                 onChange={(leadInvitees) => {
                   const jobGroups = [...draft.jobGroups];
                   jobGroups[index] = { ...group, leadInvitees };
@@ -332,13 +440,14 @@ export function LeadsStep({
             }
           >
             <Plus className="size-4" />
-            Add subgroup
+            Add group
           </button>
         </>
       ) : (
         <div className="activity-create-wizard__panel text-sm text-white/55">
-          Optional. Enable when your event has cast leads who should run their own invite-only
-          satellite experience under this showcase.
+          Skip for now if you are not ready. After you publish, open the event and use the{" "}
+          <span className="text-white/80">Leads</span> tab to search Motiion members and send
+          invites.
         </div>
       )}
     </div>

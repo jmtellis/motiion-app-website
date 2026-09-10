@@ -18,14 +18,14 @@ export function CreateProjectButton({
   if (onClick) {
     return (
       <button type="button" className={className} onClick={onClick}>
-        Create project
+        Create
       </button>
     );
   }
 
   return (
     <Link href={href} className={className}>
-      Create project
+      Create
     </Link>
   );
 }

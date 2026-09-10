@@ -30,11 +30,14 @@ export function DiscoverView({
 
   return (
     <div className="space-y-8">
-      <header className="space-y-1.5 border-b border-[#262626] pb-6">
-        <p className="font-mono text-xs font-medium tracking-[0.08em] text-[#5a5a5a] uppercase">Discover</p>
-        <h1 className="text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.02em] text-[#fafafa]">
-          Find talent & opportunities
+      <header className="space-y-1.5 border-b border-[var(--ds-border)] pb-6">
+        <p className="font-mono text-xs font-medium tracking-[0.08em] text-[var(--ds-muted)] uppercase">
+          Navigator
+        </p>
+        <h1 className="text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.02em] text-[var(--ds-text-default)]">
+          Discover
         </h1>
+        <p className="text-sm text-[var(--ds-muted)]">Find Talent across Motiion.</p>
       </header>
 
       {result.usingFallbackData ? (

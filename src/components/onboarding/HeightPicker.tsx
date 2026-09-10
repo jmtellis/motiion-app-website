@@ -46,7 +46,7 @@ export function HeightPicker({
             step={1}
             value={feet}
             onChange={(event) => update(Number(event.target.value), inches)}
-            className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[var(--line)] accent-[var(--ink)]"
+            className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[var(--line)] accent-[var(--accent,#00aacc)]"
           />
         </label>
 
@@ -62,7 +62,7 @@ export function HeightPicker({
             step={1}
             value={inches}
             onChange={(event) => update(feet, Number(event.target.value))}
-            className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[var(--line)] accent-[var(--ink)]"
+            className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[var(--line)] accent-[var(--accent,#00aacc)]"
           />
         </label>
       </div>

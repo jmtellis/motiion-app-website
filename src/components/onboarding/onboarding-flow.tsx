@@ -6,15 +6,14 @@ import { useRouter } from "next/navigation";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 
 import {
+  beginIndustryOnboarding,
   checkUsernameAvailability,
   completeOnboarding,
   syncOnboardingProfessionalDraft,
 } from "@/app/onboarding/actions";
 import {
   AuthButton,
-  AuthField,
   AuthInput,
-  AuthTextArea,
 } from "@/components/auth/ui";
 import { SetupFlowCancelButton } from "@/components/auth/SetupFlowCancelButton";
 import { SetupFlowFormPanel } from "@/components/auth/SetupFlowFormPanel";
@@ -32,17 +31,31 @@ import {
   saveOnboardingDraft,
 } from "@/lib/onboarding/draft-storage";
 import {
+  featuredInvitePath,
+  readPendingFeaturedTalentInviteToken,
+} from "@/lib/publicFeaturedTalentInvite";
+import {
   getFlowProgress,
+  getIndustryOnboardingPath,
   getNextStep,
   getOnboardingSteps,
   getPreviousStep,
-  isChoreographer,
-  isHiring,
+  isCommunity,
+  isTalent,
+  needsPhysicalTalentFields,
+  normalizeTalentTypes,
+  talentSubtypeOptions,
 } from "@/lib/onboarding/flow";
 import { getSetupFlowShellProps } from "@/lib/setup-flow/config";
 import { setupChoiceCard, setupPill } from "@/lib/setup-flow/form-styles";
-import { nonTalentSubtypeOptions, styleOptions } from "@/lib/mock-data";
-import type { DashboardProfile, NonTalentSubtype } from "@/types/database";
+import {
+  accountCreatedCopy,
+  acquisitionSourceOptions,
+  talentSetupValueItems,
+  type AcquisitionSource,
+} from "@/lib/talent/copy";
+import { styleOptions } from "@/lib/mock-data";
+import type { DashboardProfile, TalentSubtype } from "@/types/database";
 import type {
   CompleteOnboardingPayload,
   OnboardingDraft,
@@ -84,17 +97,23 @@ function splitName(fullName: string) {
   };
 }
 
-function getInitialRole(profile: DashboardProfile): OnboardingRole | null {
+/**
+ * Soft signup stubs default `account_type` to talent before the user answers
+ * “What brings you to Motiion?” Only treat the lane as confirmed when the
+ * profile has real subtype / community / hiring signals.
+ */
+function getConfirmedRole(profile: DashboardProfile): OnboardingRole | null {
   if (profile.accountType === "lookingForTalent" || profile.accountType === "looking_for_talent") {
-    return "hiring";
+    return "industry";
   }
 
-  if (profile.talentTypes?.some((type) => type.toLowerCase() === "choreographer")) {
-    return "choreographer";
+  if (profile.accountType === "community") {
+    return "community";
   }
 
-  if (profile.accountType === "talent") {
-    return "dancer";
+  const talentTypes = normalizeTalentTypes(profile.talentTypes);
+  if (profile.accountType === "talent" && talentTypes.length > 0) {
+    return "talent";
   }
 
   return null;
@@ -102,8 +121,10 @@ function getInitialRole(profile: DashboardProfile): OnboardingRole | null {
 
 function createInitialDraft(profile: DashboardProfile): OnboardingDraft {
   const { firstName, lastName } = splitName(profile.fullName);
-  const initialRole = getInitialRole(profile);
-  const role = initialRole === "hiring" ? null : initialRole;
+  const confirmedRole = getConfirmedRole(profile);
+  // Industry continues in talent-buyers flow; force role pick here.
+  const role = confirmedRole === "industry" ? null : confirmedRole;
+  const talentTypes = role === "talent" ? normalizeTalentTypes(profile.talentTypes) : [];
 
   return {
     version: 1,
@@ -115,8 +136,9 @@ function createInitialDraft(profile: DashboardProfile): OnboardingDraft {
     dateOfBirth: "",
     notificationsEnabled: false,
     role,
-    accountType: role ? "talent" : null,
-    talentTypes: role ? [role] : [],
+    accountType:
+      role === "community" ? "community" : role === "talent" ? "talent" : null,
+    talentTypes,
     displayName: profile.fullName === "Motiion User" ? "" : profile.fullName,
     username: "",
     headshotUrls: [],
@@ -147,6 +169,8 @@ function createInitialDraft(profile: DashboardProfile): OnboardingDraft {
     companyName: profile.companyName ?? "",
     nonTalentType: profile.nonTalentType ?? "",
     hiringBio: "",
+    acquisitionSource: "",
+    acquisitionSourceDetail: "",
   };
 }
 
@@ -173,7 +197,7 @@ const talentStepCopy: Record<
   { title: string; subtitle?: string }
 > = {
   role: {
-    title: "How will you use Motiion?",
+    title: "What brings you to Motiion?",
     subtitle: "Choose one to continue. You can refine your profile in the next steps.",
   },
   account: {
@@ -183,6 +207,14 @@ const talentStepCopy: Record<
   profile: {
     title: "Your profile",
     subtitle: "Add photos and the basics casting teams need.",
+  },
+  howDidYouHear: {
+    title: "How did you hear about Motiion?",
+    subtitle: "This helps us understand where Motiion is growing.",
+  },
+  accountCreated: {
+    title: accountCreatedCopy.chromeTitle,
+    subtitle: accountCreatedCopy.body,
   },
   attributes: {
     title: "Attributes",
@@ -201,25 +233,6 @@ const talentStepCopy: Record<
     subtitle: "Make sure everything looks right before you finish.",
   },
 };
-
-function TextArea({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <textarea
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      placeholder={placeholder}
-      className="min-h-28 w-full rounded-[var(--radius-field)] border border-[var(--line)] bg-[var(--surface-card)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[var(--ink-soft)] focus:border-[rgb(17_17_17_/_0.35)]"
-    />
-  );
-}
 
 function SelectField({
   label,
@@ -288,13 +301,6 @@ function TogglePills({
   );
 }
 
-function parseLines(value: string) {
-  return value
-    .split("\n")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
 function getAge(dateOfBirth: string) {
   const birthDate = new Date(dateOfBirth);
 
@@ -323,9 +329,14 @@ export function OnboardingFlow({
   const router = useRouter();
   const [draft, setDraft] = useState(() => {
     const loaded = loadOnboardingDraft(profile.id);
-    const base = loaded ?? createInitialDraft(profile);
-    if (base.role === "hiring") {
-      return { ...base, role: null, accountType: null, talentTypes: [], currentStep: "role" as const };
+    let base = loaded ?? createInitialDraft(profile);
+    // Industry always routes out; never resume mid-draft as industry here.
+    if (base.role === "industry") {
+      base = { ...base, role: null, accountType: null, talentTypes: [], currentStep: "role" };
+    }
+    // Stale drafts from when signup pre-selected talent without subtypes.
+    if (base.role === "talent" && base.talentTypes.length < 1) {
+      base = { ...base, role: null, accountType: null, currentStep: "role" };
     }
     const steps = getOnboardingSteps(base.role);
     const currentStep = steps.includes(base.currentStep) ? base.currentStep : steps[0];
@@ -339,7 +350,7 @@ export function OnboardingFlow({
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       saveOnboardingDraft(draft);
-      if (draft.role !== "hiring") {
+      if (isTalent(draft.role)) {
         void syncOnboardingProfessionalDraft({
           styles: draft.styles,
           skills: draft.skills,
@@ -373,16 +384,49 @@ export function OnboardingFlow({
   function setRole(role: OnboardingRole) {
     updateDraft({
       role,
-      accountType: role === "hiring" ? "lookingForTalent" : "talent",
-      talentTypes: role === "hiring" ? [] : [role],
+      accountType:
+        role === "industry"
+          ? "lookingForTalent"
+          : role === "community"
+            ? "community"
+            : "talent",
+      talentTypes: role === "talent" ? draft.talentTypes : [],
+    });
+  }
+
+  function toggleTalentSubtype(subtype: TalentSubtype) {
+    const selected = draft.talentTypes.includes(subtype);
+    const talentTypes = selected
+      ? draft.talentTypes.filter((item) => item !== subtype)
+      : [...draft.talentTypes, subtype];
+    updateDraft({
+      role: "talent",
+      accountType: "talent",
+      talentTypes,
+    });
+  }
+
+  function redirectToIndustry() {
+    startTransition(async () => {
+      const result = await beginIndustryOnboarding();
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      clearOnboardingDraft(profile.id);
+      router.push(result.redirectTo || getIndustryOnboardingPath());
+      router.refresh();
     });
   }
 
   function validateStep(step: OnboardingStep) {
     switch (step) {
       case "role":
-        if (!draft.role || draft.role === "hiring") {
-          return "Choose how you plan to use Motiion.";
+        if (!draft.role) {
+          return "Choose what brings you to Motiion.";
+        }
+        if (draft.role === "talent" && draft.talentTypes.length < 1) {
+          return "Choose at least one talent type.";
         }
         return null;
 
@@ -399,14 +443,7 @@ export function OnboardingFlow({
         return null;
 
       case "profile":
-        if (isHiring(draft.role)) {
-          if (!draft.companyName.trim() || !draft.nonTalentType) {
-            return "Add your organization and user type.";
-          }
-          return null;
-        }
-
-        if (draft.headshotUrls.length < 1) {
+        if (isTalent(draft.role) && draft.headshotUrls.length < 1) {
           return "Add at least one headshot URL.";
         }
         if (!draft.displayName.trim() || !/^[a-z0-9_]{3,30}$/.test(draft.username)) {
@@ -414,19 +451,13 @@ export function OnboardingFlow({
         }
         return null;
 
-      case "workDetails":
-        if (draft.workingLocations.length < 1) {
-          return "Add at least one working location.";
+      case "howDidYouHear":
+        if (!draft.acquisitionSource) {
+          return "Choose how you heard about Motiion.";
         }
         return null;
 
-      case "experience":
-        if (draft.styles.length < 1) {
-          return "Choose at least one style.";
-        }
-        if (draft.experiences.length < 1) {
-          return "Add at least one credit or experience.";
-        }
+      case "accountCreated":
         return null;
 
       default:
@@ -435,6 +466,11 @@ export function OnboardingFlow({
   }
 
   function goNext() {
+    if (draft.currentStep === "role" && draft.role === "industry") {
+      redirectToIndustry();
+      return;
+    }
+
     const stepError = validateStep(draft.currentStep);
 
     if (stepError) {
@@ -451,33 +487,12 @@ export function OnboardingFlow({
     updateDraft({ currentStep: getPreviousStep(draft.currentStep, draft.role) });
   }
 
-  function buildCompletePayload(): CompleteOnboardingPayload {
-    if (!draft.role) {
-      return draft as CompleteOnboardingPayload;
-    }
-
-    if (draft.role === "hiring") {
-      const usernameBase =
-        draft.username ||
-        draft.companyName
-          .toLowerCase()
-          .replace(/[^a-z0-9_]+/g, "_")
-          .replace(/^_+|_+$/g, "")
-          .slice(0, 24);
-
-      return {
-        ...draft,
-        role: "hiring",
-        displayName: draft.companyName.trim() || draft.displayName,
-        username: usernameBase.length >= 3 ? usernameBase : `team_${draft.userId.replace(/-/g, "").slice(0, 8)}`,
-      };
-    }
-
-    return draft as CompleteOnboardingPayload;
+  function buildCompletePayload(openProfileSetupAfterComplete: boolean): CompleteOnboardingPayload {
+    return { ...draft, openProfileSetupAfterComplete };
   }
 
-  function submit() {
-    const payload = buildCompletePayload();
+  function finishAccount(openProfileSetupAfterComplete: boolean) {
+    const payload = buildCompletePayload(openProfileSetupAfterComplete);
 
     startTransition(async () => {
       const result = await completeOnboarding(payload);
@@ -488,7 +503,10 @@ export function OnboardingFlow({
       }
 
       clearOnboardingDraft(profile.id);
-      router.push(result.redirectTo);
+      const featuredToken = readPendingFeaturedTalentInviteToken();
+      router.push(
+        featuredToken ? featuredInvitePath(featuredToken) : result.redirectTo,
+      );
       router.refresh();
     });
   }
@@ -502,34 +520,73 @@ export function OnboardingFlow({
   }
 
   function renderRoleSection() {
-    return (
-      <div className="signup-split-choice-grid">
-        {(
-          [
-            ["dancer", "Dancer", "Build a performer profile for discovery and opportunities."],
-            ["choreographer", "Choreographer", "Show creative work and manage casting workflows."],
-          ] as const
-        ).map(([role, title, description]) => {
-          const selected = draft.role === role;
+    const roleCards = [
+      [
+        "talent",
+        "Talent",
+        "Build your career and find opportunities.",
+      ],
+      [
+        "industry",
+        "Industry Professional",
+        "Cast, hire, and work with dance talent.",
+      ],
+      [
+        "community",
+        "Community Member",
+        "Discover dancers, events, and stay connected.",
+      ],
+    ] as const;
 
-          return (
-            <button
-              key={role}
-              type="button"
-              onClick={() => setRole(role)}
-              className={setupChoiceCard(selected)}
-              aria-pressed={selected}
-            >
-              <span className="signup-split-choice__copy">
-                <span className="signup-split-choice__title">{title}</span>
-                <span className="signup-split-choice__description">{description}</span>
-              </span>
-              <span className="signup-split-choice__check" aria-hidden>
-                {selected ? <Check className="size-4" strokeWidth={2.5} /> : null}
-              </span>
-            </button>
-          );
-        })}
+    return (
+      <div className="space-y-6">
+        <div className="signup-split-choice-grid">
+          {roleCards.map(([role, title, description]) => {
+            const selected = draft.role === role;
+
+            return (
+              <button
+                key={role}
+                type="button"
+                onClick={() => {
+                  setRole(role);
+                }}
+                className={setupChoiceCard(selected)}
+                aria-pressed={selected}
+              >
+                <span className="signup-split-choice__copy">
+                  <span className="signup-split-choice__title">{title}</span>
+                  <span className="signup-split-choice__description">{description}</span>
+                </span>
+                <span className="signup-split-choice__check" aria-hidden>
+                  {selected ? <Check className="size-4" strokeWidth={2.5} /> : null}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {draft.role === "talent" ? (
+          <div className="space-y-3">
+            <p className="text-sm text-[var(--ink-soft)]">Select all that apply.</p>
+            <div className="flex flex-wrap gap-2.5">
+              {talentSubtypeOptions.map((option) => {
+                const selected = draft.talentTypes.includes(option.value);
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => toggleTalentSubtype(option.value)}
+                    className={setupPill(selected)}
+                    aria-pressed={selected}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -558,7 +615,7 @@ export function OnboardingFlow({
   function renderTalentProfileSection() {
     return (
       <div className="space-y-0">
-        <SectionBlock title="Headshots">
+        <SectionBlock title={isCommunity(draft.role) ? "Headshots (optional)" : "Headshots"}>
           <HeadshotUploadGrid
             headshotUrls={draft.headshotUrls}
             headshotOriginalUrls={draft.headshotOriginalUrls}
@@ -567,13 +624,15 @@ export function OnboardingFlow({
           />
         </SectionBlock>
 
-        <SectionBlock title="Resume">
-          <ResumeUploadField
-            resumeUrl={draft.resumeUrl}
-            onProcessed={(patch) => updateDraft(patch)}
-            onError={setError}
-          />
-        </SectionBlock>
+        {isTalent(draft.role) ? (
+          <SectionBlock title="Resume">
+            <ResumeUploadField
+              resumeUrl={draft.resumeUrl}
+              onProcessed={(patch) => updateDraft(patch)}
+              onError={setError}
+            />
+          </SectionBlock>
+        ) : null}
 
         <SectionBlock title="Public profile">
           <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
@@ -598,34 +657,8 @@ export function OnboardingFlow({
     );
   }
 
-  function renderHiringProfileSection() {
-    return (
-      <div className="grid gap-4 md:grid-cols-2">
-        <Field label="Company / organization">
-          <AuthInput value={draft.companyName} onChange={(event) => updateDraft({ companyName: event.target.value })} />
-        </Field>
-        <SelectField
-          label="User type"
-          value={draft.nonTalentType}
-          placeholder="Choose user type"
-          options={nonTalentSubtypeOptions}
-          onChange={(value) => updateDraft({ nonTalentType: value as NonTalentSubtype })}
-        />
-        <div className="md:col-span-2">
-          <Field label="Bio">
-            <TextArea
-              value={draft.hiringBio}
-              onChange={(hiringBio) => updateDraft({ hiringBio })}
-              placeholder="Tell talent what kind of work your team casts or manages."
-            />
-          </Field>
-        </div>
-      </div>
-    );
-  }
-
   function renderAttributesSection() {
-    const choreographer = isChoreographer(draft.role);
+    const showPhysical = needsPhysicalTalentFields(draft.talentTypes);
 
     return (
       <div className="grid gap-4 md:grid-cols-2">
@@ -643,7 +676,7 @@ export function OnboardingFlow({
           options={ethnicityOptions.map((value) => ({ label: value, value }))}
           onChange={(ethnicity) => updateDraft({ ethnicity })}
         />
-        {!choreographer ? (
+        {showPhysical ? (
           <>
             <div className="md:col-span-2">
               <HeightPicker value={draft.height} onChange={(height) => updateDraft({ height })} />
@@ -669,11 +702,11 @@ export function OnboardingFlow({
   }
 
   function renderWorkDetailsSection() {
-    const choreographer = isChoreographer(draft.role);
+    const showPhysical = needsPhysicalTalentFields(draft.talentTypes);
 
     return (
       <div className="space-y-0">
-        {!choreographer ? (
+        {showPhysical ? (
           <SectionBlock title="Sizing">
             <SizingEditor value={draft.sizing} onChange={(sizing) => updateDraft({ sizing })} />
           </SectionBlock>
@@ -723,7 +756,7 @@ export function OnboardingFlow({
   }
 
   function renderExperienceSection() {
-    const choreographer = isChoreographer(draft.role);
+    const showPhysical = needsPhysicalTalentFields(draft.talentTypes);
 
     return (
       <div className="space-y-0">
@@ -731,13 +764,13 @@ export function OnboardingFlow({
           <TogglePills options={styleOptions} values={draft.styles} onChange={(styles) => updateDraft({ styles })} />
         </SectionBlock>
 
-        {!choreographer ? (
+        {showPhysical ? (
           <SectionBlock title="Skills">
             <TogglePills options={skillOptions} values={draft.skills} onChange={(skills) => updateDraft({ skills })} />
           </SectionBlock>
         ) : null}
 
-        {!choreographer ? (
+        {showPhysical ? (
           <SectionBlock title="Training">
             <ListEditor
               label="Training"
@@ -762,6 +795,62 @@ export function OnboardingFlow({
     );
   }
 
+  function renderHowDidYouHearSection() {
+    return (
+      <div className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2">
+          {acquisitionSourceOptions.map((option) => {
+            const selected = draft.acquisitionSource === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                className={setupChoiceCard(selected)}
+                onClick={() =>
+                  updateDraft({ acquisitionSource: option.value as AcquisitionSource })
+                }
+              >
+                <span className="font-medium">{option.label}</span>
+                {selected ? <Check className="size-4 text-[var(--accent)]" /> : null}
+              </button>
+            );
+          })}
+        </div>
+        {draft.acquisitionSource === "other" ? (
+          <Field label="Tell us more (optional)">
+            <AuthInput
+              value={draft.acquisitionSourceDetail}
+              onChange={(event) =>
+                updateDraft({ acquisitionSourceDetail: event.target.value })
+              }
+              placeholder="Where did you hear about us?"
+            />
+          </Field>
+        ) : null}
+      </div>
+    );
+  }
+
+  function renderAccountCreatedSection() {
+    return (
+      <div className="space-y-6">
+        <ul className="divide-y divide-[var(--line)] overflow-hidden rounded-[var(--ds-radius-card)] border border-[var(--line)]">
+          {talentSetupValueItems.map((item) => (
+            <li key={item} className="px-4 py-3.5 text-sm text-[var(--ink)]">
+              {item}
+            </li>
+          ))}
+        </ul>
+        {isTalent(draft.role) ? (
+          <p className="text-sm text-[var(--ink-soft)]">
+            You can finish setting up your profile anytime from Home. Progress you&apos;ve already
+            saved will be kept.
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
   function renderStep() {
     switch (draft.currentStep) {
       case "role":
@@ -769,7 +858,11 @@ export function OnboardingFlow({
       case "account":
         return renderAccountSection();
       case "profile":
-        return isHiring(draft.role) ? renderHiringProfileSection() : renderTalentProfileSection();
+        return renderTalentProfileSection();
+      case "howDidYouHear":
+        return renderHowDidYouHearSection();
+      case "accountCreated":
+        return renderAccountCreatedSection();
       case "attributes":
         return renderAttributesSection();
       case "workDetails":
@@ -784,9 +877,12 @@ export function OnboardingFlow({
   }
 
   const isFirstStep = stepIndex === 0;
-  const isReviewStep = draft.currentStep === "review";
+  const isAccountCreatedStep = draft.currentStep === "accountCreated";
   const canContinue =
-    draft.currentStep !== "role" || (draft.role !== null && draft.role !== "hiring");
+    draft.currentStep !== "role" ||
+    draft.role === "community" ||
+    draft.role === "industry" ||
+    (draft.role === "talent" && draft.talentTypes.length >= 1);
   const shellProps = getSetupFlowShellProps({
     audience: "talent",
     surface: "onboarding",
@@ -834,15 +930,29 @@ export function OnboardingFlow({
 
             <span className="signup-split-form__footer-center" aria-hidden />
 
-            {isReviewStep ? (
-              <div className="signup-split-form__footer-end">
+            {isAccountCreatedStep ? (
+              <div className="signup-split-form__footer-end flex flex-wrap items-center justify-end gap-2">
+                {isTalent(draft.role) ? (
+                  <button
+                    type="button"
+                    className="signup-split-nav-btn signup-split-nav-btn--ghost"
+                    onClick={() => finishAccount(false)}
+                    disabled={isPending}
+                  >
+                    {accountCreatedCopy.secondary}
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="signup-split-submit !w-auto px-5"
-                  onClick={submit}
+                  onClick={() => finishAccount(isTalent(draft.role))}
                   disabled={isPending}
                 >
-                  {isPending ? "Finishing…" : "Finish setup"}
+                  {isPending
+                    ? "Finishing…"
+                    : isTalent(draft.role)
+                      ? accountCreatedCopy.primary
+                      : "Enter Motiion"}
                 </button>
               </div>
             ) : (
@@ -934,7 +1044,16 @@ function ListEditor<T extends Record<string, string | undefined>>({
 
 function ReviewPanel({ draft }: { draft: OnboardingDraft }) {
   const rows = [
-    ["Role", draft.role ?? "Not selected"],
+    [
+      "Role",
+      draft.role === "talent"
+        ? `Talent (${draft.talentTypes.join(", ") || "none"})`
+        : draft.role === "community"
+          ? "Community Member"
+          : draft.role === "industry"
+            ? "Industry Professional"
+            : "Not selected",
+    ],
     ["Name", `${draft.firstName} ${draft.lastName}`.trim()],
     ["Email", draft.email],
     ["Display", draft.displayName || "Not set"],

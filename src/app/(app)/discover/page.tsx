@@ -1,4 +1,5 @@
 import { DiscoverView } from "@/components/app/DiscoverView";
+import { requireTalentAccount } from "@/lib/auth/session";
 import { searchTalentProfiles } from "@/lib/search/search-profiles";
 import type { SearchFilters } from "@/types/search";
 
@@ -7,6 +8,7 @@ export default async function DiscoverPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await requireTalentAccount();
   const params = await searchParams;
 
   const filters: SearchFilters = {
@@ -19,6 +21,7 @@ export default async function DiscoverPage({
       typeof params.page === "string" && !Number.isNaN(Number(params.page))
         ? Number(params.page)
         : 1,
+    navigator: true,
   };
 
   const result = await searchTalentProfiles(filters);

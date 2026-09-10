@@ -1,22 +1,28 @@
+import type { TalentSubtype } from "@/types/database";
 import type {
   OnboardingDraft,
   OnboardingRole,
   OnboardingStep,
 } from "@/types/onboarding";
 
+/** Lane 1 — Create Account (iOS TalentOnboardingJourney.initialSteps). */
 const talentSteps: OnboardingStep[] = [
   "role",
   "account",
   "profile",
-  "attributes",
-  "workDetails",
-  "experience",
-  "review",
+  "howDidYouHear",
+  "accountCreated",
 ];
 
-const hiringSteps: OnboardingStep[] = ["account", "profile", "review"];
+const communitySteps: OnboardingStep[] = [
+  "role",
+  "account",
+  "profile",
+  "howDidYouHear",
+  "accountCreated",
+];
 
-/** Legacy per-field steps saved in local drafts before section-based web flow. */
+/** Legacy per-field / long-form steps saved in local drafts before deferred setup. */
 const legacyStepToSection: Record<string, OnboardingStep> = {
   name: "account",
   email: "account",
@@ -27,31 +33,82 @@ const legacyStepToSection: Record<string, OnboardingStep> = {
   resume: "profile",
   username: "profile",
   hiringDetails: "profile",
-  gender: "attributes",
-  ethnicity: "attributes",
-  height: "attributes",
-  hairColor: "attributes",
-  eyeColor: "attributes",
-  sizing: "workDetails",
-  workingLocations: "workDetails",
-  representation: "workDetails",
-  unionStatus: "workDetails",
-  styles: "experience",
-  skills: "experience",
-  training: "experience",
-  credits: "experience",
-  review: "review",
+  gender: "howDidYouHear",
+  ethnicity: "howDidYouHear",
+  height: "howDidYouHear",
+  hairColor: "howDidYouHear",
+  eyeColor: "howDidYouHear",
+  sizing: "howDidYouHear",
+  workingLocations: "howDidYouHear",
+  representation: "howDidYouHear",
+  unionStatus: "howDidYouHear",
+  styles: "howDidYouHear",
+  skills: "howDidYouHear",
+  training: "howDidYouHear",
+  credits: "howDidYouHear",
+  attributes: "howDidYouHear",
+  workDetails: "howDidYouHear",
+  experience: "howDidYouHear",
+  review: "howDidYouHear",
+  howDidYouHear: "howDidYouHear",
+  accountCreated: "accountCreated",
+};
+
+const legacyRoleMap: Record<string, OnboardingRole> = {
+  dancer: "talent",
+  choreographer: "talent",
+  hiring: "industry",
+  talent: "talent",
+  industry: "industry",
+  community: "community",
 };
 
 export const onboardingSectionLabels: Record<OnboardingStep, string> = {
   role: "Role",
   account: "Account",
   profile: "Profile",
+  howDidYouHear: "About Motiion",
+  accountCreated: "Done",
   attributes: "Attributes",
   workDetails: "Work details",
   experience: "Experience",
   review: "Review",
 };
+
+export const talentSubtypeOptions: Array<{ value: TalentSubtype; label: string }> = [
+  { value: "dancer", label: "Dancer" },
+  { value: "choreographer", label: "Choreographer" },
+  { value: "instructor", label: "Instructor" },
+];
+
+export function normalizeOnboardingRole(role: string | null | undefined): OnboardingRole | null {
+  if (!role) return null;
+  return legacyRoleMap[role] ?? null;
+}
+
+export function normalizeTalentTypes(
+  types: unknown,
+  legacyRole?: string | null,
+): TalentSubtype[] {
+  const allowlist: TalentSubtype[] = ["dancer", "choreographer", "instructor"];
+  const fromArray = Array.isArray(types)
+    ? types
+        .map((item) => String(item).trim().toLowerCase())
+        .filter((item): item is TalentSubtype =>
+          allowlist.includes(item as TalentSubtype),
+        )
+    : [];
+
+  if (fromArray.length) {
+    return [...new Set(fromArray)];
+  }
+
+  if (legacyRole === "dancer" || legacyRole === "choreographer") {
+    return [legacyRole];
+  }
+
+  return [];
+}
 
 export function normalizeOnboardingStep(step: string): OnboardingStep {
   if (step in onboardingSectionLabels) {
@@ -62,15 +119,20 @@ export function normalizeOnboardingStep(step: string): OnboardingStep {
 }
 
 export function getOnboardingSteps(role: OnboardingRole | null): OnboardingStep[] {
-  if (role === "hiring") {
-    return hiringSteps;
+  if (role === "community") {
+    return communitySteps;
   }
 
-  if (role === "choreographer" || role === "dancer") {
+  if (role === "talent") {
     return talentSteps;
   }
 
+  // Industry redirects out of this flow; keep role step only until redirect.
   return ["role"];
+}
+
+export function getIndustryOnboardingPath() {
+  return "/talent-buyers/onboarding";
 }
 
 export function getStepIndex(step: OnboardingStep, role: OnboardingRole | null) {
@@ -105,14 +167,24 @@ export function getCompletionPercent(draft: OnboardingDraft) {
   return getFlowProgress(draft.currentStep, draft.role).percent;
 }
 
-export function isChoreographer(role: OnboardingRole | null) {
-  return role === "choreographer";
+export function isChoreographer(talentTypes: TalentSubtype[] | null | undefined) {
+  return (talentTypes ?? []).includes("choreographer");
+}
+
+/** Physical/sizing/skills/training apply when any dancer or instructor type is selected. */
+export function needsPhysicalTalentFields(talentTypes: TalentSubtype[] | null | undefined) {
+  const types = talentTypes ?? [];
+  return types.some((type) => type === "dancer" || type === "instructor");
 }
 
 export function isHiring(role: OnboardingRole | null) {
-  return role === "hiring";
+  return role === "industry";
 }
 
 export function isTalent(role: OnboardingRole | null) {
-  return role === "dancer" || role === "choreographer";
+  return role === "talent";
+}
+
+export function isCommunity(role: OnboardingRole | null) {
+  return role === "community";
 }

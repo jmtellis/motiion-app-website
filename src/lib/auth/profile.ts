@@ -11,6 +11,7 @@ export function normalizeAccountType(value: string | null | undefined): AccountT
   if (!value) return null;
   if (value === "looking_for_talent" || value === "lookingForTalent") return value as AccountType;
   if (value === "talent") return value;
+  if (value === "community") return value;
   return null;
 }
 
@@ -23,11 +24,19 @@ export function isHiringAccount(accountType: string | null | undefined) {
   return normalized === "looking_for_talent" || normalized === "lookingForTalent";
 }
 
+export function isCommunityAccount(accountType: string | null | undefined) {
+  return normalizeAccountType(accountType) === "community";
+}
+
 export function isOnboardingComplete(
   profile: Pick<DashboardProfile, "accountType" | "onboardingCompletedAt"> | null | undefined,
 ) {
   if (!profile?.onboardingCompletedAt) return false;
-  return isTalentAccount(profile.accountType) || isHiringAccount(profile.accountType);
+  return (
+    isTalentAccount(profile.accountType) ||
+    isHiringAccount(profile.accountType) ||
+    isCommunityAccount(profile.accountType)
+  );
 }
 
 export function getOnboardingPath(profile: Pick<DashboardProfile, "accountType"> | null | undefined) {
@@ -42,13 +51,41 @@ export function getProfileDestination(profile: DashboardProfile | null) {
   if (!profile) return "/login";
   if (!isOnboardingComplete(profile)) return getOnboardingPath(profile);
   if (isHiringAccount(profile.accountType)) return BUYER_HOME_PATH;
-  if (isTalentAccount(profile.accountType)) return "/home";
+  if (isTalentAccount(profile.accountType) || isCommunityAccount(profile.accountType)) {
+    return "/home";
+  }
   return "/onboarding";
 }
 
 export function getFullName(profile: Pick<ProfileRecord, "display_name" | "first_name" | "last_name">) {
   const fallback = [profile.first_name, profile.last_name].filter(Boolean).join(" ").trim();
   return profile.display_name || fallback || "Motiion User";
+}
+
+/**
+ * Auth Users "Display name" reads from `raw_user_meta_data`.
+ * OAuth providers populate these keys; email signups must write them when we know the name.
+ */
+export function buildAuthDisplayNameMetadata(input: {
+  firstName?: string | null;
+  lastName?: string | null;
+  displayName?: string | null;
+}) {
+  const firstName = input.firstName?.trim() || "";
+  const lastName = input.lastName?.trim() || "";
+  const displayName =
+    input.displayName?.trim() ||
+    [firstName, lastName].filter(Boolean).join(" ").trim();
+
+  if (!displayName && !firstName && !lastName) {
+    return {};
+  }
+
+  return {
+    ...(displayName ? { display_name: displayName, full_name: displayName } : {}),
+    ...(firstName ? { given_name: firstName, first_name: firstName } : {}),
+    ...(lastName ? { family_name: lastName, last_name: lastName } : {}),
+  };
 }
 
 export function toDashboardProfile(

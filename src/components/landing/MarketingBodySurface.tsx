@@ -16,15 +16,21 @@ export function MarketingBodySurface({ dark = false }: { dark?: boolean }) {
     body.style.backgroundColor = surface;
     html.style.overscrollBehavior = "none";
     body.style.overscrollBehavior = "none";
+    if (dark) {
+      html.style.colorScheme = "dark";
+    }
 
     return () => {
       html.style.backgroundColor = "";
       body.style.backgroundColor = "";
       html.style.overscrollBehavior = "";
       body.style.overscrollBehavior = "";
+      html.style.colorScheme = "";
     };
-  }, [surface]);
+  }, [surface, dark]);
 
   // Server + first client paint: keep dark routes from flashing paper white.
-  return <style>{`html,body{background-color:${surface};}`}</style>;
+  return (
+    <style>{`html,body{background-color:${surface};overscroll-behavior:none;}${dark ? "html{color-scheme:dark;}" : ""}`}</style>
+  );
 }

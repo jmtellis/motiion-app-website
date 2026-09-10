@@ -19,9 +19,42 @@ import { buyerNavItems } from "@/lib/talent-buyers/dashboard-data";
 import "./buyer-ui.css";
 
 const QUICK_ACTIONS = [
-  { href: "/projects?create=1", label: "Create project", icon: FolderKanban, keywords: "new project casting event" },
-  { href: "/projects/new/casting", label: "Create casting", icon: FolderKanban, keywords: "new casting breakdown roles" },
-  { href: "/calendar/new", label: "Create Event", icon: Calendar, keywords: "class session event" },
+  {
+    href: "/projects?create=1",
+    label: "Create",
+    icon: FolderKanban,
+    keywords: "new project casting event class session job",
+  },
+  {
+    href: "/jobs/new",
+    label: "Create job",
+    icon: FolderKanban,
+    keywords: "new job production roster credits",
+  },
+  {
+    href: "/projects/new/casting",
+    label: "Create casting",
+    icon: FolderKanban,
+    keywords: "new casting breakdown roles",
+  },
+  {
+    href: "/calendar/new?type=event",
+    label: "Create event",
+    icon: Calendar,
+    keywords: "event showcase tickets leads",
+  },
+  {
+    href: "/calendar/new?type=class",
+    label: "Create class",
+    icon: Calendar,
+    keywords: "class schedule tickets",
+  },
+  {
+    href: "/calendar/new?type=session",
+    label: "Create session",
+    icon: Calendar,
+    keywords: "session practice jam",
+  },
   { href: "/library", label: "Roster", icon: Users, keywords: "roster library save collection" },
 ] as const;
 

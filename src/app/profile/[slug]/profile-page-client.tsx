@@ -105,7 +105,11 @@ export default function ProfilePageClient({ profile }: { profile: PublicTalentPr
           {tab === "visuals" ? <VisualsPanel visuals={orderVisuals(profile.profile_visuals)} /> : null}
         </section>
 
-        <OpenInAppBar label="View full profile in Motiion" />
+        <OpenInAppBar
+          href={`/profile/${profile.username ?? profile.id}`}
+          label="View full profile in Motiion"
+          hint="Download Motiion for the full profile experience — highlights, resume, and visuals."
+        />
       </main>
     </ProductShell>
   );

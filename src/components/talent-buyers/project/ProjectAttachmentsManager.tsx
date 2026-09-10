@@ -22,9 +22,9 @@ export function ProjectAttachmentsManager({
   projectId,
   projectType,
   initialAttachments,
-  description = "Upload briefs, music, or reference files for this project.",
+  description = "Upload posters, agreements, briefs, or other files for this project.",
   emptyTitle = "No files yet",
-  emptyDescription = "Add attachments talent may need for this project.",
+  emptyDescription = "Add posters, agreements, or other project files.",
 }: {
   projectId: string;
   projectType?: string | null;

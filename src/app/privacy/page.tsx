@@ -35,6 +35,7 @@ const privacySections: LegalPageSection[] = [
       "Email address",
       "Age",
       "Password",
+      "Photos, headshots, profile videos, and other media you upload",
     ],
   },
   {
@@ -69,6 +70,8 @@ const privacySections: LegalPageSection[] = [
       "Improve our website and offerings.",
       "Improve customer service and support.",
       "Process transactions.",
+      "Operate public profiles, discovery, search, and casting features.",
+      "Promote Motiion on our website, emails, and social media channels using your photos, likeness, and profile information, as described in our Terms & Conditions.",
       "Administer promotions, surveys, and site features.",
       "Send periodic emails and service communications.",
     ],
@@ -103,6 +106,7 @@ const privacySections: LegalPageSection[] = [
     title: "Access, updates, and deletion",
     paragraphs: [
       "Depending on your relationship with Motiion and applicable law, you may request access, corrections, communication preference changes, or deletion of personal data.",
+      "You may also contact us to opt out of promotional use of your photos or likeness. That request is separate from account deletion and does not by itself remove your content from the product.",
       "Some residual data may persist in backups or archival systems for technical and legal reasons.",
     ],
   },
@@ -163,7 +167,7 @@ export default function PrivacyPage() {
   return (
     <LegalPageShell
       title="Privacy Policy"
-      updatedAt="Updated at February 3rd, 2026"
+      updatedAt="Updated at August 15th, 2026"
       intro='Motiion ("we," "our," or "us") is committed to protecting your privacy. This policy explains how personal information is collected, used, and disclosed when you use our website, related subdomains, and application services.'
       sections={privacySections}
       contactIntro="If you have questions about this Privacy Policy, contact us:"

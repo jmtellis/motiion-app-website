@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { Inter } from "next/font/google";
+import { Inter, Montserrat } from "next/font/google";
 
 import { ArrowNavigationFocusCleanup } from "@/components/layout/ArrowNavigationFocusCleanup";
 import { AutoHideScrollbars } from "@/components/layout/AutoHideScrollbars";
@@ -14,6 +14,13 @@ const geistMono = GeistMono;
 /** Marketing pages */
 const inter = Inter({
   variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+/** Signed-in product shell — matches iOS MotiionTypography (Montserrat). */
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
   subsets: ["latin"],
   display: "swap",
 });
@@ -84,7 +91,9 @@ export default function RootLayout({
           </>
         ) : null}
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} font-sans antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${montserrat.variable} font-sans antialiased`}
+      >
         <ArrowNavigationFocusCleanup />
         <AutoHideScrollbars />
         {children}

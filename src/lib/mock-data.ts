@@ -15,6 +15,7 @@ export const portraitWallImages = [
 export const talentSubtypeOptions: Array<{ value: TalentSubtype; label: string }> = [
   { value: "dancer", label: "Dancer" },
   { value: "choreographer", label: "Choreographer" },
+  { value: "instructor", label: "Instructor" },
 ];
 
 export const nonTalentSubtypeOptions: Array<{ value: NonTalentSubtype; label: string }> = [

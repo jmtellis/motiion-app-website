@@ -18,6 +18,9 @@ export default async function CalendarNewActivityPage({
 }) {
   await requireHiringAccount();
   const params = await searchParams;
+  const typeParam = Array.isArray(params.type) ? params.type[0] : params.type;
+  const typeLocked =
+    typeParam === "class" || typeParam === "session" || typeParam === "event";
   const type = parseType(params.type);
   const projectId = typeof params.projectId === "string" ? params.projectId : null;
   const draft = createDefaultActivityDraft(type, projectId);
@@ -29,6 +32,7 @@ export default async function CalendarNewActivityPage({
       <ActivityCreateWizard
         initialDraft={draft}
         mode="create"
+        typeLocked={typeLocked}
         initialConnectStatus={connect.status ?? null}
         closeHref={closeHref}
       />

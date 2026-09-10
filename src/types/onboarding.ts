@@ -1,12 +1,16 @@
 import type { AccountType, NonTalentSubtype, TalentSubtype } from "@/types/database";
+import type { AcquisitionSource } from "@/lib/talent/copy";
 
-export type OnboardingRole = "dancer" | "choreographer" | "hiring";
+export type OnboardingRole = "talent" | "industry" | "community";
 
-/** Web onboarding navigates by section (one screen per iOS container). */
+/** Lane 1 mirrors iOS Create Account; deferred fields move to /profile/setup. */
 export type OnboardingStep =
   | "role"
   | "account"
   | "profile"
+  | "howDidYouHear"
+  | "accountCreated"
+  /** @deprecated Lane 2 only — kept for draft migration */
   | "attributes"
   | "workDetails"
   | "experience"
@@ -78,9 +82,14 @@ export type OnboardingDraft = {
   companyName: string;
   nonTalentType: NonTalentSubtype | "";
   hiringBio: string;
+  acquisitionSource: AcquisitionSource | "";
+  acquisitionSourceDetail: string;
 };
 
-export type CompleteOnboardingPayload = OnboardingDraft;
+export type CompleteOnboardingPayload = OnboardingDraft & {
+  /** After Lane 1, route into deferred wizard instead of Home. */
+  openProfileSetupAfterComplete?: boolean;
+};
 
 export type CompleteOnboardingResult =
   | { ok: true; redirectTo: string }

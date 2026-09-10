@@ -19,6 +19,18 @@ const termsSections: LegalPageSection[] = [
     ],
   },
   {
+    title: "User content",
+    paragraphs: [
+      "You retain ownership of photos, videos, headshots, profile media, and other content you upload to Motiion (\"User Content\").",
+      "By uploading User Content or creating an account, you grant Motiion a worldwide, royalty-free, non-exclusive, sublicensable license to host, store, display, reproduce, adapt, and distribute your User Content as needed to operate and improve the service, including public profiles, search, discovery, casting, and related features.",
+      "You also grant Motiion the right to use your name, likeness, profile information, and User Content in Motiion's own promotional materials, including the Motiion website, Motiion emails, and Motiion social media accounts, without compensation to you.",
+      "This promotional license does not apply to private messages, invite-only materials, or unpublished drafts.",
+      "You represent that you own your User Content or have permission to grant these rights, and that any person depicted has consented where required. This license does not authorize Motiion to use third-party copyrighted materials (such as credit posters or logos you do not own) beyond what is needed to operate the service.",
+      "You may opt out of promotional use of your name, likeness, or User Content by contacting us. Opting out does not remove content from the product (for example, public profiles or search) and does not require Motiion to recall, delete, or alter ads, posts, or materials already published or distributed.",
+      "If you are under 18, Motiion will not use your photos or likeness in promotional materials based solely on these Terms without appropriate parent or guardian consent.",
+    ],
+  },
+  {
     title: "Definitions and key terms",
     bullets: [
       "Company: Motiion Ventures Inc. (11120 Chandler Blvd Apt 4098, North Hollywood, CA 91601).",
@@ -160,7 +172,7 @@ export default function TermsPage() {
   return (
     <LegalPageShell
       title="Terms & Conditions"
-      updatedAt="Updated at February 3rd, 2026"
+      updatedAt="Updated at August 15th, 2026"
       intro="These Terms & Conditions govern your use of Motiion services, including our website and related applications. By using the service, you agree to these terms."
       sections={termsSections}
       contactIntro="If you have questions about these Terms, contact us:"

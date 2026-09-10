@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
+import { X } from "lucide-react";
 
 import { MarketingScene, type MarketingSceneProps } from "@/components/marketing/MarketingScene";
 import { MockArtboard } from "@/components/marketing/MockArtboard";
@@ -17,41 +18,27 @@ const STEPS = [
   { at: 6000, set: "hold" },
 ];
 
+const WORKSPACE_TABS = ["Breakdown", "Invite", "Review Submissions", "Client Review", "Cast"];
+
 function shortlistForBeat(beat: string) {
   if (beat === "confirm" || beat === "hold") {
-    return [
-      { id: "dancer-gabriela", status: "Selected" },
-      { id: "dancer-jay", status: "Selected" },
-      { id: "dancer-jake", status: "Callback" },
-      { id: "dancer-gaynor", status: "Shortlisted" },
-    ];
+    return ["dancer-gabriela", "dancer-jay", "dancer-jake", "dancer-gaynor"];
   }
   if (beat === "callback") {
-    return [
-      { id: "dancer-gabriela", status: "Callback" },
-      { id: "dancer-jay", status: "Shortlisted" },
-      { id: "dancer-gaynor", status: "Shortlisted" },
-    ];
+    return ["dancer-gabriela", "dancer-jay", "dancer-gaynor"];
   }
   if (beat === "shortlist") {
-    return [
-      { id: "dancer-gabriela", status: "Shortlisted" },
-      { id: "dancer-gaynor", status: "Shortlisted" },
-    ];
+    return ["dancer-gabriela", "dancer-gaynor"];
   }
   return [];
 }
 
 export function CastingScene({ play, reduceMotion = false, playKey }: MarketingSceneProps) {
   const beat = useSceneTimeline(STEPS, { play, reduceMotion, restartKey: playKey });
-  const submissions = demoDancers.slice(0, 6);
+  const submissions = demoDancers.slice(0, 8);
   const shortlist = shortlistForBeat(beat)
-    .map((item) => {
-      const dancer = demoDancers.find((entry) => entry.id === item.id);
-      if (!dancer) return null;
-      return { ...dancer, status: item.status };
-    })
-    .filter((item): item is (typeof demoDancers)[number] & { status: string } => Boolean(item));
+    .map((id) => demoDancers.find((entry) => entry.id === id))
+    .filter((item): item is (typeof demoDancers)[number] => Boolean(item));
   const selectedId =
     beat === "confirm" || beat === "hold"
       ? "dancer-gabriela"
@@ -62,38 +49,63 @@ export function CastingScene({ play, reduceMotion = false, playKey }: MarketingS
   return (
     <MarketingScene>
       <MockArtboard>
-        <header className="md-mock__chrome">
-          <div>
-            <p className="md-mock__eyebrow">Casting · Review</p>
-            <p className="md-mock__title">Tour Ensemble</p>
+        <header className="md-mock__chrome md-mock__chrome--stack">
+          <div className="md-mock__chrome-row">
+            <div className="md-mock__project-chrome-identity">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={demoDancers[0]?.imageUrl} alt="" />
+              <div>
+                <p className="md-mock__title">Summer Tour 2027</p>
+                <p className="md-mock__eyebrow">World Tour</p>
+              </div>
+            </div>
           </div>
-          <div className="md-mock__tabs">
-            <span className="md-mock__tab md-mock__tab--active">Review</span>
-            <span className="md-mock__tab">Cast</span>
-          </div>
+          <nav className="md-mock__underline-tabs md-mock__underline-tabs--workspace">
+            {WORKSPACE_TABS.map((tab) => (
+              <span
+                key={tab}
+                className={`md-mock__underline-tab${
+                  tab === "Review Submissions" ? " md-mock__underline-tab--active" : ""
+                }`}
+              >
+                {tab}
+              </span>
+            ))}
+          </nav>
         </header>
 
         <div className="md-mock__body">
           <div className="md-mock__casting">
             <section className="md-mock__casting-main">
-              <h3>Submissions</h3>
-              <p>New candidates for Tour Ensemble</p>
-              <div className="md-mock__submission-row">
-                {submissions.map((dancer) => (
-                  <article
-                    key={dancer.id}
-                    className={`md-mock__submission-card${
-                      selectedId === dancer.id ? " md-mock__submission-card--selected" : ""
-                    }`}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={dancer.imageUrl} alt="" />
-                    <div>
-                      <strong>{dancer.name.split(" ")[0]}…</strong>
-                      <span>{dancer.agency}</span>
-                    </div>
-                  </article>
-                ))}
+              <div className="md-mock__casting-toolbar">
+                <div>
+                  <h3>Tour Ensemble</h3>
+                  <p>{submissions.length} submissions</p>
+                </div>
+                <div className="md-mock__segment md-mock__segment--sm" aria-hidden>
+                  <span className="md-mock__segment-item md-mock__segment-item--active">Cards</span>
+                  <span className="md-mock__segment-item">Focus</span>
+                </div>
+              </div>
+              <div className="md-mock__submission-grid">
+                {submissions.map((dancer) => {
+                  const shortlisted = shortlist.some((item) => item.id === dancer.id);
+                  return (
+                    <article
+                      key={dancer.id}
+                      className={`md-mock__submission-card${
+                        selectedId === dancer.id ? " md-mock__submission-card--selected" : ""
+                      }${shortlisted ? " md-mock__submission-card--shortlisted" : ""}`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={dancer.imageUrl} alt="" />
+                      <div>
+                        <strong>{dancer.name}</strong>
+                        <span>{dancer.agency}</span>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             </section>
 
@@ -111,7 +123,7 @@ export function CastingScene({ play, reduceMotion = false, playKey }: MarketingS
                       initial={false}
                       animate={{ opacity: 1 }}
                     >
-                      Select talent to shortlist
+                      Shortlist talent from the cards
                     </motion.li>
                   ) : (
                     shortlist.map((dancer, index) => (
@@ -128,22 +140,14 @@ export function CastingScene({ play, reduceMotion = false, playKey }: MarketingS
                         <img src={dancer.imageUrl} alt="" />
                         <div>
                           <strong>{dancer.name}</strong>
-                          <span>{dancer.status}</span>
+                          <span>Shortlisted</span>
                         </div>
+                        <X className="size-3.5 md-mock__shortlist-remove" aria-hidden />
                       </motion.li>
                     ))
                   )}
                 </AnimatePresence>
               </ul>
-              {(beat === "confirm" || beat === "hold" || reduceMotion) && (
-                <motion.span
-                  className="md-mock__pill md-mock__pill--success"
-                  initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  Selection confirmed
-                </motion.span>
-              )}
             </aside>
           </div>
         </div>

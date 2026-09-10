@@ -27,6 +27,7 @@
 }
 
 .signup-split {
+  --home-split-dark: #111111;
   min-height: 100svh;
   min-height: 100dvh;
   height: 100svh;
@@ -195,26 +196,10 @@
   }
 }
 
-/* Match home-split breakpoint: desktop nav in the side pane, accordion when stacked */
-.signup-split-cover__content > .home-split__nav--mobile {
-  display: none;
-  margin-bottom: 1rem;
-  flex-shrink: 0;
-}
-
-@media (min-width: 960px) {
-  .signup-split-cover__header .home-split__nav:not(.home-split__nav--mobile) {
-    display: flex;
-  }
-}
-
+/* Match home-split breakpoint: desktop nav in the side pane, hamburger when stacked */
 @media (max-width: 959px) {
-  .signup-split-cover__header .home-split__nav:not(.home-split__nav--mobile) {
+  .signup-split-cover__header .home-split__nav {
     display: none;
-  }
-
-  .signup-split-cover__content > .home-split__nav--mobile {
-    display: flex;
   }
 }
 
@@ -606,6 +591,24 @@
   font-size: 0.75rem;
   color: rgb(255 255 255 / 0.4);
   padding-inline-start: var(--field-pad-x, 0.85rem);
+}
+
+.signup-split-legal {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  text-align: center;
+  color: rgb(255 255 255 / 0.45);
+}
+
+.signup-split-legal a {
+  color: rgb(255 255 255 / 0.7);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.signup-split-legal a:hover {
+  color: #fff;
 }
 
 .signup-split-submit {
@@ -1500,6 +1503,40 @@
     overflow: hidden;
     padding: 0;
   }
+
+  .signup-split--media-cover {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+    overflow: visible;
+    grid-template-columns: none;
+    grid-template-rows: none;
+  }
+
+  .signup-split--media-cover .signup-split-cover {
+    display: none;
+  }
+
+  .signup-split--media-cover .signup-split__mobile-bar {
+    display: grid;
+    grid-area: auto;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    width: 100%;
+    flex-shrink: 0;
+  }
+
+  .signup-split--media-cover .signup-split-panel {
+    width: 100%;
+    max-width: none;
+    flex: 1 1 auto;
+    overflow: visible;
+    justify-content: flex-start;
+    padding: 1.5rem 1.5rem 2.5rem;
+  }
 }
 
 .signup-split-panel--full-bleed {
@@ -1606,4 +1643,108 @@
   max-width: 34rem;
   font-size: 0.9375rem;
   line-height: 1.55;
+}
+
+/* Deferred profile setup: headshot portrait on the left */
+.signup-split-cover--portrait {
+  background: #0a0a0a;
+}
+
+.signup-split-cover__portrait {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.signup-split-cover__portrait-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.signup-split-cover__portrait-fallback {
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 20%, rgb(0 170 204 / 0.18) 0%, transparent 55%),
+    linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+}
+
+.signup-split-cover__portrait-fade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgb(0 0 0 / 0.45) 0%, transparent 28%),
+    linear-gradient(0deg, rgb(0 0 0 / 0.88) 0%, rgb(0 0 0 / 0.35) 38%, transparent 62%);
+}
+
+.signup-split-cover__portrait-name {
+  position: absolute;
+  left: 1.5rem;
+  right: 1.5rem;
+  bottom: 1.75rem;
+  margin: 0;
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: #fff;
+  text-shadow: 0 2px 24px rgb(0 0 0 / 0.45);
+}
+
+.signup-split-cover--portrait .signup-split-cover__header,
+.signup-split-cover--portrait .signup-split-cover__content {
+  position: relative;
+  z-index: 1;
+}
+
+.signup-split-cover__main--portrait {
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 959px) {
+  .signup-split--portrait-cover {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+    overflow: visible;
+    grid-template-columns: none;
+    grid-template-rows: none;
+  }
+
+  .signup-split--portrait-cover .signup-split-cover {
+    position: relative;
+    width: 100%;
+    min-height: 42vw;
+    max-height: 280px;
+    flex-shrink: 0;
+  }
+
+  .signup-split--portrait-cover .signup-split-cover__portrait-name {
+    left: 1.25rem;
+    right: 1.25rem;
+    bottom: 1.1rem;
+    font-size: 1.5rem;
+  }
+
+  .signup-split--portrait-cover .signup-split-panel {
+    width: 100%;
+    max-width: none;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+}
+
+@media (min-width: 960px) {
+  .signup-split--portrait-cover .signup-split-cover__portrait-name {
+    left: 2.5rem;
+    right: 2.5rem;
+    bottom: 2.5rem;
+  }
 }

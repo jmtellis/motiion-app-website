@@ -4,7 +4,10 @@ import {
   ensureOAuthProfile,
   resolveOAuthRedirectPath,
 } from "@/lib/auth/oauth-server";
-import { parseOAuthSignupIntent } from "@/lib/auth/oauth-shared";
+import {
+  resolveSignupIntent,
+  signupIntentFromUserMetadata,
+} from "@/lib/auth/oauth-shared";
 import { trackServerEvent } from "@/lib/analytics/track-server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -36,9 +39,9 @@ function resolveRedirectOrigin(request: NextRequest) {
   return requestOrigin;
 }
 
-function resolveAuthErrorPath(intent: ReturnType<typeof parseOAuthSignupIntent>) {
+function resolveAuthErrorPath(intent: ReturnType<typeof resolveSignupIntent>) {
   if (intent.flow !== "signup") return "/login";
-  return intent.accountType === "lookingForTalent" ? "/talent-buyers/signup" : "/signup";
+  return "/signup";
 }
 
 function redirectWithAuthError(
@@ -53,8 +56,9 @@ async function rejectLoginWithoutProfile(options: {
   origin: string;
   supabase: NonNullable<Awaited<ReturnType<typeof createServerSupabaseClient>>>;
   userId: string;
+  intent: ReturnType<typeof resolveSignupIntent>;
 }) {
-  const { origin, supabase, userId } = options;
+  const { origin, supabase, userId, intent } = options;
 
   // Remove the orphaned auth identity created by the provider exchange so we
   // do not leave a Motiion-less account hanging around.
@@ -67,12 +71,13 @@ async function rejectLoginWithoutProfile(options: {
   }
 
   await supabase.auth.signOut();
-  return redirectWithAuthError(origin, "/talent-buyers/signup", "no_account");
+  return redirectWithAuthError(origin, "/signup", "no_account");
 }
 
 export async function GET(request: NextRequest) {
   const origin = resolveRedirectOrigin(request);
-  const intent = parseOAuthSignupIntent(request.nextUrl.searchParams);
+  // Preliminary intent from query only (user not loaded yet).
+  let intent = resolveSignupIntent(request.nextUrl.searchParams);
   const errorPath = resolveAuthErrorPath(intent);
   const code = request.nextUrl.searchParams.get("code");
   const oauthError =
@@ -107,6 +112,10 @@ export async function GET(request: NextRequest) {
     return redirectWithAuthError(origin, errorPath, "auth_callback_failed");
   }
 
+  // Re-resolve with user metadata so email-confirm keeps talent vs hiring lane
+  // even when redirect query params were stripped.
+  intent = resolveSignupIntent(request.nextUrl.searchParams, user);
+
   if (intent.flow === "login") {
     const { data: existingProfile } = await supabase
       .from("profiles")
@@ -114,32 +123,38 @@ export async function GET(request: NextRequest) {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (!existingProfile) {
+    // Email/password signup confirmations can look like "login" when params are
+    // missing, but metadata still marks them as signup — bootstrap the profile.
+    const metadataIntent = signupIntentFromUserMetadata(user);
+    if (!existingProfile && metadataIntent) {
+      intent = { ...intent, flow: "signup", accountType: metadataIntent.accountType };
+    } else if (!existingProfile) {
       return rejectLoginWithoutProfile({
         origin,
         supabase,
         userId: user.id,
+        intent,
       });
     }
   }
 
   try {
     const { created } = await ensureOAuthProfile(supabase, user, intent);
-    if (created && intent.flow === "signup") {
+    if (created) {
       await trackServerEvent(
         "user_signed_up",
         {
           account_type: intent.accountType,
-          auth_provider: user.app_metadata.provider ?? "oauth",
+          auth_provider: user.app_metadata.provider ?? "email",
         },
         "/auth/callback",
       );
     }
   } catch (error) {
     console.error("auth callback profile setup failed:", error);
-    return redirectWithAuthError(origin, errorPath, "profile_setup_failed");
+    return redirectWithAuthError(origin, resolveAuthErrorPath(intent), "profile_setup_failed");
   }
 
-  const destination = await resolveOAuthRedirectPath(supabase, user.id, intent);
+  const destination = await resolveOAuthRedirectPath(supabase, user.id, intent, user);
   return NextResponse.redirect(`${origin}${destination}`);
 }

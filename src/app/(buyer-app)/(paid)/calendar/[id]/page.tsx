@@ -26,6 +26,7 @@ export default async function CalendarActivityManagePage({
         revenue={result.data.revenue}
         subgroups={result.data.subgroups}
         promos={result.data.promos}
+        featuredTalent={result.data.featuredTalent}
       />
     </BuyerAppPage>
   );

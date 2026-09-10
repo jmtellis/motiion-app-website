@@ -7,7 +7,10 @@ import {
   isOnboardingComplete,
   toDashboardProfile,
 } from "@/lib/auth/profile";
-import type { OAuthSignupIntent } from "@/lib/auth/oauth-shared";
+import {
+  signupIntentFromUserMetadata,
+  type OAuthSignupIntent,
+} from "@/lib/auth/oauth-shared";
 import type { NonTalentProfileRecord, ProfileRecord } from "@/types/database";
 
 function parseNameFromUser(user: User) {
@@ -38,6 +41,11 @@ function parseNameFromUser(user: User) {
   return { firstName, lastName, displayName };
 }
 
+/**
+ * Ensure a Motiion profiles row exists after auth.
+ * Creates on explicit signup intent OR when auth metadata carries a signup lane
+ * (email confirmation often loses `flow=signup` from the redirect URL).
+ */
 export async function ensureOAuthProfile(
   supabase: SupabaseClient,
   user: User,
@@ -53,15 +61,22 @@ export async function ensureOAuthProfile(
     return { created: false };
   }
 
-  // Login must never auto-create a Motiion profile. Callers should redirect
-  // unauthenticated Google/Apple identities to industry signup instead.
-  if (intent.flow !== "signup") {
+  const metadataIntent = signupIntentFromUserMetadata(user);
+  const canCreateFromSignup = intent.flow === "signup" || Boolean(metadataIntent);
+  if (!canCreateFromSignup) {
+    // Login must never auto-create a Motiion profile for unknown identities.
     return { created: false };
   }
 
+  const resolvedIntent: OAuthSignupIntent = {
+    ...intent,
+    flow: "signup",
+    accountType: metadataIntent?.accountType ?? intent.accountType,
+  };
+
   const email = user.email ?? "";
   const { firstName, lastName, displayName } = parseNameFromUser(user);
-  const accountType = intent.accountType;
+  const accountType = resolvedIntent.accountType;
 
   const { error: profileError } = await supabase.from("profiles").upsert({
     user_id: user.id,
@@ -71,7 +86,9 @@ export async function ensureOAuthProfile(
     display_name: displayName,
     account_type: accountType,
     talent_types:
-      accountType === "talent" && intent.talentSubtype ? [intent.talentSubtype] : [],
+      accountType === "talent" && resolvedIntent.talentSubtype
+        ? [resolvedIntent.talentSubtype]
+        : [],
     working_locations: [],
     skills: [],
     experiences: [],
@@ -86,8 +103,8 @@ export async function ensureOAuthProfile(
   if (accountType === "lookingForTalent") {
     const { error: nonTalentError } = await supabase.from("non_talent_profiles").upsert({
       id: user.id,
-      company_name: intent.companyName?.trim() || null,
-      non_talent_type: intent.nonTalentType || null,
+      company_name: resolvedIntent.companyName?.trim() || null,
+      non_talent_type: resolvedIntent.nonTalentType || null,
       work_email: email,
       user_type: "talent_buyer",
     });
@@ -104,6 +121,7 @@ export async function resolveOAuthRedirectPath(
   supabase: SupabaseClient,
   userId: string,
   intent: OAuthSignupIntent,
+  user?: User | null,
 ): Promise<string> {
   const { data: profile } = await supabase
     .from("profiles")
@@ -114,7 +132,7 @@ export async function resolveOAuthRedirectPath(
     .maybeSingle<ProfileRecord>();
 
   if (!profile) {
-    return "/talent-buyers/signup";
+    return "/signup";
   }
 
   const { data: nonTalentProfile } = await supabase
@@ -127,7 +145,7 @@ export async function resolveOAuthRedirectPath(
 
   const dashboardProfile = toDashboardProfile(profile, nonTalentProfile);
 
-  if (intent.flow === "signup" && !isOnboardingComplete(dashboardProfile)) {
+  if (!isOnboardingComplete(dashboardProfile)) {
     return getOnboardingPath(dashboardProfile);
   }
 

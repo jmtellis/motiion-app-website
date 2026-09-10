@@ -38,7 +38,7 @@ export async function loadActivityDraft(
       id, creator_id, type, title, description, location, cover_image_url,
       activity_date, start_time, end_date, end_time, max_attendees, is_private,
       require_payment, project_id, root_job_id, category, subcategory,
-      price_amount_cents, max_guest_spots, attendees_visible,
+      price_amount_cents, max_guest_spots, attendees_visible, external_ticket_url,
       class_what_you_will_learn, class_skill_level, class_focus, class_intensity,
       class_prerequisites, class_dress_code, class_equipment, class_cancellation_policy,
       session_level, session_vibe, session_rules, session_good_to_know,
@@ -178,6 +178,9 @@ export async function loadActivityDraft(
         includedEventDayIds: dayIdsByTicket.get(String(ticket.id)) ?? [],
       }),
     );
+    draft.externalTicketUrl = String(r.external_ticket_url ?? "");
+    draft.sellTicketsOnMotiion = draft.isPaid || draft.ticketOptions.length > 0;
+    draft.featuredTalentInvites = [];
 
     if (!draft.eventDays.length) {
       draft.eventDays = [

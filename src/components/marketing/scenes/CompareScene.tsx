@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft } from "lucide-react";
+import { MoreHorizontal, Plus, Search } from "lucide-react";
 
 import { MarketingScene, type MarketingSceneProps } from "@/components/marketing/MarketingScene";
 import { MockArtboard } from "@/components/marketing/MockArtboard";
@@ -43,16 +43,27 @@ export function CompareScene({ play, reduceMotion = false, playKey }: MarketingS
   return (
     <MarketingScene>
       <MockArtboard>
-        <header className="md-mock__chrome">
-          {showDetail ? (
-            <span className="md-mock__pill">
-              <ArrowLeft className="size-3.5" aria-hidden />
-              Roster
-            </span>
-          ) : (
-            <p className="md-mock__title">Roster</p>
-          )}
-          <span className="md-mock__pill md-mock__pill--accent">+ Create roster</span>
+        <header className="md-mock__chrome md-mock__chrome--stack">
+          <div className="md-mock__segment" aria-hidden>
+            <span className="md-mock__segment-item">Browse</span>
+            <span className="md-mock__segment-item md-mock__segment-item--active">Roster</span>
+          </div>
+          <div className="md-mock__chrome-row">
+            <p className="md-mock__title">{showDetail && active ? active.name : "Roster"}</p>
+            <div className="md-mock__chrome-end">
+              {!showDetail ? (
+                <span className="md-mock__btn md-mock__btn--sm">
+                  <Plus className="size-3.5" aria-hidden />
+                  Create roster
+                </span>
+              ) : (
+                <span className="md-mock__btn md-mock__btn--sm">
+                  <Plus className="size-3.5" aria-hidden />
+                  Add talent
+                </span>
+              )}
+            </div>
+          </div>
         </header>
 
         <div className="md-mock__body">
@@ -67,10 +78,15 @@ export function CompareScene({ play, reduceMotion = false, playKey }: MarketingS
                 transition={{ duration: 0.4, ease: EASE }}
               >
                 <div className="md-mock__roster-heading">
-                  <h3>{active.name}</h3>
-                  <p>{active.note}</p>
-                  <span className="md-mock__chip">
-                    {members.length} {members.length === 1 ? "person" : "people"}
+                  <div>
+                    <p>{active.note}</p>
+                    <span className="md-mock__chip">
+                      {members.length} {members.length === 1 ? "person" : "people"}
+                    </span>
+                  </div>
+                  <span className="md-mock__search-field">
+                    <Search className="size-3.5" aria-hidden />
+                    Search roster
                   </span>
                 </div>
                 <div className="md-mock__member-grid">
@@ -116,15 +132,19 @@ export function CompareScene({ play, reduceMotion = false, playKey }: MarketingS
                           // eslint-disable-next-line @next/next/no-img-element
                           <img key={`${collection.id}-${dancer.id}`} src={dancer.imageUrl} alt="" />
                         ) : (
-                          <span key={`${collection.id}-empty-${index}`}>+</span>
+                          <span key={`${collection.id}-empty-${index}`} />
                         ),
                       )}
                     </div>
                     <div className="md-mock__collection-body">
-                      <h3>{collection.name}</h3>
+                      <div className="md-mock__collection-title-row">
+                        <h3>{collection.name}</h3>
+                        <MoreHorizontal className="size-4" aria-hidden />
+                      </div>
                       <p>
-                        {collection.dancerIds.length} people · {collection.note}
+                        {collection.dancerIds.length} people
                       </p>
+                      <p className="md-mock__collection-note">{collection.note}</p>
                     </div>
                   </article>
                 ))}

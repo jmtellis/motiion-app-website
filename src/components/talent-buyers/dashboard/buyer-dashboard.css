@@ -1258,8 +1258,14 @@
 .buyer-dashboard .bd-cal__toolbar--schedule .bd-cal__toolbar-start {
   grid-column: 1;
   justify-self: start;
-  flex-wrap: wrap;
-  gap: 0.75rem;
+  justify-content: flex-start;
+  align-items: center;
+  min-width: 0;
+}
+
+.buyer-dashboard .bd-cal__toolbar--schedule .bd-cal__toolbar-start .bd-cal__title {
+  text-align: left;
+  margin: 0;
 }
 
 .buyer-dashboard .bd-cal__toolbar--schedule .bd-cal__toolbar-center {

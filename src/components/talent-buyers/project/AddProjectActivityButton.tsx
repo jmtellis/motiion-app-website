@@ -1,6 +1,7 @@
 "use client";
 
 import { Calendar, Clapperboard, GraduationCap, Plus, Users, type LucideIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
@@ -56,6 +57,7 @@ export function AddProjectActivityButton({
   triggerLabel?: string;
   showPlusIcon?: boolean;
 }) {
+  const router = useRouter();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [castingOpen, setCastingOpen] = useState(false);
   const [scheduledType, setScheduledType] = useState<ScheduledActivityType | null>(null);
@@ -66,6 +68,12 @@ export function AddProjectActivityButton({
 
     if (option.action.kind === "casting") {
       setCastingOpen(true);
+      return;
+    }
+
+    // Full wizard: tickets, venue Places search, and lead invites.
+    if (option.action.activityType === "event") {
+      router.push(`/calendar/new?type=event&projectId=${projectId}`);
       return;
     }
 

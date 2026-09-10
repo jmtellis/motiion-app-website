@@ -124,7 +124,7 @@ export const industryPricingContent: IndustryPricingContent = {
     price: "$0",
     period: "forever",
     description: "Explore the platform and browse public profiles. Upgrade to Pro for search, rosters, and projects.",
-    cta: { label: "Create free account", href: "/talent-buyers/signup" },
+    cta: { label: "Create free account", href: "/signup" },
     features: [
       "Create your industry account",
       "Browse public talent profiles",
@@ -136,7 +136,7 @@ export const industryPricingContent: IndustryPricingContent = {
     price: "$200",
     period: "per month",
     description: "Full discovery, roster, and project workflow for hiring teams.",
-    cta: { label: "Start Pro", href: "/talent-buyers/signup?plan=pro" },
+    cta: { label: "Start Pro", href: "/signup?plan=pro" },
     highlighted: true,
     features: [
       "Unlimited talent search and filters",

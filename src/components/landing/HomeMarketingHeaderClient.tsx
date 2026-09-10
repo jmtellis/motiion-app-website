@@ -12,19 +12,14 @@ import { homeSignupScrollCta } from "@/lib/marketing/homepage-content";
 import {
   INDUSTRY_PRO_SIGNUP_CTA,
   JOIN_BETA_CTA,
+  marketingAudienceTabs,
   type MarketingHeaderTab,
-  type MarketingTab,
 } from "@/lib/marketing/marketing-pages";
 import { scrollToSignupSection } from "@/lib/marketing/scroll-to-signup";
 
-const marketingTabs: { id: MarketingTab; label: string; href: string }[] = [
-  { id: "talent", label: "Talent", href: "/for-talent" },
-  { id: "casting", label: "Industry Professionals", href: "/for-casting" },
-];
-
 function getHeaderSignupCta(activeTab: MarketingHeaderTab) {
   if (activeTab === "casting") return INDUSTRY_PRO_SIGNUP_CTA;
-  if (activeTab === "talent") return JOIN_BETA_CTA;
+  if (activeTab === "talent" || activeTab === "community") return JOIN_BETA_CTA;
   return { label: homeSignupScrollCta.label, href: "#signup" } as const;
 }
 
@@ -128,7 +123,7 @@ function MarketingHeaderMobileScrolledBar({
           className="absolute inset-x-0 top-full z-50 border-b border-[#262626] bg-[var(--stage-black)]/98 px-6 py-4 backdrop-blur-md"
         >
           <nav aria-label="Primary mobile" className="flex flex-col gap-1">
-            {marketingTabs.map((tab) => {
+            {marketingAudienceTabs.map((tab) => {
               const active = activeTab !== null && activeTab === tab.id;
               return (
                 <Link
@@ -325,7 +320,7 @@ export function HomeMarketingHeaderClient({
         sideRevealClass(showScrolled, "left"),
       )}
     >
-      {marketingTabs.map((tab) => {
+      {marketingAudienceTabs.map((tab) => {
         const active = activeTab !== null && activeTab === tab.id;
         return (
           <Link

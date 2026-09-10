@@ -7,10 +7,11 @@ import { motion, useReducedMotion } from "motion/react";
 
 import { AuthSplitLink, AuthSplitTransitionProvider } from "@/components/auth/AuthSplitTransition";
 import { MotiionWordmark } from "@/components/brand/MotiionWordmark";
-import { HomeSplitNav } from "@/components/landing/HomeSplitNav";
+import { HomeSplitMobileMenu, HomeSplitNav } from "@/components/landing/HomeSplitNav";
 import { ScrollMarquee } from "@/components/landing/ScrollMarquee";
 import { MarketingBodySurface } from "@/components/landing/MarketingBodySurface";
 import { SmoothScroll } from "@/components/landing/SmoothScroll";
+import { homeLoginCta } from "@/lib/marketing/homepage-content";
 
 import "@/components/landing/home-split-landing.css";
 import "@/app/signup/signup-split.css";
@@ -39,6 +40,11 @@ export type SignupSplitMarquee = {
   direction?: "left" | "right";
 };
 
+export type SignupSplitPortraitCover = {
+  imageUrl?: string | null;
+  name: string;
+};
+
 type SignupSplitShellProps = {
   headline: string;
   subtext: string;
@@ -58,6 +64,11 @@ type SignupSplitShellProps = {
    * headline/subtext render in the right panel above the form.
    */
   mediaCover?: boolean;
+  /**
+   * Deferred profile setup: left panel is the talent headshot with name overlay.
+   * Form content stays on the right (or below on small screens).
+   */
+  portraitCover?: SignupSplitPortraitCover | null;
   /** Micro-step progress shown above the left-panel headline during onboarding. */
   progressLabel?: string;
   progressCurrent?: number;
@@ -80,6 +91,7 @@ export function SignupSplitShell({
   showWordmark = true,
   fullBleed = false,
   mediaCover = false,
+  portraitCover = null,
   progressLabel,
   progressCurrent,
   progressTotal,
@@ -96,21 +108,65 @@ export function SignupSplitShell({
         animate: { opacity: 1, y: 0 },
       };
   const delay = (ms: number) => (reduceMotion ? 0 : ms);
-  const showCoverSteps = !fullBleed && !mediaCover && showSteps && steps.length > 0;
+  const hasPortraitCover = Boolean(portraitCover);
+  const showCoverSteps =
+    !fullBleed && !mediaCover && !hasPortraitCover && showSteps && steps.length > 0;
   const showCoverProgress =
     !fullBleed &&
     !mediaCover &&
+    !hasPortraitCover &&
     progressCurrent !== undefined &&
     progressTotal !== undefined &&
     progressTotal > 0;
+  const showMobileBar = showNav && !fullBleed;
+  const splitClassName = [
+    "signup-split",
+    fullBleed ? "signup-split--full-bleed" : "",
+    mediaCover ? "signup-split--media-cover" : "",
+    hasPortraitCover ? "signup-split--portrait-cover" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <AuthSplitTransitionProvider>
       <SmoothScroll>
         <MarketingBodySurface dark />
-        <div className={`signup-split${fullBleed ? " signup-split--full-bleed" : ""}`}>
+        <div className={splitClassName}>
+          {showMobileBar ? (
+            <div className="home-split__mobile-bar signup-split__mobile-bar">
+              <HomeSplitMobileMenu />
+              <Link href="/" className="home-split__mobile-bar-logo" aria-label="Motiion home">
+                <MotiionWordmark priority height={11} />
+              </Link>
+              <Link
+                href={homeLoginCta.href}
+                className="home-split__login home-split__login--on-dark"
+              >
+                {homeLoginCta.label}
+              </Link>
+            </div>
+          ) : null}
           {!fullBleed ? (
-            <aside className="signup-split-cover relative">
+            <aside
+              className={`signup-split-cover relative${hasPortraitCover ? " signup-split-cover--portrait" : ""}`}
+            >
+              {hasPortraitCover && portraitCover ? (
+                <div className="signup-split-cover__portrait" aria-hidden={!portraitCover.imageUrl}>
+                  {portraitCover.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- remote headshot URLs vary by storage host
+                    <img
+                      src={portraitCover.imageUrl}
+                      alt=""
+                      className="signup-split-cover__portrait-image"
+                    />
+                  ) : (
+                    <div className="signup-split-cover__portrait-fallback" />
+                  )}
+                  <div className="signup-split-cover__portrait-fade" />
+                  <p className="signup-split-cover__portrait-name">{portraitCover.name}</p>
+                </div>
+              ) : null}
               <motion.div
                 className="signup-split-cover__header"
                 initial={enter.initial}
@@ -135,8 +191,7 @@ export function SignupSplitShell({
                 </div>
               </motion.div>
               <div className="signup-split-cover__content">
-                {showNav ? <HomeSplitNav mobile /> : null}
-                {!mediaCover ? (
+                {!mediaCover && !hasPortraitCover ? (
                   <div className="signup-split-cover__main">
                     <motion.div
                       className="signup-split-cover__intro"
@@ -211,10 +266,13 @@ export function SignupSplitShell({
                       </motion.ol>
                     ) : null}
                   </div>
-                ) : (
+                ) : mediaCover ? (
                   <div className="signup-split-cover__main" aria-hidden />
+                ) : (
+                  <div className="signup-split-cover__main signup-split-cover__main--portrait" aria-hidden />
                 )}
-                {coverAltLinks?.length || (marquee && marquee.segments.length > 0) ? (
+                {!hasPortraitCover &&
+                (coverAltLinks?.length || (marquee && marquee.segments.length > 0)) ? (
                   <motion.div
                     className="signup-split-cover__footer"
                     initial={enter.initial}

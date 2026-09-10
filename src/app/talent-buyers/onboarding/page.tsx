@@ -1,7 +1,12 @@
 import { redirect } from "next/navigation";
 
 import { TalentBuyerOnboardingFlow } from "@/components/talent-buyers/TalentBuyerOnboardingFlow";
-import { isHiringAccount, isOnboardingComplete, isTalentAccount } from "@/lib/auth/profile";
+import {
+  isCommunityAccount,
+  isHiringAccount,
+  isOnboardingComplete,
+  isTalentAccount,
+} from "@/lib/auth/profile";
 import { getProfileDestination, requireAuth } from "@/lib/auth/session";
 
 export default async function TalentBuyerOnboardingPage() {
@@ -11,7 +16,7 @@ export default async function TalentBuyerOnboardingPage() {
     redirect(getProfileDestination(profile));
   }
 
-  if (isTalentAccount(profile.accountType)) {
+  if (isTalentAccount(profile.accountType) || isCommunityAccount(profile.accountType)) {
     redirect("/onboarding");
   }
 

@@ -80,7 +80,7 @@ export const createAccountHeroCta = {
         id: "industry",
         label: "Industry Professional",
         description: "For casting teams, agencies, and producers discovering and managing talent.",
-        href: "/talent-buyers/signup",
+        href: "/signup",
       },
     ],
   },
@@ -109,88 +109,8 @@ export const learnMoreHeroCta = {
 } as const;
 
 /** Audience nav links shown on the root split landing. */
-export const homeSplitNavLinks = [
-  { id: "talent" as const, label: "Talent", href: "/for-talent" },
-  { id: "casting" as const, label: "Industry Professionals", href: "/for-casting" },
-];
-
-export type HomeSplitNavItem = {
-  label: string;
-  href: string;
-  description: string;
-};
-
-export type HomeSplitNavGroup = {
-  id: "community" | "talent" | "industry";
-  label: string;
-  items: HomeSplitNavItem[];
-};
-
-export const homeSplitNav: HomeSplitNavGroup[] = [
-  {
-    id: "community",
-    label: "Community",
-    items: [
-      {
-        label: "Events",
-        href: "/community/events",
-        description: "Live appearances, activations, and industry gatherings.",
-      },
-      {
-        label: "Classes",
-        href: "/community/classes",
-        description: "Training sessions and open classes from the community.",
-      },
-      {
-        label: "Programs",
-        href: "/community/programs",
-        description: "Intensives, workshops, and development programs.",
-      },
-    ],
-  },
-  {
-    id: "talent",
-    label: "Talent",
-    items: [
-      {
-        label: "Product",
-        href: "/for-talent",
-        description: "One profile. Better opportunities. Less friction.",
-      },
-      {
-        label: "Open Calls",
-        href: "/open-calls",
-        description: "Browse open castings and calls across the platform.",
-      },
-      {
-        label: "Resources",
-        href: "/resources",
-        description: "SAG dancer rules, Dancer's Alliance rates, and more.",
-      },
-    ],
-  },
-  {
-    id: "industry",
-    label: "Industry Professionals",
-    items: [
-      {
-        label: "Product",
-        href: "/for-casting",
-        description: "Discover talent. Build rosters. Run projects.",
-      },
-      {
-        label: "Dancerbase",
-        href: "/dancerbase",
-        description: "Ask simple questions against Motiion's dance knowledge base.",
-      },
-      {
-        label: "Resources",
-        href: "/resources",
-        description: "SAG dancer rules, Dancer's Alliance rates, and more.",
-      },
-    ],
-  },
-];
+export { marketingAudienceTabs as homeSplitNav } from "@/lib/marketing/marketing-pages";
+export { marketingAudienceTabs as homeSplitNavLinks } from "@/lib/marketing/marketing-pages";
 
 export const homeHero = {
   eyebrow: "Professional dance, connected",
@@ -253,13 +173,18 @@ export const homeHero = {
   ],
   audienceLinks: [
     {
+      id: "community",
+      label: "Community",
+      href: "/community",
+    },
+    {
       id: "talent",
       label: "Talent",
       href: "/for-talent",
     },
     {
       id: "casting",
-      label: "Industry Professional",
+      label: "Industry Professionals",
       href: "/for-casting",
     },
   ],
@@ -325,21 +250,21 @@ export const homeSignupScrollCta = {
 export const homeSignupSection = {
   eyebrow: "Get started",
   title: "Sign up",
-  description: "Create a talent profile or set up an industry workspace.",
+  description: "Create one Motiion account, then tell us what brings you here.",
   paths: [
     {
       id: "talent",
       label: "Creative Talent",
       description: "For dancers and choreographers building a profile and managing their career.",
       href: "/signup",
-      cta: "Sign up as talent",
+      cta: "Sign up",
     },
     {
       id: "industry",
       label: "Industry Professional",
       description: "For casting teams, agencies, and producers discovering and managing talent.",
-      href: "/talent-buyers/signup",
-      cta: "Sign up as industry",
+      href: "/signup",
+      cta: "Sign up",
     },
   ],
 } as const;

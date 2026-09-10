@@ -59,9 +59,22 @@ export function LoginForm() {
     }
 
     const nextParam = searchParams.get("next");
-    const destination = nextParam?.startsWith("/")
+    let destination = nextParam?.startsWith("/")
       ? nextParam
       : await resolveClientLoginDestination(supabase);
+
+    if (!nextParam?.startsWith("/")) {
+      try {
+        const featured = window.localStorage.getItem(
+          "motiion.pending_featured_talent_invite_token",
+        );
+        if (featured && featured.trim()) {
+          destination = `/featured-invite/${encodeURIComponent(featured.trim().toLowerCase())}`;
+        }
+      } catch {
+        // ignore
+      }
+    }
 
     router.push(destination);
     router.refresh();
@@ -123,7 +136,7 @@ export function LoginForm() {
         <p className="signup-split-signup-options__label">
           Need to create an account?{" "}
           <AuthSplitLink
-            href="/talent-buyers/signup"
+            href="/signup"
             className="signup-split-text-btn signup-split-text-btn--accent"
           >
             Sign up

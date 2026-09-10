@@ -26,6 +26,7 @@ import {
 import { ActivityPeoplePicker } from "@/components/talent-buyers/activities/ActivityPeoplePicker";
 import {
   ActivityCoverField,
+  FeaturedTalentStep,
   LeadsStep,
   PromosStep,
 } from "@/components/talent-buyers/activities/activity-wizard-event-steps";
@@ -63,6 +64,8 @@ type Props = {
   initialDraft: ActivityDraft;
   mode?: "create" | "edit";
   activityId?: string;
+  /** When true, skip the type step (type came from the create picker URL). */
+  typeLocked?: boolean;
   initialConnectStatus?: ConnectAccountStatus | null;
   closeHref?: string;
 };
@@ -71,6 +74,7 @@ export function ActivityCreateWizard({
   initialDraft,
   mode = "create",
   activityId,
+  typeLocked = false,
   initialConnectStatus = null,
   closeHref = "/events",
 }: Props) {
@@ -82,8 +86,17 @@ export function ActivityCreateWizard({
   const [isPending, startTransition] = useTransition();
 
   const config = ACTIVITY_CREATE_REGISTRY[draft.type];
-  const steps = config.steps;
-  const currentStep = steps[stepIndex] ?? "type";
+  const steps = useMemo(() => {
+    let next = config.steps;
+    if (typeLocked || mode === "edit") {
+      next = next.filter((step) => step !== "type");
+    }
+    if (draft.type === "event" && !draft.sellTicketsOnMotiion) {
+      next = next.filter((step) => step !== "tickets" && step !== "promos");
+    }
+    return next;
+  }, [config.steps, mode, typeLocked, draft.type, draft.sellTicketsOnMotiion]);
+  const currentStep = steps[stepIndex] ?? steps[0] ?? "basics";
   const isLast = stepIndex >= steps.length - 1;
   const isFirst = stepIndex === 0;
 
@@ -108,8 +121,10 @@ export function ActivityCreateWizard({
       if (type === "event" && next.eventDays.length === 0) {
         next.eventDays = [createDefaultEventDay()];
       }
-      if (type === "event" && next.ticketOptions.length === 0) {
-        next.ticketOptions = createDefaultTicketOptions();
+      if (type === "event") {
+        next.sellTicketsOnMotiion = false;
+        next.isPaid = false;
+        next.ticketOptions = [];
       }
       return next;
     });
@@ -136,7 +151,12 @@ export function ActivityCreateWizard({
       setError(validation);
       return;
     }
-    if (draft.isPaid && draft.type !== "session" && !connectReady) {
+    if (
+      draft.isPaid &&
+      draft.type !== "session" &&
+      (draft.type !== "event" || draft.sellTicketsOnMotiion) &&
+      !connectReady
+    ) {
       setError("Finish Stripe payment setup before publishing a paid activity.");
       return;
     }
@@ -260,6 +280,9 @@ export function ActivityCreateWizard({
           ) : null}
           {currentStep === "learning" ? <LearningStep draft={draft} onChange={setDraft} /> : null}
           {currentStep === "dates" ? <DatesStep draft={draft} onChange={setDraft} /> : null}
+          {currentStep === "featuredTalent" ? (
+            <FeaturedTalentStep draft={draft} onChange={setDraft} />
+          ) : null}
           {currentStep === "tickets" ? (
             <TicketsStep
               draft={draft}
@@ -301,7 +324,7 @@ function TypeStep({
     {
       type: "event",
       title: "Event",
-      body: "Showcases, mixers, and ticketed multi-day experiences.",
+      body: "Showcases and industry events featuring Motiion talent.",
     },
     {
       type: "class",
@@ -497,8 +520,42 @@ function DatesStep({
   return (
     <div className="space-y-4">
       <p className="text-sm text-white/55">
-        Add one or more days. Ticket access can cover all days, a fixed set, or a selectable range.
+        Set when and where the event happens. Add an optional ticket link if tickets are sold
+        elsewhere.
       </p>
+      <ActivityField label="Ticket link (optional)">
+        <ActivityTextInput
+          type="url"
+          value={draft.externalTicketUrl}
+          placeholder="https://…"
+          onChange={(event) => onChange({ ...draft, externalTicketUrl: event.target.value })}
+        />
+      </ActivityField>
+      <label className="activity-create-wizard__toggle">
+        <div>
+          <p className="text-sm font-semibold text-white">Sell tickets on Motiion</p>
+          <p className="text-xs text-white/50">
+            Optional — configure Motiion ticket types and Stripe checkout in the next steps.
+          </p>
+        </div>
+        <input
+          type="checkbox"
+          checked={draft.sellTicketsOnMotiion}
+          onChange={(event) => {
+            const enabled = event.target.checked;
+            onChange({
+              ...draft,
+              sellTicketsOnMotiion: enabled,
+              isPaid: enabled ? draft.isPaid || true : false,
+              ticketOptions:
+                enabled && draft.ticketOptions.length === 0
+                  ? createDefaultTicketOptions()
+                  : draft.ticketOptions,
+            });
+          }}
+          className="size-4 accent-[var(--accent)]"
+        />
+      </label>
       {draft.eventDays.map((day, index) => (
         <div key={day.id} className="activity-create-wizard__panel">
           <div className="flex items-center justify-between">

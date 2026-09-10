@@ -5,14 +5,13 @@ import { MotiionBrandMark } from "@/components/brand/MotiionBrandMark";
 import { getAccountProfileHref, getAccountSettingsHref, getProfileInitials } from "@/lib/auth/avatar";
 import { isOnboardingComplete } from "@/lib/auth/profile";
 import { getCurrentUserProfile } from "@/lib/auth/session";
-import { INDUSTRY_PRO_SIGNUP_CTA, JOIN_BETA_CTA } from "@/lib/marketing/marketing-pages";
-import type { MarketingHeaderTab, MarketingTab } from "@/lib/marketing/marketing-pages";
+import {
+  INDUSTRY_PRO_SIGNUP_CTA,
+  JOIN_BETA_CTA,
+  marketingAudienceTabs,
+} from "@/lib/marketing/marketing-pages";
+import type { MarketingHeaderTab } from "@/lib/marketing/marketing-pages";
 import type { DashboardProfile } from "@/types/database";
-
-const marketingTabs: { id: MarketingTab; label: string; href: string }[] = [
-  { id: "talent", label: "Creative Talent", href: "/for-talent" },
-  { id: "casting", label: "Industry Professionals", href: "/for-casting" },
-];
 
 function toAccountPillUser(profile: DashboardProfile): AccountPillUser {
   return {
@@ -93,7 +92,7 @@ export async function MarketingHeader({
       <div className="mx-auto flex w-full max-w-6xl flex-col md:hidden">
         <div className="flex justify-center px-6 pt-3 pb-0">{logoLink}</div>
         <nav aria-label="Primary mobile" className="flex w-full px-4 pt-4 pb-3">
-          {marketingTabs.map((tab) => {
+          {marketingAudienceTabs.map((tab) => {
             const active = activeTab !== null && activeTab === tab.id;
             return (
               <Link
@@ -111,7 +110,7 @@ export async function MarketingHeader({
 
       <div className="relative mx-auto hidden min-h-[4.25rem] w-full max-w-6xl items-center gap-3 px-6 py-3 md:flex lg:gap-4 lg:px-10">
         <nav aria-label="Primary" className="flex min-w-0 flex-1 items-center gap-6 lg:gap-8">
-          {marketingTabs.map((tab) => {
+          {marketingAudienceTabs.map((tab) => {
             const active = activeTab !== null && activeTab === tab.id;
             return (
               <Link

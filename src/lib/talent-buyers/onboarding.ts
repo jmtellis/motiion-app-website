@@ -324,10 +324,10 @@ export function resolveIndustryPrimaryAction(
   goals: TalentBuyerPlatformGoal[],
 ): IndustryPrimaryAction {
   if (goals.includes("run_a_casting")) {
-    return { id: "create_casting", label: "Create a casting", href: "/projects?create=1" };
+    return { id: "create_casting", label: "Create a casting", href: "/projects/new/casting" };
   }
   if (goals.includes("staff_a_project")) {
-    return { id: "create_project", label: "Create a project", href: "/projects?create=1" };
+    return { id: "create_project", label: "Create", href: "/projects?create=1" };
   }
   if (goals.includes("find_dancers")) {
     return { id: "find_dancers", label: "Find dancers", href: "/talent" };
@@ -502,7 +502,7 @@ export function buildBuyerRecommendations(profile: {
       id: "create-casting",
       title: "Create a new casting",
       description: "Publish roles and start collecting submissions.",
-      href: "/projects?create=1",
+      href: "/projects/new/casting",
     });
   }
 

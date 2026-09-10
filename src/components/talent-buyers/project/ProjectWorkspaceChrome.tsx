@@ -6,6 +6,7 @@ import { BuyerCoverImage } from "@/components/talent-buyers/dashboard/BuyerCover
 import { CastingProjectChromeActions } from "@/components/talent-buyers/casting/CastingProjectChromeActions";
 import type { CastingProjectStatus } from "@/lib/talent-buyers/casting/casting-types";
 
+import { AddProjectActivityButton } from "./AddProjectActivityButton";
 import { ProjectAddMenuButton } from "./ProjectAddMenuButton";
 import type { ProjectWorkspaceMeta } from "./ProjectWorkspaceContext";
 
@@ -59,6 +60,8 @@ export function ProjectWorkspaceChromeEnd({
     );
   }
 
+  const isEventProject = project.projectType === "event";
+
   return (
     <>
       <span
@@ -73,7 +76,11 @@ export function ProjectWorkspaceChromeEnd({
       <Link href={`/projects/${project.id}/edit`} className="buyer-chrome-bar__edit-link">
         Edit
       </Link>
-      <ProjectAddMenuButton projectId={project.id} projectType={project.projectType} />
+      {isEventProject ? (
+        <AddProjectActivityButton projectId={project.id} triggerLabel="Add" />
+      ) : (
+        <ProjectAddMenuButton projectId={project.id} projectType={project.projectType} />
+      )}
     </>
   );
 }

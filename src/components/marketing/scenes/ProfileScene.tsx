@@ -1,5 +1,16 @@
 "use client";
 
+import {
+  Bookmark,
+  CalendarClock,
+  CalendarPlus,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  Download,
+  Send,
+} from "lucide-react";
+
 import { MarketingScene, type MarketingSceneProps } from "@/components/marketing/MarketingScene";
 import { MockArtboard } from "@/components/marketing/MockArtboard";
 import { useSceneTimeline } from "@/components/marketing/useSceneTimeline";
@@ -19,32 +30,37 @@ export function ProfileScene({ play, reduceMotion = false, playKey }: MarketingS
   const dancer = featuredDemoDancer;
   const tab =
     beat === "resume" ? "Resume" : beat === "visuals" || beat === "hold" ? "Visuals" : "About";
-  const portrait =
-    tab === "Visuals" ? (dancer.headshots[1] ?? dancer.imageUrl) : dancer.imageUrl;
+  const portraitIndex = tab === "Visuals" ? 1 : 0;
+  const portrait = dancer.headshots[portraitIndex] ?? dancer.imageUrl;
 
   return (
     <MarketingScene>
       <MockArtboard className="md-mock--profile">
-        <div className="md-mock__body">
-          <div className="md-mock__portrait">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={portrait} alt="" />
-            <p className="md-mock__portrait-count">
-              1 / {Math.max(dancer.headshots.length, 1)}
-            </p>
-          </div>
-
+        <div className="md-mock__body md-mock__body--profile">
           <div className="md-mock__profile-panel">
             <h2 className="md-mock__profile-name">{dancer.name}</h2>
             <p className="md-mock__profile-handle">
-              @{dancer.slug} · {dancer.location}
+              @{dancer.slug}
             </p>
+            <p className="md-mock__profile-location">{dancer.location}</p>
 
-            <div className="md-mock__profile-attrs">
-              <span className="md-mock__chip">{dancer.gender === "Female" ? "F" : "M"}</span>
-              <span className="md-mock__chip">{dancer.height}</span>
-              <span className="md-mock__chip">{dancer.agency}</span>
-              <span className="md-mock__chip md-mock__chip--accent">{dancer.availabilityLabel}</span>
+            <div className="md-mock__attr-strip">
+              <div>
+                <strong>{dancer.gender === "Female" ? "F" : "M"}</strong>
+                <span>Gender</span>
+              </div>
+              <div>
+                <strong>{dancer.height}</strong>
+                <span>Height</span>
+              </div>
+              <div>
+                <strong>{dancer.unionStatus}</strong>
+                <span>Union</span>
+              </div>
+              <div>
+                <strong>{dancer.agency.split(" ")[0]}</strong>
+                <span>Agency</span>
+              </div>
             </div>
 
             <div className="md-mock__profile-tabs">
@@ -104,7 +120,7 @@ export function ProfileScene({ play, reduceMotion = false, playKey }: MarketingS
                   <p className="md-mock__profile-section-title">Visuals</p>
                   <div className="md-mock__visual-grid">
                     {(dancer.headshots.length ? dancer.headshots : [dancer.imageUrl])
-                      .slice(0, 2)
+                      .slice(0, 4)
                       .map((url) => (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img key={url} src={url} alt="" />
@@ -114,6 +130,49 @@ export function ProfileScene({ play, reduceMotion = false, playKey }: MarketingS
               ) : null}
             </div>
           </div>
+
+          <div className="md-mock__portrait">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={portrait} alt="" />
+            <span className="md-mock__portrait-nav md-mock__portrait-nav--left">
+              <ChevronLeft className="size-4" aria-hidden />
+            </span>
+            <span className="md-mock__portrait-nav md-mock__portrait-nav--right">
+              <ChevronRight className="size-4" aria-hidden />
+            </span>
+            <p className="md-mock__portrait-count">
+              {portraitIndex + 1} / {Math.max(dancer.headshots.length, 1)}
+            </p>
+          </div>
+
+          <aside className="md-mock__profile-actions">
+            <p className="md-mock__profile-actions-title">Actions</p>
+            <span className="md-mock__btn md-mock__btn--ghost md-mock__btn--block">
+              <Bookmark className="size-3.5" aria-hidden />
+              Save to Library
+            </span>
+            <span className="md-mock__btn md-mock__btn--ghost md-mock__btn--block">
+              <CalendarPlus className="size-3.5" aria-hidden />
+              Add to Project
+            </span>
+            <span className="md-mock__btn md-mock__btn--ghost md-mock__btn--block">
+              <Send className="size-3.5" aria-hidden />
+              Just Invite
+            </span>
+            <span className="md-mock__btn md-mock__btn--ghost md-mock__btn--block">
+              <CalendarClock className="size-3.5" aria-hidden />
+              Ask Availability
+            </span>
+            <span className="md-mock__btn md-mock__btn--ghost md-mock__btn--block">
+              <ClipboardList className="size-3.5" aria-hidden />
+              Request Size Sheet
+            </span>
+            <span className="md-mock__btn md-mock__btn--block">
+              <Download className="size-3.5" aria-hidden />
+              Download Resume
+            </span>
+            <p className="md-mock__availability">{dancer.availabilityLabel}</p>
+          </aside>
         </div>
       </MockArtboard>
     </MarketingScene>

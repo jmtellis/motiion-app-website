@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 
 import { requireHiringAccount } from "@/lib/auth/session";
+import { createIntentPath } from "@/lib/talent-buyers/create-intent";
+import { listProjectActivities } from "@/lib/talent-buyers/project-activities";
+import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
 import { fetchProjectRecord } from "@/lib/talent-buyers/projects";
 import {
   projectLandingPath,
@@ -10,7 +13,7 @@ import {
 
 /**
  * Legacy entry: /projects/:id and /projects/:id?tab=…
- * Casting projects land on Breakdown; others on Overview.
+ * Casting → Breakdown. Event shells → linked activity or activity create.
  */
 export default async function BuyerProjectDetailPage({
   params,
@@ -28,6 +31,15 @@ export default async function BuyerProjectDetailPage({
 
   if (rawTab) {
     redirect(resolveLegacyProjectHref(id, rawTab, projectType));
+  }
+
+  if (project && getNormalizedProjectType(projectType) === "event") {
+    const { activities } = await listProjectActivities(id);
+    const primary = activities[0];
+    if (primary) {
+      redirect(`/calendar/${primary.id}`);
+    }
+    redirect(createIntentPath("event", id));
   }
 
   if (project) {

@@ -1,13 +1,19 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Pin, Search } from "lucide-react";
 
 import { ConversationPane } from "@/components/messaging/ConversationPane";
 import { InboxEmptyState } from "@/components/messaging/InboxEmptyState";
 import { formatAttachmentPreviewLabel } from "@/lib/messaging/attachment-payload";
-import type { InboxConversation } from "@/types/app";
+import {
+  filterConversationsByPartition,
+  mapPendingRequestsToChatRows,
+  type ChatInboxFilter,
+} from "@/lib/messaging/inbox-partition";
+import type { HomePendingRequest, InboxConversation } from "@/types/app";
 
 const PIN_STORAGE_KEY = "motiion:pinned-conversations";
 
@@ -44,6 +50,8 @@ export function MessengerShell({
   layout = "card",
   initialConversationId,
   projectFilterTitle,
+  pendingRequests = [],
+  initialFilter = "primary",
 }: {
   conversations: InboxConversation[];
   currentUserId: string;
@@ -52,12 +60,16 @@ export function MessengerShell({
   layout?: "card" | "workspace";
   initialConversationId?: string | null;
   projectFilterTitle?: string | null;
+  pendingRequests?: HomePendingRequest[];
+  initialFilter?: ChatInboxFilter;
 }) {
   const [activeId, setActiveId] = useState<string | null>(initialConversationId ?? null);
   const [query, setQuery] = useState("");
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  const [filter, setFilter] = useState<ChatInboxFilter>(initialFilter);
   const isDashboard = variant === "dashboard";
   const isWorkspace = layout === "workspace";
+  const showPartitions = !isDashboard && !isWorkspace;
 
   useEffect(() => {
     setPinnedIds(readPinnedIds());
@@ -69,8 +81,23 @@ export function MessengerShell({
     }
   }, [initialConversationId]);
 
+  useEffect(() => {
+    setFilter(initialFilter);
+  }, [initialFilter]);
+
+  const requestRows = useMemo(
+    () => mapPendingRequestsToChatRows(pendingRequests),
+    [pendingRequests],
+  );
+
+  const partitioned = useMemo(() => {
+    if (filter === "requests") return [] as InboxConversation[];
+    if (!showPartitions) return conversations;
+    return filterConversationsByPartition(conversations, filter);
+  }, [conversations, filter, showPartitions]);
+
   const filtered = useMemo(() => {
-    let rows = conversations;
+    let rows = partitioned;
     if (projectFilterTitle?.trim()) {
       const needle = projectFilterTitle.trim().toLowerCase();
       rows = rows.filter((row) => row.context_title?.toLowerCase().includes(needle));
@@ -90,9 +117,20 @@ export function MessengerShell({
       if (aPinned !== bPinned) return aPinned ? -1 : 1;
       return (b.last_message_at ?? "").localeCompare(a.last_message_at ?? "");
     });
-  }, [conversations, pinnedIds, projectFilterTitle, query]);
+  }, [partitioned, pinnedIds, projectFilterTitle, query]);
 
-  const active = filtered.find((row) => row.conversation_id === activeId) ?? conversations.find((row) => row.conversation_id === activeId) ?? null;
+  const filterCounts = useMemo(() => {
+    return {
+      primary: filterConversationsByPartition(conversations, "primary").length,
+      general: filterConversationsByPartition(conversations, "general").length,
+      requests: requestRows.length,
+    };
+  }, [conversations, requestRows.length]);
+
+  const active =
+    filtered.find((row) => row.conversation_id === activeId) ??
+    conversations.find((row) => row.conversation_id === activeId) ??
+    null;
 
   function togglePin(conversationId: string) {
     setPinnedIds((current) => {
@@ -118,7 +156,7 @@ export function MessengerShell({
     );
   }
 
-  if (!conversations.length) {
+  if (!conversations.length && !requestRows.length) {
     if (isDashboard) {
       return (
         <div className={isWorkspace ? "flex h-full min-h-0 flex-1 flex-col" : undefined}>
@@ -129,8 +167,8 @@ export function MessengerShell({
 
     return (
       <div className="ui-muted-panel px-6 py-10 text-center">
-        <h2 className="text-xl font-semibold text-[#fafafa]">No conversations yet</h2>
-        <p className="mx-auto mt-2 max-w-md text-sm text-[#8a8a8a]">
+        <h2 className="text-xl font-semibold text-[var(--ds-text-default)]">No conversations yet</h2>
+        <p className="mx-auto mt-2 max-w-md text-sm text-[var(--ds-muted)]">
           When you message talent or respond to invites, threads will show up here.
         </p>
       </div>
@@ -139,133 +177,233 @@ export function MessengerShell({
 
   return (
     <div className={isWorkspace ? "buyer-messages-workspace flex h-full min-h-0 flex-1 flex-col" : "space-y-3"}>
+      {showPartitions ? (
+        <div className="flex flex-wrap gap-1.5">
+          {(
+            [
+              ["primary", "Primary"],
+              ["general", "General"],
+              ["requests", "Requests"],
+            ] as const
+          ).map(([id, label]) => {
+            const selected = filter === id;
+            const count = filterCounts[id];
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => {
+                  setFilter(id);
+                  setActiveId(null);
+                }}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                  selected
+                    ? "bg-[var(--ds-surface-raised)] text-[var(--ds-text-default)]"
+                    : "text-[var(--ds-muted)] hover:bg-[var(--ds-surface)] hover:text-[var(--ds-on-surface)]"
+                }`}
+                aria-pressed={selected}
+              >
+                {label}
+                {count > 0 ? (
+                  <span className="font-mono text-[11px] text-[var(--ds-subtle)]">{count}</span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
       {!isWorkspace && projectFilterTitle ? (
-        <p className={`text-sm ${isDashboard ? "text-white/55" : "text-[#8a8a8a]"}`}>
-          Showing conversations related to <span className="font-medium text-white/85">{projectFilterTitle}</span>
+        <p className={`text-sm ${isDashboard ? "text-white/55" : "text-[var(--ds-muted)]"}`}>
+          Showing conversations related to{" "}
+          <span className="font-medium text-[var(--ds-on-surface)]">{projectFilterTitle}</span>
         </p>
       ) : null}
 
-      <div
-        className={`grid min-h-0 overflow-hidden md:grid-cols-[minmax(240px,1fr)_2fr] ${
-          isWorkspace
-            ? "h-full flex-1"
-            : `h-[70vh] min-h-[420px] rounded-2xl border ${
-                isDashboard ? "border-white/8 bg-white/2" : "border-[#262626] bg-[#151515]"
-              }`
-        }`}
-      >
-        <aside
-          className={`min-h-0 overflow-y-auto border-r md:block ${
-            isDashboard ? "border-white/8" : "border-[#262626]"
-          } ${active ? "hidden" : "block"}`}
-        >
-          <div className={`border-b p-3 ${isDashboard ? "border-white/8" : "border-[#262626]"}`}>
-            <label className="relative block">
-              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/35" />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search conversations"
-                className={`w-full rounded-full border py-2 pr-3 pl-9 text-sm outline-none focus:border-white/30 ${
+      {filter === "requests" && showPartitions ? (
+        <RequestsPane rows={requestRows} />
+      ) : (
+        <div
+          className={`grid min-h-0 overflow-hidden md:grid-cols-[minmax(240px,1fr)_2fr] ${
+            isWorkspace
+              ? "h-full flex-1"
+              : `h-[70vh] min-h-[420px] rounded-2xl border ${
                   isDashboard
-                    ? "border-white/10 bg-black/30 text-white placeholder:text-white/35"
-                    : "border-[#262626] bg-[#0f0f0f] text-white"
-                }`}
-              />
-            </label>
-          </div>
-          <ul>
-            {filtered.map((row) => {
-              const isActive = row.conversation_id === activeId;
-              const isPinned = pinnedIds.includes(row.conversation_id);
-              return (
-                <li key={row.conversation_id}>
-                  <div className="flex items-stretch">
-                    <button
-                      type="button"
-                      onClick={() => setActiveId(row.conversation_id)}
-                      className={`flex flex-1 items-start gap-3 px-4 py-3 text-left transition ${
-                        isActive
-                          ? isDashboard
-                            ? "bg-white/8"
-                            : "bg-[#1e1e1e]"
-                          : isDashboard
-                            ? "hover:bg-white/4"
-                            : "hover:bg-[#1e1e1e]/70"
-                      }`}
-                    >
-                      <ListAvatar url={row.participant_avatar_url} name={row.participant_name} />
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-baseline justify-between gap-2">
-                          <span
-                            className={`truncate text-sm font-semibold ${
-                              isDashboard ? "text-white/90" : "text-[#fafafa]"
-                            }`}
-                          >
-                            {row.participant_name}
-                          </span>
-                          <span className={`shrink-0 text-[11px] ${isDashboard ? "text-white/40" : "text-[#5a5a5a]"}`}>
-                            {formatWhen(row.last_message_at)}
-                          </span>
-                        </span>
-                        {row.context_title ? (
-                          <span className="mt-0.5 block truncate text-[11px] text-[#2dd4bf]/80">
-                            {row.context_title}
-                          </span>
-                        ) : null}
-                        <span
-                          className={`mt-0.5 line-clamp-1 block text-xs ${
-                            isDashboard ? "text-white/50" : "text-[#8a8a8a]"
+                    ? "border-white/8 bg-white/2"
+                    : "border-[var(--ds-border)] bg-[var(--ds-surface)]"
+                }`
+          }`}
+        >
+          <aside
+            className={`min-h-0 overflow-y-auto border-r md:block ${
+              isDashboard ? "border-white/8" : "border-[var(--ds-border)]"
+            } ${active ? "hidden" : "block"}`}
+          >
+            <div className={`border-b p-3 ${isDashboard ? "border-white/8" : "border-[var(--ds-border)]"}`}>
+              <label className="relative block">
+                <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/35" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search conversations"
+                  className={`w-full rounded-full border py-2 pr-3 pl-9 text-sm outline-none focus:border-white/30 ${
+                    isDashboard
+                      ? "border-white/10 bg-black/30 text-white placeholder:text-white/35"
+                      : "border-[var(--ds-border)] bg-[var(--ds-background)] text-[var(--ds-text-default)]"
+                  }`}
+                />
+              </label>
+            </div>
+            {!filtered.length ? (
+              <p className="px-4 py-8 text-center text-sm text-[var(--ds-muted)]">
+                No threads in {filter}.
+              </p>
+            ) : (
+              <ul>
+                {filtered.map((row) => {
+                  const isActive = row.conversation_id === activeId;
+                  const isPinned = pinnedIds.includes(row.conversation_id);
+                  return (
+                    <li key={row.conversation_id}>
+                      <div className="flex items-stretch">
+                        <button
+                          type="button"
+                          onClick={() => setActiveId(row.conversation_id)}
+                          className={`flex flex-1 items-start gap-3 px-4 py-3 text-left transition ${
+                            isActive
+                              ? isDashboard
+                                ? "bg-white/8"
+                                : "bg-[var(--ds-surface-raised)]"
+                              : isDashboard
+                                ? "hover:bg-white/4"
+                                : "hover:bg-[var(--ds-surface-raised)]/70"
                           }`}
                         >
-                          {formatConversationPreview(row.last_message_body)}
-                        </span>
-                      </span>
-                      {row.unread_count > 0 ? (
-                        <span className="mt-1 inline-flex min-w-[1.15rem] shrink-0 items-center justify-center rounded-full bg-[var(--accent)] px-1.5 py-0.5 font-mono text-[10px] font-bold text-[#04231e]">
-                          {row.unread_count > 99 ? "99+" : row.unread_count}
-                        </span>
-                      ) : null}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => togglePin(row.conversation_id)}
-                      className={`px-2 text-white/30 hover:text-[#2dd4bf] ${isPinned ? "text-[#2dd4bf]" : ""}`}
-                      aria-label={isPinned ? "Unpin conversation" : "Pin conversation"}
-                    >
-                      <Pin className="size-3.5" />
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </aside>
+                          <ListAvatar url={row.participant_avatar_url} name={row.participant_name} />
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-baseline justify-between gap-2">
+                              <span
+                                className={`truncate text-sm font-semibold ${
+                                  isDashboard ? "text-white/90" : "text-[var(--ds-text-default)]"
+                                }`}
+                              >
+                                {row.participant_name}
+                              </span>
+                              <span
+                                className={`shrink-0 text-[11px] ${
+                                  isDashboard ? "text-white/40" : "text-[var(--ds-subtle)]"
+                                }`}
+                              >
+                                {formatWhen(row.last_message_at)}
+                              </span>
+                            </span>
+                            {row.context_title ? (
+                              <span className="mt-0.5 block truncate text-[11px] text-[var(--ds-accent)]/80">
+                                {row.context_title}
+                              </span>
+                            ) : null}
+                            <span
+                              className={`mt-0.5 line-clamp-1 block text-xs ${
+                                isDashboard ? "text-white/50" : "text-[var(--ds-muted)]"
+                              }`}
+                            >
+                              {formatConversationPreview(row.last_message_body)}
+                            </span>
+                          </span>
+                          {row.unread_count > 0 ? (
+                            <span className="mt-1 inline-flex min-w-[1.15rem] shrink-0 items-center justify-center rounded-full bg-[var(--ds-accent)] px-1.5 py-0.5 font-mono text-[10px] font-bold text-[var(--ds-on-accent)]">
+                              {row.unread_count > 99 ? "99+" : row.unread_count}
+                            </span>
+                          ) : null}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => togglePin(row.conversation_id)}
+                          className={`px-2 text-white/30 hover:text-[var(--ds-accent)] ${isPinned ? "text-[var(--ds-accent)]" : ""}`}
+                          aria-label={isPinned ? "Unpin conversation" : "Pin conversation"}
+                        >
+                          <Pin className="size-3.5" />
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </aside>
 
-        <section className={`min-h-0 ${active ? "block" : "hidden md:block"}`}>
-          {active ? (
-            <div className="flex h-full min-h-0 flex-col">
-              <button
-                type="button"
-                onClick={() => setActiveId(null)}
-                className={`flex items-center gap-1.5 px-4 pt-3 text-xs font-medium md:hidden ${
-                  isDashboard ? "text-white/55" : "text-[#8a8a8a]"
-                }`}
-              >
-                <ArrowLeft className="size-3.5" /> All conversations
-              </button>
-              <ConversationPane conversation={active} currentUserId={currentUserId} variant={variant} />
-            </div>
-          ) : (
-            <div className="flex h-full items-center justify-center p-8 text-center">
-              <p className={`text-sm ${isDashboard ? "text-white/45" : "text-[#5a5a5a]"}`}>
-                Select a conversation to read and reply.
-              </p>
-            </div>
-          )}
-        </section>
-      </div>
+          <section className={`min-h-0 ${active ? "block" : "hidden md:block"}`}>
+            {active ? (
+              <div className="flex h-full min-h-0 flex-col">
+                <button
+                  type="button"
+                  onClick={() => setActiveId(null)}
+                  className={`flex items-center gap-1.5 px-4 pt-3 text-xs font-medium md:hidden ${
+                    isDashboard ? "text-white/55" : "text-[var(--ds-muted)]"
+                  }`}
+                >
+                  <ArrowLeft className="size-3.5" /> All conversations
+                </button>
+                <ConversationPane conversation={active} currentUserId={currentUserId} variant={variant} />
+              </div>
+            ) : (
+              <div className="flex h-full items-center justify-center p-8 text-center">
+                <p className={`text-sm ${isDashboard ? "text-white/45" : "text-[var(--ds-subtle)]"}`}>
+                  Select a conversation to read and reply.
+                </p>
+              </div>
+            )}
+          </section>
+        </div>
+      )}
     </div>
+  );
+}
+
+function RequestsPane({
+  rows,
+}: {
+  rows: ReturnType<typeof mapPendingRequestsToChatRows>;
+}) {
+  if (!rows.length) {
+    return (
+      <div className="rounded-[var(--ds-radius-card)] border border-dashed border-[var(--ds-border)] bg-[var(--ds-surface)] px-6 py-14 text-center">
+        <h2 className="text-base font-semibold text-[var(--ds-text-default)]">No requests</h2>
+        <p className="mx-auto mt-2 max-w-sm text-sm text-[var(--ds-muted)]">
+          Invites and join requests will show up here.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <ul className="divide-y divide-[var(--ds-border)] overflow-hidden rounded-[var(--ds-radius-card)] border border-[var(--ds-border)] bg-[var(--ds-surface)]">
+      {rows.map((row) => {
+        const body = (
+          <div className="flex items-center gap-3 px-4 py-3.5">
+            <ListAvatar url={row.coverUrl} name={row.title} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-[var(--ds-text-default)]">{row.title}</p>
+              <p className="mt-0.5 truncate text-xs text-[var(--ds-muted)]">{row.detail}</p>
+            </div>
+            <span className="shrink-0 font-mono text-[10px] tracking-[0.08em] text-[var(--ds-subtle)] uppercase">
+              {row.kind.replace(/_/g, " ")}
+            </span>
+          </div>
+        );
+        return (
+          <li key={row.id}>
+            {row.href ? (
+              <Link href={row.href} className="block transition-colors hover:bg-[var(--ds-surface-raised)]">
+                {body}
+              </Link>
+            ) : (
+              body
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -287,7 +425,7 @@ function ListAvatar({ url, name }: { url: string | null; name: string }) {
   }
 
   return (
-    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#0c2a26] text-xs font-semibold text-[#2dd4bf]">
+    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--ds-accent)_18%,black)] text-xs font-semibold text-[var(--ds-accent)]">
       {initials || "?"}
     </span>
   );

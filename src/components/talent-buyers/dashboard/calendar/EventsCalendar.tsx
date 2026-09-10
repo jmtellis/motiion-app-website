@@ -4,8 +4,8 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import type { CalendarEvent } from "@/app/(buyer-app)/(paid)/events/actions";
+import { SegmentedControl } from "@/components/talent-buyers/dashboard/SegmentedControl";
 
-import { CreateActivityButton } from "../CreateActivityButton";
 import {
   formatMonthYear,
   navigateAnchor,
@@ -23,7 +23,7 @@ const VIEW_OPTIONS: { value: CalendarView; label: string }[] = [
 
 type EventsCalendarProps = {
   events: CalendarEvent[];
-  /** When true, calendar sits under the Events Manage/Schedule chrome (no close/create). */
+  /** When true, calendar sits under the Calendar page chrome. */
   embedded?: boolean;
 };
 
@@ -53,27 +53,19 @@ export function EventsCalendar({ events, embedded = false }: EventsCalendarProps
     <div className={`bd-cal${embedded ? " bd-cal--embedded" : ""}`}>
       <div className="bd-cal__toolbar bd-cal__toolbar--schedule">
         <div className="bd-cal__toolbar-start">
-          <div className="bd-cal__range-tabs" role="tablist" aria-label="Calendar range">
-            {VIEW_OPTIONS.map((option) => {
-              const selected = view === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  className={`bd-cal__range-tab${selected ? " bd-cal__range-tab--active" : ""}`}
-                  onClick={() => setView(option.value)}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
+          <h3 className="bd-cal__title">{formatMonthYear(anchorDate)}</h3>
         </div>
 
         <div className="bd-cal__toolbar-center">
-          <h3 className="bd-cal__title">{formatMonthYear(anchorDate)}</h3>
+          <SegmentedControl
+            ariaLabel="Calendar range"
+            value={view}
+            onChange={setView}
+            options={VIEW_OPTIONS}
+            equalWidth
+            hug
+            activeTone="white"
+          />
         </div>
 
         <div className="bd-cal__toolbar-end">
@@ -95,14 +87,6 @@ export function EventsCalendar({ events, embedded = false }: EventsCalendarProps
               <ChevronRight className="size-4" />
             </button>
           </div>
-
-          {!embedded ? (
-            <CreateActivityButton
-              triggerClassName="buyer-chrome-bar__cta"
-              triggerLabel="Create activity"
-              showPlusIcon
-            />
-          ) : null}
         </div>
       </div>
 

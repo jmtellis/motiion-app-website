@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { SignupForm } from "@/components/auth/signup-form";
@@ -16,7 +17,9 @@ export default async function SignupPage() {
 
   return (
     <SignupSplitShell {...shell}>
-      <SignupForm />
+      <Suspense fallback={null}>
+        <SignupForm />
+      </Suspense>
     </SignupSplitShell>
   );
 }

@@ -225,11 +225,14 @@ function matchesSubtype(profile: SearchProfileRecord, subtype: string) {
   if (want === "choreographer" || want === "choreographers") {
     return types.some((type) => type.includes("choreographer"));
   }
+  if (want === "instructor" || want === "instructors") {
+    return types.some((type) => type.includes("instructor"));
+  }
 
   return false;
 }
 
-/** Defensive guard: only dancer/choreographer talent rows belong in the talent database. */
+/** Defensive guard: only dancer/choreographer/instructor talent rows belong in the talent database. */
 export function isTalentSearchProfile(profile: SearchProfileRecord): boolean {
   const types = parseStringArray(profile.talent_types).map(normalizeText);
   if (!types.length) {
@@ -237,7 +240,10 @@ export function isTalentSearchProfile(profile: SearchProfileRecord): boolean {
     return true;
   }
   return types.some(
-    (type) => type.includes("dancer") || type.includes("choreographer"),
+    (type) =>
+      type.includes("dancer") ||
+      type.includes("choreographer") ||
+      type.includes("instructor"),
   );
 }
 

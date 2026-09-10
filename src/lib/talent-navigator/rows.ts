@@ -36,6 +36,9 @@ function matchesSubtype(talent: Talent, subtype: string) {
   if (want.includes("choreographer")) {
     return styles.some((style) => style.includes("choreographer"));
   }
+  if (want.includes("instructor")) {
+    return styles.some((style) => style.includes("instructor"));
+  }
   return true;
 }
 

@@ -3,7 +3,7 @@
  * These are canonical attribute values — not per-user. Agencies are loaded from the database separately.
  */
 
-export const PROFILE_TYPE_OPTIONS = ["Dancer", "Choreographer"] as const;
+export const PROFILE_TYPE_OPTIONS = ["Dancer", "Choreographer", "Instructor"] as const;
 
 export const GENDER_OPTIONS = ["Male", "Female", "Non-binary"] as const;
 

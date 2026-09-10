@@ -271,9 +271,10 @@ export function CastingCastPanel() {
         showToast({ message: result.error ?? "Could not create job", variant: "error" });
         return;
       }
-      showToast({ message: "Job project created", variant: "success" });
+      showToast({ message: "Job created", variant: "success" });
       setCreateJobOpen(false);
-      if (result.jobProjectId) router.push(`/projects/${result.jobProjectId}/overview`);
+      if (result.jobId) router.push(`/jobs/${result.jobId}`);
+      else if (result.jobProjectId) router.push(`/jobs/${result.jobProjectId}`);
     });
   }
 

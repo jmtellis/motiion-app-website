@@ -221,15 +221,22 @@ html:has(.home-split) body {
 }
 
 .home-split__nav-link {
-  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: rgb(255 255 255 / 0.72);
   text-decoration: none;
-  transition: color 160ms ease;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease;
 }
 
 .home-split__nav-link:hover {
   color: #fafafa;
+  background: rgb(255 255 255 / 0.06);
 }
 
 .home-split__nav-link:focus-visible {

@@ -5,6 +5,7 @@ import {
   locationDisplayString,
   syncScheduleFromEventDays,
 } from "@/lib/talent-buyers/activities/defaults";
+import { syncFeaturedTalentInvites } from "@/lib/talent-buyers/activities/featured-talent";
 import { syncActivityPromoCodes } from "@/lib/talent-buyers/activities/promo-codes";
 import { syncEventSubgroups } from "@/lib/talent-buyers/activities/subgroups";
 import type { ActivityDraft, DraftTicketOption } from "@/lib/talent-buyers/activities/types";
@@ -243,9 +244,11 @@ export async function persistNewActivity(
   const validationError = validateActivityDraft(draft);
   if (validationError) return { ok: false, error: validationError };
 
+  const sellOnMotiion = draft.type !== "event" || draft.sellTicketsOnMotiion;
   const requirePayment =
     draft.type !== "session" &&
     draft.isPaid &&
+    sellOnMotiion &&
     (draft.type === "class"
       ? draft.priceAmount >= 0.5
       : draft.ticketOptions.some((t) => t.label.trim() && t.priceAmount >= 0.5));
@@ -289,10 +292,11 @@ export async function persistNewActivity(
     Object.assign(baseRow, {
       root_job_id: rootJobId,
       category: null,
-      subcategory: trimOrNull(draft.subcategory),
+      subcategory: trimOrNull(draft.subcategory) ?? "Showcase",
       price_amount_cents: null,
       price_currency: requirePayment ? "usd" : null,
       pricing_tiers: requirePayment ? legacyPricingTiers(draft.ticketOptions) : null,
+      external_ticket_url: trimOrNull(draft.externalTicketUrl),
       event_highlights: normalizeStringList(draft.eventHighlights, 5),
       event_lineup: normalizeStringList(draft.eventLineup, 20),
       event_schedule_items: draft.eventScheduleItems
@@ -364,10 +368,15 @@ export async function persistNewActivity(
   if (draft.type === "event") {
     const daysResult = await replaceEventDays(supabase, activityId, draft);
     if (!daysResult.ok) return daysResult;
-    const ticketsResult = await replaceTicketOptions(supabase, activityId, draft);
-    if (!ticketsResult.ok) return ticketsResult;
 
-    if (rootJobId) {
+    if (draft.sellTicketsOnMotiion) {
+      const ticketsResult = await replaceTicketOptions(supabase, activityId, draft);
+      if (!ticketsResult.ok) return ticketsResult;
+      const promoResult = await syncActivityPromoCodes(supabase, activityId, draft);
+      if (!promoResult.ok) return promoResult;
+    }
+
+    if (rootJobId && draft.eventSubgroupsEnabled) {
       const subgroupResult = await syncEventSubgroups(
         supabase,
         userId,
@@ -378,8 +387,12 @@ export async function persistNewActivity(
       if (!subgroupResult.ok) return subgroupResult;
     }
 
-    const promoResult = await syncActivityPromoCodes(supabase, activityId, draft);
-    if (!promoResult.ok) return promoResult;
+    const featuredResult = await syncFeaturedTalentInvites(
+      supabase,
+      activityId,
+      draft.featuredTalentInvites,
+    );
+    if (!featuredResult.ok) return featuredResult;
   }
 
   const collaboratorIds =
@@ -424,9 +437,11 @@ export async function persistUpdatedActivity(
     return { ok: false, error: "Activity type cannot be changed after publish." };
   }
 
+  const sellOnMotiion = draft.type !== "event" || draft.sellTicketsOnMotiion;
   const requirePayment =
     draft.type !== "session" &&
     draft.isPaid &&
+    sellOnMotiion &&
     (draft.type === "class"
       ? draft.priceAmount >= 0.5
       : draft.ticketOptions.some((t) => t.label.trim() && t.priceAmount >= 0.5));
@@ -457,9 +472,10 @@ export async function persistUpdatedActivity(
   if (draft.type === "event") {
     Object.assign(updates, {
       category: null,
-      subcategory: trimOrNull(draft.subcategory),
+      subcategory: trimOrNull(draft.subcategory) ?? "Showcase",
       price_currency: requirePayment ? "usd" : null,
       pricing_tiers: requirePayment ? legacyPricingTiers(draft.ticketOptions) : null,
+      external_ticket_url: trimOrNull(draft.externalTicketUrl),
       event_highlights: normalizeStringList(draft.eventHighlights, 5),
       event_lineup: normalizeStringList(draft.eventLineup, 20),
       event_schedule_items: draft.eventScheduleItems
@@ -533,8 +549,13 @@ export async function persistUpdatedActivity(
   if (draft.type === "event") {
     const daysResult = await replaceEventDays(supabase, activityId, draft);
     if (!daysResult.ok) return daysResult;
-    const ticketsResult = await replaceTicketOptions(supabase, activityId, draft);
-    if (!ticketsResult.ok) return ticketsResult;
+
+    if (draft.sellTicketsOnMotiion) {
+      const ticketsResult = await replaceTicketOptions(supabase, activityId, draft);
+      if (!ticketsResult.ok) return ticketsResult;
+      const promoResult = await syncActivityPromoCodes(supabase, activityId, draft);
+      if (!promoResult.ok) return promoResult;
+    }
 
     const rootJobId = (existing as { root_job_id: string | null }).root_job_id;
     if (rootJobId) {
@@ -550,18 +571,24 @@ export async function persistUpdatedActivity(
         })
         .eq("id", rootJobId);
 
-      const subgroupResult = await syncEventSubgroups(
-        supabase,
-        userId,
-        rootJobId,
-        activityId,
-        draft,
-      );
-      if (!subgroupResult.ok) return subgroupResult;
+      if (draft.eventSubgroupsEnabled) {
+        const subgroupResult = await syncEventSubgroups(
+          supabase,
+          userId,
+          rootJobId,
+          activityId,
+          draft,
+        );
+        if (!subgroupResult.ok) return subgroupResult;
+      }
     }
 
-    const promoResult = await syncActivityPromoCodes(supabase, activityId, draft);
-    if (!promoResult.ok) return promoResult;
+    const featuredResult = await syncFeaturedTalentInvites(
+      supabase,
+      activityId,
+      draft.featuredTalentInvites,
+    );
+    if (!featuredResult.ok) return featuredResult;
   }
 
   const collaboratorIds =

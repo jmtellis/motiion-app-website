@@ -6,8 +6,8 @@ export const MOCK_ARTBOARD_WIDTH = 1280;
 export const MOCK_ARTBOARD_HEIGHT = 800;
 
 /**
- * Locks scene content to a desktop 1280×800 composition, scaled to fill the
- * marketing scene viewport so responsive product UI never collapses.
+ * Locks scene content to a desktop 1280×800 composition, cover-scaled to fill
+ * the viewport (no letterboxing / side gaps). Overflow is clipped by the host.
  */
 export function MockArtboard({
   children,
@@ -17,7 +17,7 @@ export function MockArtboard({
   className?: string;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState<number | null>(null);
+  const [layout, setLayout] = useState<{ scale: number; x: number; y: number } | null>(null);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -26,7 +26,12 @@ export function MockArtboard({
     const update = () => {
       const { width, height } = host.getBoundingClientRect();
       if (width < 1 || height < 1) return;
-      setScale(Math.min(width / MOCK_ARTBOARD_WIDTH, height / MOCK_ARTBOARD_HEIGHT));
+      const scale = Math.max(width / MOCK_ARTBOARD_WIDTH, height / MOCK_ARTBOARD_HEIGHT);
+      setLayout({
+        scale,
+        x: (width - MOCK_ARTBOARD_WIDTH * scale) / 2,
+        y: (height - MOCK_ARTBOARD_HEIGHT * scale) / 2,
+      });
     };
 
     update();
@@ -40,12 +45,12 @@ export function MockArtboard({
       <div
         className={`md-mock ${className}`.trim()}
         style={
-          scale == null
+          layout == null
             ? { width: MOCK_ARTBOARD_WIDTH, height: MOCK_ARTBOARD_HEIGHT, visibility: "hidden" }
             : {
                 width: MOCK_ARTBOARD_WIDTH,
                 height: MOCK_ARTBOARD_HEIGHT,
-                transform: `scale(${scale})`,
+                transform: `translate(${layout.x}px, ${layout.y}px) scale(${layout.scale})`,
               }
         }
       >

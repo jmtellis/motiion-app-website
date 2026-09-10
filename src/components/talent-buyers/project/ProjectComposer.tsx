@@ -20,6 +20,7 @@ import { projectCreateLandingPath } from "@/lib/talent-buyers/project-routes";
 import { validateProjectForm } from "@/lib/talent-buyers/project-schema";
 import type { ProjectAttachment, ProjectComposerForm } from "@/types/project";
 
+import { LocationAutocomplete } from "./LocationAutocomplete";
 import { getCreateMetadata, updateCreateMetadata } from "./ProjectSelectionsPanel";
 
 import "./project-create.css";
@@ -286,26 +287,46 @@ export function ProjectComposer({
         ) : null}
 
         {hasSection("highlights") && createConfig?.highlights?.length
-          ? createConfig.highlights.map((field) => (
-              <label key={field.fieldKey} className="project-create__field">
-                <span className="project-create__label">{field.label}</span>
-                <input
-                  className="project-create__input"
+          ? createConfig.highlights.map((field) =>
+              field.fieldKey === "venue" ? (
+                <LocationAutocomplete
+                  key={field.fieldKey}
+                  label={field.label}
+                  mode="establishments"
                   value={getCreateMetadata(controlledForm, field.fieldKey)}
-                  onChange={(event) =>
-                    setForm((current) => updateCreateMetadata(current, field.fieldKey, event.target.value))
-                  }
                   placeholder={field.placeholder}
+                  onChange={(value) =>
+                    setForm((current) => updateCreateMetadata(current, field.fieldKey, value))
+                  }
+                  onPlaceSelect={(place) =>
+                    setForm((current) =>
+                      updateCreateMetadata(current, field.fieldKey, place.displayLabel),
+                    )
+                  }
                 />
-              </label>
-            ))
+              ) : (
+                <label key={field.fieldKey} className="project-create__field">
+                  <span className="project-create__label">{field.label}</span>
+                  <input
+                    className="project-create__input"
+                    value={getCreateMetadata(controlledForm, field.fieldKey)}
+                    onChange={(event) =>
+                      setForm((current) =>
+                        updateCreateMetadata(current, field.fieldKey, event.target.value),
+                      )
+                    }
+                    placeholder={field.placeholder}
+                  />
+                </label>
+              ),
+            )
           : null}
 
         {hasSection("attachments") ? (
           <div className="project-create__field">
             <h2 className="project-create__section-title">Attachments</h2>
             <p className="project-create__section-copy">
-              Briefs, music, or reference files talent may need for submissions.
+              Posters, agreements, briefs, or other files for this project.
             </p>
 
             {attachments.length ? (

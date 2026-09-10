@@ -46,7 +46,7 @@ Return ONLY a JSON object matching this schema (omit fields that are not clearly
   "heightMin": "X'Y\\"",
   "heightMax": "X'Y\\"",
   "unionStatus": "SAG-AFTRA" | "SAG-AFTRA Eligible" | "Non-union",
-  "talentTypes": ["Dancer" | "Choreographer"],
+  "talentTypes": ["Dancer" | "Choreographer" | "Instructor"],
   "nameQuery": string,
   "genres": [string],
   "skills": [string],

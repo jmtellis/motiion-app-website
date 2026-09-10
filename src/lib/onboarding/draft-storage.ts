@@ -1,4 +1,8 @@
-import { normalizeOnboardingStep } from "@/lib/onboarding/flow";
+import {
+  normalizeOnboardingRole,
+  normalizeOnboardingStep,
+  normalizeTalentTypes,
+} from "@/lib/onboarding/flow";
 import type { OnboardingDraft } from "@/types/onboarding";
 
 function getDraftKey(userId: string) {
@@ -17,14 +21,29 @@ export function loadOnboardingDraft(userId: string) {
   }
 
   try {
-    const draft = JSON.parse(rawDraft) as OnboardingDraft;
+    const draft = JSON.parse(rawDraft) as OnboardingDraft & { role?: string | null };
+    const legacyRole = draft.role;
+    const role = normalizeOnboardingRole(legacyRole);
+    const talentTypes = normalizeTalentTypes(draft.talentTypes, legacyRole);
     let currentStep = normalizeOnboardingStep(draft.currentStep);
     // Older drafts stored role selection on the account screen.
-    if (currentStep === "account" && !draft.role) {
+    if (currentStep === "account" && !role) {
       currentStep = "role";
     }
     return {
       ...draft,
+      role,
+      talentTypes,
+      acquisitionSource: draft.acquisitionSource ?? "",
+      acquisitionSourceDetail: draft.acquisitionSourceDetail ?? "",
+      accountType:
+        role === "industry"
+          ? "lookingForTalent"
+          : role === "community"
+            ? "community"
+            : role === "talent"
+              ? "talent"
+              : draft.accountType,
       currentStep,
     };
   } catch {

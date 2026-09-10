@@ -1,17 +1,13 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 import {
-  MVP_PROJECT_TYPE_INTENTION_GROUPS,
-  MVP_PROJECT_TYPE_OPTIONS,
-} from "@/lib/talent-buyers/project-composer-defaults";
-import type { ProjectType } from "@/lib/talent-buyers/project-types";
-import { projectCreatePath } from "@/lib/talent-buyers/project-create-registry";
+  BUYER_CREATE_INTENT_OPTIONS,
+  createIntentPath,
+  type BuyerCreateIntent,
+} from "@/lib/talent-buyers/create-intent";
 
 import "./project-create.css";
 
@@ -27,117 +23,37 @@ export function ProjectTypePickerOverlay({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const reducedMotion = useReducedMotion();
-  const [pageIndex, setPageIndex] = useState(0);
 
-  // MVP: casting + event only. Full PROJECT_TYPE_INTENTION_GROUPS remain in the registry.
-  const groups = MVP_PROJECT_TYPE_INTENTION_GROUPS;
-  const activeGroup = groups[pageIndex];
-  const showPager = groups.length > 1;
-  const isFirstPage = pageIndex === 0;
-  const isLastPage = pageIndex === groups.length - 1;
-
-  function handleClose() {
-    setPageIndex(0);
+  function selectIntent(intent: BuyerCreateIntent) {
     onClose();
-  }
-
-  function goToPage(nextIndex: number) {
-    setPageIndex(Math.max(0, Math.min(groups.length - 1, nextIndex)));
-  }
-
-  function selectType(type: ProjectType) {
-    handleClose();
-    router.push(projectCreatePath(type));
+    router.push(createIntentPath(intent));
   }
 
   return (
     <Modal
       open={open}
-      onClose={handleClose}
+      onClose={onClose}
       title="What are you creating?"
-      description="Choose a casting or event. This cannot be changed after creation."
+      description="Choose a casting, event, class, or session."
       size="xl"
-      footer={
-        showPager ? (
-          <div className="project-create-picker__footer">
-            <button
-              type="button"
-              className="project-create-picker__nav-btn"
-              onClick={() => goToPage(pageIndex - 1)}
-              disabled={isFirstPage}
-            >
-              <ChevronLeft className="size-4" aria-hidden />
-              Previous
-            </button>
-
-            <div className="project-create-picker__dots" role="tablist" aria-label="Project categories">
-              {groups.map((group, index) => (
-                <button
-                  key={group.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={index === pageIndex}
-                  aria-label={group.label}
-                  className={
-                    index === pageIndex
-                      ? "project-create-picker__dot project-create-picker__dot--active"
-                      : "project-create-picker__dot"
-                  }
-                  onClick={() => goToPage(index)}
-                />
-              ))}
-            </div>
-
-            <button
-              type="button"
-              className="project-create-picker__nav-btn"
-              onClick={() => goToPage(pageIndex + 1)}
-              disabled={isLastPage}
-            >
-              Next
-              <ChevronRight className="size-4" aria-hidden />
-            </button>
-          </div>
-        ) : undefined
-      }
     >
       <div className="project-create-picker__modal-body">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={activeGroup.id}
-            className="project-create-picker__page"
-            initial={reducedMotion ? { opacity: 0 } : { opacity: 0, x: 24 }}
-            animate={reducedMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
-            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, x: -24 }}
-            transition={{ duration: reducedMotion ? 0.12 : 0.22, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {showPager ? (
-              <p className="project-create-picker__section-eyebrow">
-                {pageIndex + 1} of {groups.length}
-              </p>
-            ) : null}
-            <h3 className="project-create-picker__section-title">{activeGroup.label}</h3>
-
-            <div className="project-create__choice-grid project-create__choice-grid--2 project-create-picker__choices">
-              {activeGroup.types.map((type) => {
-                const option = MVP_PROJECT_TYPE_OPTIONS.find((entry) => entry.value === type);
-                if (!option) return null;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    className={choiceClass()}
-                    onClick={() => selectType(option.value)}
-                  >
-                    <span className="project-create__choice-title">{option.label}</span>
-                    <p className="project-create__choice-copy">{option.description}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </motion.div>
-        </AnimatePresence>
+        <div className="project-create-picker__page">
+          <h3 className="project-create-picker__section-title">Castings & activities</h3>
+          <div className="project-create__choice-grid project-create__choice-grid--2 project-create-picker__choices">
+            {BUYER_CREATE_INTENT_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={choiceClass()}
+                onClick={() => selectIntent(option.value)}
+              >
+                <span className="project-create__choice-title">{option.label}</span>
+                <p className="project-create__choice-copy">{option.description}</p>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </Modal>
   );

@@ -7,6 +7,7 @@ type ProfileRow = {
   display_name: string | null;
   first_name: string | null;
   last_name: string | null;
+  talent_types: unknown;
   styles: unknown;
   skills: unknown;
   gender: string | null;
@@ -18,6 +19,22 @@ type ProfileRow = {
   tiktok_url: string | null;
   youtube_url: string | null;
 };
+
+function resolveProfessionalSubtype(talentTypes: unknown): string {
+  const allowlist = ["dancer", "choreographer", "instructor"] as const;
+  const types = Array.isArray(talentTypes)
+    ? talentTypes
+        .map((item) => String(item).trim().toLowerCase())
+        .filter((item): item is (typeof allowlist)[number] =>
+          allowlist.includes(item as (typeof allowlist)[number]),
+        )
+    : [];
+
+  if (types.includes("dancer")) return "dancer";
+  if (types.includes("instructor")) return "instructor";
+  if (types.includes("choreographer")) return "choreographer";
+  return "dancer";
+}
 
 function parseHeightCm(height: string | null): number | null {
   if (!height) return null;
@@ -58,7 +75,7 @@ export async function syncProfessionalProfile(userId: string): Promise<{ ok: boo
   const { data: profile, error: readError } = await supabase
     .from("profiles")
     .select(
-      "user_id, username, display_name, first_name, last_name, styles, skills, gender, ethnicity, height, union_status, working_locations, instagram_url, tiktok_url, youtube_url",
+      "user_id, username, display_name, first_name, last_name, talent_types, styles, skills, gender, ethnicity, height, union_status, working_locations, instagram_url, tiktok_url, youtube_url",
     )
     .eq("user_id", userId)
     .maybeSingle<ProfileRow>();
@@ -73,7 +90,7 @@ export async function syncProfessionalProfile(userId: string): Promise<{ ok: boo
     {
       user_id: userId,
       slug,
-      subtype: "dancer",
+      subtype: resolveProfessionalSubtype(profile.talent_types),
       bio: null,
       location_city: city,
       location_region: region,

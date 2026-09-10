@@ -7,19 +7,19 @@
   --text-low: #a3a3a3;
   --border-low: #262626;
   --surface-overlay: #21212166;
-  --primary-500: #2dd4bf;
-  --primary-600: #14b8a6;
-  --accent-class: #2dd4bf;
+  --primary-500: #00aacc;
+  --primary-600: #007a99;
+  --accent-class: #00aacc;
   --accent-session: #e040d5;
   --accent-event: #7ba3f5;
-  --surface-accent: #0c2a26;
+  --surface-accent: #001f29;
   --spacing-md: 12px;
   --spacing-lg: 16px;
   --spacing-xl: 24px;
   --product-radius-button: 9999px;
-  --product-radius-field: 8px;
-  --product-radius-card: 14px;
-  --product-radius-panel: 20px;
+  --product-radius-field: 12px;
+  --product-radius-card: 16px;
+  --product-radius-panel: 26px;
   --product-stage: #0a0a0a;
   --product-graphite: #141414;
 
@@ -97,6 +97,28 @@
 
 .product-btn-primary:hover {
   background: #f2f2f2;
+}
+
+.product-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--product-radius-button);
+  padding: 0.4375rem 0.875rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fafafa;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+
+.product-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.24);
 }
 
 .product-highlights-rail {

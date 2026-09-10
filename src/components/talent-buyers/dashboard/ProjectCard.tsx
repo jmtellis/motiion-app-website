@@ -7,16 +7,20 @@ import {
   getProjectTypeStockCategory,
 } from "@/lib/talent-buyers/project-type-icons";
 import { getProjectTypeLabel } from "@/lib/talent-buyers/project-types";
+import type { ProjectHubSummary } from "@/lib/talent-buyers/projects-hub";
 import { resolveBuyerCoverSrc } from "@/lib/talent-buyers/stock-images";
 import type { BuyerProjectSummary } from "@/types/talent-buyer-dashboard";
 
 import { BuyerCoverImage } from "./BuyerCoverImage";
 
+type ProjectCardModel = BuyerProjectSummary &
+  Pick<Partial<ProjectHubSummary>, "href" | "workTypeLabel" | "workKind">;
+
 export function ProjectCard({
   project,
   variant = "default",
 }: {
-  project: BuyerProjectSummary;
+  project: ProjectCardModel;
   variant?: "default" | "dashboard" | "workspace";
 }) {
   const isDashboard = variant === "dashboard";
@@ -28,14 +32,17 @@ export function ProjectCard({
     id: project.id,
     category: stockCategory,
   });
-  const typeLabel = getProjectTypeLabel(project.projectType);
+  const typeLabel = project.workTypeLabel ?? getProjectTypeLabel(project.projectType);
   const TypeIcon = getProjectTypeIcon(project.projectType);
   const typeAccent = getProjectTypeAccent(project.projectType);
+  const href = project.href ?? `/projects/${project.id}`;
+  const countLabel =
+    project.workKind === "activity" ? "Guests" : project.workKind === "job" ? "People" : "Talent";
 
   if (isWorkspace) {
     return (
       <Link
-        href={`/projects/${project.id}`}
+        href={href}
         className="group relative block min-h-[320px] overflow-hidden rounded-xl border border-[var(--buyer-line)] text-white transition-colors hover:border-white/18 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
       >
         <BuyerCoverImage
@@ -65,7 +72,7 @@ export function ProjectCard({
                 <dd className="font-medium text-white/85">{formatBuyerRelativeDate(project.lastUpdated)}</dd>
               </div>
               <div>
-                <dt className="text-white/40">Talent</dt>
+                <dt className="text-white/40">{countLabel}</dt>
                 <dd className="font-medium text-white/85">{project.talentCount}</dd>
               </div>
               {project.sharedLinksCount != null ? (
@@ -83,7 +90,7 @@ export function ProjectCard({
 
   if (isDashboard) {
     return (
-      <Link href={`/projects/${project.id}`} className="bd-visual-card bd-interactive-card bd-project-card group block">
+      <Link href={href} className="bd-visual-card bd-interactive-card bd-project-card group block">
         <div className="bd-project-card__media">
           <BuyerCoverImage
             src={coverSrc}
@@ -125,7 +132,7 @@ export function ProjectCard({
   }
 
   return (
-    <Link href={`/projects/${project.id}`} className="ui-card-interactive group block overflow-hidden rounded-[var(--radius-card)]">
+    <Link href={href} className="ui-card-interactive group block overflow-hidden rounded-[var(--radius-card)]">
       <div className="relative">
         <BuyerCoverImage
           src={coverSrc}
@@ -148,7 +155,7 @@ export function ProjectCard({
             <dd className="font-medium text-[var(--ink)]">{formatBuyerRelativeDate(project.lastUpdated)}</dd>
           </div>
           <div>
-            <dt className="text-[var(--ink-soft)]">Talent</dt>
+            <dt className="text-[var(--ink-soft)]">{countLabel}</dt>
             <dd className="font-medium text-[var(--ink)]">{project.talentCount}</dd>
           </div>
           {project.notesCount != null ? (

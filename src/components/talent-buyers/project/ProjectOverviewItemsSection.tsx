@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useRef } from "react";
 
 import { StaggerList } from "@/components/talent-buyers/dashboard/FadeInSection";
+import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
 import type { ProjectWorkspaceItem } from "@/lib/talent-buyers/project-workspace-items";
 
+import { AddProjectActivityButton } from "./AddProjectActivityButton";
 import { ProjectAddMenuButton } from "./ProjectAddMenuButton";
 import { ProjectActivityCard } from "./ProjectActivityCard";
 import { ProjectWorkspaceEmpty } from "./ProjectAddMenuButton";
@@ -23,6 +25,7 @@ export function ProjectOverviewItemsSection({
   workspaceItems: ProjectWorkspaceItem[];
   selectedItemId: string | null;
 }) {
+  const isEventProject = getNormalizedProjectType(projectType) === "event";
   const cardRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   const setCardRef = useCallback((id: string) => {
@@ -50,21 +53,43 @@ export function ProjectOverviewItemsSection({
       <div className="project-workspace__overview-section-header">
         <div>
           <h3 id="overview-items-heading" className="project-workspace__overview-section-title">
-            Castings & activities
+            {isEventProject ? "Showcase events & activities" : "Castings & activities"}
           </h3>
           <p className="project-workspace__overview-section-description">
-            Castings, classes, sessions, and events attached to this project.
+            {isEventProject
+              ? "Add a showcase Event to invite leads, sell tickets, and run check-in. Open that event to manage the Leads tab."
+              : "Castings, classes, sessions, and events attached to this project."}
           </p>
         </div>
-        <ProjectAddMenuButton projectId={projectId} projectType={projectType} triggerClassName="bd-btn-secondary text-sm" />
+        {isEventProject ? (
+          <AddProjectActivityButton
+            projectId={projectId}
+            triggerClassName="bd-btn-secondary text-sm"
+            triggerLabel="Add"
+          />
+        ) : (
+          <ProjectAddMenuButton
+            projectId={projectId}
+            projectType={projectType}
+            triggerClassName="bd-btn-secondary text-sm"
+          />
+        )}
       </div>
 
       {workspaceItems.length === 0 ? (
         <ProjectWorkspaceEmpty
-          title="No castings or activities yet"
-          description="Add a casting, class, session, or event to begin organizing this project."
+          title={isEventProject ? "No showcase event yet" : "No castings or activities yet"}
+          description={
+            isEventProject
+              ? "Create a Showcase event to invite Motiion members as leads, manage guests, and run check-in."
+              : "Add a casting, class, session, or event to begin organizing this project."
+          }
         >
-          <ProjectAddMenuButton projectId={projectId} projectType={projectType} />
+          {isEventProject ? (
+            <AddProjectActivityButton projectId={projectId} triggerLabel="Add showcase event" />
+          ) : (
+            <ProjectAddMenuButton projectId={projectId} projectType={projectType} />
+          )}
         </ProjectWorkspaceEmpty>
       ) : groups.length === 1 ? (
         <StaggerList className="projects-hub__grid">

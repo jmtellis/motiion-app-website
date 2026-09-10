@@ -18,12 +18,12 @@ export function CalendarEmptyState({ embedded = false }: { embedded?: boolean })
   return (
     <div className={`buyer-empty bd-cal-empty${embedded ? " bd-cal-empty--embedded" : ""}`}>
       <BuyerEmptyIntro
-        title="Your schedule will live here"
-        lede="Book sessions, classes, and shoot days — they'll show up on the grid."
+        title="Your calendar will live here"
+        lede="Castings, events, classes, and sessions you create show up on the grid."
       >
         <CreateActivityButton
           triggerClassName="buyer-chrome-bar__cta"
-          triggerLabel="Create activity"
+          triggerLabel="Create"
           showPlusIcon
         />
       </BuyerEmptyIntro>

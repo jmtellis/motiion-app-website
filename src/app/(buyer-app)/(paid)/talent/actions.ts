@@ -1030,6 +1030,9 @@ export async function saveTalentToRoster(input: {
 
   if (memberError) return { ok: false, error: memberError.message };
 
+  // Named roster adds should also land in Saved Talent (Library / Roster parity).
+  await saveTalentForBuyer(input.talentIdOrSlug);
+
   revalidatePath("/library");
   return { ok: true };
 }

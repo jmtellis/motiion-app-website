@@ -7,7 +7,11 @@ import { useMemo, useState } from "react";
 import { AuthSplitLink } from "@/components/auth/AuthSplitTransition";
 import { SignupSplitDivider, SignupSplitOAuth } from "@/components/auth/SignupSplitOAuth";
 import { trackClientEvent } from "@/lib/analytics/track-client";
-import { oauthErrorMessage } from "@/lib/auth/oauth-shared";
+import {
+  buildOAuthRedirectUrl,
+  buildSignupUserMetadata,
+  oauthErrorMessage,
+} from "@/lib/auth/oauth-shared";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 
 function isValidEmail(value: string) {
@@ -51,7 +55,11 @@ export function TalentBuyerSignupForm() {
       email: nextEmail,
       password: nextPassword,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?flow=signup&account_type=lookingForTalent`,
+        emailRedirectTo: buildOAuthRedirectUrl({
+          flow: "signup",
+          accountType: "lookingForTalent",
+        }),
+        data: buildSignupUserMetadata("lookingForTalent"),
       },
     });
 
@@ -68,10 +76,9 @@ export function TalentBuyerSignupForm() {
     }
 
     if (!data.session) {
-      setError(
-        "Your account was created, but email confirmation is required before you can continue. Confirm your email, then log in.",
+      router.push(
+        `/talent-buyers/signup/check-email?email=${encodeURIComponent(nextEmail)}`,
       );
-      setLoading(false);
       return;
     }
 
@@ -167,6 +174,18 @@ export function TalentBuyerSignupForm() {
 
         {error ? <div className="signup-split-error">{error}</div> : null}
         {callbackError ? <div className="signup-split-error">{callbackError}</div> : null}
+
+        <p className="signup-split-legal">
+          By creating an account, you agree to our{" "}
+          <a href="/terms" target="_blank" rel="noopener noreferrer">
+            Terms and Conditions
+          </a>{" "}
+          and{" "}
+          <a href="/privacy" target="_blank" rel="noopener noreferrer">
+            Privacy Policy
+          </a>
+          .
+        </p>
 
         <button type="submit" className="signup-split-submit" disabled={loading || !canSubmit}>
           {loading ? "Creating account…" : "Sign Up"}

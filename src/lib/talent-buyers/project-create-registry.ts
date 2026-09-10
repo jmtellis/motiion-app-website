@@ -49,7 +49,7 @@ const PROJECT_CREATE_REGISTRY: Record<ProjectType, ProjectCreateConfig> = {
     leftSections: ["cover", "dates", "location"],
     rightSections: ["title", "description", "company", "highlights", "attachments"],
     highlights: [
-      { fieldKey: "venue", label: "Venue", placeholder: "Studio or theater name" },
+      { fieldKey: "venue", label: "Venue", placeholder: "Search for a studio or theater" },
       { fieldKey: "auditionFormat", label: "Format", placeholder: "Open call, by appointment, video first…" },
     ],
   },
@@ -150,7 +150,7 @@ const PROJECT_CREATE_REGISTRY: Record<ProjectType, ProjectCreateConfig> = {
     leftSections: ["cover", "dates", "location"],
     rightSections: ["title", "description", "company", "highlights", "attachments"],
     highlights: [
-      { fieldKey: "venue", label: "Venue", placeholder: "Event location or venue name" },
+      { fieldKey: "venue", label: "Venue", placeholder: "Search for a venue" },
       { fieldKey: "guestCapacity", label: "Guest capacity", placeholder: "Expected attendance" },
     ],
   },

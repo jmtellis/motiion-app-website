@@ -29,23 +29,25 @@ function profile(partial: Partial<SearchProfileRecord> & { id: string }): Search
 }
 
 describe("talent-only professional profile queries", () => {
-  it("queries the talent_professional_profiles view with dancer/choreographer subtypes", () => {
+  it("queries the talent_professional_profiles view with dancer/choreographer/instructor subtypes", () => {
     const path = buildProfessionalProfilesQueryPath({ navigator: true }, null);
     assert.match(path, /^talent_professional_profiles\?/);
-    assert.match(path, /subtype=in\.\("dancer","choreographer"\)/);
+    assert.match(path, /subtype=in\.\("dancer","choreographer","instructor"\)/);
     assert.match(path, /is_verified=eq\.true/);
   });
 });
 
 describe("talent search defensive filtering", () => {
-  it("keeps dancer and choreographer profiles", () => {
+  it("keeps dancer, choreographer, and instructor profiles", () => {
     const dancer = profile({ id: "d1", talent_types: ["dancer"] });
     const choreo = profile({ id: "c1", talent_types: ["choreographer"] });
+    const instructor = profile({ id: "i1", talent_types: ["instructor"] });
     assert.equal(isTalentSearchProfile(dancer), true);
     assert.equal(isTalentSearchProfile(choreo), true);
+    assert.equal(isTalentSearchProfile(instructor), true);
 
-    const filtered = filterSearchProfiles([dancer, choreo], { navigator: true });
-    assert.equal(filtered.length, 2);
+    const filtered = filterSearchProfiles([dancer, choreo, instructor], { navigator: true });
+    assert.equal(filtered.length, 3);
   });
 
   it("excludes industry-style non-talent type labels", () => {

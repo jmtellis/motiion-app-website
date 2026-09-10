@@ -38,7 +38,6 @@ export function AuthSplitTransitionProvider({ children }: { children: ReactNode 
     router.prefetch("/");
     router.prefetch("/signup");
     router.prefetch("/login");
-    router.prefetch("/talent-buyers/signup");
   }, [router]);
 
   useEffect(() => {

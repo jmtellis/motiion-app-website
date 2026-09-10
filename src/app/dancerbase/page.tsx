@@ -8,7 +8,7 @@ export default function DancerbasePage() {
       eyebrow="Industry Professionals"
       title="Dancerbase"
       description="A lightweight chat for discovering dance info—ask simple questions against Motiion's database. Early access is coming soon."
-      cta={{ label: "Sign up as industry", href: "/talent-buyers/signup" }}
+      cta={{ label: "Sign up", href: "/signup" }}
     />
   );
 }

@@ -255,18 +255,27 @@ export async function listHostedActivities(): Promise<HostedActivitiesResult> {
 
   const hosted = (hostedRows ?? []) as ActivityRow[];
 
-  const { data: enrollmentRows } = await supabase
-    .from("enrollments")
-    .select("activity_id")
-    .eq("user_id", user.id)
-    .in("status", ["paid", "guest", "comped", "pending", "confirmed"])
-    .limit(200);
+  const [{ data: enrollmentRows }, { data: featuredRows }] = await Promise.all([
+    supabase
+      .from("enrollments")
+      .select("activity_id")
+      .eq("user_id", user.id)
+      .in("status", ["paid", "guest", "comped", "pending", "confirmed"])
+      .limit(200),
+    supabase
+      .from("activity_featured_talent")
+      .select("activity_id")
+      .eq("talent_user_id", user.id)
+      .eq("status", "accepted")
+      .limit(200),
+  ]);
 
   const attendingIds = [
     ...new Set(
-      ((enrollmentRows ?? []) as { activity_id: string }[])
-        .map((row) => row.activity_id)
-        .filter((id) => !hosted.some((activity) => activity.id === id)),
+      [
+        ...((enrollmentRows ?? []) as { activity_id: string }[]).map((row) => row.activity_id),
+        ...((featuredRows ?? []) as { activity_id: string }[]).map((row) => row.activity_id),
+      ].filter((id) => !hosted.some((activity) => activity.id === id)),
     ),
   ];
 

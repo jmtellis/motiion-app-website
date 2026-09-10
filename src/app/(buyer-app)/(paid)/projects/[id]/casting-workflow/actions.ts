@@ -643,7 +643,8 @@ export async function addExternalCandidate(input: {
 
 export async function createJobFromCasting(
   projectId: string,
-): Promise<{ ok: boolean; error?: string; jobProjectId?: string }> {
+  options?: { existingJobId?: string | null },
+): Promise<{ ok: boolean; error?: string; jobId?: string; jobProjectId?: string }> {
   const supabase = await createServerSupabaseClient();
   if (!supabase) return { ok: false, error: "Supabase is not configured." };
   const {
@@ -660,50 +661,59 @@ export async function createJobFromCasting(
   const { data: casting } = await supabase.from("castings").select("*").eq("id", castingId).maybeSingle();
   if (!casting) return { ok: false, error: "Casting not found." };
 
-  const { data: jobProject, error: projectError } = await supabase
-    .from("projects")
-    .insert({
-      poster_id: user.id,
-      title: `${access.project.title} — Job`,
-      project_type: "job",
-      enabled_modules: { casting: false, activities: true },
-      project_configuration: {
-        source_casting_project_id: projectId,
-        source_casting_id: castingId,
-      },
-    })
-    .select("id")
-    .single();
-
-  if (projectError || !jobProject) {
-    return { ok: false, error: projectError?.message ?? "Could not create job project." };
-  }
-
   const { data: confirmedCandidates } = await supabase
     .from("casting_candidates")
     .select("talent_profile_id, role_ids, display_name")
     .eq("casting_id", castingId)
     .eq("status", "confirmed");
 
-  for (const candidate of confirmedCandidates ?? []) {
-    if (!candidate.talent_profile_id) continue;
-    await supabase.from("project_roster").upsert(
-      {
-        project_id: jobProject.id,
-        profile_id: candidate.talent_profile_id,
-        notes: `Transferred from casting (${candidate.display_name})`,
-      },
-      { onConflict: "project_id,profile_id", ignoreDuplicates: true },
-    );
+  const profileIds = (confirmedCandidates ?? [])
+    .map((c) => c.talent_profile_id as string | null)
+    .filter((id): id is string => Boolean(id));
+
+  const dancerUserIds: string[] = [];
+  if (profileIds.length) {
+    const { data: profiles } = await supabase
+      .from("professional_profiles")
+      .select("id, user_id")
+      .in("id", profileIds);
+    for (const profile of profiles ?? []) {
+      if (profile.user_id) dancerUserIds.push(profile.user_id as string);
+    }
+  }
+
+  const { data, error } = await supabase.rpc("create_or_attach_production_job_from_casting", {
+    p_title: `${access.project.title} — Job`,
+    p_dancer_user_ids: dancerUserIds,
+    p_existing_job_id: options?.existingJobId || null,
+    p_role_id: null,
+    p_project_id: projectId,
+    p_start_date: null,
+    p_end_date: null,
+  });
+
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  const result = data as {
+    ok?: boolean;
+    error?: string;
+    job_id?: string;
+  } | null;
+
+  if (!result?.ok || !result.job_id) {
+    return { ok: false, error: result?.error ?? "Could not create production job." };
   }
 
   await trackServerEvent("casting_job_created", {
     project_id: projectId,
-    job_project_id: jobProject.id,
+    job_id: result.job_id,
   });
 
-  revalidatePath(`/projects/${jobProject.id}`);
-  return { ok: true, jobProjectId: jobProject.id as string };
+  revalidatePath(`/jobs/${result.job_id}`);
+  revalidatePath("/projects");
+  return { ok: true, jobId: result.job_id, jobProjectId: result.job_id };
 }
 
 const RESENDABLE_INVITATION_STATUSES = new Set(["withdrawn", "declined", "expired"]);
@@ -1097,6 +1107,60 @@ export async function finalizeCastingRole(input: {
 
   if (error) return { ok: false, error: error.message };
 
+  const dancerUserIds: string[] = [];
+  if (finalSelectIds.length) {
+    const { data: submissionRowsWithTalent } = await supabase
+      .from("submissions")
+      .select("id, talent_id")
+      .in("id", finalSelectIds);
+    for (const row of submissionRowsWithTalent ?? []) {
+      if (row.talent_id) dancerUserIds.push(row.talent_id as string);
+    }
+
+    // Pipeline candidates may only have professional profile ids.
+    if (castingId) {
+      const { data: pipeline } = await supabase
+        .from("casting_candidates")
+        .select("talent_profile_id, submission_id, role_ids, status")
+        .eq("casting_id", castingId);
+      const profileIds: string[] = [];
+      for (const candidate of pipeline ?? []) {
+        const roleIds = (candidate.role_ids as string[] | null) ?? [];
+        if (!roleIds.includes(input.bridgedRoleId)) continue;
+        if (!FINALIZE_CANDIDATE_STATUSES.includes(candidate.status as (typeof FINALIZE_CANDIDATE_STATUSES)[number])) {
+          continue;
+        }
+        if (candidate.talent_profile_id) profileIds.push(candidate.talent_profile_id as string);
+      }
+      if (profileIds.length) {
+        const { data: profiles } = await supabase
+          .from("professional_profiles")
+          .select("user_id")
+          .in("id", profileIds);
+        for (const profile of profiles ?? []) {
+          if (profile.user_id) dancerUserIds.push(profile.user_id as string);
+        }
+      }
+    }
+  }
+
+  const uniqueDancers = [...new Set(dancerUserIds)];
+  const { data: roleTitleRow } = await supabase
+    .from("roles")
+    .select("title")
+    .eq("id", input.bridgedRoleId)
+    .maybeSingle();
+
+  await supabase.rpc("create_or_attach_production_job_from_casting", {
+    p_title: `${access.project.title}${roleTitleRow?.title ? ` — ${roleTitleRow.title}` : ""}`,
+    p_dancer_user_ids: uniqueDancers,
+    p_existing_job_id: null,
+    p_role_id: input.bridgedRoleId,
+    p_project_id: input.projectId,
+    p_start_date: null,
+    p_end_date: null,
+  });
+
   await trackServerEvent("casting_role_finalized", {
     project_id: input.projectId,
     role_id: input.bridgedRoleId,
@@ -1104,6 +1168,7 @@ export async function finalizeCastingRole(input: {
   });
 
   revalidateProject(input.projectId);
+  revalidatePath("/projects");
   return { ok: true, finalizedCount: finalSelectIds.length };
 }
 

@@ -1,12 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AuthSplitLink } from "@/components/auth/AuthSplitTransition";
 import { SignupSplitDivider, SignupSplitOAuth } from "@/components/auth/SignupSplitOAuth";
 import { trackClientEvent } from "@/lib/analytics/track-client";
+import { buildOAuthRedirectUrl, buildSignupUserMetadata } from "@/lib/auth/oauth-shared";
+import { storePendingFeaturedTalentInviteToken } from "@/lib/publicFeaturedTalentInvite";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 
 function isValidEmail(value: string) {
@@ -15,12 +17,20 @@ function isValidEmail(value: string) {
 
 export function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const canSubmit = isValidEmail(email.trim()) && password.length >= 8;
+
+  useEffect(() => {
+    const featured = searchParams.get("featured");
+    if (featured) {
+      storePendingFeaturedTalentInviteToken(featured);
+    }
+  }, [searchParams]);
 
   async function handleSubmit(formData: FormData) {
     const supabase = createClientSupabaseClient();
@@ -45,7 +55,11 @@ export function SignupForm() {
       email: nextEmail,
       password: nextPassword,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?flow=signup&account_type=talent`,
+        emailRedirectTo: buildOAuthRedirectUrl({
+          flow: "signup",
+          accountType: "talent",
+        }),
+        data: buildSignupUserMetadata("talent"),
       },
     });
 
@@ -62,10 +76,7 @@ export function SignupForm() {
     }
 
     if (!data.session) {
-      setError(
-        "Your account was created, but email confirmation is required before you can continue. Confirm your email, then log in.",
-      );
-      setLoading(false);
+      router.push(`/signup/check-email?email=${encodeURIComponent(nextEmail)}`);
       return;
     }
 
@@ -73,7 +84,7 @@ export function SignupForm() {
       user_id: data.user.id,
       email: nextEmail,
       account_type: "talent",
-      talent_types: ["dancer"],
+      talent_types: [],
       working_locations: [],
       skills: [],
       experiences: [],
@@ -89,7 +100,6 @@ export function SignupForm() {
 
     trackClientEvent("user_signed_up", {
       account_type: "talent",
-      role_type: "dancer",
     });
 
     router.push("/onboarding");
@@ -98,17 +108,6 @@ export function SignupForm() {
 
   return (
     <div className="signup-split-form__body">
-      <nav className="signup-split-audience" aria-label="Other signup options">
-        <AuthSplitLink
-          href="/talent-buyers/signup"
-          className="signup-split-text-btn signup-split-text-btn--muted"
-        >
-          Or sign up as an industry professional
-        </AuthSplitLink>
-      </nav>
-
-      <div className="signup-split-rule" aria-hidden />
-
       <form action={handleSubmit} className="flex flex-col gap-4">
         <label className="signup-split-field">
           <span>Email</span>
@@ -151,6 +150,18 @@ export function SignupForm() {
         </label>
 
         {error ? <div className="signup-split-error">{error}</div> : null}
+
+        <p className="signup-split-legal">
+          By creating an account, you agree to our{" "}
+          <a href="/terms" target="_blank" rel="noopener noreferrer">
+            Terms and Conditions
+          </a>{" "}
+          and{" "}
+          <a href="/privacy" target="_blank" rel="noopener noreferrer">
+            Privacy Policy
+          </a>
+          .
+        </p>
 
         <button type="submit" className="signup-split-submit" disabled={loading || !canSubmit}>
           {loading ? "Creating account…" : "Sign Up"}

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { buildAuthDisplayNameMetadata } from "@/lib/auth/profile";
 import { getProfileDestination } from "@/lib/auth/session";
 import { trackServerEvent } from "@/lib/analytics/track-server";
 import { upsertProfessionalProfileDraft, type ProfessionalProfileDraftInput } from "@/lib/professional-profile/actions";
@@ -52,9 +53,9 @@ const onboardingPayloadSchema = z.object({
   email: z.string().trim().email("A valid email is required."),
   dateOfBirth: z.string().trim().min(1, "Date of birth is required."),
   notificationsEnabled: z.boolean(),
-  role: z.enum(["dancer", "choreographer", "hiring"]),
-  accountType: z.enum(["talent", "lookingForTalent", "looking_for_talent"]).nullable(),
-  talentTypes: z.array(z.enum(["dancer", "choreographer"])).default([]),
+  role: z.enum(["talent", "industry", "community"]),
+  accountType: z.enum(["talent", "lookingForTalent", "looking_for_talent", "community"]).nullable(),
+  talentTypes: z.array(z.enum(["dancer", "choreographer", "instructor"])).default([]),
   displayName: z.string().trim().min(1, "Display name is required."),
   username: z.string().trim().toLowerCase().regex(usernameRegex, "Use 3-30 lowercase letters, numbers, or underscores."),
   headshotUrls: stringArraySchema,
@@ -85,6 +86,11 @@ const onboardingPayloadSchema = z.object({
   companyName: z.string().trim().optional(),
   nonTalentType: z.string().trim().optional(),
   hiringBio: z.string().trim().optional(),
+  acquisitionSource: z
+    .enum(["instagram", "friend_or_referral", "motiion_founder", "event", "other", ""])
+    .optional(),
+  acquisitionSourceDetail: z.string().trim().optional(),
+  openProfileSetupAfterComplete: z.boolean().optional(),
 });
 
 function compactObject<T extends Record<string, unknown>>(value: T) {
@@ -190,6 +196,71 @@ export async function syncOnboardingProfessionalDraft(input: ProfessionalProfile
   return upsertProfessionalProfileDraft(input);
 }
 
+/** Switch an incomplete signup into the talent-buyer lane before redirecting. */
+export async function beginIndustryOnboarding(): Promise<
+  | { ok: true; redirectTo: string }
+  | { ok: false; error: string }
+> {
+  const supabase = await createServerSupabaseClient();
+
+  if (!supabase) {
+    return { ok: false, error: "Supabase is not configured." };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, error: "You must be signed in." };
+  }
+
+  const { data: profile, error: profileReadError } = await supabase
+    .from("profiles")
+    .select("onboarding_completed_at")
+    .eq("user_id", user.id)
+    .maybeSingle<{ onboarding_completed_at: string | null }>();
+
+  if (profileReadError) {
+    return { ok: false, error: profileReadError.message };
+  }
+
+  if (profile?.onboarding_completed_at) {
+    return { ok: false, error: "Your profile is already complete." };
+  }
+
+  const { error: profileError } = await supabase.from("profiles").upsert(
+    {
+      user_id: user.id,
+      account_type: "lookingForTalent",
+      talent_types: [],
+    },
+    { onConflict: "user_id" },
+  );
+
+  if (profileError) {
+    return { ok: false, error: profileError.message };
+  }
+
+  const { error: nonTalentError } = await supabase.from("non_talent_profiles").upsert(
+    {
+      id: user.id,
+      work_email: user.email ?? null,
+      user_type: "talent_buyer",
+    },
+    { onConflict: "id" },
+  );
+
+  if (nonTalentError) {
+    return { ok: false, error: nonTalentError.message };
+  }
+
+  revalidatePath("/onboarding");
+  revalidatePath("/talent-buyers/onboarding");
+
+  return { ok: true, redirectTo: "/talent-buyers/onboarding" };
+}
+
 export async function completeOnboarding(
   payload: CompleteOnboardingPayload,
 ): Promise<CompleteOnboardingResult> {
@@ -208,12 +279,19 @@ export async function completeOnboarding(
     return { ok: false, error: "You must be at least 18 to join Motiion." };
   }
 
-  if (data.role !== "hiring" && data.headshotUrls.length < 1) {
+  if (data.role === "talent" && data.headshotUrls.length < 1) {
     return { ok: false, error: "Add at least one headshot URL before completing setup." };
   }
 
-  if (data.role === "hiring" && !data.companyName) {
-    return { ok: false, error: "Company or organization is required." };
+  if (data.role === "talent" && data.talentTypes.length < 1) {
+    return { ok: false, error: "Choose at least one talent type." };
+  }
+
+  if (data.role === "industry") {
+    return {
+      ok: false,
+      error: "Industry professionals continue in talent-buyer onboarding.",
+    };
   }
 
   const supabase = await createServerSupabaseClient();
@@ -230,11 +308,8 @@ export async function completeOnboarding(
     return { ok: false, error: "You must be signed in to finish onboarding." };
   }
 
-  const accountType = data.role === "hiring" ? "lookingForTalent" : "talent";
-  const talentTypes =
-    data.role === "hiring"
-      ? []
-      : [data.role === "choreographer" ? "choreographer" : "dancer"];
+  const accountType = data.role === "community" ? "community" : "talent";
+  const talentTypes = data.role === "talent" ? data.talentTypes : [];
   const completedAt = new Date().toISOString();
   const resolvedUsername = await resolveAvailableUsername(supabase, data.username);
 
@@ -270,8 +345,9 @@ export async function completeOnboarding(
       union_status: data.unionStatus || null,
       union_member_id: data.unionMemberId || null,
       talent_types: talentTypes,
+      is_private: data.role === "community" ? true : undefined,
       agent: data.agent || null,
-      additional_representations: data.additionalRepresentations,
+      additional_agents: data.additionalRepresentations,
       experiences: data.experiences,
       training: data.training,
       styles: data.styles,
@@ -279,6 +355,8 @@ export async function completeOnboarding(
       profile_highlights: data.profileHighlights,
       profile_visuals: [],
       onboarding_completed_at: completedAt,
+      acquisition_source: data.acquisitionSource || null,
+      acquisition_source_detail: data.acquisitionSourceDetail || null,
       instagram_url: data.instagramUrl || null,
       x_url: data.xUrl || null,
       tiktok_url: data.tiktokUrl || null,
@@ -292,27 +370,15 @@ export async function completeOnboarding(
     return { ok: false, error: formatProfileWriteError(profileError.message) };
   }
 
-  if (data.role === "hiring") {
-    const { error: nonTalentError } = await supabase
-      .from("non_talent_profiles")
-      .upsert(
-        {
-          id: user.id,
-          company_name: data.companyName || null,
-          non_talent_type: data.nonTalentType || null,
-          work_email: data.email,
-        },
-        { onConflict: "id" },
-      );
-
-    if (nonTalentError) {
-      return { ok: false, error: nonTalentError.message };
-    }
-  }
 
   await supabase.auth.updateUser({
     data: {
       has_completed_onboarding: true,
+      ...buildAuthDisplayNameMetadata({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        displayName: data.displayName,
+      }),
     },
   });
 
@@ -328,19 +394,26 @@ export async function completeOnboarding(
   revalidatePath("/dashboard");
   revalidatePath("/account");
   revalidatePath("/onboarding");
+  revalidatePath("/home");
+  revalidatePath("/profile/setup");
+
+  const defaultDestination = getProfileDestination({
+    id: user.id,
+    email: data.email,
+    fullName: data.displayName,
+    accountType,
+    onboardingCompletedAt: completedAt,
+    talentTypes,
+    companyName: data.companyName || null,
+    nonTalentType: null,
+  });
 
   return {
     ok: true,
-    redirectTo: getProfileDestination({
-      id: user.id,
-      email: data.email,
-      fullName: data.displayName,
-      accountType,
-      onboardingCompletedAt: completedAt,
-      talentTypes,
-      companyName: data.companyName || null,
-      nonTalentType: null,
-    }),
+    redirectTo:
+      accountType === "talent" && data.openProfileSetupAfterComplete
+        ? "/profile/setup"
+        : defaultDestination,
   };
 }
 

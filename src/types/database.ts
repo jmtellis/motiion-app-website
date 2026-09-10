@@ -11,9 +11,9 @@ import type {
   TalentBuyerWorkType,
 } from "@/types/talent-buyers";
 
-export type AccountType = "talent" | "lookingForTalent" | "looking_for_talent";
+export type AccountType = "talent" | "lookingForTalent" | "looking_for_talent" | "community";
 
-export type TalentSubtype = "dancer" | "choreographer";
+export type TalentSubtype = "dancer" | "choreographer" | "instructor";
 
 export type NonTalentSubtype =
   | "casting_director"

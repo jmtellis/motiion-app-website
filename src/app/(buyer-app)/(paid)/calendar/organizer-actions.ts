@@ -4,6 +4,10 @@ import { revalidatePath } from "next/cache";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
+  loadFeaturedTalentTree,
+  type FeaturedTalentRow,
+} from "@/lib/talent-buyers/activities/featured-talent";
+import {
   loadOrganizerActivity,
   loadOrganizerPromos,
   loadOrganizerRevenue,
@@ -28,6 +32,7 @@ export type OrganizerPageData = {
   revenue: OrganizerRevenueSummary;
   subgroups: OrganizerSubgroup[];
   promos: DraftPromoCode[];
+  featuredTalent: FeaturedTalentRow[];
 };
 
 export async function getOrganizerPageData(
@@ -45,11 +50,14 @@ export async function getOrganizerPageData(
   const activityResult = await loadOrganizerActivity(supabase, activityId, user.id);
   if (!activityResult.ok) return activityResult;
 
-  const [attendees, revenue, subgroups, promos] = await Promise.all([
+  const [attendees, revenue, subgroups, promos, featuredTalent] = await Promise.all([
     loadOrganizerRoster(supabase, activityId, eventDayId),
     loadOrganizerRevenue(supabase, activityId),
     loadOrganizerSubgroups(supabase, activityResult.activity.rootJobId),
     loadOrganizerPromos(supabase, activityId),
+    activityResult.activity.type === "event"
+      ? loadFeaturedTalentTree(supabase, activityId)
+      : Promise.resolve([]),
   ]);
 
   return {
@@ -60,6 +68,7 @@ export async function getOrganizerPageData(
       revenue,
       subgroups,
       promos,
+      featuredTalent,
     },
   };
 }
@@ -176,6 +185,21 @@ export async function inviteSubgroupLead(input: {
   groupId: string;
   userId: string;
 }): Promise<{ ok: boolean; error?: string }> {
+  const result = await addEventLead({
+    activityId: input.activityId,
+    userId: input.userId,
+    groupId: input.groupId,
+  });
+  return result.ok ? { ok: true } : result;
+}
+
+/** Invite a Motiion member as a subgroup lead. Creates a subgroup when none is selected. */
+export async function addEventLead(input: {
+  activityId: string;
+  userId: string;
+  groupId?: string | null;
+  newGroupName?: string | null;
+}): Promise<{ ok: true; groupId: string } | { ok: false; error: string }> {
   const supabase = await createServerSupabaseClient();
   if (!supabase) return { ok: false, error: "Supabase is not configured." };
 
@@ -186,11 +210,42 @@ export async function inviteSubgroupLead(input: {
 
   const activityResult = await loadOrganizerActivity(supabase, input.activityId, user.id);
   if (!activityResult.ok) return activityResult;
+  if (activityResult.activity.type !== "event") {
+    return { ok: false, error: "Leads are only available on events." };
+  }
   const rootJobId = activityResult.activity.rootJobId;
   if (!rootJobId) return { ok: false, error: "This event has no showcase workspace." };
 
+  let groupId = input.groupId?.trim() || null;
+  if (!groupId) {
+    const name = input.newGroupName?.trim() || "Featured";
+    const { data: existingGroups } = await supabase
+      .from("job_groups")
+      .select("id,sort_order")
+      .eq("job_id", rootJobId)
+      .order("sort_order", { ascending: false })
+      .limit(1);
+    const nextSort =
+      ((existingGroups?.[0] as { sort_order?: number } | undefined)?.sort_order ?? -1) + 1;
+    const { data: created, error: createError } = await supabase
+      .from("job_groups")
+      .insert({
+        job_id: rootJobId,
+        name,
+        sort_order: nextSort,
+        created_by: user.id,
+      })
+      .select("id")
+      .single();
+    if (createError || !created) {
+      console.error("[organizer] create subgroup", createError?.message);
+      return { ok: false, error: "Could not create a subgroup for this lead." };
+    }
+    groupId = created.id as string;
+  }
+
   const { error } = await supabase.from("job_group_invites").insert({
-    job_group_id: input.groupId,
+    job_group_id: groupId,
     job_id: rootJobId,
     invited_user_id: input.userId,
     invited_by: user.id,
@@ -205,7 +260,7 @@ export async function inviteSubgroupLead(input: {
   }
 
   revalidatePath(`/calendar/${input.activityId}`);
-  return { ok: true };
+  return { ok: true, groupId };
 }
 
 export async function removeSubgroupLead(input: {

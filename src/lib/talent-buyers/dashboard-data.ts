@@ -8,7 +8,7 @@ export const BUYER_DASHBOARD_PATH = "/dashboard";
 export const buyerMenuNavItems = [
   { href: "/talent", label: "Find Talent", segment: "talent" },
   { href: "/projects", label: "Projects", segment: "projects" },
-  { href: "/events", label: "Events", segment: "events" },
+  { href: "/events", label: "Calendar", segment: "events" },
   { href: "/library", label: "Roster", segment: "library" },
 ] as const;
 
@@ -16,7 +16,7 @@ export const buyerWorkspaceNavItems = [
   { href: "/talent", label: "Find Talent", segment: "talent" },
   { href: "/projects", label: "Projects", segment: "projects" },
   { href: "/messages", label: "Inbox", segment: "messages" },
-  { href: "/events", label: "Events", segment: "events" },
+  { href: "/events", label: "Calendar", segment: "events" },
   { href: "/library", label: "Roster", segment: "library" },
 ] as const;
 

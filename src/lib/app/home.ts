@@ -52,7 +52,7 @@ async function fetchUpcomingActivities(userId: string): Promise<UpcomingActivity
   const supabase = await createServerSupabaseClient();
   if (!supabase) return [];
 
-  const [{ data: enrollments }, { data: hosting }] = await Promise.all([
+  const [{ data: enrollments }, { data: hosting }, { data: featuredTalent }] = await Promise.all([
     supabase
       .from("enrollments")
       .select(
@@ -68,9 +68,17 @@ async function fetchUpcomingActivities(userId: string): Promise<UpcomingActivity
       .neq("status", "cancelled")
       .order("activity_date", { ascending: true, nullsFirst: false })
       .limit(8),
+    supabase
+      .from("activity_featured_talent")
+      .select(
+        "activity_id, activities ( id, title, type, activity_date, start_time, cover_image_url, status )",
+      )
+      .eq("talent_user_id", userId)
+      .eq("status", "accepted")
+      .limit(12),
   ]);
 
-  const attending = (enrollments ?? [])
+  const attendingFromEnrollments = (enrollments ?? [])
     .map((row) => {
       const joined = (row as { activities?: unknown }).activities;
       const activity = Array.isArray(joined) ? joined[0] : joined;
@@ -78,6 +86,17 @@ async function fetchUpcomingActivities(userId: string): Promise<UpcomingActivity
     })
     .filter((activity): activity is ActivitySummary => Boolean(activity))
     .map((activity) => toUpcoming(activity, "attending"));
+
+  const attendingFromFeatured = (featuredTalent ?? [])
+    .map((row) => {
+      const joined = (row as { activities?: unknown }).activities;
+      const activity = Array.isArray(joined) ? joined[0] : joined;
+      return normalizeJoinedActivity(activity);
+    })
+    .filter((activity): activity is ActivitySummary => Boolean(activity))
+    .map((activity) => toUpcoming(activity, "attending"));
+
+  const attending = [...attendingFromEnrollments, ...attendingFromFeatured];
 
   const hosted = (hosting ?? [])
     .map((row) => normalizeJoinedActivity(row))

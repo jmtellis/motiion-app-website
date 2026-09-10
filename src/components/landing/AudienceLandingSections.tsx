@@ -154,11 +154,13 @@ export function AudienceLandingSections({
         </Reveal>
       </AudienceSection>
 
-      <AudienceSection id="pricing" altBackground={true} dark={dark}>
-        <Reveal amount={0.16} distance={28} className="w-full">
-          <AudiencePricingSection content={content.pricing} dark={dark} />
-        </Reveal>
-      </AudienceSection>
+      {content.pricing ? (
+        <AudienceSection id="pricing" altBackground={true} dark={dark}>
+          <Reveal amount={0.16} distance={28} className="w-full">
+            <AudiencePricingSection content={content.pricing} dark={dark} />
+          </Reveal>
+        </AudienceSection>
+      ) : null}
     </>
   );
 }

@@ -199,7 +199,7 @@ export function ProjectMediaPanel({
       <div className="space-y-3">
         <h2 className="project-create__section-title">Attachments</h2>
         <p className="text-sm text-white/50">
-          Upload briefs, music, or reference files talent may need for submissions.
+          Upload posters, agreements, briefs, or other files for this project.
         </p>
 
         {attachments.length ? (

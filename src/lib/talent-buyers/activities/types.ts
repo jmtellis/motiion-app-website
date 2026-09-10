@@ -1,6 +1,10 @@
+import type { DraftFeaturedTalentInvite } from "@/lib/talent-buyers/activities/featured-talent";
+
 export type ActivityType = "class" | "session" | "event";
 
 export type TicketAccessMode = "all_days" | "select_days" | "fixed_days";
+
+export type { DraftFeaturedTalentInvite };
 
 export type ActivityPlace = {
   placeId: string;
@@ -111,6 +115,12 @@ export type ActivityDraft = {
   // Event
   eventDays: DraftEventDay[];
   ticketOptions: DraftTicketOption[];
+  /** Optional off-platform ticket URL. */
+  externalTicketUrl: string;
+  /** When false, Motiion ticketing/promo steps are skipped for new events. */
+  sellTicketsOnMotiion: boolean;
+  /** Draft featured talent invites (persisted as pending on publish). */
+  featuredTalentInvites: DraftFeaturedTalentInvite[];
   eventHighlights: string[];
   eventLineup: string[];
   eventScheduleItems: DraftScheduleItem[];

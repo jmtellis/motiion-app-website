@@ -7,6 +7,7 @@ export type ActivityComposerStepId =
   | "learning"
   | "experience"
   | "dates"
+  | "featuredTalent"
   | "tickets"
   | "promos"
   | "leads"
@@ -44,11 +45,9 @@ const EVENT_STEPS: ActivityComposerStepId[] = [
   "type",
   "basics",
   "dates",
+  "featuredTalent",
   "tickets",
   "promos",
-  "leads",
-  "experience",
-  "attendees",
   "publish",
 ];
 
@@ -71,7 +70,7 @@ export const ACTIVITY_CREATE_REGISTRY: Record<ActivityType, ActivityCreateConfig
   },
   event: {
     pageTitle: "Create event",
-    lede: "Build a showcase or industry event with tickets, days, and check-in.",
+    lede: "Create a showcase event and invite the talent who will be featured.",
     publishLabel: "Publish event",
     steps: EVENT_STEPS,
     titlePlaceholder: "Summer showcase",
@@ -92,7 +91,9 @@ export function stepLabel(step: ActivityComposerStepId): string {
     case "experience":
       return "Experience";
     case "dates":
-      return "Dates";
+      return "Details";
+    case "featuredTalent":
+      return "Featured Talent";
     case "tickets":
       return "Tickets";
     case "promos":

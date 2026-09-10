@@ -61,6 +61,7 @@ function formatLocation(city: string | null | undefined, region: string | null |
 
 type HydratedMemberCard = {
   profile_id: string;
+  user_id?: string | null;
   slug: string | null;
   name: string;
   location: string | null;

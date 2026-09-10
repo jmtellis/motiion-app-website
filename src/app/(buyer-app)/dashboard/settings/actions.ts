@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { isHiringAccount } from "@/lib/auth/profile";
+import { buildAuthDisplayNameMetadata, isHiringAccount } from "@/lib/auth/profile";
 import { mapBuyerRoleToLegacyNonTalentType } from "@/lib/talent-buyers/roles";
 import type {
   TalentBuyerNotificationPreferences,
@@ -136,6 +136,17 @@ export async function updateBuyerProfile(
     .eq("user_id", user.id);
 
   if (profileError) return { ok: false, error: profileError.message };
+
+  const { error: authNameError } = await supabase.auth.updateUser({
+    data: buildAuthDisplayNameMetadata({
+      firstName,
+      lastName,
+      displayName: parsed.data.fullName.trim(),
+    }),
+  });
+  if (authNameError) {
+    return { ok: false, error: authNameError.message };
+  }
 
   const buyerUpdate: {
     organization_name: string | null;

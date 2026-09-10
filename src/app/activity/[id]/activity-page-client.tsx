@@ -22,9 +22,13 @@ type DetailRow = { label: string; value: string };
 export default function ActivityPageClient({
   activity,
   sharePath,
+  ticketProviderName = null,
+  ticketProviderLogoUrl = null,
 }: {
   activity: PublicActivity;
   sharePath: string;
+  ticketProviderName?: string | null;
+  ticketProviderLogoUrl?: string | null;
 }) {
   const kind = effectiveActivityKind(activity, sharePath);
   const dateLine = formatActivityDateTime(activity);
@@ -61,10 +65,20 @@ export default function ActivityPageClient({
   const isClass = kind === "class";
   const isSession = kind === "session";
   const isEvent = kind === "event";
+  const hasExternalTickets = Boolean(activity.externalTicketUrl?.trim());
+  const hasMotiionTickets = (activity.ticketOptions?.length ?? 0) > 0 || activity.requirePayment;
   const canBookGuest =
-    (isClass || isEvent) && activity.isEligibleForBooking && !enrolledTitle && !soldOut;
+    (isClass || isEvent) &&
+    activity.isEligibleForBooking &&
+    !enrolledTitle &&
+    !soldOut &&
+    (!isEvent || hasMotiionTickets);
   const showGuestBookingBar =
-    (isClass || isEvent) && activity.isEligibleForBooking && !enrolledTitle;
+    (isClass || (isEvent && hasMotiionTickets)) &&
+    activity.isEligibleForBooking &&
+    !enrolledTitle;
+  const showExternalTicketBar =
+    isEvent && hasExternalTickets && !showGuestBookingBar && !enrolledTitle;
   const showSessionActionBar = isSession && activity.isEligibleForBooking;
 
   const analyticsPath = sharePath.startsWith("/") ? sharePath : `/${sharePath}`;
@@ -102,7 +116,10 @@ export default function ActivityPageClient({
       />
       <article
         className="casting-page"
-        style={{ paddingBottom: showGuestBookingBar || showSessionActionBar ? 88 : 24 }}
+        style={{
+          paddingBottom:
+            showGuestBookingBar || showSessionActionBar || showExternalTicketBar ? 88 : 24,
+        }}
       >
         <header className="casting-page-header">
           <p className="casting-section-title">{activityKindLabel(kind)}</p>
@@ -151,15 +168,153 @@ export default function ActivityPageClient({
           </dl>
         </section>
 
-        {isEvent && (activity.ticketOptions?.length ?? 0) > 0 ? (
+        {isEvent && activity.externalTicketUrl?.trim() ? (
           <section className="casting-glass-card">
             <h2 className="casting-section-title">Tickets</h2>
+            <p
+              className="casting-body-copy"
+              style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}
+            >
+              <TicketProviderLogo url={ticketProviderLogoUrl} name={ticketProviderName} />
+              <a
+                href={activity.externalTicketUrl.trim()}
+                target="_blank"
+                rel="noreferrer"
+                className="casting-inline-link"
+              >
+                Get tickets
+              </a>
+            </p>
+          </section>
+        ) : null}
+
+        {isEvent && (activity.ticketOptions?.length ?? 0) > 0 ? (
+          <section className="casting-glass-card">
+            <h2 className="casting-section-title">
+              {activity.externalTicketUrl?.trim() ? "Motiion Tickets" : "Tickets"}
+            </h2>
             <ul className="casting-body-copy" style={{ display: "grid", gap: 8, marginTop: 10 }}>
               {activity.ticketOptions?.map((ticket) => (
                 <li key={ticket.id}>
                   <strong>{ticket.label}</strong>
                   {" — "}
                   {formatMoney(ticket.amountCents, ticket.currency || activity.priceCurrency || "usd")}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {isEvent && (activity.featuredTalent?.length ?? 0) > 0 ? (
+          <section className="casting-glass-card">
+            <h2 className="casting-section-title">Featured talent</h2>
+            <ul style={{ display: "grid", gap: 16, marginTop: 12, padding: 0, listStyle: "none" }}>
+              {activity.featuredTalent?.map((talent) => (
+                <li key={talent.id}>
+                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                    {talent.headshotUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={talent.headshotUrl}
+                        alt=""
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 999,
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : (
+                      <span
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 999,
+                          display: "grid",
+                          placeItems: "center",
+                          background: "rgba(255,255,255,0.08)",
+                        }}
+                      >
+                        {talent.displayName.slice(0, 1)}
+                      </span>
+                    )}
+                    <div>
+                      <p className="casting-body-copy" style={{ margin: 0, fontWeight: 600 }}>
+                        {talent.username ? (
+                          <a href={`/${talent.username}`} className="casting-inline-link">
+                            {talent.displayName}
+                          </a>
+                        ) : (
+                          talent.displayName
+                        )}
+                      </p>
+                      {talent.videoUrl ? (
+                        <p className="casting-body-copy" style={{ margin: "4px 0 0" }}>
+                          <a
+                            href={talent.videoUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="casting-inline-link"
+                          >
+                            Watch showcase
+                          </a>
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                  {talent.children.length > 0 ? (
+                    <ul
+                      style={{
+                        display: "grid",
+                        gap: 10,
+                        margin: "12px 0 0",
+                        padding: "0 0 0 16px",
+                        listStyle: "none",
+                        borderLeft: "1px solid rgba(255,255,255,0.12)",
+                      }}
+                    >
+                      {talent.children.map((child) => (
+                        <li key={child.id} style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                          {child.headshotUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={child.headshotUrl}
+                              alt=""
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 999,
+                                objectFit: "cover",
+                              }}
+                            />
+                          ) : (
+                            <span
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 999,
+                                display: "grid",
+                                placeItems: "center",
+                                background: "rgba(255,255,255,0.08)",
+                                fontSize: 12,
+                              }}
+                            >
+                              {child.displayName.slice(0, 1)}
+                            </span>
+                          )}
+                          <p className="casting-body-copy" style={{ margin: 0 }}>
+                            {child.username ? (
+                              <a href={`/${child.username}`} className="casting-inline-link">
+                                {child.displayName}
+                              </a>
+                            ) : (
+                              child.displayName
+                            )}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -257,7 +412,26 @@ export default function ActivityPageClient({
         ) : null}
       </article>
 
-      <OpenInAppBar href={sharePath} label="Open in the Motiion app" />
+      <OpenInAppBar
+        href={sharePath}
+        label="Open in Motiion"
+        hint="Download Motiion for tickets, updates, and the full experience."
+      />
+
+      {showExternalTicketBar ? (
+        <div className="casting-submit-bar">
+          <a
+            href={activity.externalTicketUrl!.trim()}
+            target="_blank"
+            rel="noreferrer"
+            className="casting-submit-button"
+            style={{ gap: 8 }}
+          >
+            <TicketProviderLogo url={ticketProviderLogoUrl} name={ticketProviderName} />
+            Get tickets
+          </a>
+        </div>
+      ) : null}
 
       {showGuestBookingBar ? (
         <div className="casting-submit-bar">
@@ -351,6 +525,34 @@ function BreakdownRow({ label, value }: { label: string; value: string }) {
       <dt>{label}</dt>
       <dd>{value}</dd>
     </div>
+  );
+}
+
+function TicketProviderLogo({
+  url,
+  name,
+}: {
+  url?: string | null;
+  name?: string | null;
+}) {
+  const src = url?.trim();
+  if (!src) return null;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={name ? `${name} logo` : ""}
+      width={20}
+      height={20}
+      style={{
+        width: 20,
+        height: 20,
+        borderRadius: 5,
+        objectFit: "contain",
+        background: "#fff",
+        flexShrink: 0,
+      }}
+    />
   );
 }
 

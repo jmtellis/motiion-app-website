@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   Camera,
   CheckCircle2,
@@ -17,16 +17,18 @@ import {
 } from "lucide-react";
 
 import {
+  addEventLead,
   grantOrganizerComp,
-  inviteSubgroupLead,
   recordOrganizerCheckIn,
   removeSubgroupLead,
   saveOrganizerPromos,
 } from "@/app/(buyer-app)/(paid)/calendar/organizer-actions";
 import { ActivityPeoplePicker } from "@/components/talent-buyers/activities/ActivityPeoplePicker";
+import { FeaturedTalentManagePanel } from "@/components/talent-buyers/activities/FeaturedTalentManagePanel";
 import { BuyerCoverImage } from "@/components/talent-buyers/dashboard/BuyerCoverImage";
 import { useRegisterBuyerChrome } from "@/components/talent-buyers/dashboard/BuyerPageChromeContext";
 import { createDefaultPromoCode } from "@/lib/talent-buyers/activities/defaults";
+import type { FeaturedTalentRow } from "@/lib/talent-buyers/activities/featured-talent";
 import type { OrganizerActivityDetail } from "@/lib/talent-buyers/activities/organizer-data";
 import type {
   DraftPersonRef,
@@ -40,7 +42,7 @@ import { formatMoney } from "@/lib/publicActivity";
 
 import "@/components/talent-buyers/project/project-workspace.css";
 
-type Tab = "overview" | "guests" | "checkin" | "leads" | "promos" | "revenue";
+type Tab = "overview" | "featured" | "guests" | "checkin" | "leads" | "promos" | "revenue";
 
 function ActivityCoverAvatar({ src }: { src: string | null }) {
   return (
@@ -117,6 +119,7 @@ export function OrganizerManageView({
   revenue,
   subgroups,
   promos: initialPromos,
+  featuredTalent = [],
   initialTab,
 }: {
   activity: OrganizerActivityDetail;
@@ -124,6 +127,7 @@ export function OrganizerManageView({
   revenue: OrganizerRevenueSummary;
   subgroups: OrganizerSubgroup[];
   promos: DraftPromoCode[];
+  featuredTalent?: FeaturedTalentRow[];
   initialTab?: Tab;
 }) {
   const router = useRouter();
@@ -141,8 +145,15 @@ export function OrganizerManageView({
   const [leadInviteGroupId, setLeadInviteGroupId] = useState<string | null>(
     subgroups[0]?.id ?? null,
   );
+  const [newLeadGroupName, setNewLeadGroupName] = useState("Featured");
   const [leadInvitees, setLeadInvitees] = useState<DraftPersonRef[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (!leadInviteGroupId && subgroups[0]?.id) {
+      setLeadInviteGroupId(subgroups[0].id);
+    }
+  }, [subgroups, leadInviteGroupId]);
   const streamRef = useRef<MediaStream | null>(null);
   const scanLoopRef = useRef<number | null>(null);
 
@@ -307,11 +318,16 @@ export function OrganizerManageView({
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "overview", label: "Overview" },
-    { id: "guests", label: "Guests" },
-    { id: "checkin", label: "Check-in" },
+    ...(activity.type === "event" ? [{ id: "featured" as const, label: "Featured talent" }] : []),
+    ...(activity.requirePayment || activity.ticketOptions.length > 0
+      ? [
+          { id: "guests" as const, label: "Guests" },
+          { id: "checkin" as const, label: "Check-in" },
+        ]
+      : []),
     ...(activity.type === "event" ? [{ id: "leads" as const, label: "Leads" }] : []),
     ...(activity.requirePayment ? [{ id: "promos" as const, label: "Promos" }] : []),
-    { id: "revenue", label: "Revenue" },
+    ...(activity.requirePayment ? [{ id: "revenue" as const, label: "Revenue" }] : []),
   ];
 
   return (
@@ -380,6 +396,16 @@ export function OrganizerManageView({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm font-semibold text-white">Details</p>
               <div className="flex flex-wrap gap-2">
+                {activity.type === "event" ? (
+                  <button
+                    type="button"
+                    className="bd-btn-accent gap-1.5"
+                    onClick={() => setTab("featured")}
+                  >
+                    <Plus className="size-3.5" />
+                    Add featured talent
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="bd-btn-secondary gap-1.5"
@@ -414,6 +440,24 @@ export function OrganizerManageView({
               </div>
             ) : null}
           </div>
+        </div>
+      ) : null}
+
+      {tab === "featured" ? (
+        <div className="bd-muted-panel space-y-4 p-5">
+          <div className="space-y-1">
+            <p className="font-semibold text-white">Featured talent</p>
+            <p className="text-sm text-white/55">
+              Invite talent to accept a feature on this event. Accepted talent can add supporting
+              talent under them and attach a showcase video link.
+            </p>
+          </div>
+          <FeaturedTalentManagePanel
+            activityId={activity.id}
+            initialTree={featuredTalent}
+            canManage
+            allowVideoEdit
+          />
         </div>
       ) : null}
 
@@ -531,27 +575,94 @@ export function OrganizerManageView({
       {tab === "leads" ? (
         <div className="space-y-6">
           <div className="bd-muted-panel space-y-2 p-5 text-sm text-white/60">
-            <p className="font-semibold text-white">Subgroup leads</p>
+            <p className="font-semibold text-white">Event leads</p>
             <p>
-              Leads facilitate their own private satellite event for this showcase in the Motiion
-              app. Invite them here; they accept and finish setup on mobile.
+              Search Motiion members by name and invite them as leads. They accept in the app, get a
+              compsed main-event ticket, then set up their private satellite event. This is included
+              on free plans — Talent Search is not required.
             </p>
           </div>
 
+          <div className="bd-muted-panel space-y-3 p-5">
+            <p className="text-sm font-semibold text-white">Add a lead</p>
+            {subgroups.length > 0 ? (
+              <label className="block text-sm text-white/55">
+                Group
+                <select
+                  className="mt-1 w-full rounded-full border border-white/12 bg-black/30 px-3 py-2.5 text-white outline-none"
+                  value={leadInviteGroupId ?? ""}
+                  onChange={(event) => setLeadInviteGroupId(event.target.value || null)}
+                >
+                  {subgroups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                  <option value="">New group…</option>
+                </select>
+              </label>
+            ) : null}
+            {!leadInviteGroupId ? (
+              <label className="block text-sm text-white/55">
+                Group name
+                <input
+                  className="mt-1 w-full rounded-full border border-white/12 bg-black/30 px-3 py-2.5 text-white outline-none"
+                  value={newLeadGroupName}
+                  onChange={(event) => setNewLeadGroupName(event.target.value)}
+                  placeholder="e.g. Featured, Ensemble"
+                />
+              </label>
+            ) : null}
+            <ActivityPeoplePicker
+              label="Motiion member"
+              selected={leadInvitees}
+              onChange={setLeadInvitees}
+              emptyHint="Type a name or username, then select the person to invite."
+            />
+            <button
+              type="button"
+              className="bd-btn-accent gap-1.5"
+              disabled={
+                isPending ||
+                leadInvitees.length === 0 ||
+                (!leadInviteGroupId && !newLeadGroupName.trim())
+              }
+              onClick={() => {
+                const person = leadInvitees[0];
+                if (!person) return;
+                setError(null);
+                setMessage(null);
+                startTransition(async () => {
+                  const result = await addEventLead({
+                    activityId: activity.id,
+                    userId: person.userId,
+                    groupId: leadInviteGroupId,
+                    newGroupName: leadInviteGroupId ? null : newLeadGroupName,
+                  });
+                  if (!result.ok) {
+                    setError(result.error ?? "Could not invite lead.");
+                    return;
+                  }
+                  setLeadInvitees([]);
+                  setLeadInviteGroupId(result.groupId);
+                  setMessage("Lead invited.");
+                  router.refresh();
+                });
+              }}
+            >
+              <Plus className="size-3.5" />
+              {isPending ? "Sending…" : "Send invite"}
+            </button>
+          </div>
+
           {subgroups.length === 0 ? (
-            <div className="bd-muted-panel p-5 text-sm text-white/55">
-              No subgroups yet.{" "}
-              <Link href={`/calendar/${activity.id}/edit`} className="text-[var(--accent)] underline">
-                Edit the event
-              </Link>{" "}
-              to enable subgroups and invite leads.
-            </div>
+            <p className="text-sm text-white/45">No leads yet. Invite the first one above.</p>
           ) : (
             subgroups.map((group) => (
               <div key={group.id} className="space-y-3">
                 <h2 className="text-sm font-semibold text-white">{group.name}</h2>
                 {group.leads.length === 0 ? (
-                  <p className="text-sm text-white/45">No leads invited yet.</p>
+                  <p className="text-sm text-white/45">No leads in this group yet.</p>
                 ) : (
                   <ul className="divide-y divide-white/8 rounded-2xl border border-white/10">
                     {group.leads.map((lead) => (
@@ -604,57 +715,6 @@ export function OrganizerManageView({
               </div>
             ))
           )}
-
-          {subgroups.length > 0 ? (
-            <div className="bd-muted-panel space-y-3 p-5">
-              <p className="text-sm font-semibold text-white">Invite another lead</p>
-              <label className="block text-sm text-white/55">
-                Subgroup
-                <select
-                  className="mt-1 w-full rounded-full border border-white/12 bg-black/30 px-3 py-2.5 text-white outline-none"
-                  value={leadInviteGroupId ?? ""}
-                  onChange={(event) => setLeadInviteGroupId(event.target.value || null)}
-                >
-                  {subgroups.map((group) => (
-                    <option key={group.id} value={group.id}>
-                      {group.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <ActivityPeoplePicker
-                label="Lead"
-                selected={leadInvitees}
-                onChange={setLeadInvitees}
-                emptyHint="Search for a Motiion user to invite as lead."
-              />
-              <button
-                type="button"
-                className="bd-btn-accent"
-                disabled={isPending || !leadInviteGroupId || leadInvitees.length === 0}
-                onClick={() => {
-                  const person = leadInvitees[0];
-                  if (!person || !leadInviteGroupId) return;
-                  startTransition(async () => {
-                    const result = await inviteSubgroupLead({
-                      activityId: activity.id,
-                      groupId: leadInviteGroupId,
-                      userId: person.userId,
-                    });
-                    if (!result.ok) {
-                      setError(result.error ?? "Could not invite lead.");
-                      return;
-                    }
-                    setLeadInvitees([]);
-                    setMessage("Lead invited.");
-                    router.refresh();
-                  });
-                }}
-              >
-                Send invite
-              </button>
-            </div>
-          ) : null}
         </div>
       ) : null}
 

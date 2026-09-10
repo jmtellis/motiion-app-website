@@ -118,17 +118,17 @@ export const PROJECT_TYPE_INTENTION_GROUPS: ProjectTypeIntentionGroup[] = [
 ];
 
 /**
- * Project types shown in create UI for MVP.
- * Full PROJECT_TYPES / intention groups stay intact for existing projects and future unlock.
- * Classes/sessions continue to be created from the Events page, not the project picker.
+ * @deprecated Prefer BuyerCreateIntent / BUYER_CREATE_INTENT_OPTIONS.
+ * Kept for legacy imports; create UI uses create-intent.ts.
  */
-export const MVP_CREATE_PROJECT_TYPES: readonly ProjectType[] = ["casting", "event"];
+export const MVP_CREATE_PROJECT_TYPES: readonly ProjectType[] = ["casting"];
 
+/** @deprecated Prefer BUYER_CREATE_INTENT_OPTIONS — create UI no longer pages by project type. */
 export const MVP_PROJECT_TYPE_INTENTION_GROUPS: ProjectTypeIntentionGroup[] = [
   {
     id: "mvp",
-    label: "Castings & Events",
-    types: ["casting", "event"],
+    label: "Castings & activities",
+    types: ["casting"],
   },
 ];
 

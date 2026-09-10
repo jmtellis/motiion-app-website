@@ -47,10 +47,16 @@ export function ProjectAddMenuButton({
         router.push(`/talent?projectId=${projectId}`);
         return;
       case "navigate":
+        if (action.action.href === "calendar-new-event") {
+          router.push(`/calendar/new?type=event&projectId=${projectId}`);
+          return;
+        }
         if (action.action.href === "files") {
           router.push(projectTabPath(projectId, "files"));
         } else if (action.action.href === "timeline") {
           router.push(projectOverviewPath(projectId));
+        } else if (action.action.href.startsWith("/")) {
+          router.push(action.action.href);
         } else {
           router.push(projectTabPath(projectId, "overview"));
         }

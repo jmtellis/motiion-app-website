@@ -15,7 +15,10 @@ export const PROJECT_TYPE_OPTIONS = PROJECT_TYPES.map((value) => ({
   description: PROJECT_TYPE_DESCRIPTIONS[value],
 })) as ReadonlyArray<{ value: ProjectType; label: string; description: string }>;
 
-/** Create-picker options limited to MVP-visible project types. */
+/**
+ * @deprecated Prefer BUYER_CREATE_INTENT_OPTIONS from create-intent.ts.
+ * Create picker no longer uses project-type options.
+ */
 export const MVP_PROJECT_TYPE_OPTIONS = MVP_CREATE_PROJECT_TYPES.map((value) => ({
   value,
   label: PROJECT_TYPE_LABELS[value],

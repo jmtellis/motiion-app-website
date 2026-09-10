@@ -38,6 +38,12 @@ export type ProjectHubSummary = BuyerProjectSummary & {
   activities: ProjectActivitySummary[];
   rosterCount: number;
   rosterPreview: ProjectHubRosterPreview[];
+  /** Defaults to project. Activities and production jobs are first-class hub cards. */
+  workKind?: "project" | "activity" | "job";
+  /** Override card link; defaults to /projects/:id */
+  href?: string;
+  /** Display label for activity cards (Event / Class / Session). */
+  workTypeLabel?: string;
 };
 
 function mapActivityRow(
@@ -316,21 +322,222 @@ function enrichSummaries(
   });
 }
 
+function activityProjectType(
+  eventType: ProjectActivitySummary["eventType"],
+): BuyerProjectSummary["projectType"] {
+  if (eventType === "class") return "class_program";
+  if (eventType === "session") return "training_program";
+  return "event";
+}
+
+function activityWorkTypeLabel(eventType: ProjectActivitySummary["eventType"]): string {
+  if (eventType === "class") return "Class";
+  if (eventType === "session") return "Session";
+  return "Event";
+}
+
+function activityToHubSummary(activity: ProjectActivitySummary): ProjectHubSummary {
+  const status: BuyerProjectSummary["status"] =
+    activity.status === "draft" ? "draft" : activity.status === "past" ? "archived" : "active";
+
+  return {
+    id: activity.id,
+    title: activity.title,
+    projectType: activityProjectType(activity.eventType),
+    status,
+    lastUpdated: activity.dateTime,
+    talentCount: activity.attendeeCount,
+    coverImageUrl: activity.coverImageUrl,
+    roles: [],
+    castings: [],
+    activities: [activity],
+    rosterCount: 0,
+    rosterPreview: [],
+    workKind: "activity",
+    href: `/calendar/${activity.id}`,
+    workTypeLabel: activityWorkTypeLabel(activity.eventType),
+  };
+}
+
+/** Hosted activities that appear as first-class work in the Projects hub. */
+async function fetchHostedActivityHubItems(posterId: string): Promise<ProjectHubSummary[]> {
+  const supabase = await createServerSupabaseClient();
+  if (!supabase) return [];
+
+  const { data } = await supabase
+    .from("activities")
+    .select("id, title, type, status, location, activity_date, start_time, cover_image_url")
+    .eq("creator_id", posterId)
+    .neq("status", "cancelled")
+    .order("activity_date", { ascending: false, nullsFirst: false })
+    .limit(200);
+
+  const rows = (data ?? []) as Record<string, unknown>[];
+  if (!rows.length) return [];
+
+  const counts = new Map<string, number>();
+  const { data: enrollments } = await supabase
+    .from("enrollments")
+    .select("activity_id")
+    .in(
+      "activity_id",
+      rows.map((row) => row.id as string),
+    )
+    .in("status", ["paid", "guest", "comped", "pending", "confirmed"]);
+
+  for (const enrollment of enrollments ?? []) {
+    const activityId = enrollment.activity_id as string;
+    counts.set(activityId, (counts.get(activityId) ?? 0) + 1);
+  }
+
+  return rows.map((row) => activityToHubSummary(mapActivityRow(row, counts)));
+}
+
+/**
+ * Event project rows are planning shells; Event/Class/Session work items are activities.
+ * Hide event-type project cards so the hub does not double-list empty containers.
+ */
+function isLegacyEventProjectShell(project: ProjectHubSummary): boolean {
+  return project.workKind !== "activity" && project.workKind !== "job" && project.projectType === "event";
+}
+
+/** Legacy `projects.project_type = job` workspace — not the lightweight production Job card. */
+function isLegacyJobProjectContainer(project: ProjectHubSummary): boolean {
+  return project.workKind !== "job" && project.projectType === "job";
+}
+
+function productionJobToHubSummary(row: {
+  id: string;
+  title: string | null;
+  status: string | null;
+  updated_at: string | null;
+  cover_image_url?: string | null;
+  member_count?: number;
+}): ProjectHubSummary {
+  const rawStatus = (row.status ?? "upcoming").toLowerCase();
+  const status: BuyerProjectSummary["status"] =
+    rawStatus === "completed" || rawStatus === "cancelled" ? "archived" : "active";
+
+  return {
+    id: row.id,
+    title: row.title?.trim() || "Untitled job",
+    projectType: "job",
+    status,
+    lastUpdated: row.updated_at ?? new Date().toISOString(),
+    talentCount: row.member_count ?? 0,
+    coverImageUrl: row.cover_image_url ?? null,
+    roles: [],
+    castings: [],
+    activities: [],
+    rosterCount: row.member_count ?? 0,
+    rosterPreview: [],
+    workKind: "job",
+    href: `/jobs/${row.id}`,
+    workTypeLabel: "Job",
+  };
+}
+
+async function fetchProductionJobHubItems(posterId: string): Promise<ProjectHubSummary[]> {
+  const supabase = await createServerSupabaseClient();
+  if (!supabase) return [];
+
+  const { data: organized } = await supabase
+    .from("job_organizers")
+    .select("job_id")
+    .eq("user_id", posterId);
+
+  const organizedIds = (organized ?? []).map((row) => row.job_id as string);
+
+  let query = supabase
+    .from("jobs")
+    .select("id, title, status, updated_at, cover_image_url, poster_id")
+    .eq("job_kind", "production")
+    .order("updated_at", { ascending: false })
+    .limit(200);
+
+  if (organizedIds.length) {
+    query = query.or(`poster_id.eq.${posterId},id.in.(${organizedIds.join(",")})`);
+  } else {
+    query = query.eq("poster_id", posterId);
+  }
+
+  const { data } = await query;
+  const rows = data ?? [];
+  if (!rows.length) return [];
+
+  const jobIds = rows.map((row) => row.id as string);
+  const { data: members } = await supabase
+    .from("job_members")
+    .select("job_id")
+    .in("job_id", jobIds)
+    .eq("status", "active");
+
+  const counts = new Map<string, number>();
+  for (const member of members ?? []) {
+    const jobId = member.job_id as string;
+    counts.set(jobId, (counts.get(jobId) ?? 0) + 1);
+  }
+
+  return rows.map((row) =>
+    productionJobToHubSummary({
+      id: row.id as string,
+      title: row.title as string | null,
+      status: row.status as string | null,
+      updated_at: row.updated_at as string | null,
+      cover_image_url: (row.cover_image_url as string | null) ?? null,
+      member_count: counts.get(row.id as string) ?? 0,
+    }),
+  );
+}
+
 export async function fetchProjectsHubData(posterId: string) {
   const summaries = await fetchPosterCastingSummaries(posterId);
   const { drafts, published } = splitCastingSummaries(summaries);
   const allIds = summaries.map((project) => project.id);
 
-  const [rolesByProject, activitiesByProject, rosterByProject, castingsByProject] =
-    await Promise.all([
-      fetchRolesByProject(allIds),
-      fetchActivitiesByProject(allIds),
-      fetchRosterPreviewsByProject(posterId, allIds),
-      fetchCastingsByProject(allIds, summaries),
-    ]);
+  const [
+    rolesByProject,
+    activitiesByProject,
+    rosterByProject,
+    castingsByProject,
+    hostedActivities,
+    productionJobs,
+  ] = await Promise.all([
+    fetchRolesByProject(allIds),
+    fetchActivitiesByProject(allIds),
+    fetchRosterPreviewsByProject(posterId, allIds),
+    fetchCastingsByProject(allIds, summaries),
+    fetchHostedActivityHubItems(posterId),
+    fetchProductionJobHubItems(posterId),
+  ]);
+
+  const projectDrafts = enrichSummaries(
+    drafts,
+    rolesByProject,
+    castingsByProject,
+    activitiesByProject,
+    rosterByProject,
+  ).filter(
+    (project) => !isLegacyEventProjectShell(project) && !isLegacyJobProjectContainer(project),
+  );
+
+  const projectPublished = enrichSummaries(
+    published,
+    rolesByProject,
+    castingsByProject,
+    activitiesByProject,
+    rosterByProject,
+  ).filter(
+    (project) => !isLegacyEventProjectShell(project) && !isLegacyJobProjectContainer(project),
+  );
+
+  const activityDrafts = hostedActivities.filter((item) => item.status === "draft");
+  const activityPublished = hostedActivities.filter((item) => item.status !== "draft");
+  const jobActive = productionJobs.filter((item) => item.status !== "archived");
+  const jobArchived = productionJobs.filter((item) => item.status === "archived");
 
   return {
-    drafts: enrichSummaries(drafts, rolesByProject, castingsByProject, activitiesByProject, rosterByProject),
-    published: enrichSummaries(published, rolesByProject, castingsByProject, activitiesByProject, rosterByProject),
+    drafts: [...projectDrafts, ...activityDrafts],
+    published: [...projectPublished, ...activityPublished, ...jobActive, ...jobArchived],
   };
 }

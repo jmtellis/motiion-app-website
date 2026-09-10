@@ -18,6 +18,17 @@ function signupPathsForAudience(audience: MarketingHeaderTab) {
   if (audience === "casting") {
     return homeSignupSection.paths.filter((path) => path.id === "industry");
   }
+  if (audience === "community") {
+    return [
+      {
+        id: "community" as const,
+        label: "Community",
+        description: "For dancers, students, and fans finding events, classes, and programs.",
+        href: "/signup",
+        cta: "Join the community",
+      },
+    ];
+  }
   return homeSignupSection.paths;
 }
 

@@ -21,7 +21,6 @@ export type TalentSpotlightSocial = {
 export type TalentSpotlight = {
   headshotUrl: string | null;
   metaLine: string | null;
-  profilePath: string;
   credits: TalentSpotlightCredit[];
   socials: TalentSpotlightSocial[];
 };
@@ -92,12 +91,9 @@ function socials(profile: PublicTalentProfile): TalentSpotlightSocial[] {
 
 /** Trims a full public profile down to the fields the program cast modal renders. */
 export function buildTalentSpotlight(profile: PublicTalentProfile): TalentSpotlight {
-  const slug = trim(profile.username) || profile.id;
-
   return {
     headshotUrl: trim(profile.headshot_url) || trim(profile.headshot_urls?.[0]) || null,
     metaLine: formatFeaturedPerformerMetaLine(profile.talent_types, profile.representation),
-    profilePath: `/profile/${encodeURIComponent(slug)}`,
     credits: topCredits([...profile.credits.artists, ...profile.credits.companies]),
     socials: socials(profile),
   };

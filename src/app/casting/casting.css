@@ -1051,6 +1051,7 @@ html.event-program-page body::-webkit-scrollbar {
 
 /* Cast spotlight modal — enlarged portrait, credits, socials */
 .event-program-spotlight {
+  position: relative;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
   width: 100%;
@@ -1085,6 +1086,8 @@ html.event-program-page body::-webkit-scrollbar {
 
 .event-program-spotlight-scroll {
   overflow-y: auto;
+  /* No rubber-band, so pulling down can never open a gap above the portrait. */
+  overscroll-behavior: none;
   scrollbar-width: none;
 }
 
@@ -1129,8 +1132,10 @@ html.event-program-page body::-webkit-scrollbar {
   pointer-events: none;
 }
 
+/* Sits on the card, not the scroll area, so it stays put while content scrolls. */
 .event-program-spotlight-close {
   position: absolute;
+  z-index: 5;
   top: 14px;
   right: 14px;
   width: 34px;

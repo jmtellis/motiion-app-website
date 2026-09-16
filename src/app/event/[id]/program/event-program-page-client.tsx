@@ -195,6 +195,7 @@ export default function EventProgramPageClient({
         <ProgramTalentSheet
           key={selected.id}
           talent={selected}
+          appStoreUrl={appStoreUrl}
           onClose={() => setSelected(null)}
         />
       ) : null}
@@ -204,9 +205,11 @@ export default function EventProgramPageClient({
 
 function ProgramTalentSheet({
   talent,
+  appStoreUrl,
   onClose,
 }: {
   talent: PublicFeaturedTalent;
+  appStoreUrl: string;
   onClose: () => void;
 }) {
   const slug = talentProfileSlug(talent);
@@ -221,6 +224,15 @@ function ProgramTalentSheet({
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
+
+  // Keep the program page from scrolling behind the modal.
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, []);
 
   useEffect(() => {
     if (!slug) return;
@@ -259,6 +271,23 @@ function ProgramTalentSheet({
         className="event-program-spotlight"
         onClick={(event) => event.stopPropagation()}
       >
+        <button
+          type="button"
+          className="event-program-spotlight-close"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden focusable="false">
+            <path
+              d="M6 6l12 12M18 6L6 18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+
         <div className="event-program-spotlight-scroll">
           <div className="event-program-spotlight-portrait">
             {portraitUrl ? (
@@ -270,22 +299,6 @@ function ProgramTalentSheet({
               </div>
             )}
             <div className="event-program-spotlight-portrait-scrim" />
-            <button
-              type="button"
-              className="event-program-spotlight-close"
-              onClick={onClose}
-              aria-label="Close"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden focusable="false">
-                <path
-                  d="M6 6l12 12M18 6L6 18"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </button>
             <div className="event-program-spotlight-identity">
               <h2 id="program-talent-title" className="event-program-spotlight-name">
                 {talent.displayName}
@@ -391,8 +404,13 @@ function ProgramTalentSheet({
           </div>
         </div>
 
-        {spotlight ? (
-          <a className="event-program-spotlight-footer" href={spotlight.profilePath}>
+        {slug ? (
+          <a
+            className="event-program-spotlight-footer"
+            href={appStoreUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
             See their full profile on Motiion
           </a>
         ) : null}

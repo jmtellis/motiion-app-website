@@ -125,6 +125,18 @@ export type PublicFeaturedTalent = {
   children: PublicFeaturedTalent[];
 };
 
+/** Billed music artist on a tour (`event_type_data.artists`). */
+export type PublicTourArtist = {
+  id: string;
+  name: string;
+};
+
+/** How billed talent is structured on an event. */
+export type PublicEventTalentAppearance =
+  | "featured_company"
+  | "flat_cast"
+  | "billed_artist_credits";
+
 export type PublicEventHost = {
   userId: string;
   displayName: string;
@@ -159,6 +171,9 @@ export type PublicActivity = {
   ticketOptions?: PublicTicketOption[] | null;
   externalTicketUrl?: string | null;
   featuredTalent?: PublicFeaturedTalent[] | null;
+  talentAppearance?: string | null;
+  eventType?: string | null;
+  billedArtists?: PublicTourArtist[] | null;
   hosts?: PublicEventHost[] | null;
   eventHighlights?: string[] | null;
   eventLineup?: string[] | null;

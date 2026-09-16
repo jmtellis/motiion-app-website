@@ -1,5 +1,9 @@
 import { callSupabaseFunction } from "@/lib/supabaseRest";
-import type { PublicActivity } from "@/types/public";
+import type {
+  PublicActivity,
+  PublicEventTalentAppearance,
+  PublicFeaturedTalent,
+} from "@/types/public";
 
 type ActivityResponse = { activity: PublicActivity };
 
@@ -103,6 +107,99 @@ export function formatProgramDateTime(activity: PublicActivity): string | null {
 
   const timePart = formatProgramTime12Hour(activity.startTime);
   return timePart ? `${datePart} at ${timePart}` : datePart;
+}
+
+const TALENT_APPEARANCES: readonly string[] = [
+  "featured_company",
+  "flat_cast",
+  "billed_artist_credits",
+];
+
+/** Mirrors `EventTalentAppearance.default(for:)` in the app for rows saved before the column existed. */
+function defaultTalentAppearance(
+  eventType: string | null | undefined,
+): PublicEventTalentAppearance {
+  switch (eventType?.trim()) {
+    case "showcase":
+    case "live_show":
+      return "featured_company";
+    case "festival":
+      return "billed_artist_credits";
+    default:
+      return "flat_cast";
+  }
+}
+
+export function resolveTalentAppearance(
+  activity: PublicActivity,
+): PublicEventTalentAppearance {
+  const raw = activity.talentAppearance?.trim();
+  if (raw && TALENT_APPEARANCES.includes(raw)) {
+    return raw as PublicEventTalentAppearance;
+  }
+  return defaultTalentAppearance(activity.eventType);
+}
+
+/** e.g. "Beyoncé, Megan Thee Stallion" — billed artists for a tour, or null when none. */
+export function billedArtistsLine(activity: PublicActivity): string | null {
+  const names = (activity.billedArtists ?? [])
+    .map((artist) => artist.name?.trim() ?? "")
+    .filter(Boolean);
+  return names.length > 0 ? names.join(", ") : null;
+}
+
+/** Billed artists lead the program hero on tours; everything else falls back to the kind label. */
+export function programHeroEyebrow(activity: PublicActivity): string {
+  return billedArtistsLine(activity) ?? activityKindLabel(activity.kind);
+}
+
+export function featuredTalentSectionTitle(
+  appearance: PublicEventTalentAppearance,
+): string {
+  switch (appearance) {
+    case "flat_cast":
+      return "Cast";
+    case "billed_artist_credits":
+      return "Artists";
+    default:
+      return "Featured Talent";
+  }
+}
+
+export function featuredTalentEmptyMessage(
+  appearance: PublicEventTalentAppearance,
+): string {
+  switch (appearance) {
+    case "flat_cast":
+      return "Cast will appear here once performers are confirmed.";
+    case "billed_artist_credits":
+      return "Artists will appear here once they are confirmed.";
+    default:
+      return "Featured talent will appear here once performers are confirmed.";
+  }
+}
+
+/**
+ * Cast list for the program page. `flat_cast` events (tours) bill everyone at the
+ * top level, so nested rows saved before the organizer flattened them are promoted.
+ */
+export function programCastNodes(activity: PublicActivity): PublicFeaturedTalent[] {
+  const roots = activity.featuredTalent ?? [];
+  if (resolveTalentAppearance(activity) !== "flat_cast") return roots;
+
+  const flattened: PublicFeaturedTalent[] = [];
+  const seen = new Set<string>();
+
+  for (const root of roots) {
+    for (const node of [root, ...root.children]) {
+      const key = node.userId?.trim().toLowerCase() || node.id;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      flattened.push({ ...node, children: [] });
+    }
+  }
+
+  return flattened;
 }
 
 export function formatTalentTypeDisplayLine(

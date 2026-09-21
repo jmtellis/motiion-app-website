@@ -303,9 +303,8 @@
 }
 
 .home-signup-section__card:hover {
-  border-color: rgb(45 212 191 / 0.35);
-  background: rgb(45 212 191 / 0.08);
-  transform: translateY(-1px);
+  border-color: rgb(255 255 255 / 0.24);
+  background: rgb(255 255 255 / 0.08);
 }
 
 .home-signup-section__card-label {
@@ -327,27 +326,27 @@
   color: var(--accent);
 }
 
+/* Height comes from content; the reveal panel supplies the extra space when it
+   is active. A fixed height here clipped growing content at zoom. */
 .home-signup-section--footer-reveal {
   display: flex;
   min-height: 0;
-  height: 100%;
   flex-direction: column;
   justify-content: center;
-  overflow: hidden;
+  padding-block: clamp(2.5rem, 6vw, 3.5rem);
+}
+
+[data-footer-reveal="animated"] .home-signup-section--footer-reveal {
+  height: 100%;
+  padding-block: 0;
 }
 
 .home-signup-section--footer-reveal__inner {
   display: flex;
   width: 100%;
-  max-width: 72rem;
+  max-width: var(--mkt-container, 76rem);
   margin-inline: auto;
-  padding-inline: 1.5rem;
-}
-
-@media (min-width: 1024px) {
-  .home-signup-section--footer-reveal__inner {
-    padding-inline: 2.5rem;
-  }
+  padding-inline: var(--mkt-gutter, 1.5rem);
 }
 
 .home-signup-section--footer-reveal__layout {
@@ -457,7 +456,6 @@
 .home-signup-section__option:hover {
   border-color: rgb(255 255 255 / 0.24);
   background: rgb(255 255 255 / 0.08);
-  transform: translateY(-1px);
 }
 
 .home-signup-section__option-copy {

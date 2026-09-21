@@ -1,18 +1,18 @@
 "use client";
 
-import { Menu, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 
 import { AccountPill, type AccountPillUser } from "@/components/auth/AccountPill";
 import { MotiionBrandMark } from "@/components/brand/MotiionBrandMark";
 import { MotiionScrolledWordmark } from "@/components/brand/MotiionScrolledWordmark";
-import { homeSignupScrollCta } from "@/lib/marketing/homepage-content";
+import { LandingAudienceTabs } from "@/components/landing/LandingAudienceTabs";
+import { useLandingAudienceOptional } from "@/components/landing/LandingAudienceContext";
+import { homeLoginCta, homeSignupScrollCta } from "@/lib/marketing/homepage-content";
 import {
   INDUSTRY_PRO_SIGNUP_CTA,
   JOIN_BETA_CTA,
-  marketingAudienceTabs,
   type MarketingHeaderTab,
 } from "@/lib/marketing/marketing-pages";
 import { scrollToSignupSection } from "@/lib/marketing/scroll-to-signup";
@@ -29,7 +29,11 @@ function cn(...classes: Array<string | false | null | undefined>) {
 
 const HERO_REVEAL_SCROLL_RATIO = 1 / 3;
 
-function getHeroRevealThreshold() {
+function getHeroRevealThreshold(overlayHero: boolean) {
+  if (overlayHero) {
+    const hero = document.querySelector<HTMLElement>(".home-split");
+    if (hero) return Math.max(hero.offsetHeight * 0.4, 220);
+  }
   return window.innerHeight * HERO_REVEAL_SCROLL_RATIO;
 }
 
@@ -43,138 +47,39 @@ function sideRevealClass(visible: boolean, side: "left" | "right") {
 }
 
 function MarketingHeaderMobileScrolledBar({
-  open,
-  onOpenChange,
-  activeTab,
-  darkTheme,
   headerCta,
   signupScrolls,
   accountUser,
   wordmark,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  activeTab: MarketingHeaderTab;
-  darkTheme: boolean;
   headerCta: { label: string; href: string };
   signupScrolls: boolean;
   accountUser: AccountPillUser | null;
   wordmark: ReactNode;
 }) {
-  const menuId = useId();
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-
-    function handlePointerDown(event: MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        onOpenChange(false);
-      }
-    }
-
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") onOpenChange(false);
-    }
-
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("keydown", handleEscape);
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [open, onOpenChange]);
-
-  const menuLinkClass = (active: boolean) =>
-    cn(
-      "block rounded-full px-3 py-3 text-sm font-medium transition-colors",
-      darkTheme
-        ? active
-          ? "bg-[#151515] text-[#fafafa]"
-          : "text-[#eaeaea] hover:bg-[#151515]"
-        : active
-          ? "bg-[var(--ink)] text-white"
-          : "text-[var(--ink)] hover:bg-[var(--line)]/40",
-    );
-
   return (
-    <div ref={rootRef} className="relative">
-      <div className="grid grid-cols-[2.5rem_1fr_2.5rem] items-center gap-2 px-6 py-3">
-        <div className="flex items-center justify-start">
+    <div className="grid grid-cols-[1fr_auto] items-center gap-2 px-6 py-3">
+      <div className="flex min-w-0 items-center justify-start">{wordmark}</div>
+      <div className="flex items-center justify-end">
+        {accountUser ? (
+          <AccountPill user={accountUser} />
+        ) : signupScrolls ? (
           <button
             type="button"
-            className="inline-flex size-10 items-center justify-center text-white transition hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-            aria-expanded={open}
-            aria-controls={menuId}
-            aria-label={open ? "Close menu" : "Open menu"}
-            onClick={() => onOpenChange(!open)}
+            className="btn-hero-pill btn-hero-pill-accent btn-hero-pill-compact whitespace-nowrap"
+            onClick={scrollToSignupSection}
           >
-            {open ? <X className="size-6" aria-hidden /> : <Menu className="size-6" aria-hidden />}
+            {headerCta.label}
           </button>
-        </div>
-        <div className="flex min-w-0 items-center justify-center">{wordmark}</div>
-        <div aria-hidden className="size-10" />
+        ) : (
+          <Link
+            href={headerCta.href}
+            className="btn-hero-pill btn-hero-pill-accent btn-hero-pill-compact whitespace-nowrap"
+          >
+            {headerCta.label}
+          </Link>
+        )}
       </div>
-
-      {open ? (
-        <div
-          id={menuId}
-          role="menu"
-          className="absolute inset-x-0 top-full z-50 border-b border-[#262626] bg-[var(--stage-black)]/98 px-6 py-4 backdrop-blur-md"
-        >
-          <nav aria-label="Primary mobile" className="flex flex-col gap-1">
-            {marketingAudienceTabs.map((tab) => {
-              const active = activeTab !== null && activeTab === tab.id;
-              return (
-                <Link
-                  key={tab.href}
-                  href={tab.href}
-                  role="menuitem"
-                  className={menuLinkClass(active)}
-                  aria-current={active ? "page" : undefined}
-                  onClick={() => onOpenChange(false)}
-                >
-                  {tab.label}
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="mt-4 border-t border-[#262626] pt-4">
-            {accountUser ? (
-              <Link
-                href={accountUser.profileHref}
-                role="menuitem"
-                className={menuLinkClass(false)}
-                onClick={() => onOpenChange(false)}
-              >
-                Account
-              </Link>
-            ) : signupScrolls ? (
-              <button
-                type="button"
-                role="menuitem"
-                className="btn-hero-pill btn-hero-pill-accent w-full justify-center"
-                onClick={() => {
-                  onOpenChange(false);
-                  scrollToSignupSection();
-                }}
-              >
-                {headerCta.label}
-              </button>
-            ) : (
-              <Link
-                href={headerCta.href}
-                role="menuitem"
-                className="btn-hero-pill btn-hero-pill-accent w-full justify-center"
-                onClick={() => onOpenChange(false)}
-              >
-                {headerCta.label}
-              </Link>
-            )}
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -184,54 +89,54 @@ export function HomeMarketingHeaderClient({
   activeTab = null,
   darkTheme = false,
   wordmarkHeader = false,
+  overlayHero = false,
+  showAudienceTabs = false,
 }: {
   accountUser: AccountPillUser | null;
   activeTab?: MarketingHeaderTab;
   darkTheme?: boolean;
-  /** Audience pages: always show wordmark, tabs, and CTA (no resting emblem). */
+  /** Audience pages: always show wordmark and CTA (no resting emblem). */
   wordmarkHeader?: boolean;
+  overlayHero?: boolean;
+  showAudienceTabs?: boolean;
 }) {
   const reduceMotion = useReducedMotion();
+  const landingAudience = useLandingAudienceOptional();
   const [pastHero, setPastHero] = useState(wordmarkHeader);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (wordmarkHeader) return;
 
     function updatePastHero() {
-      setPastHero(window.scrollY >= getHeroRevealThreshold());
+      if (overlayHero) {
+        const hero = document.querySelector<HTMLElement>(".home-split");
+        if (hero) {
+          const rect = hero.getBoundingClientRect();
+          setPastHero(rect.bottom < window.innerHeight * 0.6);
+          return;
+        }
+      }
+      setPastHero(window.scrollY >= getHeroRevealThreshold(false));
     }
 
     updatePastHero();
     window.addEventListener("scroll", updatePastHero, { passive: true });
     window.addEventListener("resize", updatePastHero);
+    // Lenis anchor/lerp scrolling does not always emit window scroll events.
+    const interval = window.setInterval(updatePastHero, 200);
 
     return () => {
+      window.clearInterval(interval);
       window.removeEventListener("scroll", updatePastHero);
       window.removeEventListener("resize", updatePastHero);
     };
-  }, [wordmarkHeader]);
+  }, [overlayHero, wordmarkHeader]);
 
   void reduceMotion;
 
   const showScrolled = wordmarkHeader || pastHero;
-
-  useEffect(() => {
-    if (showScrolled) return;
-    setMobileMenuOpen(false);
-  }, [showScrolled]);
-
-  const headerCta = getHeaderSignupCta(activeTab);
+  const headerCta = getHeaderSignupCta(landingAudience?.audience ?? activeTab);
   const signupScrolls = headerCta.href.startsWith("#");
-
-  const tabClass = (active: boolean) =>
-    darkTheme
-      ? active
-        ? "rounded-full bg-[#151515] px-3 py-1.5 text-center text-xs font-medium whitespace-nowrap text-[#fafafa] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:text-sm"
-        : "rounded-full px-3 py-1.5 text-center text-xs font-medium whitespace-nowrap text-[#8a8a8a] transition-colors hover:bg-[#151515] hover:text-[#eaeaea] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:text-sm"
-      : active
-        ? "border-b-2 border-[var(--accent-dark)] pb-0.5 text-center text-xs font-semibold whitespace-nowrap text-[var(--ink)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:text-sm"
-        : "border-b-2 border-transparent pb-0.5 text-center text-xs font-semibold whitespace-nowrap text-[var(--ink-soft)] transition-colors hover:border-[var(--line)] hover:text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:text-sm";
 
   const restingLogoLink = (
     <Link
@@ -311,31 +216,45 @@ export function HomeMarketingHeaderClient({
     signupButton
   );
 
-  const desktopTabs = (
-    <nav
-      aria-label="Primary"
-      aria-hidden={!showScrolled}
-      className={cn(
-        "flex items-center justify-center gap-6 transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none lg:gap-8",
-        sideRevealClass(showScrolled, "left"),
-      )}
-    >
-      {marketingAudienceTabs.map((tab) => {
-        const active = activeTab !== null && activeTab === tab.id;
-        return (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            className={cn(tabClass(active), "shrink-0 whitespace-nowrap")}
-            tabIndex={showScrolled ? 0 : -1}
-            aria-current={active ? "page" : undefined}
-          >
-            {tab.label}
-          </Link>
-        );
-      })}
-    </nav>
+  const overlayActions = accountUser ? (
+    <AccountPill user={accountUser} />
+  ) : showScrolled ? (
+    signupScrolls ? (
+      <button
+        type="button"
+        onClick={scrollToSignupSection}
+        className="btn-hero-pill btn-hero-pill-accent btn-hero-pill-compact whitespace-nowrap"
+      >
+        {headerCta.label}
+      </button>
+    ) : (
+      <Link href={headerCta.href} className="btn-hero-pill btn-hero-pill-accent btn-hero-pill-compact whitespace-nowrap">
+        {headerCta.label}
+      </Link>
+    )
+  ) : (
+    <Link href={homeLoginCta.href} className={cn("home-split__login", "home-split__login--media")}>
+      {homeLoginCta.label}
+    </Link>
   );
+
+  if (overlayHero) {
+    return (
+      <header className={cn("landing-header", showScrolled && "is-visible")}>
+        <div className="landing-header__inner">
+          <Link href="/" className="landing-header__brand" aria-label="Motiion home">
+            <MotiionScrolledWordmark priority />
+          </Link>
+          {showAudienceTabs ? (
+            <div className={cn("landing-header__tabs", !showScrolled && "is-hidden")}>
+              <LandingAudienceTabs />
+            </div>
+          ) : null}
+          <div className="landing-header__actions">{overlayActions}</div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header
@@ -351,10 +270,6 @@ export function HomeMarketingHeaderClient({
       <div className="marketing-header-mobile mx-auto w-full max-w-6xl md:hidden">
         {showScrolled ? (
           <MarketingHeaderMobileScrolledBar
-            open={mobileMenuOpen}
-            onOpenChange={setMobileMenuOpen}
-            activeTab={activeTab}
-            darkTheme={darkTheme}
             headerCta={headerCta}
             signupScrolls={signupScrolls}
             accountUser={accountUser}
@@ -369,9 +284,7 @@ export function HomeMarketingHeaderClient({
         <div className="flex min-w-0 items-center justify-start">{showScrolled ? scrolledWordmarkLink : null}</div>
 
         <div className="flex items-center justify-center">
-          {showScrolled ? (
-            desktopTabs
-          ) : (
+          {showScrolled ? null : (
             <div className="absolute top-1/2 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
               {restingLogoLink}
             </div>

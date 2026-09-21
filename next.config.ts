@@ -30,13 +30,28 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/for-clients",
-        destination: "/for-casting",
-        permanent: true,
+        destination: "/?audience=casting",
+        permanent: false,
       },
       {
         source: "/for-agents",
         destination: "/",
         permanent: true,
+      },
+      {
+        source: "/for-talent",
+        destination: "/?audience=talent",
+        permanent: false,
+      },
+      {
+        source: "/for-casting",
+        destination: "/?audience=casting",
+        permanent: false,
+      },
+      {
+        source: "/community",
+        destination: "/?audience=community",
+        permanent: false,
       },
     ];
   },

@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "../components/landing/marketing-atmosphere.css";
+@import "../components/landing/marketing-system.css";
 
 /* Product design tokens — perceptual parity with iOS MotiionDesignSystem (dark product shell). */
 :root {
@@ -503,7 +504,7 @@ h3 {
   border-radius: var(--ds-radius-xl);
   border: 1px solid var(--ds-border);
   background:
-    radial-gradient(ellipse 90% 70% at 50% -18%, rgb(45 212 191 / 0.05) 0%, transparent 62%),
+    radial-gradient(ellipse 90% 70% at 50% -18%, rgb(0 170 204 / 0.05) 0%, transparent 62%),
     var(--ds-surface);
   box-shadow: none;
 }
@@ -730,27 +731,41 @@ h3 {
 .marketing-footer-reveal__spacer {
   position: relative;
   z-index: 0;
-  height: var(--footer-reveal-height);
   pointer-events: none;
 }
 
+/* Pages without a signup band keep the long-standing bottom-anchored footer. */
+.marketing-footer-reveal__spacer[data-footer-reveal="plain"] {
+  height: var(--footer-reveal-height);
+}
+
+/* Static baseline: the panel is in normal flow, so it needs no scroll runway. */
+.marketing-footer-reveal__spacer[data-footer-reveal="static"] {
+  height: 0;
+}
+
 .marketing-footer-reveal__footer {
-  position: fixed;
-  inset-inline: 0;
-  bottom: 0;
+  position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
-  min-height: var(--footer-reveal-height);
-  max-height: var(--footer-reveal-height);
   pointer-events: auto;
 }
 
-.marketing-footer-reveal__footer:not(:has(.marketing-footer-reveal__band)) {
+.marketing-footer-reveal__footer[data-footer-reveal="plain"],
+.marketing-footer-reveal__footer[data-footer-reveal="animated"] {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  min-height: var(--footer-reveal-height);
+}
+
+.marketing-footer-reveal__footer[data-footer-reveal="plain"] {
   justify-content: flex-end;
 }
 
-.marketing-footer-reveal__footer:has(.marketing-footer-reveal__band) {
+/* Only the measured, fits-one-screen reveal starts hidden. */
+.marketing-footer-reveal__footer[data-footer-reveal="animated"] {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -800,7 +815,6 @@ h3 {
   justify-content: center;
   width: 100%;
   min-height: 0;
-  overflow: hidden;
   background: transparent;
 }
 
@@ -822,9 +836,15 @@ h3 {
   padding-block: clamp(1.5rem, 3vh, 2.5rem);
 }
 
-.marketing-footer-reveal__footer:has(.marketing-footer-reveal__band) > footer > div {
-  padding-top: clamp(1rem, 2vh, 1.5rem) !important;
-  padding-bottom: clamp(2rem, 4vh, 3rem) !important;
+/* Only the one-screen reveal needs compressed footer padding. */
+.marketing-footer-reveal__footer[data-footer-reveal="animated"] > footer > div {
+  padding-top: clamp(1rem, 2vh, 1.5rem);
+  padding-bottom: clamp(2rem, 4vh, 3rem);
+}
+
+.marketing-footer-reveal__footer[data-footer-reveal="static"] > footer > div {
+  padding-top: clamp(2rem, 4vw, 3rem);
+  padding-bottom: calc(clamp(2rem, 4vw, 3rem) + var(--safe-area-bottom));
 }
 
 @media (max-width: 767px) {
@@ -832,8 +852,8 @@ h3 {
     padding-bottom: var(--safe-area-bottom);
   }
 
-  .marketing-footer-reveal__footer:has(.marketing-footer-reveal__band) > footer > div {
-    padding-bottom: calc(clamp(2rem, 4vh, 3rem) + var(--safe-area-bottom)) !important;
+  .marketing-footer-reveal__footer[data-footer-reveal="animated"] > footer > div {
+    padding-bottom: calc(clamp(2rem, 4vh, 3rem) + var(--safe-area-bottom));
   }
 }
 
@@ -1017,7 +1037,7 @@ h3 {
 }
 
 .btn-hero-pill-accent:focus-visible {
-  outline: 2px solid rgb(45 212 191 / 0.65);
+  outline: 2px solid rgb(255 255 255 / 0.65);
   outline-offset: 2px;
 }
 

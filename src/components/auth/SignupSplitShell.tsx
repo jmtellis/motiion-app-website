@@ -7,7 +7,6 @@ import { motion, useReducedMotion } from "motion/react";
 
 import { AuthSplitLink, AuthSplitTransitionProvider } from "@/components/auth/AuthSplitTransition";
 import { MotiionWordmark } from "@/components/brand/MotiionWordmark";
-import { HomeSplitMobileMenu, HomeSplitNav } from "@/components/landing/HomeSplitNav";
 import { ScrollMarquee } from "@/components/landing/ScrollMarquee";
 import { MarketingBodySurface } from "@/components/landing/MarketingBodySurface";
 import { SmoothScroll } from "@/components/landing/SmoothScroll";
@@ -51,7 +50,7 @@ type SignupSplitShellProps = {
   steps: SignupSplitStep[];
   showSteps?: boolean;
   /**
-   * When false, cover header shows wordmark only (no Community/Talent/Industry nav).
+   * When false, hides the stacked mobile header (wordmark + login).
    * Used for onboarding so the left panel stays quiet.
    */
   showNav?: boolean;
@@ -135,13 +134,12 @@ export function SignupSplitShell({
         <div className={splitClassName}>
           {showMobileBar ? (
             <div className="home-split__mobile-bar signup-split__mobile-bar">
-              <HomeSplitMobileMenu />
               <Link href="/" className="home-split__mobile-bar-logo" aria-label="Motiion home">
                 <MotiionWordmark priority height={11} />
               </Link>
               <Link
                 href={homeLoginCta.href}
-                className="home-split__login home-split__login--on-dark"
+                className="home-split__login home-split__login--dark"
               >
                 {homeLoginCta.label}
               </Link>
@@ -173,22 +171,19 @@ export function SignupSplitShell({
                 animate={enter.animate}
                 transition={{ duration: 0.5, ease: ENTER_EASE }}
               >
-                <div className="home-split__brand-nav">
-                  {coverAction ? (
-                    <div className="signup-split-cover__header-action">{coverAction}</div>
-                  ) : showWordmark ? (
-                    <Link
-                      href="/"
-                      className="home-split__wordmark inline-flex items-center"
-                      aria-label="Motiion home"
-                    >
-                      <MotiionWordmark priority height={12} />
-                    </Link>
-                  ) : (
-                    <span />
-                  )}
-                  {showNav ? <HomeSplitNav /> : null}
-                </div>
+                {coverAction ? (
+                  <div className="signup-split-cover__header-action">{coverAction}</div>
+                ) : showWordmark ? (
+                  <Link
+                    href="/"
+                    className="home-split__wordmark inline-flex items-center"
+                    aria-label="Motiion home"
+                  >
+                    <MotiionWordmark priority height={12} />
+                  </Link>
+                ) : (
+                  <span />
+                )}
               </motion.div>
               <div className="signup-split-cover__content">
                 {!mediaCover && !hasPortraitCover ? (

@@ -15,7 +15,7 @@ function cn(...classes: Array<string | false | null | undefined>) {
 function audienceSectionSurface(altBackground: boolean, dark: boolean) {
   if (dark) {
     return altBackground
-      ? "marketing-atmosphere-band marketing-atmosphere-band--lines border-[#262626]"
+      ? "marketing-atmosphere-band border-[#262626]"
       : "marketing-atmosphere-clear border-[rgb(255_255_255/0.08)]";
   }
   return altBackground ? "border-[var(--line)] bg-[var(--tone)]" : "border-[var(--line)] bg-[var(--paper)]";
@@ -27,23 +27,25 @@ function AudienceSection({
   dark,
   children,
   innerClassName,
+  flush = false,
 }: {
   id: string;
   altBackground: boolean;
   dark: boolean;
   children: ReactNode;
   innerClassName?: string;
+  flush?: boolean;
 }) {
   return (
-    <section id={id} className={cn("w-full border-t", audienceSectionSurface(altBackground, dark))}>
-      <div
-        className={cn(
-          "mx-auto w-full max-w-6xl px-6 py-16 lg:px-10 lg:py-20",
-          innerClassName,
-        )}
-      >
-        {children}
-      </div>
+    <section
+      id={id}
+      className={cn(
+        "audience-section w-full",
+        !flush && "border-t",
+        audienceSectionSurface(altBackground, dark),
+      )}
+    >
+      <div className={cn("mkt-container mkt-section-y", innerClassName)}>{children}</div>
     </section>
   );
 }
@@ -57,8 +59,9 @@ export function AudienceLandingSections({
 }) {
   return (
     <>
-      <AudienceSection id="benefits" altBackground={false} dark={dark}>
-        <Reveal amount={0.18} distance={24} className="w-full">
+      <AudienceSection id="benefits" altBackground={false} dark={dark} flush>
+        {/* One reveal per section — the cards inside no longer reveal again. */}
+        <Reveal amount={0.15} distance={20}>
           <AudienceBenefitsShowcase
             title={content.benefitsTitle}
             benefits={content.benefits}
@@ -68,84 +71,72 @@ export function AudienceLandingSections({
       </AudienceSection>
 
       <AudienceSection id="workflow" altBackground={true} dark={dark}>
-        <Reveal amount={0.16} distance={22} className="w-full">
-          <div className="ui-split-scroll ui-split-scroll--sticky-left">
-            <div>
-              <h2
-                className={cn(
-                  "type-heading-1 text-balance",
-                  dark ? "text-on-dark-primary" : "text-[var(--ink)]",
-                )}
-              >
+        <Reveal amount={0.15} distance={20}>
+          <div className="audience-workflow">
+            <div className="audience-workflow__steps">
+              <h2 className={cn("mkt-heading", !dark && "text-[var(--ink)]")}>
                 {content.workflowTitle}
               </h2>
-              <ul className="mt-6 space-y-4">
+              <ol className="audience-workflow__list">
                 {content.workflowSteps.map((step, index) => (
-                  <li key={step} className="flex gap-4">
+                  <li key={step} className="audience-workflow__step">
                     <span
                       className={cn(
-                        "inline-flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-chip)] border text-sm font-semibold",
-                        dark
-                          ? "border-[#262626] bg-[#1e1e1e] font-mono text-on-dark-primary"
-                          : "border-[var(--line)] bg-white text-[var(--ink)]",
+                        "audience-workflow__step-number",
+                        !dark && "audience-workflow__step-number--light",
                       )}
+                      aria-hidden
                     >
                       {index + 1}
                     </span>
                     <p
                       className={cn(
-                        "type-body pt-1",
-                        dark ? "text-on-dark-secondary" : "text-[var(--ink-soft)]",
+                        "audience-workflow__step-copy",
+                        !dark && "text-[var(--ink-soft)]",
                       )}
                     >
                       {step}
                     </p>
                   </li>
                 ))}
-              </ul>
+              </ol>
             </div>
-            {content.workflowAside === "blank" ? (
-              <div
-                className={cn("audience-workflow__visual", dark && "audience-workflow__visual--dark")}
-                aria-hidden
-              />
-            ) : (
-              <div className={cn("ui-panel p-5", dark && "ui-panel-dark")}>
-                <h3
-                  className={cn(
-                    "text-lg font-semibold",
-                    dark ? "text-on-dark-primary" : "text-[var(--ink)]",
-                  )}
-                >
-                  {content.trustTitle}
-                </h3>
-                <ul className="mt-4 space-y-3">
-                  {content.trustPoints.map((point) => (
-                    <li
-                      key={point}
-                      className={cn(
-                        "border-l-2 border-[var(--accent)] pl-4 text-sm leading-relaxed",
-                        dark ? "text-on-dark-secondary" : "text-[var(--ink-soft)]",
-                      )}
-                    >
-                      {point}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+
+            {/* Text-led aside rather than an empty decorative panel. */}
+            <aside
+              className={cn("audience-workflow__aside", !dark && "audience-workflow__aside--light")}
+            >
+              <h3
+                className={cn("audience-workflow__aside-title", !dark && "text-[var(--ink)]")}
+              >
+                {content.trustTitle}
+              </h3>
+              <ul className="audience-workflow__aside-list">
+                {content.trustPoints.map((point) => (
+                  <li
+                    key={point}
+                    className={cn(
+                      "audience-workflow__aside-item",
+                      !dark && "text-[var(--ink-soft)]",
+                    )}
+                  >
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            </aside>
           </div>
         </Reveal>
       </AudienceSection>
 
-      <AudienceSection id="faq" altBackground={false} dark={dark} innerClassName="max-w-3xl">
-        <Reveal amount={0.14} distance={20} className="w-full">
-          <h2
-            className={cn(
-              "text-center text-balance text-2xl font-semibold tracking-tight md:text-3xl lg:text-4xl",
-              dark ? "text-on-dark-primary" : "text-[var(--ink)]",
-            )}
-          >
+      <AudienceSection
+        id="faq"
+        altBackground={false}
+        dark={dark}
+        innerClassName="mkt-container--reading"
+      >
+        <Reveal amount={0.14} distance={18}>
+          <h2 className={cn("mkt-heading text-center", !dark && "text-[var(--ink)]")}>
             Common questions
           </h2>
           <div className="mt-8">
@@ -156,7 +147,7 @@ export function AudienceLandingSections({
 
       {content.pricing ? (
         <AudienceSection id="pricing" altBackground={true} dark={dark}>
-          <Reveal amount={0.16} distance={28} className="w-full">
+          <Reveal amount={0.14} distance={20}>
             <AudiencePricingSection content={content.pricing} dark={dark} />
           </Reveal>
         </AudienceSection>

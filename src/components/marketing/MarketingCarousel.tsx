@@ -1,7 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState, type ComponentType } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type CSSProperties,
+} from "react";
 import { motion, type PanInfo, useReducedMotion } from "motion/react";
 
 import type { MarketingSceneProps } from "@/components/marketing/MarketingScene";
@@ -44,9 +51,15 @@ function CarouselSlideContent({
         alt={slide.alt}
         fill
         priority={priority}
+        loading={priority ? undefined : "lazy"}
         sizes="(max-width: 959px) 100vw, 50vw"
         className="marketing-carousel__image"
-        style={{ objectPosition: slide.objectPosition }}
+        style={
+          {
+            "--portrait-position": slide.objectPosition,
+            "--portrait-position-mobile": slide.objectPositionMobile,
+          } as CSSProperties
+        }
       />
     );
   }
@@ -60,32 +73,51 @@ export function MarketingCarousel({
   activeIndex,
   onIndexChange,
   pausedExternal = false,
+  onAutoplayStateChange,
 }: {
   slides: MarketingCarouselSlide[];
   activeIndex: number;
   onIndexChange: (index: number) => void;
   pausedExternal?: boolean;
+  /** Reports whether autoplay is currently advancing, for an external control. */
+  onAutoplayStateChange?: (running: boolean) => void;
 }) {
   const reduceMotion = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(true);
   const [hovered, setHovered] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [focusWithin, setFocusWithin] = useState(false);
+  const [documentHidden, setDocumentHidden] = useState(false);
   const [prevIndex, setPrevIndex] = useState<number | null>(null);
   const activeIndexRef = useRef(activeIndex);
   const lastRenderedRef = useRef(activeIndex);
   const fadeTimerRef = useRef<number | null>(null);
 
-  activeIndexRef.current = activeIndex;
+  // Declared before the autoplay effect so the timer always reads a fresh index.
+  useEffect(() => {
+    activeIndexRef.current = activeIndex;
+  }, [activeIndex]);
 
   // Hover pauses slide autoplay only — scene timelines keep running so demos stay readable.
   const autoplayPaused =
-    Boolean(reduceMotion) || !inView || hovered || dragging || pausedExternal;
-  const scenePlay = !Boolean(reduceMotion) && inView && !dragging && !pausedExternal;
+    Boolean(reduceMotion) ||
+    !inView ||
+    hovered ||
+    dragging ||
+    focusWithin ||
+    documentHidden ||
+    pausedExternal;
+  const scenePlay =
+    !Boolean(reduceMotion) && inView && !dragging && !documentHidden && !pausedExternal;
   const active = slides[activeIndex] ?? slides[0];
   const previous = prevIndex != null ? slides[prevIndex] : null;
   const nextIndex = slides.length ? (activeIndex + 1) % slides.length : 0;
   const next = slides[nextIndex];
+
+  useEffect(() => {
+    onAutoplayStateChange?.(!autoplayPaused);
+  }, [autoplayPaused, onAutoplayStateChange]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -101,6 +133,14 @@ export function MarketingCarousel({
 
     observer.observe(root);
     return () => observer.disconnect();
+  }, []);
+
+  // A backgrounded tab should not burn through slides.
+  useEffect(() => {
+    const sync = () => setDocumentHidden(document.hidden);
+    sync();
+    document.addEventListener("visibilitychange", sync);
+    return () => document.removeEventListener("visibilitychange", sync);
   }, []);
 
   useEffect(() => {
@@ -170,6 +210,12 @@ export function MarketingCarousel({
       className="marketing-carousel"
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
+      onFocusCapture={() => setFocusWithin(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setFocusWithin(false);
+        }
+      }}
     >
       {previous ? (
         <motion.div

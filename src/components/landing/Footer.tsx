@@ -70,7 +70,7 @@ function FooterLinkItem({ link }: { link: FooterLink }) {
 
   if (link.href === "#") {
     return (
-      <span className="cursor-default text-sm text-[#5a5a5a]" aria-disabled="true">
+      <span className="cursor-default text-sm text-[#828282]" aria-disabled="true">
         {link.label}
       </span>
     );
@@ -85,8 +85,8 @@ function FooterLinkItem({ link }: { link: FooterLink }) {
 
 function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) {
   return (
-    <div className="w-[7.25rem] shrink-0">
-      <h3 className="type-eyebrow text-[#5a5a5a]">{title}</h3>
+    <div className="landing-footer__column">
+      <h3 className="mkt-eyebrow text-[#8f8f8f]">{title}</h3>
       <ul className="mt-3 space-y-2">
         {links.map((link) => (
           <li key={link.label}>
@@ -132,35 +132,30 @@ export function Footer({
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 55% 45% at 50% 115%, rgb(45 212 191 / 0.07) 0%, transparent 65%)",
+              "radial-gradient(ellipse 55% 45% at 50% 115%, rgb(0 170 204 / 0.07) 0%, transparent 65%)",
           }}
           aria-hidden
         />
       ) : null}
 
       <div
-        className={`landing-footer__inner relative z-10 mx-auto w-full max-w-6xl px-6 lg:px-10 ${
-          reveal
-            ? "py-8 pb-10 md:py-16 md:pb-20 lg:py-20 lg:pb-24"
-            : "py-16 pb-20 lg:py-20 lg:pb-24"
+        className={`landing-footer__inner relative z-10 mkt-container ${
+          reveal ? "landing-footer__inner--reveal" : "py-16 pb-20 lg:py-20 lg:pb-24"
         }`}
       >
-        <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
+        <div className="landing-footer__top">
           <FooterVisionBlurb />
 
-          <nav
-            aria-label="Footer"
-            className={`flex-wrap justify-end gap-x-5 gap-y-8 lg:gap-x-6 lg:gap-y-0 ${
-              reveal ? "hidden md:flex" : "flex"
-            }`}
-          >
+          {/* Every destination stays reachable at every width — a reveal must
+              never cost navigation access. */}
+          <nav aria-label="Footer" className="landing-footer__nav">
             {footerColumns.map((column) => (
               <FooterColumn key={column.title} title={column.title} links={column.links} />
             ))}
           </nav>
         </div>
 
-        <div className={`landing-footer__meta pt-8 ${reveal ? "mt-8 hidden md:block md:mt-14" : "mt-14"}`}>
+        <div className="landing-footer__meta">
           <div className="landing-footer__meta-divider" aria-hidden />
           <div className="landing-footer__meta-row">
             <p>© {year} Motiion Ventures, Inc.</p>

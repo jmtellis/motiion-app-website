@@ -17,15 +17,20 @@ function toAccountPillUser(profile: DashboardProfile): AccountPillUser {
   };
 }
 
-/** Marketing landing header: resting emblem, scrolled wordmark + tabs + CTA. */
+/** Marketing landing header: resting emblem, scrolled wordmark + CTA. */
 export async function HomeMarketingHeader({
   activeTab = null,
   darkTheme = false,
   wordmarkHeader = false,
+  overlayHero = false,
+  showAudienceTabs = false,
 }: {
   activeTab?: MarketingHeaderTab;
   darkTheme?: boolean;
   wordmarkHeader?: boolean;
+  /** Home split hero: fixed overlay that appears after the hero exits. */
+  overlayHero?: boolean;
+  showAudienceTabs?: boolean;
 }) {
   const profile = await getCurrentUserProfile();
   const showAccountPill = profile && isOnboardingComplete(profile);
@@ -37,6 +42,8 @@ export async function HomeMarketingHeader({
       activeTab={activeTab}
       darkTheme={darkTheme}
       wordmarkHeader={wordmarkHeader}
+      overlayHero={overlayHero}
+      showAudienceTabs={showAudienceTabs}
     />
   );
 }

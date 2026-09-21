@@ -96,21 +96,17 @@ export const learnMoreHeroCta = {
         id: "talent",
         label: "Talent",
         description: "Create a profile. Get discovered. Book work.",
-        href: "/for-talent",
+        href: "/?audience=talent",
       },
       {
         id: "casting",
         label: "Industry Professional",
         description: "Discover talent. Build rosters. Create castings. Manage projects.",
-        href: "/for-casting",
+        href: "/?audience=casting",
       },
     ],
   },
 } as const;
-
-/** Audience nav links shown on the root split landing. */
-export { marketingAudienceTabs as homeSplitNav } from "@/lib/marketing/marketing-pages";
-export { marketingAudienceTabs as homeSplitNavLinks } from "@/lib/marketing/marketing-pages";
 
 export const homeHero = {
   eyebrow: "Professional dance, connected",
@@ -171,23 +167,6 @@ export const homeHero = {
       },
     },
   ],
-  audienceLinks: [
-    {
-      id: "community",
-      label: "Community",
-      href: "/community",
-    },
-    {
-      id: "talent",
-      label: "Talent",
-      href: "/for-talent",
-    },
-    {
-      id: "casting",
-      label: "Industry Professionals",
-      href: "/for-casting",
-    },
-  ],
 };
 
 export type HomeHeroPortrait = {
@@ -195,7 +174,10 @@ export type HomeHeroPortrait = {
   title: string;
   src: string;
   alt: string;
+  /** Wide split-panel crop (tall frame, sides trimmed). */
   objectPosition: string;
+  /** Landscape crop below 960px, biased to protect faces and headwear. */
+  objectPositionMobile: string;
   durationMs: number;
 };
 
@@ -205,24 +187,27 @@ export const homeHeroPortraits: HomeHeroPortrait[] = [
     id: "dancer-01",
     title: "Professional dancer portrait",
     src: "/marketing/hero/dancer-01.png",
-    alt: "Professional dancer in a tiger-print top and striped trousers against a light studio backdrop",
-    objectPosition: "50% 50%",
+    alt: "Dancer with a blonde bob in a tiger-print top and black wide-leg trousers, posed against a pale studio backdrop",
+    objectPosition: "52% 50%",
+    objectPositionMobile: "52% 32%",
     durationMs: 5200,
   },
   {
     id: "dancer-02",
     title: "Professional dancer portrait",
     src: "/marketing/hero/dancer-02.png",
-    alt: "Professional dancer with pink hair and silver jewelry against a teal studio backdrop",
+    alt: "Dancer with cropped pink hair and layered silver jewelry, posed against a teal studio backdrop",
     objectPosition: "50% 50%",
+    objectPositionMobile: "50% 14%",
     durationMs: 5200,
   },
   {
     id: "dancer-03",
     title: "Professional dancer portrait",
     src: "/marketing/hero/dancer-03.png",
-    alt: "Professional dancer in a lace top and strapped leggings against a monochrome studio backdrop",
-    objectPosition: "50% 50%",
+    alt: "Dancer with a spiked updo in a black lace top and strapped leggings, mid-pose in a black-and-white studio portrait",
+    objectPosition: "56% 50%",
+    objectPositionMobile: "56% 28%",
     durationMs: 5200,
   },
 ];
@@ -368,14 +353,14 @@ export const visionSection = {
 
 export const homeAudienceLinks = [
   {
-    label: "Talent",
+    label: "Professional Dancers",
     description: "Create a profile. Get discovered. Book work.",
-    href: "/for-talent",
+    href: "/?audience=talent",
   },
   {
     label: "Industry Professional",
     description: "Discover talent. Build rosters. Create castings. Manage projects.",
-    href: "/for-casting",
+    href: "/?audience=casting",
   },
 ] as const;
 

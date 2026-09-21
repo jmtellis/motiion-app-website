@@ -7,14 +7,10 @@ export type MarketingTab = "community" | "talent" | "casting";
 export const JOIN_BETA_CTA = { label: "Sign up", href: "/signup" } as const;
 export const INDUSTRY_PRO_SIGNUP_CTA = { label: "Sign up", href: "/signup" } as const;
 
-export const marketingAudienceTabs: { id: MarketingTab; label: string; href: string }[] = [
-  { id: "community", label: "Community", href: "/community" },
-  { id: "talent", label: "Talent", href: "/for-talent" },
-  { id: "casting", label: "Industry Professionals", href: "/for-casting" },
-];
-
 /** Root landing and other pages where no audience tab is selected. */
 export type MarketingHeaderTab = MarketingTab | null;
+
+export const LANDING_DEFAULT_AUDIENCE: MarketingTab = "talent";
 
 export type BenefitIconKey =
   | "images"
@@ -33,10 +29,12 @@ export type BenefitPreviewKind =
   | "talent-portfolio"
   | "talent-discovery"
   | "talent-inbox"
+  | "talent-identity"
   | "industry-navigator"
   | "industry-projects"
   | "industry-roster"
-  | "industry-shortlist";
+  | "industry-shortlist"
+  | "community-event";
 
 export type AudienceBenefit = {
   title: string;
@@ -55,7 +53,6 @@ export type AudiencePageContent = {
   benefits: AudienceBenefit[];
   workflowTitle: string;
   workflowSteps: string[];
-  workflowAside?: "blank" | "trust";
   trustTitle: string;
   trustPoints: string[];
   faq: FaqItem[];
@@ -63,7 +60,7 @@ export type AudiencePageContent = {
 };
 
 export const talentPageContent: AudiencePageContent = {
-  eyebrow: "Talent",
+  eyebrow: "Professional Dancers",
   headline: "One profile. Better opportunities. Less friction.",
   summary:
     "Motiion helps dancers and choreographers build a living professional identity, get discovered by the right teams, and respond to invites without rebuilding materials every time.",
@@ -99,6 +96,8 @@ export const talentPageContent: AudiencePageContent = {
       description:
         "Share one verified Motiion profile instead of chasing links, PDFs, and outdated folders for every submission.",
       icon: "user-circle",
+      featured: true,
+      preview: "talent-identity",
     },
     {
       title: "Any representation",
@@ -120,7 +119,6 @@ export const talentPageContent: AudiencePageContent = {
     "Get discovered in search and receive targeted invites.",
     "Manage messages, schedule, and opportunities from one home base.",
   ],
-  workflowAside: "blank",
   trustTitle: "Designed for working artists",
   trustPoints: [
     "Search-safe profiles that protect personal details while staying discoverable.",
@@ -209,7 +207,6 @@ export const castingPageContent: AudiencePageContent = {
     "Create projects and publish castings with roles, requirements, and submission details.",
     "Build shortlists, collaborate with stakeholders, and move from discovery to confirmation.",
   ],
-  workflowAside: "blank",
   trustTitle: "Built for production timelines",
   trustPoints: [
     "Reduces time-to-shortlist on fast-moving projects.",
@@ -237,7 +234,7 @@ export const castingPageContent: AudiencePageContent = {
 };
 
 export const communityPageContent: AudiencePageContent = {
-  eyebrow: "Community",
+  eyebrow: "Community Members",
   headline: "Find the rooms, classes, and programs around you.",
   summary:
     "Motiion helps the dance community discover events, take class, and join programs—so showing up and staying connected does not depend on a group chat or a flyer.",
@@ -252,6 +249,7 @@ export const communityPageContent: AudiencePageContent = {
         "See live appearances, activations, and gatherings in one place instead of piecing nights together across stories and texts.",
       icon: "sparkles",
       featured: true,
+      preview: "community-event",
     },
     {
       title: "Classes and training",
@@ -292,7 +290,6 @@ export const communityPageContent: AudiencePageContent = {
     "Save what you care about and get the details before you go.",
     "Keep coming back as the calendar, the rooms, and the people change.",
   ],
-  workflowAside: "blank",
   trustTitle: "Built for people who show up",
   trustPoints: [
     "Made for dancers, students, and fans who want a clearer way into the scene.",
@@ -321,3 +318,15 @@ export const communityPageContent: AudiencePageContent = {
     },
   ],
 };
+
+export const landingAudienceSegments = [
+  { id: "casting", label: "Industry Professionals", content: castingPageContent },
+  { id: "talent", label: "Professional Dancers", content: talentPageContent },
+  { id: "community", label: "Community Members", content: communityPageContent },
+] as const;
+
+export function parseAudienceParam(value: string | undefined): MarketingTab {
+  return landingAudienceSegments.some((segment) => segment.id === value)
+    ? (value as MarketingTab)
+    : LANDING_DEFAULT_AUDIENCE;
+}

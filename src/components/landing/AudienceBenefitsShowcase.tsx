@@ -1,5 +1,3 @@
-"use client";
-
 import type { LucideIcon } from "lucide-react";
 import {
   Bookmark,
@@ -16,7 +14,6 @@ import {
 } from "lucide-react";
 
 import { AppPreviewMock } from "@/components/landing/AppPreviewMocks";
-import { Reveal } from "@/components/landing/Reveal";
 import type { AudienceBenefit, BenefitIconKey } from "@/lib/marketing/marketing-pages";
 
 import "./audience-benefits-showcase.css";
@@ -55,18 +52,13 @@ function FeaturedBenefitCard({
   showDivider?: boolean;
   insetStart?: boolean;
 }) {
-  const isBlankPreview =
-    benefit.preview === "talent-portfolio" ||
-    benefit.preview === "talent-discovery" ||
-    benefit.preview === "industry-navigator" ||
-    benefit.preview === "industry-projects";
-
   return (
     <article
       className={cn(
         "audience-benefits__featured-card",
         showDivider && "audience-benefits__featured-card--divider",
         insetStart && "audience-benefits__featured-card--inset",
+        !benefit.preview && "audience-benefits__featured-card--text",
       )}
     >
       <div className="audience-benefits__featured-copy">
@@ -79,32 +71,20 @@ function FeaturedBenefitCard({
         </p>
       </div>
 
+      {/* The preview restates the copy above it visually, so it is hidden from
+          assistive technology instead of duplicating decorative UI microcopy. */}
       {benefit.preview ? (
-        <div
-          className={cn(
-            "audience-benefits__preview",
-            isBlankPreview && "audience-benefits__preview--blank",
-          )}
-          aria-hidden={isBlankPreview ? true : undefined}
-        >
-          {!isBlankPreview ? (
-            <div className="audience-benefits__preview-inner">
-              <AppPreviewMock kind={benefit.preview} />
-            </div>
-          ) : null}
+        <div className="audience-benefits__preview" aria-hidden>
+          <div className="audience-benefits__preview-inner">
+            <AppPreviewMock kind={benefit.preview} />
+          </div>
         </div>
       ) : null}
     </article>
   );
 }
 
-function CompactBenefitCard({
-  benefit,
-  dark,
-}: {
-  benefit: AudienceBenefit;
-  dark: boolean;
-}) {
+function CompactBenefitCard({ benefit, dark }: { benefit: AudienceBenefit; dark: boolean }) {
   return (
     <article className="audience-benefits__compact-card">
       <BenefitIcon icon={benefit.icon} />
@@ -129,41 +109,37 @@ export function AudienceBenefitsShowcase({
 }) {
   const featured = benefits.filter((benefit) => benefit.featured);
   const compact = benefits.filter((benefit) => !benefit.featured);
+  const featuredHasMedia = featured.some((benefit) => Boolean(benefit.preview));
 
   return (
     <div className={cn("audience-benefits", dark && "text-white")}>
       <div className="audience-benefits__header">
-        <h2
-          className={cn(
-            "type-heading-1 mx-auto max-w-3xl text-center text-balance",
-            dark ? "text-on-dark-primary" : "text-[var(--ink)]",
-          )}
-        >
-          {title}
-        </h2>
+        <h2 className={cn("mkt-heading", !dark && "text-[var(--ink)]")}>{title}</h2>
       </div>
 
       {featured.length > 0 ? (
-        <div className="audience-benefits__featured">
+        <div
+          className={cn(
+            "audience-benefits__featured",
+            !featuredHasMedia && "audience-benefits__featured--text",
+          )}
+        >
           {featured.map((benefit, index) => (
-            <Reveal key={benefit.title} delay={index * 0.06} amount={0.12} distance={20}>
-              <FeaturedBenefitCard
-                benefit={benefit}
-                dark={dark}
-                showDivider={index === 0 && featured.length > 1}
-                insetStart={index === 1}
-              />
-            </Reveal>
+            <FeaturedBenefitCard
+              key={benefit.title}
+              benefit={benefit}
+              dark={dark}
+              showDivider={index === 0 && featured.length > 1}
+              insetStart={index === 1}
+            />
           ))}
         </div>
       ) : null}
 
       {compact.length > 0 ? (
         <div className="audience-benefits__compact">
-          {compact.map((benefit, index) => (
-            <Reveal key={benefit.title} delay={index * 0.04} amount={0.1} distance={14}>
-              <CompactBenefitCard benefit={benefit} dark={dark} />
-            </Reveal>
+          {compact.map((benefit) => (
+            <CompactBenefitCard key={benefit.title} benefit={benefit} dark={dark} />
           ))}
         </div>
       ) : null}

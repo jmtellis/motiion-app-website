@@ -6,7 +6,7 @@
 
 .audience-pricing__intro {
   display: flex;
-  max-width: 40rem;
+  max-width: 44rem;
   flex-direction: column;
   gap: 0.875rem;
   margin-inline: auto;
@@ -14,7 +14,8 @@
   align-items: center;
 }
 
-.audience-pricing__intro .type-body {
+.audience-pricing__intro .mkt-body {
+  max-width: 36rem;
   margin-inline: auto;
 }
 
@@ -25,26 +26,44 @@
   margin-inline: auto;
   padding: 0.25rem;
   border-radius: 9999px;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.04);
+  border: 1px solid var(--mkt-line, rgb(255 255 255 / 0.1));
+  background: rgb(255 255 255 / 0.06);
 }
 
 .audience-pricing__toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 44px target. */
+  min-height: 2.5rem;
   border: 0;
   border-radius: 9999px;
   background: transparent;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.125rem;
+  font-family: inherit;
   font-size: 0.875rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--mkt-text-secondary, #a8a8a8);
+  cursor: pointer;
   transition:
-    background-color 160ms ease,
-    color 160ms ease;
+    background-color var(--mkt-duration-control, 170ms) ease,
+    color var(--mkt-duration-control, 170ms) ease;
 }
 
 .audience-pricing__toggle-btn--active {
-  background: #151515;
-  color: #fafafa;
+  background: #fafafa;
+  color: #0a0a0a;
+}
+
+.audience-pricing__toggle-btn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .audience-pricing__toggle-btn {
+    transition: none;
+  }
 }
 
 .audience-pricing__grid {
@@ -59,13 +78,26 @@
   }
 }
 
+/* Subgrid aligns header, features, and CTA across cards without fixed heights. */
+@media (min-width: 768px) {
+  .audience-pricing__grid {
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .audience-pricing__plan {
+    display: grid;
+    grid-row: span 3;
+    grid-template-rows: subgrid;
+  }
+}
+
 .audience-pricing__plan {
   display: flex;
   min-height: 100%;
   flex-direction: column;
   gap: 1.25rem;
-  border-radius: 1.125rem;
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: var(--mkt-radius-panel, 1.125rem);
+  border: 1px solid var(--mkt-line, rgb(255 255 255 / 0.1));
   background: rgb(255 255 255 / 0.03);
   padding: clamp(1.25rem, 3vw, 1.75rem);
 }
@@ -88,11 +120,12 @@
 }
 
 .audience-pricing__plan-name {
-  font-size: 0.8125rem;
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--mkt-text-secondary, #a8a8a8);
 }
 
 .audience-pricing__plan-price-row {
@@ -110,13 +143,14 @@
 
 .audience-pricing__plan-period {
   font-size: 0.875rem;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--mkt-text-tertiary, #8f8f8f);
 }
 
 .audience-pricing__plan-description {
   font-size: 0.9375rem;
   line-height: 1.55;
-  color: rgb(255 255 255 / 0.58);
+  text-wrap: pretty;
+  color: var(--mkt-text-secondary, #a8a8a8);
 }
 
 .audience-pricing__features {
@@ -133,14 +167,15 @@
   display: flex;
   align-items: flex-start;
   gap: 0.625rem;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   line-height: 1.5;
-  color: rgb(255 255 255 / 0.78);
+  text-wrap: pretty;
+  color: #dcdcdc;
 }
 
 .audience-pricing__feature-icon {
-  margin-top: 0.125rem;
-  color: var(--accent);
+  margin-top: 0.1875rem;
+  color: var(--ds-accent-bright, #00d4f0);
 }
 
 .audience-pricing__cta {

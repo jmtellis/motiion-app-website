@@ -4,17 +4,11 @@ import Link from "next/link";
 import { useCallback, useId, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
-import { AccountPill, type AccountPillUser } from "@/components/auth/AccountPill";
-import { MotiionWordmark } from "@/components/brand/MotiionWordmark";
-import { HomeSplitMobileMenu, HomeSplitNav } from "@/components/landing/HomeSplitNav";
 import { IosDownloadHeroButton } from "@/components/landing/IosDownloadHeroButton";
+import { LANDING_AUDIENCE_TABS_ID } from "@/components/landing/LandingAudienceContext";
 import { MarketingDialog } from "@/components/landing/MarketingDialog";
 import { MarketingHero } from "@/components/marketing/MarketingHero";
-import {
-  createAccountHeroCta,
-  homeHero,
-  homeLoginCta,
-} from "@/lib/marketing/homepage-content";
+import { createAccountHeroCta, homeHero } from "@/lib/marketing/homepage-content";
 
 import "./home-split-landing.css";
 
@@ -33,7 +27,7 @@ function CreateAccountButton({ className }: { className?: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={cn("home-split__cta-primary", className)}
+        className={cn("mkt-btn mkt-btn--primary", className)}
       >
         {createAccountHeroCta.label}
       </button>
@@ -52,10 +46,10 @@ function CreateAccountButton({ className }: { className?: string }) {
                 <Link
                   href={path.href}
                   onClick={close}
-                  className="group flex w-full flex-col rounded-[14px] border border-[#262626] bg-[#1e1e1e] px-4 py-3.5 text-left transition-colors hover:border-[#3a3a3a] hover:bg-[#2a2a2a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                  className="group flex w-full flex-col rounded-[14px] border border-[#262626] bg-[#1e1e1e] px-4 py-3.5 text-left transition-colors hover:border-[#3a3a3a] hover:bg-[#2a2a2a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 >
-                  <span className="text-sm font-semibold text-[#fafafa]">{path.label}</span>
-                  <span className="mt-1 text-sm leading-snug text-[#a3a3a3]">{path.description}</span>
+                  <span className="text-[0.9375rem] font-semibold text-[#fafafa]">{path.label}</span>
+                  <span className="mt-1 text-sm leading-snug text-[#a8a8a8]">{path.description}</span>
                 </Link>
               </li>
             ))}
@@ -66,42 +60,16 @@ function CreateAccountButton({ className }: { className?: string }) {
   );
 }
 
-function LoginControl({
-  accountUser,
-  onDark = false,
-}: {
-  accountUser: AccountPillUser | null;
-  onDark?: boolean;
-}) {
-  if (accountUser) {
-    return <AccountPill user={accountUser} />;
-  }
-
+function HomeSplitScrollCue() {
   return (
-    <Link
-      href={homeLoginCta.href}
-      className={cn("home-split__login", onDark && "home-split__login--on-dark")}
-    >
-      {homeLoginCta.label}
-    </Link>
+    <a href={`#${LANDING_AUDIENCE_TABS_ID}`} className="home-split__scroll-cue">
+      <span className="home-split__scroll-cue-label">Explore</span>
+      <span className="home-split__scroll-cue-chevron" aria-hidden />
+    </a>
   );
 }
 
-function HomeSplitFooter() {
-  const year = new Date().getFullYear();
-
-  return (
-    <div className="home-split__footer">
-      <p className="home-split__footer-copy">© {year} Motiion Ventures, Inc.</p>
-    </div>
-  );
-}
-
-export function HomeSplitLanding({
-  accountUser = null,
-}: {
-  accountUser?: AccountPillUser | null;
-}) {
+export function HomeSplitLanding() {
   const reduceMotion = useReducedMotion();
 
   const enter = reduceMotion
@@ -115,28 +83,7 @@ export function HomeSplitLanding({
     <div className="home-split">
       <div className="home-split__grain" aria-hidden />
 
-      <div className="home-split__mobile-bar">
-        <HomeSplitMobileMenu />
-        <Link href="/" className="home-split__mobile-bar-logo" aria-label="Motiion home">
-          <MotiionWordmark priority height={11} />
-        </Link>
-        <LoginControl accountUser={accountUser} onDark />
-      </div>
-
       <section className="home-split__panel home-split__panel--dark" aria-label="Motiion">
-        <div className="home-split__header-row home-split__header-row--dark">
-          <div className="home-split__brand-nav">
-            <Link
-              href="/"
-              className="home-split__wordmark inline-flex items-center"
-              aria-label="Motiion home"
-            >
-              <MotiionWordmark priority height={12} />
-            </Link>
-            <HomeSplitNav />
-          </div>
-        </div>
-
         <div className="home-split__content">
           <motion.div
             className="home-split__copy"
@@ -168,20 +115,17 @@ export function HomeSplitLanding({
             animate={enter.animate}
             transition={{ duration: 0.55, delay: reduceMotion ? 0 : 0.08, ease: [0.22, 1, 0.36, 1] }}
           >
-            <IosDownloadHeroButton dark variant="ghost" className="sm:min-w-0" />
-            <CreateAccountButton />
+            {/* Account creation is the one dominant action; the app link is quiet. */}
+            <CreateAccountButton className="home-split__cta" />
+            <IosDownloadHeroButton className="home-split__cta" />
           </motion.div>
         </div>
 
-        <HomeSplitFooter />
+        <HomeSplitScrollCue />
       </section>
 
       <section className="home-split__panel home-split__panel--light" aria-label="Featured dancers">
         <div className="home-split__visual home-split__visual--portraits">
-          <div className="home-split__login-anchor">
-            <LoginControl accountUser={accountUser} onDark />
-          </div>
-
           <div className="home-split__feature home-split__feature--portraits">
             <MarketingHero />
           </div>

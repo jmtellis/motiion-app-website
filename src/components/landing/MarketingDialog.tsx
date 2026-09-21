@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 type MarketingDialogProps = {
   onClose: () => void;
@@ -22,6 +22,11 @@ export function MarketingDialog({
   panelClassName,
 }: MarketingDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  // Captured during the first render: by the time effects run, showModal() has
+  // already pulled focus into the dialog.
+  const [opener] = useState<Element | null>(() =>
+    typeof document === "undefined" ? null : document.activeElement,
+  );
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -43,18 +48,28 @@ export function MarketingDialog({
     };
   }, [onClose]);
 
+  // The dialog unmounts without close(), so the native focus-restore never runs.
+  useEffect(
+    () => () => {
+      if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
+    },
+    [opener],
+  );
+
   return (
     <dialog
       ref={dialogRef}
       aria-labelledby={titleId}
       aria-describedby={description ? descriptionId : undefined}
-      className="marketing-dialog fixed inset-0 z-[200] m-0 h-full max-h-none w-full max-w-none border-0 bg-transparent p-4 open:flex open:items-center open:justify-center sm:p-6"
+      // Keeps Lenis from scrolling the page behind the top-layer dialog.
+      data-lenis-prevent
+      className="marketing-dialog fixed inset-0 z-[200] m-0 h-full max-h-none w-full max-w-none overflow-y-auto overscroll-contain border-0 bg-transparent p-4 open:grid open:place-items-center sm:p-6"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
       <div
-        className={`relative z-10 w-full max-w-md rounded-[20px] border border-[#262626] bg-[#151515] p-5 sm:p-6 ${panelClassName ?? ""}`}
+        className={`relative z-10 my-auto w-full max-w-md rounded-[20px] border border-[#262626] bg-[#151515] p-5 sm:p-6 ${panelClassName ?? ""}`}
         onClick={(event) => event.stopPropagation()}
       >
         <button
@@ -68,11 +83,11 @@ export function MarketingDialog({
           </span>
         </button>
 
-        <h2 id={titleId} className="type-heading-2 pr-10 text-left text-[#fafafa]">
+        <h2 id={titleId} className="mkt-heading mkt-heading--sm pr-10 text-left">
           {title}
         </h2>
         {description ? (
-          <p id={descriptionId} className="type-body-lg mt-3 text-left text-pretty text-[#a3a3a3]">
+          <p id={descriptionId} className="mkt-body mt-3 text-left text-pretty">
             {description}
           </p>
         ) : null}

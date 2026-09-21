@@ -1,0 +1,430 @@
+/**
+ * Marketing system — container, rhythm, type, and control patterns for the
+ * public landing surfaces. Scoped to `.marketing-root` so auth, onboarding,
+ * public profiles, and the signed-in product shell are untouched.
+ */
+
+.marketing-root {
+  /* One container + gutter system across every landing band. */
+  --mkt-container: 76rem;
+  --mkt-gutter: 1.25rem;
+  --mkt-measure-lead: 42rem;
+  --mkt-measure-prose: 36rem;
+  --mkt-measure-feature: 30rem;
+
+  /* 4px spacing rhythm. Section padding is tuned, not mechanical. */
+  --mkt-space-1: 0.25rem;
+  --mkt-space-2: 0.5rem;
+  --mkt-space-3: 0.75rem;
+  --mkt-space-4: 1rem;
+  --mkt-space-5: 1.25rem;
+  --mkt-space-6: 1.5rem;
+  --mkt-space-8: 2rem;
+  --mkt-space-10: 2.5rem;
+  --mkt-space-12: 3rem;
+  --mkt-section-y: 3rem;
+
+  /* Surfaces and hairlines. */
+  --mkt-surface: #111111;
+  --mkt-surface-low: #0a0a0a;
+  --mkt-surface-raised: #1a1a1a;
+  --mkt-line: rgb(255 255 255 / 0.1);
+  --mkt-line-strong: #2a2a2a;
+
+  /* Text ladder — verified against composited dark surfaces for WCAG AA. */
+  --mkt-text: #fafafa;
+  --mkt-text-secondary: #a8a8a8;
+  --mkt-text-tertiary: #8f8f8f;
+
+  /* Control geometry shared by every marketing button. */
+  --mkt-control-height: 2.75rem;
+  --mkt-control-height-compact: 2.25rem;
+  --mkt-control-pad-x: 1.35rem;
+  --mkt-radius-control: 9999px;
+  --mkt-radius-media: 1rem;
+  --mkt-radius-panel: 1.125rem;
+
+  /* Motion — brief control transitions, restrained entrances. */
+  --mkt-duration-control: 170ms;
+  --mkt-duration-enter: 420ms;
+  --mkt-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --landing-header-pad-x: var(--mkt-gutter);
+  --landing-header-pad-y: 0.75rem;
+  --landing-header-offset: calc(var(--landing-header-pad-y) * 2 + 2.25rem);
+}
+
+@media (min-width: 640px) {
+  .marketing-root {
+    --mkt-gutter: 1.5rem;
+    --mkt-section-y: 3.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .marketing-root {
+    --mkt-gutter: 2.25rem;
+    --mkt-section-y: 4.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .marketing-root {
+    --mkt-gutter: 2.5rem;
+    --mkt-section-y: 5.5rem;
+  }
+}
+
+/* ---------------------------------------------------------------- layout */
+
+/* Fallbacks keep shared consumers (auth shell, public profile footer) sane when
+   the pattern is used outside `.marketing-root`. */
+.mkt-container {
+  width: 100%;
+  max-width: var(--mkt-container, 76rem);
+  margin-inline: auto;
+  padding-inline: var(--mkt-gutter, 1.5rem);
+}
+
+.mkt-container--reading {
+  max-width: 56rem;
+}
+
+.mkt-section-y {
+  padding-block: var(--mkt-section-y, 3.5rem);
+}
+
+/* ------------------------------------------------------------ typography */
+
+.mkt-heading {
+  font-family: var(--font-brand);
+  font-size: clamp(1.75rem, 1.6vw + 1.1rem, 2.5rem);
+  font-weight: 600;
+  line-height: 1.14;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  color: var(--mkt-text);
+}
+
+/* Dialog / card-level heading — same voice, one step down. */
+.mkt-heading--sm {
+  font-size: clamp(1.375rem, 0.8vw + 1.1rem, 1.625rem);
+  line-height: 1.2;
+}
+
+.mkt-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mkt-lead {
+  max-width: var(--mkt-measure-lead);
+  font-size: clamp(1rem, 0.35vw + 0.93rem, 1.125rem);
+  line-height: 1.55;
+  text-wrap: pretty;
+  color: var(--mkt-text-secondary);
+}
+
+.mkt-feature-title {
+  font-size: clamp(1.0625rem, 0.5vw + 0.95rem, 1.25rem);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--mkt-text);
+}
+
+.mkt-body {
+  font-size: 1rem;
+  line-height: 1.6;
+  text-wrap: pretty;
+  color: var(--mkt-text-secondary);
+}
+
+.mkt-body-sm {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  text-wrap: pretty;
+  color: var(--mkt-text-secondary);
+}
+
+.mkt-meta {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--mkt-text-tertiary);
+}
+
+/* --------------------------------------------------------------- buttons */
+
+.mkt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: var(--mkt-control-height);
+  padding-inline: var(--mkt-control-pad-x);
+  padding-block: 0.625rem;
+  border: 1px solid transparent;
+  border-radius: var(--mkt-radius-control);
+  font-family: var(--font-brand);
+  font-size: 0.9375rem;
+  font-weight: 550;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--mkt-duration-control) ease,
+    border-color var(--mkt-duration-control) ease,
+    color var(--mkt-duration-control) ease;
+}
+
+.mkt-btn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.mkt-btn:disabled,
+.mkt-btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.mkt-btn--compact {
+  min-height: var(--mkt-control-height-compact);
+  padding-inline: 1rem;
+  padding-block: 0.4375rem;
+  font-size: 0.875rem;
+}
+
+.mkt-btn--block {
+  width: 100%;
+}
+
+/* Dominant action — crisp off-white on dark. */
+.mkt-btn--primary {
+  background: #fafafa;
+  border-color: #fafafa;
+  color: #0a0a0a;
+}
+
+.mkt-btn--primary:hover:not(:disabled) {
+  background: #ffffff;
+  border-color: #ffffff;
+}
+
+.mkt-btn--primary:active:not(:disabled) {
+  background: #e4e4e4;
+  border-color: #e4e4e4;
+}
+
+/* Quiet outlined companion. */
+.mkt-btn--secondary {
+  background: transparent;
+  border-color: rgb(255 255 255 / 0.28);
+  color: #fafafa;
+}
+
+.mkt-btn--secondary:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.08);
+  border-color: rgb(255 255 255 / 0.44);
+}
+
+.mkt-btn--secondary:active:not(:disabled) {
+  background: rgb(255 255 255 / 0.12);
+}
+
+/* Lowest-emphasis inline action. */
+.mkt-btn--quiet {
+  min-height: var(--mkt-control-height-compact);
+  padding-inline: 0.75rem;
+  background: transparent;
+  border-color: transparent;
+  color: var(--mkt-text-secondary);
+  font-weight: 500;
+}
+
+.mkt-btn--quiet:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.07);
+  color: #fafafa;
+}
+
+/* Restrained cyan emphasis — reserved, not the default primary. */
+.mkt-btn--accent {
+  background: color-mix(in oklab, var(--accent) 20%, #0f0f0f);
+  border-color: color-mix(in oklab, var(--accent) 55%, transparent);
+  color: #fafafa;
+}
+
+.mkt-btn--accent:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--accent) 30%, #0f0f0f);
+  border-color: color-mix(in oklab, var(--accent) 72%, transparent);
+}
+
+.mkt-btn--accent:focus-visible {
+  outline-color: var(--ds-accent-bright);
+}
+
+/* --------------------------------------------- landing overlay header */
+
+.landing-header {
+  --landing-header-pad-x: var(--mkt-gutter, 1.5rem);
+  --landing-header-pad-y: 0.75rem;
+  --landing-header-offset: calc(var(--landing-header-pad-y) * 2 + 2.25rem);
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 50;
+  border-bottom: 1px solid transparent;
+  background: #111111;
+  pointer-events: auto;
+  transition:
+    background-color 360ms var(--mkt-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    border-color 360ms var(--mkt-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    backdrop-filter 360ms var(--mkt-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+@media (min-width: 768px) {
+  .landing-header:not(.is-visible) {
+    background: transparent;
+  }
+}
+
+.landing-header.is-visible {
+  border-bottom-color: #262626;
+  background: rgb(10 10 10 / 0.9);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+.landing-header__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 0.75rem;
+  row-gap: 0;
+  width: 100%;
+  max-width: var(--mkt-container, 76rem);
+  margin-inline: auto;
+  padding: max(var(--landing-header-pad-y), env(safe-area-inset-top)) var(--landing-header-pad-x) var(--landing-header-pad-y);
+}
+
+.landing-header__brand {
+  display: inline-flex;
+  grid-column: 1;
+  grid-row: 1;
+  align-items: center;
+  min-width: 0;
+  transition: opacity 170ms ease;
+}
+
+.landing-header__brand:hover {
+  opacity: 0.8;
+}
+
+.landing-header__tabs {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+}
+
+.landing-header__tabs.is-hidden {
+  display: none;
+}
+
+.landing-header__actions {
+  display: flex;
+  grid-column: 2;
+  grid-row: 1;
+  align-items: center;
+  justify-content: flex-end;
+  justify-self: end;
+}
+
+@media (min-width: 768px) {
+  .landing-header__inner {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto;
+    gap: 1.5rem;
+    padding: var(--landing-header-pad-y) var(--landing-header-pad-x);
+  }
+
+  .landing-header__brand,
+  .landing-header__tabs,
+  .landing-header__actions {
+    grid-row: 1;
+  }
+
+  .landing-header__tabs {
+    grid-column: 2;
+    justify-self: center;
+  }
+
+  .landing-header__tabs.is-hidden {
+    display: block;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .landing-header__actions {
+    grid-column: 3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-header,
+  .landing-header.is-visible {
+    transition: none;
+  }
+}
+
+/* ------------------------------------------------------------ skip link */
+
+.mkt-skip-link {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 200;
+  translate: -50% -140%;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--mkt-control-height-compact);
+  padding-inline: 1rem;
+  border: 1px solid rgb(255 255 255 / 0.3);
+  border-top: 0;
+  border-radius: 0 0 var(--mkt-radius-control) var(--mkt-radius-control);
+  background: #0a0a0a;
+  color: #fafafa;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: translate var(--mkt-motion-fast) var(--mkt-ease);
+}
+
+/* `:focus`, not `:focus-visible` — a focused skip link must never be invisible,
+   including when focus arrives programmatically. */
+.mkt-skip-link:focus {
+  translate: -50% 0;
+  outline: 2px solid var(--accent);
+  outline-offset: -4px;
+}
+
+/* ----------------------------------------------------------------- media */
+
+.mkt-media-frame {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--mkt-line);
+  border-radius: var(--mkt-radius-media);
+  background: var(--mkt-surface-low);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mkt-btn,
+  .mkt-skip-link {
+    transition: none;
+  }
+}

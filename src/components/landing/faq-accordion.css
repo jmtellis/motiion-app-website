@@ -1,0 +1,103 @@
+.faq-accordion {
+  --faq-line: var(--line);
+  --faq-question: var(--ink);
+  --faq-answer: var(--ink-soft);
+  --faq-marker: var(--ink-soft);
+  border-block: 1px solid var(--faq-line);
+}
+
+.faq-accordion--dark {
+  --faq-line: #262626;
+  --faq-question: var(--mkt-text, #fafafa);
+  --faq-answer: var(--mkt-text-secondary, #a8a8a8);
+  --faq-marker: var(--mkt-text-tertiary, #8f8f8f);
+}
+
+.faq-accordion__item + .faq-accordion__item {
+  border-top: 1px solid var(--faq-line);
+}
+
+.faq-accordion__heading {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.faq-accordion__trigger {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  /* 44px minimum target. */
+  min-height: 2.75rem;
+  padding: 1rem 1.25rem;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.faq-accordion__trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.faq-accordion__question {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  text-wrap: pretty;
+  color: var(--faq-question);
+}
+
+.faq-accordion__marker {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--faq-marker);
+}
+
+.faq-accordion__trigger:hover .faq-accordion__marker {
+  color: var(--faq-question);
+}
+
+/* 0fr -> 1fr grows to the answer's intrinsic height with no arbitrary cap. */
+.faq-accordion__answer {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  visibility: hidden;
+  transition:
+    grid-template-rows 240ms var(--mkt-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    visibility 240ms;
+}
+
+.faq-accordion__answer[data-open="true"] {
+  grid-template-rows: 1fr;
+  visibility: visible;
+}
+
+.faq-accordion__answer-inner {
+  min-height: 0;
+}
+
+.faq-accordion__answer-text {
+  max-width: 44rem;
+  padding: 0 1.25rem 1.25rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  text-wrap: pretty;
+  color: var(--faq-answer);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq-accordion__answer {
+    transition: none;
+  }
+}

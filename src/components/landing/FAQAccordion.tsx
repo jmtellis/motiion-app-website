@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { Minus, Plus } from "lucide-react";
+import { useId, useState } from "react";
+
+import "./faq-accordion.css";
 
 type FAQItem = {
   question: string;
@@ -18,52 +21,46 @@ function cn(...classes: Array<string | false | null | undefined>) {
 
 export function FAQAccordion({ items, dark = false }: FAQAccordionProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const baseId = useId();
 
   return (
-    <div className={cn("divide-y", dark ? "divide-[#262626] border-[#262626]" : "divide-[var(--line)] border-[var(--line)]", "border-y")}>
+    <div className={cn("faq-accordion", dark && "faq-accordion--dark")}>
       {items.map((item, index) => {
         const isOpen = openIndex === index;
+        const triggerId = `${baseId}-trigger-${index}`;
+        const answerId = `${baseId}-answer-${index}`;
+
         return (
-          <article key={item.question} className="overflow-hidden">
-            <h3>
+          <article key={item.question} className="faq-accordion__item">
+            <h3 className="faq-accordion__heading">
               <button
                 type="button"
-                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--accent)]"
+                id={triggerId}
+                className="faq-accordion__trigger"
                 aria-expanded={isOpen}
+                aria-controls={answerId}
                 onClick={() => setOpenIndex(isOpen ? null : index)}
               >
-                <span
-                  className={cn(
-                    "text-base font-semibold tracking-tight",
-                    dark ? "text-on-dark-primary" : "text-[var(--ink)]",
-                  )}
-                >
-                  {item.question}
-                </span>
-                <span
-                  className={cn(
-                    "text-xl leading-none",
-                    dark ? "text-on-dark-secondary" : "text-[var(--ink-soft)]",
-                  )}
-                  aria-hidden
-                >
-                  {isOpen ? "-" : "+"}
+                <span className="faq-accordion__question">{item.question}</span>
+                <span className="faq-accordion__marker" aria-hidden>
+                  {isOpen ? <Minus className="size-4" /> : <Plus className="size-4" />}
                 </span>
               </button>
             </h3>
+            {/* Intrinsic expansion: the answer row grows to its own height, so
+                long answers cannot be clipped at narrow widths or text zoom.
+                `visibility` keeps collapsed copy out of the a11y tree and out
+                of the tab order. */}
             <div
-              className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${
-                isOpen ? "max-h-48" : "max-h-0"
-              }`}
+              id={answerId}
+              role="region"
+              aria-labelledby={triggerId}
+              className="faq-accordion__answer"
+              data-open={isOpen ? "true" : "false"}
             >
-              <p
-                className={cn(
-                  "px-5 pb-5 text-sm leading-relaxed",
-                  dark ? "text-on-dark-secondary" : "text-[var(--ink-soft)]",
-                )}
-              >
-                {item.answer}
-              </p>
+              <div className="faq-accordion__answer-inner">
+                <p className="faq-accordion__answer-text">{item.answer}</p>
+              </div>
             </div>
           </article>
         );

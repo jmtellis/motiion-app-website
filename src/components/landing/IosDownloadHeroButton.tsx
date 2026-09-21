@@ -9,12 +9,12 @@ function cn(...classes: Array<string | false | null | undefined>) {
 export function IosDownloadHeroButton({
   dark = false,
   className,
-  variant = "accent",
+  variant = "secondary",
 }: {
   dark?: boolean;
   className?: string;
-  /** `ghost` for outline-style CTA on dark split landing. */
-  variant?: "accent" | "ghost";
+  /** Quiet outlined companion by default; `primary` for standalone use. */
+  variant?: "primary" | "secondary";
 }) {
   void dark;
 
@@ -22,8 +22,8 @@ export function IosDownloadHeroButton({
     <a
       href={getIosAppStoreUrl()}
       className={cn(
-        "btn-hero-pill w-full sm:w-auto sm:min-w-[11rem]",
-        variant === "ghost" ? "btn-hero-pill-ghost" : "btn-hero-pill-accent",
+        "mkt-btn",
+        variant === "primary" ? "mkt-btn--primary" : "mkt-btn--secondary",
         className,
       )}
     >

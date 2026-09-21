@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Check } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 
 import type {
   AudiencePricingContent,
@@ -47,8 +47,8 @@ function PricingCard({ plan, dark }: { plan: PricingPlan; dark: boolean }) {
       <Link
         href={plan.cta.href}
         className={cn(
-          "audience-pricing__cta",
-          plan.highlighted ? "btn-hero-pill btn-hero-pill-accent" : "btn-hero-pill btn-hero-pill-ghost",
+          "mkt-btn audience-pricing__cta",
+          plan.highlighted ? "mkt-btn--primary" : "mkt-btn--secondary",
         )}
       >
         {plan.cta.label}
@@ -57,23 +57,91 @@ function PricingCard({ plan, dark }: { plan: PricingPlan; dark: boolean }) {
   );
 }
 
-function TalentPricing({ content, dark }: { content: Extract<AudiencePricingContent, { variant: "talent" }>; dark: boolean }) {
+function TalentPricing({
+  content,
+  dark,
+}: {
+  content: Extract<AudiencePricingContent, { variant: "talent" }>;
+  dark: boolean;
+}) {
+  const baseId = useId();
   const [role, setRole] = useState<TalentPricingRole>("dancer");
-  const activeRole = content.roles.find((entry) => entry.role === role) ?? content.roles[0];
+  const activeIndex = Math.max(0, content.roles.findIndex((entry) => entry.role === role));
+  const activeRole = content.roles[activeIndex] ?? content.roles[0];
+
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const shouldFocusRef = useRef(false);
+
+  useEffect(() => {
+    if (!shouldFocusRef.current) return;
+    shouldFocusRef.current = false;
+    tabRefs.current[activeIndex]?.focus();
+  }, [activeIndex]);
+
+  // Two small cards swap, so automatic activation on arrow keys is appropriate.
+  const selectByOffset = (offset: number) => {
+    const count = content.roles.length;
+    const next = content.roles[(((activeIndex + offset) % count) + count) % count];
+    if (!next) return;
+    shouldFocusRef.current = true;
+    setRole(next.role);
+  };
+
+  const selectByIndex = (index: number) => {
+    const next = content.roles[index];
+    if (!next) return;
+    shouldFocusRef.current = true;
+    setRole(next.role);
+  };
+
+  const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    switch (event.key) {
+      case "ArrowRight":
+      case "ArrowDown":
+        event.preventDefault();
+        selectByOffset(1);
+        break;
+      case "ArrowLeft":
+      case "ArrowUp":
+        event.preventDefault();
+        selectByOffset(-1);
+        break;
+      case "Home":
+        event.preventDefault();
+        selectByIndex(0);
+        break;
+      case "End":
+        event.preventDefault();
+        selectByIndex(content.roles.length - 1);
+        break;
+      default:
+        break;
+    }
+  };
 
   return (
     <>
       <div className="audience-pricing__toggle" role="tablist" aria-label="Talent type">
-        {content.roles.map((entry) => {
+        {content.roles.map((entry, index) => {
           const selected = entry.role === role;
           return (
             <button
               key={entry.role}
+              ref={(node) => {
+                tabRefs.current[index] = node;
+              }}
               type="button"
               role="tab"
+              id={`${baseId}-tab-${entry.role}`}
               aria-selected={selected}
-              className={cn("audience-pricing__toggle-btn", selected && "audience-pricing__toggle-btn--active")}
+              aria-controls={`${baseId}-panel-${entry.role}`}
+              tabIndex={selected ? 0 : -1}
+              className={cn(
+                "audience-pricing__toggle-btn",
+                selected && "audience-pricing__toggle-btn--active",
+              )}
               onClick={() => setRole(entry.role)}
+              onKeyDown={onKeyDown}
             >
               {entry.label}
             </button>
@@ -81,7 +149,12 @@ function TalentPricing({ content, dark }: { content: Extract<AudiencePricingCont
         })}
       </div>
 
-      <div className="audience-pricing__grid" role="tabpanel">
+      <div
+        className="audience-pricing__grid"
+        role="tabpanel"
+        id={`${baseId}-panel-${activeRole.role}`}
+        aria-labelledby={`${baseId}-tab-${activeRole.role}`}
+      >
         <PricingCard plan={activeRole.free} dark={dark} />
         <PricingCard plan={activeRole.pro} dark={dark} />
       </div>
@@ -114,12 +187,8 @@ export function AudiencePricingSection({
   return (
     <div className={cn("audience-pricing", dark && "audience-pricing--dark")}>
       <div className="audience-pricing__intro">
-        <h2 className={cn("type-heading-1 text-balance", dark ? "text-on-dark-primary" : "text-[var(--ink)]")}>
-          {content.title}
-        </h2>
-        <p className={cn("type-body max-w-2xl text-pretty", dark ? "text-on-dark-secondary" : "text-[var(--ink-soft)]")}>
-          {content.description}
-        </p>
+        <h2 className={cn("mkt-heading", !dark && "text-[var(--ink)]")}>{content.title}</h2>
+        <p className={cn("mkt-body", !dark && "text-[var(--ink-soft)]")}>{content.description}</p>
       </div>
 
       {content.variant === "talent" ? (

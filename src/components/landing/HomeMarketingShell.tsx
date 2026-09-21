@@ -9,7 +9,12 @@ export function HomeMarketingShell({ children }: { children: ReactNode }) {
   return (
     <BetaSignupModalProvider>
       <SmoothScroll>
-        <div className="marketing-root">{children}</div>
+        <div className="marketing-root">
+          <a className="mkt-skip-link" href="#main-content">
+            Skip to content
+          </a>
+          {children}
+        </div>
       </SmoothScroll>
     </BetaSignupModalProvider>
   );

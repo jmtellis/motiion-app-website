@@ -1,3 +1,5 @@
+export type KpiDirection = "up" | "down";
+
 export type KpiMetric = {
   key: string;
   label: string;
@@ -7,6 +9,25 @@ export type KpiMetric = {
   periodLabel: string;
   format: "number" | "currency" | "percent";
   hint?: string;
+  source?: string;
+  direction?: KpiDirection;
+};
+
+export type KpiBusinessGoalKey =
+  | "creative_os"
+  | "trusted_network"
+  | "healthy_marketplace"
+  | "sustainable_growth"
+  | "longterm_expansion";
+
+export type KpiNorthStarGoal = {
+  key: KpiBusinessGoalKey;
+  businessGoal: string;
+  northStarLabel: string;
+  status: "active" | "not_started";
+  description: string;
+  primary: KpiMetric | null;
+  supporting: KpiMetric[];
 };
 
 export type KpiNorthStarPayload = {
@@ -87,8 +108,31 @@ export type KpiRetentionPayload = {
   d90RetentionPct: number;
 };
 
+export type KpiVerifiedProfessionals = {
+  total: number;
+  talentVerifiedProfiles: number;
+  industryIdentityVerified: number;
+  source: string;
+};
+
+export type KpiWeeklyScorecard = {
+  periodStart: string;
+  periodEnd: string;
+  periodLabel: string;
+  timezone: "UTC";
+  metrics: KpiMetric[];
+  sources: Record<string, string>;
+};
+
 export type KpiDashboardData = {
+  version: "v1";
+  northStars: KpiNorthStarGoal[];
+  weeklyScorecard: KpiWeeklyScorecard;
+  /** MAPO composite from kpi_north_star_monthly — marketplace momentum, not a Notion north star. */
+  mapo: KpiNorthStarPayload | null;
+  /** @deprecated Use mapo. Kept so older clients still read the MAPO payload. */
   northStar: KpiNorthStarPayload | null;
+  verifiedProfessionals: KpiVerifiedProfessionals | null;
   business: KpiBusinessPayload | null;
   supply: KpiSupplyPayload | null;
   demand: KpiDemandPayload | null;

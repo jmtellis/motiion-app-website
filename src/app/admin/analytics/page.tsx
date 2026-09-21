@@ -4,14 +4,14 @@ import { AnalyticsBarChart } from "@/components/analytics/dashboard/AnalyticsBar
 import { AnalyticsRangeControls, AnalyticsSearchForm } from "@/components/analytics/dashboard/AnalyticsControls";
 import { AnalyticsDonutChart } from "@/components/analytics/dashboard/AnalyticsDonutChart";
 import { AnalyticsFunnel } from "@/components/analytics/dashboard/AnalyticsFunnel";
-import { AnalyticsKpiGoalGrid } from "@/components/analytics/dashboard/AnalyticsKpiGoalGrid";
 import { AnalyticsKpiSection } from "@/components/analytics/dashboard/AnalyticsKpiSection";
 import {
   AnalyticsEventVolumeChart,
   AnalyticsPlatformVolumeChart,
 } from "@/components/analytics/dashboard/AnalyticsLineChart";
 import { AnalyticsMetricGrid } from "@/components/analytics/dashboard/AnalyticsMetricGrid";
-import { AnalyticsNorthStarCard } from "@/components/analytics/dashboard/AnalyticsNorthStarCard";
+import { AnalyticsMapoMomentumCard } from "@/components/analytics/dashboard/AnalyticsNorthStarCard";
+import { AnalyticsNorthStarGoals } from "@/components/analytics/dashboard/AnalyticsNorthStarGoals";
 import { AnalyticsProductHealthGrid } from "@/components/analytics/dashboard/AnalyticsProductHealthGrid";
 import {
   AnalyticsRecentEventsTable,
@@ -19,6 +19,7 @@ import {
 } from "@/components/analytics/dashboard/AnalyticsRecentEvents";
 import { AnalyticsReferralsPanel } from "@/components/analytics/dashboard/AnalyticsReferralsPanel";
 import { AnalyticsUserTable } from "@/components/analytics/dashboard/AnalyticsUserTable";
+import { AnalyticsWeeklyScorecard } from "@/components/analytics/dashboard/AnalyticsWeeklyScorecard";
 import { fetchAnalyticsDashboard } from "@/lib/analytics/queries";
 import { fetchKpiDashboard } from "@/lib/analytics/kpi-queries";
 import { hasAdminSupabaseEnv } from "@/lib/supabase/admin";
@@ -70,11 +71,11 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
             Internal
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[var(--ink)]">
-            Product analytics
+            Admin analytics
           </h1>
           <p className="mt-2 max-w-3xl text-sm text-[var(--ink-soft)]">
-            Visual insights across web and iOS behavior, enriched with user profiles and product health
-            signals.
+            Notion north stars and the July 29 weekly scorecard. Behavior and funnel panels stay
+            below as supporting detail.
           </p>
         </div>
         <div className="flex gap-3">
@@ -93,53 +94,75 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
         </section>
       ) : null}
 
+      <section className="mb-10 space-y-6">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--ink-soft)]">
+            Business goals
+          </p>
+          <h2 className="mt-2 text-xl font-semibold text-[var(--ink)]">North stars</h2>
+          <p className="mt-1 text-sm text-[var(--ink-soft)]">
+            One metric per Notion goal. MAPO is marketplace momentum under Healthy Marketplace, not
+            the page hero.
+          </p>
+        </div>
+
+        <AnalyticsNorthStarGoals goals={kpi.northStars} />
+        <AnalyticsWeeklyScorecard scorecard={kpi.weeklyScorecard} />
+        <AnalyticsMapoMomentumCard northStar={kpi.mapo} />
+
+        {kpi.error ? (
+          <p className="text-sm text-amber-700">
+            Some KPI data could not be loaded ({kpi.error}). Apply the KPI migration if needed.
+          </p>
+        ) : null}
+      </section>
+
+      <section className="mb-10 space-y-6">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--ink-soft)]">
+            Supporting
+          </p>
+          <h2 className="mt-2 text-xl font-semibold text-[var(--ink)]">Existing KPI detail</h2>
+        </div>
+        <div className="grid gap-6">
+          <AnalyticsKpiSection
+            title="Growth + revenue"
+            description="Users, subscriptions, and revenue toward end-of-year targets."
+            metrics={kpi.growthMetrics}
+          />
+          <AnalyticsKpiSection
+            title="Marketplace supply"
+            description="Classes, sessions, and castings created by organizers."
+            metrics={kpi.supplyMetrics}
+          />
+          <AnalyticsKpiSection
+            title="Marketplace demand"
+            description="Registrations, RSVPs, submissions, and fill rates."
+            metrics={kpi.demandMetrics}
+          />
+          <AnalyticsKpiSection
+            title="Talent success"
+            description="Profile discovery, saves, shares, and booking interest."
+            metrics={kpi.talentMetrics}
+          />
+          <AnalyticsKpiSection
+            title="Retention"
+            description="Active users and cohort retention."
+            metrics={kpi.retentionMetrics}
+          />
+        </div>
+      </section>
+
       {dashboard ? (
         <>
-          <section className="mb-8 space-y-6">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--ink-soft)]">
-                Executive summary
-              </p>
-              <h2 className="mt-2 text-xl font-semibold text-[var(--ink)]">KPI progress</h2>
-            </div>
-
-            <AnalyticsNorthStarCard northStar={kpi.northStar} />
-
-            <AnalyticsKpiGoalGrid metrics={kpi.executiveMetrics} />
-
-            {kpi.error ? (
-              <p className="text-sm text-amber-700">
-                Some KPI data could not be loaded ({kpi.error}). Apply the KPI migration if needed.
-              </p>
-            ) : null}
-
-            <div className="grid gap-6">
-              <AnalyticsKpiSection
-                title="Growth + revenue"
-                description="Users, subscriptions, and revenue toward end-of-year targets."
-                metrics={kpi.growthMetrics}
-              />
-              <AnalyticsKpiSection
-                title="Marketplace supply"
-                description="Classes, sessions, and castings created by organizers."
-                metrics={kpi.supplyMetrics}
-              />
-              <AnalyticsKpiSection
-                title="Marketplace demand"
-                description="Registrations, RSVPs, submissions, and fill rates."
-                metrics={kpi.demandMetrics}
-              />
-              <AnalyticsKpiSection
-                title="Talent success"
-                description="Profile discovery, saves, shares, and booking interest."
-                metrics={kpi.talentMetrics}
-              />
-              <AnalyticsKpiSection
-                title="Retention"
-                description="Active users and cohort retention."
-                metrics={kpi.retentionMetrics}
-              />
-            </div>
+          <section className="mb-6 space-y-2">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--ink-soft)]">
+              Secondary
+            </p>
+            <h2 className="text-xl font-semibold text-[var(--ink)]">Behavior and funnels</h2>
+            <p className="text-sm text-[var(--ink-soft)]">
+              Web and iOS event volume, activation funnel, and product health. Not the v1 scorecard.
+            </p>
           </section>
 
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -254,8 +277,9 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
         </>
       ) : (
         <section className="ui-card p-5 text-sm text-[var(--ink-soft)]">
-          No analytics data available yet, the service role query failed, or the admin analytics RPC
-          migration has not been applied.
+          Behavior panels are unavailable — the service role query failed, or the admin analytics RPC
+          migration has not been applied. North stars above still use the KPI RPCs when those are
+          present.
         </section>
       )}
     </main>

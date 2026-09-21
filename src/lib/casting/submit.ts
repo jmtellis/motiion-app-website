@@ -1,3 +1,4 @@
+import { trackClientEvent } from "@/lib/analytics/track-client";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 
 export type CastingSubmissionResult =
@@ -69,6 +70,11 @@ export async function submitToCastingRole(input: {
   if (!result.ok) {
     return { ok: false, message: mapSubmissionError(result) };
   }
+
+  trackClientEvent("casting_submission_completed", {
+    role_id: input.roleId,
+    submission_id: result.submission_id ?? null,
+  });
 
   return { ok: true, submissionId: result.submission_id };
 }

@@ -22,7 +22,8 @@ export function AnalyticsKpiGoalGrid({ metrics }: { metrics: KpiMetric[] }) {
           </p>
           {metric.target != null ? (
             <p className="mt-1 text-xs text-[var(--ink-soft)]">
-              Target: {formatKpiValue(metric.target, metric.format)}
+              {metric.direction === "down" ? "Max" : "Target"}:{" "}
+              {formatKpiValue(metric.target, metric.format)}
             </p>
           ) : null}
           {metric.progressPct != null ? (
@@ -33,7 +34,11 @@ export function AnalyticsKpiGoalGrid({ metrics }: { metrics: KpiMetric[] }) {
                   style={{ width: `${metric.progressPct}%` }}
                 />
               </div>
-              <p className="mt-1 text-xs text-[var(--ink-soft)]">{metric.progressPct}% of goal</p>
+              <p className="mt-1 text-xs text-[var(--ink-soft)]">
+                {metric.direction === "down" && metric.current <= (metric.target ?? 0)
+                  ? "On track"
+                  : `${metric.progressPct}% of goal`}
+              </p>
             </div>
           ) : null}
           {metric.hint ? (

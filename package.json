@@ -14,6 +14,7 @@
     "test:talent-credits": "npx tsx --test scripts/talent-credit-search.test.ts",
     "test:talent-intent": "npx tsx --test scripts/talent-navigator-intent.test.ts",
     "test:industry-billing": "npx tsx --test scripts/industry-billing.test.ts",
+    "test:kpis": "npx tsx --test scripts/kpi-dashboard.test.ts",
     "postinstall": "patch-package"
   },
   "dependencies": {

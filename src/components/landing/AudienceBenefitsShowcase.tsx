@@ -99,11 +99,9 @@ function CompactBenefitCard({ benefit, dark }: { benefit: AudienceBenefit; dark:
 }
 
 export function AudienceBenefitsShowcase({
-  title,
   benefits,
   dark = false,
 }: {
-  title: string;
   benefits: AudienceBenefit[];
   dark?: boolean;
 }) {
@@ -113,14 +111,12 @@ export function AudienceBenefitsShowcase({
 
   return (
     <div className={cn("audience-benefits", dark && "text-white")}>
-      <div className="audience-benefits__header">
-        <h2 className={cn("mkt-heading", !dark && "text-[var(--ink)]")}>{title}</h2>
-      </div>
 
       {featured.length > 0 ? (
         <div
           className={cn(
             "audience-benefits__featured",
+            featured.length > 2 && "audience-benefits__featured--stack",
             !featuredHasMedia && "audience-benefits__featured--text",
           )}
         >
@@ -129,8 +125,8 @@ export function AudienceBenefitsShowcase({
               key={benefit.title}
               benefit={benefit}
               dark={dark}
-              showDivider={index === 0 && featured.length > 1}
-              insetStart={index === 1}
+              showDivider={featured.length === 2 && index === 0}
+              insetStart={featured.length === 2 && index === 1}
             />
           ))}
         </div>

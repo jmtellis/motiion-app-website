@@ -1,15 +1,17 @@
 "use client";
 
+import { IosDownloadHeroButton } from "./IosDownloadHeroButton";
+
 import Link from "next/link";
+import { Menu, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 
 import { AccountPill, type AccountPillUser } from "@/components/auth/AccountPill";
 import { MotiionBrandMark } from "@/components/brand/MotiionBrandMark";
 import { MotiionScrolledWordmark } from "@/components/brand/MotiionScrolledWordmark";
-import { LandingAudienceTabs } from "@/components/landing/LandingAudienceTabs";
 import { useLandingAudienceOptional } from "@/components/landing/LandingAudienceContext";
-import { homeLoginCta, homeSignupScrollCta } from "@/lib/marketing/homepage-content";
+import { homeSignupScrollCta } from "@/lib/marketing/homepage-content";
 import {
   INDUSTRY_PRO_SIGNUP_CTA,
   JOIN_BETA_CTA,
@@ -90,7 +92,6 @@ export function HomeMarketingHeaderClient({
   darkTheme = false,
   wordmarkHeader = false,
   overlayHero = false,
-  showAudienceTabs = false,
 }: {
   accountUser: AccountPillUser | null;
   activeTab?: MarketingHeaderTab;
@@ -103,18 +104,40 @@ export function HomeMarketingHeaderClient({
   const reduceMotion = useReducedMotion();
   const landingAudience = useLandingAudienceOptional();
   const [pastHero, setPastHero] = useState(wordmarkHeader);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [compactHeader, setCompactHeader] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 767px)");
+    const update = () => {
+      setCompactHeader(query.matches);
+      if (!query.matches) setMenuOpen(false);
+    };
+    update();
+    query.addEventListener("change", update);
+    window.addEventListener("resize", update);
+    return () => {
+      query.removeEventListener("change", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setMenuOpen(false);
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [menuOpen]);
 
   useEffect(() => {
     if (wordmarkHeader) return;
 
     function updatePastHero() {
       if (overlayHero) {
-        const hero = document.querySelector<HTMLElement>(".home-split");
-        if (hero) {
-          const rect = hero.getBoundingClientRect();
-          setPastHero(rect.bottom < window.innerHeight * 0.6);
-          return;
-        }
+        setPastHero(window.scrollY > 2);
+        return;
       }
       setPastHero(window.scrollY >= getHeroRevealThreshold(false));
     }
@@ -123,7 +146,7 @@ export function HomeMarketingHeaderClient({
     window.addEventListener("scroll", updatePastHero, { passive: true });
     window.addEventListener("resize", updatePastHero);
     // Lenis anchor/lerp scrolling does not always emit window scroll events.
-    const interval = window.setInterval(updatePastHero, 200);
+    const interval = window.setInterval(updatePastHero, overlayHero ? 50 : 200);
 
     return () => {
       window.clearInterval(interval);
@@ -216,41 +239,38 @@ export function HomeMarketingHeaderClient({
     signupButton
   );
 
-  const overlayActions = accountUser ? (
-    <AccountPill user={accountUser} />
-  ) : showScrolled ? (
-    signupScrolls ? (
-      <button
-        type="button"
-        onClick={scrollToSignupSection}
-        className="btn-hero-pill btn-hero-pill-accent btn-hero-pill-compact whitespace-nowrap"
-      >
-        {headerCta.label}
-      </button>
-    ) : (
-      <Link href={headerCta.href} className="btn-hero-pill btn-hero-pill-accent btn-hero-pill-compact whitespace-nowrap">
-        {headerCta.label}
-      </Link>
-    )
-  ) : (
-    <Link href={homeLoginCta.href} className={cn("home-split__login", "home-split__login--media")}>
-      {homeLoginCta.label}
-    </Link>
-  );
-
   if (overlayHero) {
+    const closeMenu = () => setMenuOpen(false);
     return (
-      <header className={cn("landing-header", showScrolled && "is-visible")}>
+      <header className={cn("landing-header", showScrolled && "is-visible", menuOpen && "is-menu-open")}>
         <div className="landing-header__inner">
-          <Link href="/" className="landing-header__brand" aria-label="Motiion home">
-            <MotiionScrolledWordmark priority />
-          </Link>
-          {showAudienceTabs ? (
-            <div className={cn("landing-header__tabs", !showScrolled && "is-hidden")}>
-              <LandingAudienceTabs />
+          <Link href="/" className="landing-header__brand" aria-label="Motiion home"><MotiionScrolledWordmark priority /></Link>
+          {compactHeader ? (
+            <div className="landing-header__menu">
+              <button type="button" className="landing-header__menu-toggle" aria-expanded={menuOpen} aria-controls="landing-header-menu" onClick={() => setMenuOpen(open => !open)}>
+                {menuOpen ? <X aria-hidden /> : <Menu aria-hidden />}
+                <span className="sr-only">{menuOpen ? "Close menu" : "Open menu"}</span>
+              </button>
+              <nav id="landing-header-menu" aria-label="Account and download" className="landing-header__menu-panel" inert={!menuOpen} aria-hidden={!menuOpen}>
+                <Link href="/pricing" className="landing-header__menu-item" onClick={closeMenu}>Pricing</Link>
+                {accountUser ? <AccountPill user={accountUser} /> : <>
+                  <Link href="/login" className="landing-header__menu-item" onClick={closeMenu}>Login</Link>
+                  <Link href="/signup" className="landing-header__menu-item" onClick={closeMenu}>Create Account</Link>
+                </>}
+                <IosDownloadHeroButton label="Download" className="landing-header__download landing-header__menu-item" />
+              </nav>
             </div>
-          ) : null}
-          <div className="landing-header__actions">{overlayActions}</div>
+          ) : (
+            <div className="landing-header__end landing-header__desktop-actions">
+              <Link href="/pricing" className="landing-header__pricing">Pricing</Link>
+              <IosDownloadHeroButton label="Download" className="landing-header__download" />
+              <span className="landing-header__action-divider" aria-hidden />
+              {accountUser ? <AccountPill user={accountUser} /> : <>
+                <Link href="/login" className="home-split__login">Login</Link>
+                <Link href="/signup" className="mkt-btn mkt-btn--primary landing-header__signup">Create Account</Link>
+              </>}
+            </div>
+          )}
         </div>
       </header>
     );

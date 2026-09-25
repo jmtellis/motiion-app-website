@@ -102,3 +102,9 @@
   text-wrap: pretty;
   color: var(--mkt-text-secondary, #a8a8a8);
 }
+
+.audience-workflow { grid-template-columns: 1fr; }
+.audience-workflow__steps { position: static; max-width: 52rem; }
+.audience-features { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 32px; list-style: none; margin: 32px 0 0; padding: 0; }
+.audience-features li { border-top: 1px solid #ffffff18; padding-top: 20px; color: #a6aaaa; line-height: 1.7; }
+@media(max-width:767px) { .audience-features { grid-template-columns: 1fr; gap: 24px; } }

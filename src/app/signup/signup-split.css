@@ -1,3 +1,56 @@
+/* Auth navigation belongs to this shell, independent of the marketing hero.
+   The mobile bar must not become a third item in the desktop two-column grid. */
+.signup-split__mobile-bar {
+  display: none;
+}
+
+.signup-split__wordmark {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.25rem;
+  opacity: 0.92;
+  transition: opacity 170ms ease;
+}
+
+.signup-split__wordmark:hover,
+.signup-split__wordmark:focus-visible {
+  opacity: 1;
+}
+
+.signup-split__login {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0.375rem 1.125rem;
+  border: 1px solid rgb(255 255 255 / 0.22);
+  border-radius: 9999px;
+  color: #fafafa;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 170ms ease, border-color 170ms ease;
+}
+
+.signup-split__login:hover {
+  background: rgb(255 255 255 / 0.08);
+  border-color: rgb(255 255 255 / 0.36);
+}
+
+.signup-split__wordmark:focus-visible,
+.signup-split__login:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signup-split__wordmark,
+  .signup-split__login {
+    transition: none;
+  }
+}
+
 .signup-split-transition {
   min-height: 100svh;
   min-height: 100dvh;
@@ -27,12 +80,11 @@
 }
 
 .signup-split {
-  --home-split-dark: #111111;
   min-height: 100svh;
   min-height: 100dvh;
   height: 100svh;
   height: 100dvh;
-  /* Match home-split: equal CSS grid columns (flex + panel padding skewed the seam). */
+  /* Keep the cover and form in equal columns on desktop. */
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
@@ -176,7 +228,6 @@
   display: flex;
   align-items: center;
   width: 100%;
-  /* Match home-split__header-row top alignment */
   padding: 1.25rem 1.5rem 0;
 }
 
@@ -1510,6 +1561,11 @@
 
   .signup-split--media-cover .signup-split__mobile-bar {
     display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    padding: max(0.75rem, env(safe-area-inset-top)) 1.5rem 0.75rem;
+    background: #111;
     grid-area: auto;
     position: sticky;
     top: 0;

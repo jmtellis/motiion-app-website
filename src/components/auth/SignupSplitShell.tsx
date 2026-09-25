@@ -12,7 +12,6 @@ import { MarketingBodySurface } from "@/components/landing/MarketingBodySurface"
 import { SmoothScroll } from "@/components/landing/SmoothScroll";
 import { homeLoginCta } from "@/lib/marketing/homepage-content";
 
-import "@/components/landing/home-split-landing.css";
 import "@/app/signup/signup-split.css";
 
 export type SignupSplitStep = {
@@ -133,13 +132,13 @@ export function SignupSplitShell({
         <MarketingBodySurface dark />
         <div className={splitClassName}>
           {showMobileBar ? (
-            <div className="home-split__mobile-bar signup-split__mobile-bar">
-              <Link href="/" className="home-split__mobile-bar-logo" aria-label="Motiion home">
+            <div className="signup-split__mobile-bar">
+              <Link href="/" className="signup-split__wordmark" aria-label="Motiion home">
                 <MotiionWordmark priority height={11} />
               </Link>
               <Link
                 href={homeLoginCta.href}
-                className="home-split__login home-split__login--dark"
+                className="signup-split__login"
               >
                 {homeLoginCta.label}
               </Link>
@@ -176,7 +175,7 @@ export function SignupSplitShell({
                 ) : showWordmark ? (
                   <Link
                     href="/"
-                    className="home-split__wordmark inline-flex items-center"
+                    className="signup-split__wordmark"
                     aria-label="Motiion home"
                   >
                     <MotiionWordmark priority height={12} />

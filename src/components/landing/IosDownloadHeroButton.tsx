@@ -10,9 +10,11 @@ export function IosDownloadHeroButton({
   dark = false,
   className,
   variant = "secondary",
+  label = iosHeroCta.label,
 }: {
   dark?: boolean;
   className?: string;
+  label?: string;
   /** Quiet outlined companion by default; `primary` for standalone use. */
   variant?: "primary" | "secondary";
 }) {
@@ -28,7 +30,7 @@ export function IosDownloadHeroButton({
       )}
     >
       <AppleLogo className="h-[1.125rem] w-[1.125rem] shrink-0" />
-      {iosHeroCta.label}
+      {label}
     </a>
   );
 }

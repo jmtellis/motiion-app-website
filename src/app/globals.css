@@ -2,38 +2,91 @@
 @import "../components/landing/marketing-atmosphere.css";
 @import "../components/landing/marketing-system.css";
 
-/* Product design tokens — perceptual parity with iOS MotiionDesignSystem (dark product shell). */
+/* Product design tokens — dark values mirror MotiionColor / MotiionSpacing / MotiionRadius (iOS).
+   Source of truth: motiion-app-ios/Motiion/DesignSystem/Colors.swift (+ Spacing.swift, Radius.swift).
+   Marketing light tokens (--paper, --ink, …) stay separate below. */
 :root {
-  --ds-background: #0a0a0a;
-  --ds-surface: #151515;
+  /* MotiionColor — dark appearance */
+  --ds-background-default: #003d4d;
+  --ds-background-utility-dark: #111111;
+  --ds-background-utility-light: #ffffff;
+  --ds-background-overlay: #11111166;
+  --ds-background-gradient-filled: #000000;
+  --ds-background-accent: #00aacc;
+  --ds-background-manage: #315066;
+
   --ds-surface-default: #111111;
   --ds-surface-high: #000000;
-  --ds-surface-low: #1e1e1e;
-  --ds-surface-raised: #1e1e1e;
+  --ds-surface-low: #dbdbdb;
+  --ds-surface-overlay: #21212166;
   --ds-surface-tint: #42424266;
   --ds-surface-accent: #001f29;
-  --ds-overlay: #000000;
-  --ds-border: #262626;
-  --ds-border-low: #323232;
-  --ds-border-strong: #3a3a3a;
-  --ds-primary: #fafafa;
-  --ds-on-primary: #0a0a0a;
-  --ds-accent: #00aacc;
-  --ds-accent-bright: #00d4f0;
-  --ds-on-accent: #042028;
-  --ds-accent-soft: #0a2a32;
-  --ds-on-background: #fafafa;
-  --ds-on-surface: #eaeaea;
+  --ds-surface-error: #d6324e;
+
   --ds-text-default: #ffffff;
+  --ds-text-high: #111111;
   --ds-text-low: #dbdbdb;
   --ds-text-disabled: #646464;
-  --ds-muted: #8a8a8a;
+  --ds-text-error: #e06378;
+  --ds-text-accent: #00d4f0;
+  --ds-text-accent-low: #007a99;
+  --ds-text-utility-dark: #111111;
+
+  --ds-border-default: #646464;
+  --ds-border-high: #ffffff;
+  --ds-border-low: #323232;
+  --ds-border-tint: #42424266;
+  --ds-border-accent: #007a99;
+  --ds-border-disabled: #d2d2d2;
+
+  --ds-icon-default: #ffffff;
+  --ds-icon-accent: #00d4f0;
+  --ds-icon-error: #d6324e;
+  --ds-icon-disabled: #646464;
+  --ds-icon-low: #ededed;
+
+  --ds-primary-500: #00d4f0;
+  --ds-primary-600: #00aacc;
+  --ds-error-500: #cc0124;
+
+  --ds-button-surface-default: #ffffff;
+  --ds-button-surface-accent: #003d4d;
+  --ds-button-surface-disabled: #212121;
+  --ds-button-surface-tint: #42424266;
+  --ds-button-surface-utility-dark: #111111;
+
+  --ds-accent-job: #f5b731;
+  --ds-accent-sub-event: #b894ff;
+  --ds-accent-class: #00d4f0;
+  --ds-accent-session: #e040d5;
+  --ds-accent-event: #7ba3f5;
+  --ds-accent-submission: #ff6b8a;
+
+  /* Convenience aliases used across the product shell.
+     Web canvas stays near-black (editorial product shell). iOS Motiion Green
+     (`backgroundDefault` #003d4d) is available as --ds-background-default for parity. */
+  --ds-background: #0a0a0a;
+  --ds-surface: var(--ds-surface-default);
+  --ds-surface-raised: var(--ds-surface-default);
+  --ds-overlay: var(--ds-background-overlay);
+  --ds-border: var(--ds-border-default);
+  --ds-border-strong: var(--ds-border-high);
+  --ds-primary: var(--ds-primary-500);
+  --ds-on-primary: #042028;
+  --ds-accent: var(--ds-text-accent);
+  --ds-accent-bright: var(--ds-primary-500);
+  --ds-on-accent: #042028;
+  --ds-accent-soft: var(--ds-surface-accent);
+  --ds-on-background: var(--ds-text-default);
+  --ds-on-surface: var(--ds-text-low);
+  --ds-muted: var(--ds-text-disabled);
   --ds-subtle: #5a5a5a;
   --ds-success: #3fb950;
   --ds-warning: #e3a008;
-  --ds-error: #f04438;
+  --ds-error: var(--ds-error-500);
   --ds-info: #4a9eff;
-  /* iOS MotiionRadius: sm=8, md=12, card=16, button=14, sheet=26 */
+
+  /* MotiionRadius */
   --ds-radius-sm: 8px;
   --ds-radius-md: 12px;
   --ds-radius-button: 14px;
@@ -42,7 +95,8 @@
   --ds-radius-sheet: 26px;
   --ds-radius-xl: 26px;
   --ds-radius-full: 9999px;
-  /* iOS MotiionSpacing: xs=4 … xxxl=40 */
+
+  /* MotiionSpacing */
   --ds-space-xs: 4px;
   --ds-space-sm: 8px;
   --ds-space-md: 12px;
@@ -70,6 +124,109 @@
   color: var(--ds-text-default);
 }
 
+/* Admin / product dark shell — pin canvas to near-black (do not inherit iOS Motiion Green). */
+.theme-dark.theme-product {
+  --ds-background: #0a0a0a;
+  --ds-on-button-surface-default: #111111;
+  background-color: #0a0a0a;
+  color: #ffffff;
+}
+
+/* Design-system catalog light appearance — MotiionColor light tokens from Colors.swift */
+.theme-ds-light {
+  color-scheme: light;
+
+  --ds-background-default: #f4fcff;
+  --ds-background-utility-dark: #111111;
+  --ds-background-utility-light: #ffffff;
+  --ds-background-overlay: #11111122;
+  --ds-background-gradient-filled: #f2f2f2;
+  --ds-background-accent: #00aacc;
+  --ds-background-manage: #315066;
+
+  --ds-surface-default: #ffffff;
+  --ds-surface-high: #f2f2f2;
+  --ds-surface-low: #ededed;
+  --ds-surface-overlay: #11111166;
+  --ds-surface-tint: #e8e8e866;
+  --ds-surface-accent: #d6f2f8;
+  --ds-surface-error: #d6324e;
+
+  --ds-text-default: #111111;
+  --ds-text-high: #000000;
+  --ds-text-low: #4b4b4b;
+  --ds-text-disabled: #8b8b8b;
+  --ds-text-error: #e06378;
+  --ds-text-accent: #00aacc;
+  --ds-text-accent-low: #007a99;
+  --ds-text-utility-dark: #111111;
+
+  --ds-border-default: #9f9f9f;
+  --ds-border-high: #111111;
+  --ds-border-low: #d0d0d0;
+  --ds-border-tint: #42424222;
+  --ds-border-accent: #007a99;
+  --ds-border-disabled: #d2d2d2;
+
+  --ds-icon-default: #111111;
+  --ds-icon-accent: #00aacc;
+  --ds-icon-error: #d6324e;
+  --ds-icon-disabled: #8b8b8b;
+  --ds-icon-low: #4b4b4b;
+
+  --ds-primary-500: #00aacc;
+  --ds-primary-600: #007a99;
+  --ds-error-500: #cc0124;
+
+  --ds-button-surface-default: #111111;
+  --ds-button-surface-accent: #007a99;
+  --ds-button-surface-disabled: #d8d8d8;
+  --ds-button-surface-tint: #42424222;
+  --ds-button-surface-utility-dark: #111111;
+  --ds-on-button-surface-default: #ffffff;
+
+  --ds-accent-job: #e8a317;
+  --ds-accent-sub-event: #9b6bff;
+  --ds-accent-class: #00aacc;
+  --ds-accent-session: #cc00bf;
+  --ds-accent-event: #5b8def;
+  --ds-accent-submission: #e8557d;
+
+  --ds-background: #f4fcff;
+  --ds-surface: var(--ds-surface-default);
+  --ds-surface-raised: var(--ds-surface-high);
+  --ds-overlay: var(--ds-background-overlay);
+  --ds-border: var(--ds-border-default);
+  --ds-border-strong: var(--ds-border-high);
+  --ds-primary: var(--ds-primary-500);
+  --ds-on-primary: #ffffff;
+  --ds-accent: var(--ds-text-accent);
+  --ds-accent-bright: var(--ds-primary-500);
+  --ds-on-accent: #ffffff;
+  --ds-accent-soft: var(--ds-surface-accent);
+  --ds-on-background: var(--ds-text-default);
+  --ds-on-surface: var(--ds-text-low);
+  --ds-muted: var(--ds-text-disabled);
+  --ds-subtle: #8b8b8b;
+  --ds-error: var(--ds-error-500);
+
+  --paper: #fcfcfb;
+  --tone: #f5f5f3;
+  --line: var(--ds-border-low);
+  --ink: var(--ds-text-default);
+  --ink-soft: var(--ds-text-low);
+  --accent: var(--ds-primary-500);
+  --accent-dark: var(--ds-primary-600);
+  --btn-surface-default: var(--ds-button-surface-default);
+  --btn-surface-accent: var(--ds-button-surface-accent);
+  --btn-text-on-fill: var(--ds-on-button-surface-default);
+  --btn-border-default: var(--ds-border-default);
+  --surface-card: var(--ds-surface-default);
+
+  background-color: var(--ds-background);
+  color: var(--ds-text-default);
+}
+
 :root {
   --paper: #fcfcfb;
   --tone: #f5f5f3;
@@ -77,23 +234,23 @@
   --ink: #151515;
   --ink-soft: #5f5f5a;
   --accent: #00aacc;
-  --accent-dark: #008fb0;
-  /* Figma / ios.json — Colors/Button Surface (light) */
+  --accent-dark: #007a99;
+  /* Figma / ios.json — MotiionColor button surfaces (light appearance defaults) */
   --btn-surface-default: #111111;
-  --btn-surface-accent: #007a8a;
-  --btn-surface-tint: rgb(66 66 66 / 0.13);
+  --btn-surface-accent: #007a99;
+  --btn-surface-tint: #42424222;
   --btn-text-on-fill: #ffffff;
   --btn-border-default: #9f9f9f;
-  --btn-radius: 9999px;
+  --btn-radius: var(--ds-radius-full);
   --btn-height: 2.25rem;
   --btn-font-size: 0.875rem;
   --btn-shadow: none;
   --btn-shadow-accent: none;
 
   /* Shared product surface language */
-  --radius-button: 9999px;
-  --radius-field: 12px;
-  --radius-chip: 9999px;
+  --radius-button: var(--ds-radius-full);
+  --radius-field: var(--ds-radius-md);
+  --radius-chip: var(--ds-radius-full);
   --radius-card: var(--ds-radius-card);
   --radius-panel: var(--ds-radius-sheet);
   --surface-card: #ffffff;
@@ -930,10 +1087,10 @@ h3 {
   opacity: 1;
 }
 
-/* High-contrast CTA on dark marketing surfaces — design.md button-primary */
+/* High-contrast CTA on dark product surfaces — MotiionColor.buttonSurfaceDefault (dark) */
 .btn-on-dark {
-  background: var(--ds-primary);
-  color: var(--ds-on-primary);
+  background: var(--ds-button-surface-default);
+  color: var(--ds-text-utility-dark);
   border-color: transparent;
   box-shadow: none;
 }
@@ -943,16 +1100,16 @@ h3 {
 }
 
 .btn-on-dark:focus-visible {
-  outline: 2px solid var(--ds-accent);
+  outline: 2px solid var(--ds-primary-500);
   outline-offset: 2px;
 }
 
-/* design.md button-secondary — raised surface with hairline border */
+/* MotiionColor.surfaceDefault + borderDefault on dark */
 .btn-outline-on-dark,
 .btn-outline.btn-outline-on-dark {
-  background: var(--ds-surface-raised);
-  color: var(--ds-on-surface);
-  border-color: var(--ds-border);
+  background: var(--ds-surface-default);
+  color: var(--ds-text-default);
+  border-color: var(--ds-border-default);
   border-width: 1px;
   box-shadow: none;
 }
@@ -1125,22 +1282,28 @@ h3 {
   backdrop-filter: blur(4px);
 }
 
-/* Dark token scope — remaps light tokens so shared components render on the design.md canvas.
-   Apply to any page root that should live on the dark design system. */
+/* Dark token scope — remaps light marketing tokens onto MotiionColor dark product values. */
 .theme-dark,
 .theme-marketing-dark {
-  --paper: #111111;
-  --tone: #151515;
-  --line: #262626;
-  --ink: #fafafa;
-  --ink-soft: #a3a3a3;
-  --surface-card: #151515;
-  --surface-muted: #1e1e1e;
-  --surface-panel: #151515;
-  --border-subtle: #262626;
-  --surface-quiet: #151515;
-  --border-command: #262626;
-  --surface-command: rgb(21 21 21 / 0.96);
+  --paper: var(--ds-surface-default);
+  --tone: var(--ds-surface-default);
+  --line: var(--ds-border-low);
+  --ink: var(--ds-text-default);
+  --ink-soft: var(--ds-text-low);
+  --accent: var(--ds-primary-500);
+  --accent-dark: var(--ds-primary-600);
+  --surface-card: var(--ds-surface-default);
+  --surface-muted: var(--ds-background-utility-dark);
+  --surface-panel: var(--ds-surface-default);
+  --border-subtle: var(--ds-border-low);
+  --surface-quiet: var(--ds-surface-default);
+  --border-command: var(--ds-border-default);
+  --surface-command: color-mix(in oklab, var(--ds-surface-default) 96%, transparent);
+  --btn-surface-default: var(--ds-button-surface-default);
+  --btn-surface-accent: var(--ds-primary-600);
+  --btn-surface-tint: var(--ds-button-surface-tint);
+  --btn-text-on-fill: var(--ds-text-utility-dark);
+  --btn-border-default: var(--ds-border-default);
   --shadow-raised: none;
   --shadow-surface: none;
   color-scheme: dark;
@@ -1163,8 +1326,8 @@ h3 {
 
 .theme-dark .btn-primary,
 .theme-marketing-dark .btn-primary {
-  background: var(--ds-primary);
-  color: var(--ds-on-primary);
+  background: var(--ds-button-surface-default);
+  color: var(--ds-text-utility-dark);
 }
 
 .theme-dark .btn-primary:hover:not(:disabled),

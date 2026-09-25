@@ -65,7 +65,7 @@
   width: 100%;
   max-width: 48rem;
   margin-inline: auto;
-  padding: var(--mkt-section-y, 3.5rem) var(--mkt-gutter, 1.5rem) 0;
+  padding: 1.35rem var(--mkt-gutter, 1.5rem) 0;
   text-align: center;
 }
 
@@ -76,10 +76,35 @@
   background: var(--ds-accent-bright, #00d4f0);
 }
 
+.landing-audience-intro__headline {
+  margin: 0;
+  max-width: 20ch;
+}
+
 .landing-audience-intro__summary {
-  margin-top: 1.25rem;
+  margin: 0;
   max-width: 36rem;
 }
+
+.landing-audience-panel #benefits > .mkt-section-y {
+  padding-top: 2rem;
+  padding-bottom: var(--mkt-section-y, 3.5rem);
+}
+
+.landing-audience-panel .audience-benefits__featured {
+  margin-top: 0;
+}
+
+/* Audience selection stays separate from the illustrated benefits. */
+.landing-audience-choices { scroll-margin-top: 6rem; padding: 20px 20px 24px; }
+.landing-audience-choices__inner { display: flex; justify-content: center; }
+.landing-audience-choices__list { display: flex; padding: 5px; gap: 4px; border-radius: 12px; background: #1b1c1d; box-shadow: inset 0 1px 0 #ffffff08; }
+.landing-audience-choices__choice { border: 0; background: transparent; color: #939699; padding: 11px 30px; border-radius: 8px; font: inherit; font-size: 13px; cursor: pointer; transition: color 180ms, background 180ms; }
+.landing-audience-choices__choice[aria-selected="true"] { background: #343638; color: #f3f4f4; box-shadow: 0 2px 5px #0003; }
+.landing-audience-choices__choice:hover { color: white; }
+.landing-audience-choices__choice:focus-visible { outline: 2px solid #87cec3; outline-offset: 3px; }
+@media(max-width:639px) { .landing-audience-choices__choice { padding: 11px 22px; } }
+@media(prefers-reduced-motion:reduce) { .landing-audience-choices__choice { transition:none; } }
 
 .landing-audience-chip {
   position: relative;
@@ -192,3 +217,41 @@
     transition: none;
   }
 }
+
+/* Audience selection leads into the text and illustrations below the hero. */
+.landing-audience-panel > .landing-audience-choices { padding: 8px 24px 0; }
+.landing-audience-choices__choice:focus-visible { outline-color: var(--accent); }
+.landing-audience-panel .landing-audience-intro__inner { padding-top: 24px; }
+@media(max-width:767px) {
+  .landing-audience-choices__choice { padding-inline: 20px; }
+}
+
+/* Keep the audience control compact even when parent layouts stretch children. */
+.landing-audience-choices__inner { align-items: center; }
+.landing-audience-choices__list { flex: 0 0 auto; align-items: center; height: 50px; }
+.landing-audience-choices__choice { display: inline-flex; align-items: center; justify-content: center; height: 40px; min-height: 40px; line-height: 18px; padding-block: 0; white-space: nowrap; }
+
+/* One rounded sheet below the hero, using the former workflow surface. */
+.landing-audience-panel {
+  border-radius: 32px 32px 0 0;
+  overflow: clip;
+  box-shadow: 0 -12px 40px rgb(0 0 0 / .12);
+}
+.landing-audience-panel > .landing-audience-choices { padding-top: 28px; }
+.landing-audience-panel #workflow {
+  background: #111;
+  border-color: rgb(255 255 255 / .08);
+}
+.landing-audience-panel #workflow::after { content: none; }
+@media(max-width:767px) {
+  .landing-audience-panel { border-radius: 24px 24px 0 0; }
+  .landing-audience-panel > .landing-audience-choices { padding-top: 24px; }
+}
+
+.landing-audience-panel.marketing-atmosphere-band {
+  background: linear-gradient(180deg, #1a1a1a 0, #151515 420px, #111111 1050px);
+}
+.landing-audience-panel.marketing-atmosphere-band::after { content: none; }
+.landing-audience-panel .navigator-proof { background: transparent; }
+.landing-audience-panel .navigator-proof::before { content: none; }
+.landing-audience-panel #features, .landing-audience-panel #faq { background: #111; }

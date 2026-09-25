@@ -1,9 +1,11 @@
 "use client";
 
+import { LandingAudienceChoices } from "./LandingAudienceChoices";
+import { TalentNavigatorPreview } from "./TalentNavigatorPreview";
+
 import { motion, useReducedMotion } from "motion/react";
 
 import { AudienceLandingSections } from "@/components/landing/AudienceLandingSections";
-import { LandingAudienceChip } from "@/components/landing/LandingAudienceChip";
 import {
   LANDING_AUDIENCE_PANEL_ID,
   LANDING_AUDIENCE_TABS_ID,
@@ -19,14 +21,15 @@ export function LandingAudiencePanel() {
   const reduceMotion = useReducedMotion();
 
   return (
-    <div className="landing-audience-panel">
+    <div className="landing-audience-panel marketing-atmosphere-band">
+      <LandingAudienceChoices />
       {/* A keyed fade-in rather than AnimatePresence: the incoming audience is
           in the DOM immediately, so switching never leaves a blank gap. */}
       <motion.div
         key={audience}
         id={LANDING_AUDIENCE_PANEL_ID}
         role="tabpanel"
-        aria-labelledby={`landing-audience-tab-${audience}`}
+        aria-labelledby={`landing-audience-choice-${audience}`}
         initial={reduceMotion ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
@@ -37,12 +40,17 @@ export function LandingAudiencePanel() {
           aria-label={segment.label}
         >
           <div className="landing-audience-intro__inner">
-            <LandingAudienceChip />
             <p className="mkt-lead landing-audience-intro__summary">{segment.content.summary}</p>
           </div>
         </section>
 
-        <AudienceLandingSections content={segment.content} dark />
+        <AudienceLandingSections
+          content={segment.content}
+          dark
+          showPricing={false}
+          illustratedBenefits
+          afterBenefits={audience === "casting" ? <TalentNavigatorPreview /> : null}
+        />
       </motion.div>
     </div>
   );

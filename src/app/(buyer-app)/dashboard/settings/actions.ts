@@ -118,12 +118,12 @@ export async function updateBuyerProfile(
   const profileUpdate: {
     display_name: string;
     first_name: string;
-    last_name: string | null;
+    last_name: string;
     email?: string;
   } = {
     display_name: parsed.data.fullName.trim(),
     first_name: firstName,
-    last_name: lastName || null,
+    last_name: lastName,
   };
 
   if (nextEmail) {

@@ -31,13 +31,6 @@ function syncAudienceParam(audience: MarketingTab) {
   window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
 }
 
-function prefersReducedMotion() {
-  return (
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
-}
-
 export function LandingAudienceProvider({
   initial = LANDING_DEFAULT_AUDIENCE,
   children,
@@ -49,15 +42,11 @@ export function LandingAudienceProvider({
 
   const setAudience = useCallback(
     (next: MarketingTab) => {
-      // Re-selecting the active audience should not yank the page around.
+      // Keep audience changes in place so the hero remains in view.
       if (audience === next) return;
 
       setAudienceState(next);
       syncAudienceParam(next);
-      document.getElementById(LANDING_AUDIENCE_TABS_ID)?.scrollIntoView({
-        behavior: prefersReducedMotion() ? "auto" : "smooth",
-        block: "start",
-      });
     },
     [audience],
   );

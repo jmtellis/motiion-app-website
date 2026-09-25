@@ -150,6 +150,15 @@ const progressPayloadSchema = talentBuyerPayloadSchema.partial().extend({
   currentStep: z.string(),
 });
 
+/** profiles.last_name is NOT NULL. A single given name is stored with an empty last name. */
+function splitPersonName(fullName: string) {
+  const nameParts = fullName.trim().split(/\s+/).filter(Boolean);
+  return {
+    firstName: nameParts[0] ?? "",
+    lastName: nameParts.slice(1).join(" "),
+  };
+}
+
 function resolvedOrganizationName(data: {
   organizationRelationship: "organization" | "independent" | "multiple";
   organizationName: string;
@@ -188,9 +197,7 @@ export async function saveTalentBuyerOnboardingProgress(
 
   const contactEmail = data.contactEmail?.trim().toLowerCase();
   const fullName = data.fullName?.trim();
-  const nameParts = fullName?.split(/\s+/) ?? [];
-  const firstName = nameParts[0] ?? "";
-  const lastName = nameParts.slice(1).join(" ");
+  const { firstName, lastName } = splitPersonName(fullName ?? "");
 
   if (fullName || contactEmail) {
     const { error: profileError } = await supabase.from("profiles").upsert(
@@ -200,7 +207,7 @@ export async function saveTalentBuyerOnboardingProgress(
         ...(fullName
           ? {
               first_name: firstName,
-              last_name: lastName || null,
+              last_name: lastName,
               display_name: fullName,
             }
           : {}),
@@ -322,10 +329,8 @@ export async function completeTalentBuyerOnboarding(
 
   const completedAt = new Date().toISOString();
   const contactEmail = data.contactEmail.trim().toLowerCase();
-  const nameParts = data.fullName.trim().split(/\s+/);
-  const firstName = nameParts[0] ?? "";
-  const lastName = nameParts.slice(1).join(" ");
   const fullName = data.fullName.trim();
+  const { firstName, lastName } = splitPersonName(fullName);
   const marketLabels =
     data.markets.length > 0 ? data.markets : marketsFromPlaces(data.marketPlaces);
   const notificationPreferences = {
@@ -342,7 +347,7 @@ export async function completeTalentBuyerOnboarding(
       user_id: user.id,
       email: contactEmail,
       first_name: firstName,
-      last_name: lastName || null,
+      last_name: lastName,
       display_name: fullName,
       account_type: "lookingForTalent",
       onboarding_completed_at: completedAt,

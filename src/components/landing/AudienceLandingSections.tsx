@@ -1,3 +1,4 @@
+import { IllustratedBenefits } from "./IllustratedBenefits";
 import type { ReactNode } from "react";
 
 import { AudienceBenefitsShowcase } from "@/components/landing/AudienceBenefitsShowcase";
@@ -53,22 +54,26 @@ function AudienceSection({
 export function AudienceLandingSections({
   content,
   dark = false,
+  illustratedBenefits = false,
+  afterBenefits,
+  showPricing = true,
 }: {
   content: AudiencePageContent;
   dark?: boolean;
+  illustratedBenefits?: boolean;
+  afterBenefits?: ReactNode;
+  showPricing?: boolean;
 }) {
   return (
     <>
       <AudienceSection id="benefits" altBackground={false} dark={dark} flush>
         {/* One reveal per section — the cards inside no longer reveal again. */}
         <Reveal amount={0.15} distance={20}>
-          <AudienceBenefitsShowcase
-            title={content.benefitsTitle}
-            benefits={content.benefits}
-            dark={dark}
-          />
+          {illustratedBenefits ? <IllustratedBenefits benefits={content.benefits} /> : <AudienceBenefitsShowcase benefits={content.benefits} dark={dark} />}
         </Reveal>
       </AudienceSection>
+
+      {afterBenefits}
 
       <AudienceSection id="workflow" altBackground={true} dark={dark}>
         <Reveal amount={0.15} distance={20}>
@@ -102,32 +107,26 @@ export function AudienceLandingSections({
               </ol>
             </div>
 
-            {/* Text-led aside rather than an empty decorative panel. */}
-            <aside
-              className={cn("audience-workflow__aside", !dark && "audience-workflow__aside--light")}
-            >
-              <h3
-                className={cn("audience-workflow__aside-title", !dark && "text-[var(--ink)]")}
-              >
-                {content.trustTitle}
-              </h3>
-              <ul className="audience-workflow__aside-list">
-                {content.trustPoints.map((point) => (
-                  <li
-                    key={point}
-                    className={cn(
-                      "audience-workflow__aside-item",
-                      !dark && "text-[var(--ink-soft)]",
-                    )}
-                  >
-                    {point}
-                  </li>
-                ))}
-              </ul>
-            </aside>
+
           </div>
         </Reveal>
       </AudienceSection>
+
+      <AudienceSection id="features" altBackground={false} dark={dark}>
+        <h2 className="mkt-heading">Features</h2>
+        <p className="mkt-lead mt-4">{content.trustTitle}</p>
+        <ul className="audience-features">
+          {content.trustPoints.map(point => <li key={point}>{point}</li>)}
+        </ul>
+      </AudienceSection>
+
+      {showPricing && content.pricing ? (
+        <AudienceSection id="pricing" altBackground={true} dark={dark}>
+          <Reveal amount={0.14} distance={20}>
+            <AudiencePricingSection content={content.pricing} dark={dark} />
+          </Reveal>
+        </AudienceSection>
+      ) : null}
 
       <AudienceSection
         id="faq"
@@ -144,14 +143,6 @@ export function AudienceLandingSections({
           </div>
         </Reveal>
       </AudienceSection>
-
-      {content.pricing ? (
-        <AudienceSection id="pricing" altBackground={true} dark={dark}>
-          <Reveal amount={0.14} distance={20}>
-            <AudiencePricingSection content={content.pricing} dark={dark} />
-          </Reveal>
-        </AudienceSection>
-      ) : null}
     </>
   );
 }

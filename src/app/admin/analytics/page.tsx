@@ -78,6 +78,9 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
           </p>
         </div>
         <div className="flex gap-3">
+          <Link href="/admin/design-system" className="btn-secondary text-sm">
+            Design system
+          </Link>
           <Link href="/admin/entities" className="btn-secondary text-sm">
             Industry entities
           </Link>

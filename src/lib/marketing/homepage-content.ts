@@ -242,14 +242,14 @@ export const homeSignupSection = {
       label: "Creative Talent",
       description: "For dancers and choreographers building a profile and managing their career.",
       href: "/signup",
-      cta: "Sign up",
+      cta: "Create your profile",
     },
     {
       id: "industry",
       label: "Industry Professional",
       description: "For casting teams, agencies, and producers discovering and managing talent.",
       href: "/signup",
-      cta: "Sign up",
+      cta: "Create an industry account",
     },
   ],
 } as const;

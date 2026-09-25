@@ -39,16 +39,17 @@ export function AppTabNav({
 }: {
   inboxUnread?: number;
   variant?: "talent" | "community";
-  placement?: "top" | "bottom";
+  placement?: "top" | "bottom" | "sidebar";
 }) {
   const pathname = usePathname();
   const tabs = variant === "community" ? communityTabs : talentTabs;
   const isBottom = placement === "bottom";
+  const isSidebar = placement === "sidebar";
 
   return (
     <div
       className={
-        isBottom
+        isSidebar ? "workspace-nav" : isBottom
           ? "flex w-full items-stretch justify-around gap-0.5 px-1 pt-1"
           : "flex min-w-0 flex-1 items-center gap-1 overflow-x-auto"
       }
@@ -59,6 +60,15 @@ export function AppTabNav({
         const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
         const showBadge = tab.href === "/inbox" && inboxUnread > 0;
         const Icon = tab.icon;
+
+        if (isSidebar) {
+          return <Link key={tab.href} href={tab.href} title={tab.label}
+            className="workspace-nav-link" aria-current={active ? "page" : undefined}
+            onClick={() => trackClientEvent("app_tab_viewed", { tab: tab.label.toLowerCase() }, tab.href)}>
+            <Icon aria-hidden="true" /><span className="workspace-nav-label">{tab.label}</span>
+            {showBadge ? <span className="workspace-nav-badge">{inboxUnread > 99 ? "99+" : inboxUnread}</span> : null}
+          </Link>;
+        }
 
         if (isBottom) {
           return (

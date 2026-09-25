@@ -20,7 +20,8 @@ import { BuyerProfileModal } from "./BuyerProfileModal";
 import { DashboardScrollLock } from "./DashboardScrollLock";
 import { SidebarNav } from "./SidebarNav";
 
-const SIDEBAR_EXPANDED_KEY = "buyer-sidebar-expanded";
+import { useWorkspaceSidebar, WorkspaceSidebarResize } from "@/components/workspace/WorkspaceSidebar";
+import "@/components/workspace/workspace.css";
 
 /** Match Find Talent hubs: no top chrome unless the page needs nested crumbs or end actions. */
 function buyerShellNeedsChrome(pathname: string, chrome: BuyerPageChromeConfig) {
@@ -42,8 +43,8 @@ export function BuyerDashboardShell({
   const pathname = usePathname();
   const mainRef = useRef<HTMLElement>(null);
   const { chrome } = useBuyerPageChromeContext();
-  const [sidebarExpanded, setSidebarExpanded] = useState(true);
-  const [sidebarPreferenceReady, setSidebarPreferenceReady] = useState(false);
+  const sidebar = useWorkspaceSidebar("motiion-industry-sidebar-width");
+  const sidebarExpanded = !sidebar.collapsed;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const needsShellChrome = useMemo(
@@ -54,34 +55,33 @@ export function BuyerDashboardShell({
   const hideShellChrome = !needsShellChrome;
   const sidebarCollapsed = !sidebarExpanded;
 
-  useEffect(() => {
-    const stored = window.localStorage.getItem(SIDEBAR_EXPANDED_KEY);
-    if (stored === "0") setSidebarExpanded(false);
-    if (stored === "1") setSidebarExpanded(true);
-    setSidebarPreferenceReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!sidebarPreferenceReady) return;
-    window.localStorage.setItem(SIDEBAR_EXPANDED_KEY, sidebarExpanded ? "1" : "0");
-  }, [sidebarExpanded, sidebarPreferenceReady]);
-
-  useEffect(() => {
+  const [previousPathname, setPreviousPathname] = useState(pathname);
+  if (previousPathname !== pathname) {
+    setPreviousPathname(pathname);
     setMobileOpen(false);
     setProfileOpen(false);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     if (hideShellChrome && isTalentRoute) return;
     mainRef.current?.scrollTo({ top: 0 });
   }, [hideShellChrome, isTalentRoute, pathname]);
 
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    function closeMobileDrawer(event: MediaQueryListEvent) {
+      if (event.matches) setMobileOpen(false);
+    }
+    desktop.addEventListener("change", closeMobileDrawer);
+    return () => desktop.removeEventListener("change", closeMobileDrawer);
+  }, []);
+
   function toggleSidebar() {
     if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
       setMobileOpen((open) => !open);
       return;
     }
-    setSidebarExpanded((expanded) => !expanded);
+    sidebar.toggle();
   }
 
   const showChrome = needsShellChrome && !mobileOpen;
@@ -90,7 +90,10 @@ export function BuyerDashboardShell({
     <>
       <DashboardScrollLock />
       <div
-        className={`buyer-dashboard-shell buyer-dashboard-shell--aligned ${
+        style={sidebar.style}
+        data-resizing={sidebar.dragging}
+        data-collapsed={sidebar.collapsed}
+        className={`buyer-dashboard-shell workspace-shell workspace-shell--industry ${
           sidebarCollapsed ? "buyer-dashboard-shell--sidebar-collapsed" : ""
         } ${hideShellChrome ? "buyer-dashboard-shell--talent-profile" : ""}`}
       >
@@ -105,6 +108,8 @@ export function BuyerDashboardShell({
           sidebarExpanded={sidebarExpanded}
         />
 
+        <WorkspaceSidebarResize sidebar={sidebar} controls="buyer-sidebar-nav" />
+        <div className="workspace-frame">
         <NavigationProgress />
 
         {showChrome ? (
@@ -133,16 +138,19 @@ export function BuyerDashboardShell({
         ) : null}
 
         {!showChrome && !mobileOpen ? (
+          <div className="workspace-industry-mobile-toolbar">
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="fixed left-3 top-3 z-40 inline-flex size-9 items-center justify-center rounded-full border border-white/10 bg-black/70 text-white/80 backdrop-blur-md transition hover:bg-black/85 hover:text-white lg:hidden"
+            className="workspace-icon-button"
             aria-label="Open navigation menu"
             aria-expanded={mobileOpen}
             aria-controls="buyer-sidebar-nav"
           >
             <Menu className="size-4" aria-hidden />
           </button>
+          <span>Motiion</span>
+          </div>
         ) : null}
 
         <main
@@ -155,6 +163,7 @@ export function BuyerDashboardShell({
         >
           {children}
         </main>
+        </div>
       </div>
 
       <BuyerProfileModal

@@ -61,55 +61,37 @@ export type AudiencePageContent = {
 
 export const talentPageContent: AudiencePageContent = {
   eyebrow: "Professional Dancers",
-  headline: "One profile. Better opportunities. Less friction.",
+  headline: "Your work deserves to be seen.",
   summary:
-    "Motiion helps dancers and choreographers build a living professional identity, get discovered by the right teams, and respond to invites without rebuilding materials every time.",
+    "Bring your portfolio and experience together, get discovered, and find your next opportunity.",
   heroCtas: {
-    primary: JOIN_BETA_CTA,
+    primary: { label: "Create your profile", href: "/signup" },
   },
-  benefitsTitle: "Why join Motiion?",
+  benefitsTitle: "What you can do",
   benefits: [
     {
-      title: "Living portfolio",
+      title: "Show your work",
       description:
-        "Keep headshots, reels, credits, training, and sizing in one place that updates as your career moves.",
+        "Keep your portfolio, reels, credits, and professional experience in one profile that stays current as your career moves.",
       icon: "images",
       featured: true,
       preview: "talent-portfolio",
     },
     {
-      title: "Right discovery",
+      title: "Get discovered",
       description:
-        "Show up in search with style, skills, and experience filters industry teams actually use.",
+        "Help industry teams find relevant talent by style, skills, and experience. Credentials can show a verification status when they have been confirmed—a profile is not treated as verified until it is.",
       icon: "search",
       featured: true,
       preview: "talent-discovery",
     },
     {
-      title: "Faster invites",
+      title: "Find opportunities",
       description:
-        "Class, session, event, and casting invites land in one inbox so you can accept or decline with context.",
+        "See casting opportunities and receive invites in one place, then respond with the profile industry teams already have.",
       icon: "mail",
-    },
-    {
-      title: "One profile",
-      description:
-        "Share one verified Motiion profile instead of chasing links, PDFs, and outdated folders for every submission.",
-      icon: "user-circle",
       featured: true,
-      preview: "talent-identity",
-    },
-    {
-      title: "Any representation",
-      description:
-        "Whether you book on your own or through an agency, your materials stay presentation-ready.",
-      icon: "users",
-    },
-    {
-      title: "Community growth",
-      description:
-        "Discover classes, sessions, and collaborators on the same network hiring teams use every day.",
-      icon: "sparkles",
+      preview: "talent-inbox",
     },
   ],
   workflowTitle: "How it works for talent",
@@ -143,7 +125,7 @@ export const talentPageContent: AudiencePageContent = {
     {
       question: "Is there a cost to join?",
       answer:
-        "You can start on the Free plan and upgrade to Pro when you need more visibility, media, and workflow tools. See pricing below for dancer and choreographer plans.",
+        "You can start on the Free plan and upgrade to Pro when you need more visibility, media, and workflow tools. See pricing above for dancer and choreographer plans.",
     },
   ],
   pricing: talentPricingContent,
@@ -151,53 +133,36 @@ export const talentPageContent: AudiencePageContent = {
 
 export const castingPageContent: AudiencePageContent = {
   eyebrow: "Industry Professionals",
-  headline: "Discover talent. Build rosters. Run projects.",
+  headline: "Find your talent. Bring your project together.",
   summary:
-    "Motiion gives casting directors, creative teams, producers, agencies, and choreographers one workspace to search the talent database, manage rosters, create castings, and keep projects moving from discovery to confirmation.",
+    "Discover dancers and choreographers, build rosters, and manage castings in one workspace.",
   heroCtas: {
-    primary: INDUSTRY_PRO_SIGNUP_CTA,
+    primary: { label: "Create an industry account", href: "/signup" },
   },
-  benefitsTitle: "Why industry professionals use Motiion",
+  benefitsTitle: "What you can do",
   benefits: [
     {
-      title: "Talent database",
+      title: "Discover talent",
       description:
-        "Search verified dancers and choreographers by style, experience, location, and talent type instead of scrolling social feeds and email threads.",
+        "Search and review professional profiles by style, experience, and location. Verification is shown when a credential has been confirmed, not assumed for every profile.",
       icon: "search",
       featured: true,
       preview: "industry-navigator",
     },
     {
-      title: "Project workspace",
+      title: "Build your roster",
+      description: "Save and organize the talent you want to work with again.",
+      icon: "bookmark",
+      featured: true,
+      preview: "industry-roster",
+    },
+    {
+      title: "Manage castings",
       description:
-        "Create projects, publish castings with roles and submission rules, and track progress from draft to live.",
+        "Run projects, collect submissions, and collaborate with your team from discovery through a decision.",
       icon: "folder-kanban",
       featured: true,
       preview: "industry-projects",
-    },
-    {
-      title: "Roster management",
-      description:
-        "Save talent, organize rosters, and keep your go-to people accessible for the next brief or production.",
-      icon: "bookmark",
-    },
-    {
-      title: "Faster shortlists",
-      description:
-        "Compare candidates, share selections with collaborators, and move review cycles from debate to decision.",
-      icon: "list-checks",
-    },
-    {
-      title: "Less admin",
-      description:
-        "Centralize discovery, outreach, and project context instead of rebuilding spreadsheets for every job.",
-      icon: "layout-dashboard",
-    },
-    {
-      title: "Clear communication",
-      description:
-        "Keep conversations tied to roles, castings, and sessions so nothing gets lost across tools.",
-      icon: "message-square",
     },
   ],
   workflowTitle: "How it works for industry professionals",
@@ -235,52 +200,33 @@ export const castingPageContent: AudiencePageContent = {
 
 export const communityPageContent: AudiencePageContent = {
   eyebrow: "Community Members",
-  headline: "Find the rooms, classes, and programs around you.",
+  headline: "Find your place in dance.",
   summary:
-    "Motiion helps the dance community discover events, take class, and join programs—so showing up and staying connected does not depend on a group chat or a flyer.",
+    "Discover the people, classes, and events that keep you connected to the dance world.",
   heroCtas: {
-    primary: JOIN_BETA_CTA,
+    primary: { label: "Join the community", href: "/signup" },
   },
-  benefitsTitle: "Why the community is on Motiion",
+  benefitsTitle: "What you can do",
   benefits: [
     {
-      title: "Events nearby",
-      description:
-        "See live appearances, activations, and gatherings in one place instead of piecing nights together across stories and texts.",
-      icon: "sparkles",
+      title: "Discover people",
+      description: "Explore dancers and the work they’re part of.",
+      icon: "user-circle",
       featured: true,
-      preview: "community-event",
+      preview: "talent-discovery",
     },
     {
-      title: "Classes and training",
-      description:
-        "Find open classes, sessions, and studios when you want to train—not only when someone happens to post.",
+      title: "Find classes and training",
+      description: "Look for classes, workshops, and programs in the same place you follow the scene.",
       icon: "users",
       featured: true,
     },
     {
-      title: "Programs that develop you",
-      description:
-        "Discover intensives, workshops, and longer programs without hunting through a dozen organizers.",
-      icon: "images",
-    },
-    {
-      title: "One place to follow along",
-      description:
-        "Keep events, classes, and programs in the same network the industry already uses to find dancers.",
-      icon: "layout-dashboard",
-    },
-    {
-      title: "Show up with context",
-      description:
-        "RSVP and get the details that matter—who is hosting, where it is, and what to expect—before you walk in.",
-      icon: "mail",
-    },
-    {
-      title: "Grow with the scene",
-      description:
-        "Stay connected to the people and rooms that shape your practice, whether you are just starting or already working.",
-      icon: "user-circle",
+      title: "Explore events",
+      description: "Discover performances and community gatherings, including who is part of the cast.",
+      icon: "sparkles",
+      featured: true,
+      preview: "community-event",
     },
   ],
   workflowTitle: "How it works for the community",

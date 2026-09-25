@@ -24,6 +24,11 @@
     gap: 0;
   }
 
+  .audience-benefits__featured--stack {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.5rem;
+  }
+
   .audience-benefits__featured-card--divider {
     padding-right: clamp(1.5rem, 3vw, 2.5rem);
     border-right: 1px solid var(--ab-border);
@@ -44,6 +49,14 @@
   .audience-benefits__featured--text {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 2rem 2.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .audience-benefits__featured--stack,
+  .audience-benefits__featured--stack.audience-benefits__featured--text {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem 1.75rem;
   }
 }
 

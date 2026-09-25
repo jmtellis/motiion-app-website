@@ -1,0 +1,28 @@
+.illustrated-benefits { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid #ffffff0e; }
+.illustrated-benefits__card { position: relative; padding: 24px 28px 36px; }
+.illustrated-benefits__card + .illustrated-benefits__card { border-left: 1px solid #ffffff0c; }
+.illustrated-benefits__number { font: 10px ui-monospace, monospace; letter-spacing: .12em; color: #6f7876; }
+.illustrated-benefits__card .benefit-art { width: 100%; height: auto; margin: 8px 0 24px; }
+.illustrated-benefits__card h3 { font-size: 21px; font-weight: 500; letter-spacing: -.035em; color: #eeeeef; margin: 0 0 12px; }
+.illustrated-benefits__card p { color: #969b9a; font-size: 14px; line-height: 1.7; margin: 0; max-width: 30ch; }
+@media(max-width:639px) { .illustrated-benefits { grid-template-columns: 1fr; } .illustrated-benefits__card { padding: 24px 12px 32px; } .illustrated-benefits__card + .illustrated-benefits__card { border-left: 0; border-top: 1px solid #ffffff0c; } .illustrated-benefits__card .benefit-art { max-width: 360px; margin-inline: auto; } .illustrated-benefits__card p { max-width: none; } }
+
+.benefit-art {
+  --art-accent: #d7d7d7;
+  --art-line: #858585;
+  --art-detail: #454545;
+  --art-surface: #151515;
+  aspect-ratio: 4 / 3;
+}
+.benefit-art svg { width: 100%; height: 100%; overflow: visible; }
+.benefit-art__drawing { animation: benefit-float 8s ease-in-out infinite; transform-origin: 200px 150px; }
+.benefit-art__accent { animation: benefit-glint 6s ease-in-out infinite; }
+.benefit-art__guide { animation: benefit-trace 18s linear infinite; }
+.illustrated-benefits__card:nth-child(2) .benefit-art__drawing { animation-delay: -2.5s; }
+.illustrated-benefits__card:nth-child(3) .benefit-art__drawing { animation-delay: -5s; }
+@keyframes benefit-float { 0%, 100% { transform: translateY(2px); } 50% { transform: translateY(-4px); } }
+@keyframes benefit-glint { 0%, 100% { opacity: .65; } 50% { opacity: 1; } }
+@keyframes benefit-trace { to { stroke-dashoffset: -56; } }
+@media(prefers-reduced-motion:reduce) {
+  .benefit-art__drawing, .benefit-art__accent, .benefit-art__guide { animation: none; }
+}

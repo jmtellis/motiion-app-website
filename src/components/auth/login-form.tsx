@@ -4,7 +4,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { AuthSplitLink } from "@/components/auth/AuthSplitTransition";
 import { SignupSplitDivider, SignupSplitOAuth } from "@/components/auth/SignupSplitOAuth";
 import { resolveClientLoginDestination } from "@/lib/auth/login-redirect";
 import { oauthErrorMessage } from "@/lib/auth/oauth-shared";
@@ -84,12 +83,12 @@ export function LoginForm() {
     <div className="signup-split-form__body">
       <form action={handleSubmit} className="flex flex-col gap-4">
         <label className="signup-split-field">
-          <span>Email</span>
+          <span className="sr-only">Email</span>
           <input
             id="email"
             name="email"
             type="email"
-            placeholder="eg. johnfrans@gmail.com"
+            placeholder="Email address"
             required
             autoComplete="email"
             value={email}
@@ -98,7 +97,7 @@ export function LoginForm() {
         </label>
 
         <label className="signup-split-field">
-          <span>Password</span>
+          <span className="sr-only">Password</span>
           <div className="signup-split-password-wrap">
             <input
               id="password"
@@ -132,17 +131,7 @@ export function LoginForm() {
       <SignupSplitDivider />
       <SignupSplitOAuth flow="login" disabled={loading} />
 
-      <div className="signup-split-signup-options">
-        <p className="signup-split-signup-options__label">
-          Need to create an account?{" "}
-          <AuthSplitLink
-            href="/signup"
-            className="signup-split-text-btn signup-split-text-btn--accent"
-          >
-            Sign up
-          </AuthSplitLink>
-        </p>
-      </div>
+
     </div>
   );
 }

@@ -78,3 +78,5 @@
     transparent 100%
   );
 }
+
+.landing-footer__logo { display: block; width: 33px; height: 24px; object-fit: contain; margin-bottom: 32px; }

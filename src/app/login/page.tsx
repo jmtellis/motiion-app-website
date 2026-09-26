@@ -2,9 +2,8 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { LoginForm } from "@/components/auth/login-form";
-import { SignupSplitShell } from "@/components/auth/SignupSplitShell";
+import { CenteredAuthShell } from "@/components/auth/CenteredAuthShell";
 import { getCurrentUserProfile, getProfileDestination } from "@/lib/auth/session";
-import { getLoginShellProps } from "@/lib/setup-flow/config";
 
 function LoginFormFallback() {
   return (
@@ -21,13 +20,12 @@ export default async function LoginPage() {
     redirect(getProfileDestination(profile));
   }
 
-  const shell = getLoginShellProps();
 
   return (
-    <SignupSplitShell {...shell}>
+    <CenteredAuthShell mode="login">
       <Suspense fallback={<LoginFormFallback />}>
         <LoginForm />
       </Suspense>
-    </SignupSplitShell>
+    </CenteredAuthShell>
   );
 }

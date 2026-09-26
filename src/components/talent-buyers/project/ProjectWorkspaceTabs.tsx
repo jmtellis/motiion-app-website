@@ -24,6 +24,7 @@ function formatBadge(count: number) {
 }
 
 function projectNavItemHref(projectId: string, tab: ProjectNavItem) {
+  if (tab.id === "bookings") return `/projects/${projectId}/bookings`;
   if (tab.id === "overview" || tab.id === "files" || tab.path === "overview" || tab.path === "files") {
     return projectTabPath(projectId, tab.id as ProjectTabId);
   }

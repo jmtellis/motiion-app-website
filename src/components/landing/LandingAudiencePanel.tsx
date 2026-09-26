@@ -2,6 +2,7 @@
 
 import { LandingAudienceChoices } from "./LandingAudienceChoices";
 import { TalentNavigatorPreview } from "./TalentNavigatorPreview";
+import { TalentCredentialSection } from "./TalentCredentialSection";
 
 import { motion, useReducedMotion } from "motion/react";
 
@@ -50,6 +51,7 @@ export function LandingAudiencePanel() {
           showPricing={false}
           illustratedBenefits
           afterBenefits={audience === "casting" ? <TalentNavigatorPreview /> : null}
+          afterWorkflow={audience === "talent" ? <TalentCredentialSection /> : null}
         />
       </motion.div>
     </div>

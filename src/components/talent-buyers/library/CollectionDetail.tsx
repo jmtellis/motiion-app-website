@@ -188,9 +188,13 @@ export function CollectionDetail({
                 {collection.talentCount === 1 ? "1 person" : `${collection.talentCount} people`}
               </p>
             </div>
+            <div className="flex flex-wrap gap-2">
+            <a className="bd-btn-secondary" href={`/api/rosters/${collection.id}/export?format=xlsx`}>Export Excel</a>
+            <a className="bd-btn-secondary" href={`/api/rosters/${collection.id}/export?format=pdf`}>Export PDF</a>
             <button type="button" className="buyer-chrome-bar__cta" onClick={() => setAddOpen(true)}>
               Add Talent
             </button>
+            </div>
           </div>
 
           {members.length ? (

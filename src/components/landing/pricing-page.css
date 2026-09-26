@@ -1,0 +1,17 @@
+.pricing-page { background: #0b0b0b; color: #f5f5f5; padding: 180px 0 88px; min-height: 100svh; }
+.pricing-page > .mkt-container > h1 { font-size: clamp(42px, 5vw, 64px); font-weight: 400; letter-spacing: -.055em; }
+.pricing-page .landing-audience-choices { padding-top: 32px; padding-bottom: 24px; }
+.pricing-page .audience-pricing__intro { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.pricing-page .audience-pricing__plan { background: #171717; border: 1px solid #ffffff08; border-radius: 16px; padding: clamp(28px, 4vw, 44px); }
+.pricing-page .audience-pricing__plan--highlighted { background: #191919; border-color: #ffffff24; }
+.pricing-page .audience-pricing__plan-name { font-family: inherit; font-size: 24px; letter-spacing: -.03em; text-transform: none; color: white; }
+.pricing-page .audience-pricing__icon { color: #ddd; }
+.pricing-comparison { margin-top: 64px; }
+.pricing-comparison h2 { font-size: 28px; letter-spacing: -.035em; margin-bottom: 24px; }
+.pricing-comparison table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.pricing-comparison th, .pricing-comparison td { padding: 18px 12px; border-bottom: 1px solid #ffffff16; text-align: left; }
+.pricing-comparison td { color: #aaa; }
+.pricing-comparison th { font-weight: 500; }
+@media(max-width:767px) { .pricing-page { padding-top: 120px; } .pricing-comparison th, .pricing-comparison td { padding: 14px 6px; font-size: 12px; } }
+
+.pricing-page > .mkt-container > .mkt-lead { margin-inline: auto; text-align: center; }

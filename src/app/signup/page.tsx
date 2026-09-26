@@ -2,9 +2,8 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { SignupForm } from "@/components/auth/signup-form";
-import { SignupSplitShell } from "@/components/auth/SignupSplitShell";
+import { CenteredAuthShell } from "@/components/auth/CenteredAuthShell";
 import { getCurrentUserProfile, getProfileDestination } from "@/lib/auth/session";
-import { getSetupFlowShellProps } from "@/lib/setup-flow/config";
 
 export default async function SignupPage() {
   const profile = await getCurrentUserProfile();
@@ -13,13 +12,12 @@ export default async function SignupPage() {
     redirect(getProfileDestination(profile));
   }
 
-  const shell = getSetupFlowShellProps({ audience: "talent", surface: "signup" });
 
   return (
-    <SignupSplitShell {...shell}>
+    <CenteredAuthShell mode="signup">
       <Suspense fallback={null}>
         <SignupForm />
       </Suspense>
-    </SignupSplitShell>
+    </CenteredAuthShell>
   );
 }

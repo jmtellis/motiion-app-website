@@ -1,0 +1,39 @@
+.project-bookings { padding: 28px; color: #252b2d; overflow-y: auto; width: 100%; }
+.project-bookings h2 { font-size: 28px; font-weight: 600; letter-spacing: -.04em; }
+.project-bookings h3 { font-size: 15px; font-weight: 600; }
+.project-bookings p { color: #70787a; font-size: 13px; line-height: 1.6; }
+.project-bookings__heading { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:24px; }
+.project-bookings__eyebrow { font-size:10px!important; letter-spacing:.14em; margin-bottom:8px; }
+.project-bookings button { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 16px; border-radius:9px; background:#222829; color:white; cursor:pointer; font-size:13px; }
+.project-bookings button:disabled { opacity:.45; cursor:default; }
+.project-bookings button.secondary { background:#f4f5f5; color:#424b4d; }
+.project-bookings button[aria-pressed=true] { box-shadow:inset 0 0 0 1px #78aba7; background:#edf6f5; color:#24514d; }
+.project-bookings__stages { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:28px; }
+.project-bookings__stages button { background:#fff; border:1px solid #e5e8e8; color:#5f696b; justify-content:space-between; padding:20px; }
+.project-bookings__stages strong { font-size:24px; color:#252b2d; }
+.project-bookings__panel { background:white; border:1px solid #e5e8e8; border-radius:16px; padding:24px; box-shadow:0 3px 12px #18242404; min-width:0; }
+.project-bookings__layout { display:grid; grid-template-columns:minmax(0,1fr) 280px; gap:24px; }
+.project-bookings nav { display:flex; gap:8px; margin-bottom:24px; }
+.project-bookings__fields { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.project-bookings label { display:block; font-size:12px; color:#586264; }
+.project-bookings :is(input,select,textarea) { width:100%; padding:11px 12px; border:1px solid #dfe5e5; border-radius:8px; font-size:13px; margin-top:8px; background:#fafbfb; color:#202626; }
+.project-bookings textarea { resize:vertical; }
+.project-bookings__save { display:flex; justify-content:flex-end; margin-top:24px; }
+.project-bookings__contract { display:grid; gap:16px; }
+.project-bookings hr { border-color:#e5e8e8; margin:24px 0; }
+.project-bookings__amount { display:block; font-size:26px; margin:12px 0; }
+.project-bookings .project-bookings__notice { background:#f3f6f6; border-radius:9px; padding:14px; margin:14px 0; }
+.project-bookings .project-bookings__error { color:#ae3232; margin-top:16px; }
+.project-bookings__empty { padding:48px 16px; text-align:center; }
+.project-bookings__empty p { max-width:430px; margin:12px auto 24px; }
+.project-bookings__table { overflow-x:auto; }
+.project-bookings table { width:100%; border-collapse:collapse; text-align:left; }
+.project-bookings th { color:#798184; font-weight:500; font-size:11px; padding:12px 8px; }
+.project-bookings td { padding:18px 8px; border-top:1px solid #eee; font-size:13px; }
+.project-bookings button.project-bookings__name { background:transparent; color:#222; padding:0; font-weight:600; }
+.project-bookings small { display:block; color:#798184; }
+.project-bookings__status { background:#f2f4f4; padding:5px 9px; border-radius:6px; font-size:11px; white-space:nowrap; }
+.project-bookings__status.is-confirmed,.project-bookings__status.is-completed { background:#e7f4ed; color:#286246; }
+.project-bookings__status.is-negotiating { background:#fff4dc; color:#866523; }
+@media(max-width:900px) { .project-bookings__layout { grid-template-columns:1fr; } .project-bookings__stages { grid-template-columns:1fr 1fr; } }
+@media(max-width:600px) { .project-bookings {padding:16px;} .project-bookings__fields {grid-template-columns:1fr;} .project-bookings__panel {padding:16px;} }

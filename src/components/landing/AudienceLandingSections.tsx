@@ -56,12 +56,14 @@ export function AudienceLandingSections({
   dark = false,
   illustratedBenefits = false,
   afterBenefits,
+  afterWorkflow,
   showPricing = true,
 }: {
   content: AudiencePageContent;
   dark?: boolean;
   illustratedBenefits?: boolean;
   afterBenefits?: ReactNode;
+  afterWorkflow?: ReactNode;
   showPricing?: boolean;
 }) {
   return (
@@ -111,6 +113,8 @@ export function AudienceLandingSections({
           </div>
         </Reveal>
       </AudienceSection>
+
+      {afterWorkflow}
 
       <AudienceSection id="features" altBackground={false} dark={dark}>
         <h2 className="mkt-heading">Features</h2>

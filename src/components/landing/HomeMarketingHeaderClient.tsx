@@ -255,7 +255,7 @@ export function HomeMarketingHeaderClient({
                 <Link href="/pricing" className="landing-header__menu-item" onClick={closeMenu}>Pricing</Link>
                 {accountUser ? <AccountPill user={accountUser} /> : <>
                   <Link href="/login" className="landing-header__menu-item" onClick={closeMenu}>Login</Link>
-                  <Link href="/signup" className="landing-header__menu-item" onClick={closeMenu}>Create Account</Link>
+                  <Link href="/signup" className="landing-header__menu-item" onClick={closeMenu}>Sign Up</Link>
                 </>}
                 <IosDownloadHeroButton label="Download" className="landing-header__download landing-header__menu-item" />
               </nav>
@@ -267,7 +267,7 @@ export function HomeMarketingHeaderClient({
               <span className="landing-header__action-divider" aria-hidden />
               {accountUser ? <AccountPill user={accountUser} /> : <>
                 <Link href="/login" className="home-split__login">Login</Link>
-                <Link href="/signup" className="mkt-btn mkt-btn--primary landing-header__signup">Create Account</Link>
+                <Link href="/signup" className="mkt-btn mkt-btn--primary landing-header__signup">Sign Up</Link>
               </>}
             </div>
           )}

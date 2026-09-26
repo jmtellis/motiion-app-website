@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Instagram, Linkedin, Youtube } from "lucide-react";
 
@@ -101,6 +102,7 @@ function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) 
 function FooterVisionBlurb() {
   return (
     <div className="max-w-sm space-y-3">
+      <Image src="/marketing/footer-logo.svg" alt="Motiion" width={55} height={40} className="landing-footer__logo" />
       <p className="text-base font-semibold tracking-tight text-[#fafafa]">Moving the industry forward</p>
       <p className="text-sm leading-relaxed text-[#8a8a8a]">
         We envision a future where every creative has access to the tools, relationships, and
@@ -132,7 +134,7 @@ export function Footer({
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 55% 45% at 50% 115%, rgb(0 170 204 / 0.07) 0%, transparent 65%)",
+              "linear-gradient(180deg, #111 0%, rgb(17 17 17 / .76) 35%, rgb(10 12 14 / .35) 100%), url(/footer-background.png) center bottom / cover no-repeat",
           }}
           aria-hidden
         />

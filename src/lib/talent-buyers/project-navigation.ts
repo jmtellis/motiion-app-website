@@ -1,4 +1,4 @@
-import { FileText, LayoutDashboard, type LucideIcon } from "lucide-react";
+import { FileText, CalendarCheck, LayoutDashboard, type LucideIcon } from "lucide-react";
 
 import type { ProjectNavItem, ProjectWorkspaceConfig } from "./project-workspace-config";
 import { getProjectWorkspaceConfig } from "./project-workspace-config";
@@ -37,6 +37,8 @@ export const UNIVERSAL_PROJECT_NAVIGATION: ProjectNavItem[] = [
   },
 ];
 
+const bookingNav: ProjectNavItem = { id: "bookings", label: "Bookings", icon: CalendarCheck, path: "bookings", description: "Talent, job terms, and payment planning" };
+
 export function getProjectNavigation(project: {
   projectType?: string | null;
   type?: string | null;
@@ -48,20 +50,20 @@ export function getProjectNavigation(project: {
     return {
       projectType,
       project: [],
-      workspace: config.workspaceItems,
+      workspace: [...config.workspaceItems, bookingNav],
       config,
-      sections: [{ id: "workspace", label: "Workspace", items: config.workspaceItems }],
+      sections: [{ id: "workspace", label: "Workspace", items: [...config.workspaceItems, bookingNav] }],
     };
   }
 
   return {
     projectType,
     project: UNIVERSAL_PROJECT_NAVIGATION,
-    workspace: config.workspaceItems,
+    workspace: [...config.workspaceItems, bookingNav],
     config,
     sections: [
       { id: "project", label: "Project", items: UNIVERSAL_PROJECT_NAVIGATION },
-      { id: "workspace", label: "Workspace", items: config.workspaceItems },
+      { id: "workspace", label: "Workspace", items: [...config.workspaceItems, bookingNav] },
     ],
   };
 }

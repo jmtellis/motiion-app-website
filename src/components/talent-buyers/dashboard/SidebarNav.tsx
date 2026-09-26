@@ -8,6 +8,7 @@ import {
   Bell,
   BookOpen,
   CalendarDays,
+  CalendarCheck,
   ChevronsUpDown,
   Folder,
   Mail,
@@ -39,6 +40,7 @@ import "./buyer-chrome.css";
 
 const navIcons = {
   projects: Folder,
+  bookings: CalendarCheck,
   talent: Search,
   messages: Mail,
   calendar: CalendarDays,

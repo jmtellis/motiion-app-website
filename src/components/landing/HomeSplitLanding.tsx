@@ -27,9 +27,9 @@ export function HomeSplitLanding({ events }: { events: HeroEventCard[] }) {
           >
             <p className="home-split__eyebrow">Talent. Industry. Community.</p>
             <h1 className="home-split__headline">
-              Built to power
+              Powering the
               <br />
-              the <em>dance</em> industry.
+              <em>dance</em> industry.
             </h1>
             <p className="home-split__subtext">
               Discover the talent, work, and opportunities that bring dance to life. Motiion connects

@@ -21,7 +21,7 @@ export function TalentNavigatorPreview() {
         <div className="navigator-proof__window" role="img" aria-label="Motiion Talent Navigator preview: a workspace sidebar, a grid of dancer portraits, and a search field for describing the talent you want to find.">
           <div className="navigator-proof__interface" aria-hidden="true">
             <aside className="navigator-proof__sidebar">
-              <div className="navigator-proof__brand"><MotiionWordmark height={13} /><PanelLeftClose size={14} /></div>
+              <div className="navigator-proof__brand"><MotiionWordmark height={9} /><PanelLeftClose size={14} /></div>
               <span className="navigator-proof__group-label">Workspace</span>
               <div className="navigator-proof__nav">
                 {navigation.map(({ label, icon: Icon }, index) => (

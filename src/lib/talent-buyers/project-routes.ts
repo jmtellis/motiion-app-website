@@ -53,6 +53,7 @@ export function isProjectTabId(value: string): value is ProjectTabId {
 
 /** Routes under `(workspace)` for project workspace views. */
 const PROJECT_WORKSPACE_PATH_SEGMENTS = new Set([
+  "bookings",
   "overview",
   "files",
   "workspace",

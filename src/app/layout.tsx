@@ -5,6 +5,7 @@ import { Inter, Montserrat } from "next/font/google";
 
 import { ArrowNavigationFocusCleanup } from "@/components/layout/ArrowNavigationFocusCleanup";
 import { AutoHideScrollbars } from "@/components/layout/AutoHideScrollbars";
+import { SITE_URL, SITE_TITLE, SITE_DESCRIPTION } from "@/lib/marketing/site-seo";
 import "./globals.css";
 
 /** Product / design-system typography (docs/design.md) */
@@ -25,30 +26,30 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.motiion.app").replace(/\/$/, "");
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  verification: { google: process.env.GOOGLE_SITE_VERIFICATION },
   title: {
-    default: "Motiion | Dance Industry Operating System",
+    default: SITE_TITLE,
     template: "%s · Motiion",
   },
   description:
-    "Motiion is the professional platform connecting dancers, choreographers, agencies, casting teams, creative directors, and entertainment companies. Discover verified talent, manage projects and castings, build professional profiles, and create meaningful opportunities—all in one connected ecosystem.",
+    SITE_DESCRIPTION,
   openGraph: {
     siteName: "Motiion",
     type: "website",
     url: SITE_URL,
-    title: "Motiion | Dance Industry Operating System",
+    title: SITE_TITLE,
     description:
-      "Motiion is the professional platform connecting dancers, choreographers, agencies, casting teams, creative directors, and entertainment companies. Discover verified talent, manage projects and castings, build professional profiles, and create meaningful opportunities—all in one connected ecosystem.",
-    images: [{ url: "/motiion-icon-512.png", width: 512, height: 512, alt: "Motiion" }],
+      SITE_DESCRIPTION,
+    images: [{ url: "/motiion-share-preview.png", width: 1728, height: 1443, alt: "Motiion — dancers in motion", type: "image/png" }],
   },
   twitter: {
-    card: "summary",
-    title: "Motiion | Dance Industry Operating System",
+    card: "summary_large_image",
+    images: [{ url: "/motiion-share-preview.png", alt: "Motiion — dancers in motion" }],
+    title: SITE_TITLE,
     description:
-      "Motiion is the professional platform connecting dancers, choreographers, agencies, casting teams, creative directors, and entertainment companies. Discover verified talent, manage projects and castings, build professional profiles, and create meaningful opportunities—all in one connected ecosystem.",
+      SITE_DESCRIPTION,
   },
   icons: {
     icon: [

@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import { LegalPageShell } from "@/components/landing/LegalPageShell";
 import { legalMarketingViewport, type LegalPageSection } from "@/lib/marketing/legal-page";
+
+export const metadata: Metadata = {
+  title: "Cookie Policy",
+  description: "Learn how Motiion uses cookies on its website.",
+  alternates: { canonical: "/cookies" },
+};
 
 export const viewport = legalMarketingViewport;
 

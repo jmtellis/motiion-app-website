@@ -1,5 +1,7 @@
-import type { Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import { redirect } from "next/navigation";
+
+import { homepageStructuredData } from "@/lib/marketing/site-seo";
 
 import { BrowserThemeColor } from "@/components/landing/BrowserThemeColor";
 import { Footer } from "@/components/landing/Footer";
@@ -14,6 +16,10 @@ import { getCurrentUserProfile } from "@/lib/auth/session";
 import { MARKETING_DARK } from "@/lib/marketing/dark-theme";
 import { loadHeroEventCards } from "@/lib/marketing/hero-events";
 import { parseAudienceParam } from "@/lib/marketing/marketing-pages";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export const viewport: Viewport = {
   themeColor: [
@@ -40,6 +46,12 @@ export default async function Home({
 
   return (
     <HomeMarketingShell>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(homepageStructuredData).replace(/</g, "\\u003c"),
+        }}
+      />
       <MarketingBodySurface dark />
       <BrowserThemeColor color={MARKETING_DARK.bg} />
       <LandingAudienceProvider

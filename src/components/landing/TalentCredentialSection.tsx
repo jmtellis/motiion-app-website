@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useRef } from "react";
 import { motion, useReducedMotion, useScroll, useSpring, useTransform } from "motion/react";
 
@@ -34,7 +33,7 @@ export function TalentCredentialSection() {
 
         <div className="talent-credential__visual">
           <div className="talent-credential__glow" aria-hidden="true" />
-          <div className="talent-credential__perspective">
+          <div className="talent-credential__perspective" role="img" aria-label="Jay Tellis's Motiion credential, member 0000007, with a QR code linking to his profile">
             <motion.div
               className="talent-credential__card"
               style={{ rotateY: reduceMotion ? 0 : rotateY, rotateZ: reduceMotion ? 0 : rotateZ, rotateX: reduceMotion ? 0 : rotateX }}
@@ -47,7 +46,7 @@ export function TalentCredentialSection() {
                 <div className="talent-credential__portrait">
                   <Image src="/marketing/credential/j-tellis.jpg" alt="" fill sizes="(max-width: 767px) 200px, 280px" />
                 </div>
-                <div className="talent-credential__name">J Tellis</div>
+                <div className="talent-credential__name">Jay Tellis</div>
                 <div className="talent-credential__member">0000007</div>
                 <motion.div className="talent-credential__shine" style={{ x: reduceMotion ? "0%" : shine }} />
               </div>
@@ -64,9 +63,6 @@ export function TalentCredentialSection() {
               </div>
             </motion.div>
           </div>
-          <Link className="talent-credential__profile" href="/profile/jaymtellis2" aria-label="View J Tellis's profile, member 0000007">
-            <span>J Tellis</span><span>@jaymtellis2 <span aria-hidden="true">↗</span></span>
-          </Link>
         </div>
       </div>
     </section>

@@ -9,16 +9,20 @@ const illustrations: Partial<Record<BenefitIconKey, string>> = {
   "user-circle": "people-cards", users: "training-steps", sparkles: "event-calendar",
 };
 
-const talentVideoPreviews = new Set(["talent-portfolio", "talent-discovery", "talent-inbox"]);
+const talentVideoPreviews: Record<string, string> = {
+  "talent-portfolio": "/marketing/videos/site-talent-1",
+  "talent-discovery": "/marketing/videos/site-talent-2",
+  "talent-inbox": "/marketing/videos/site-talent-3",
+};
 
 export function IllustratedBenefits({ benefits }: { benefits: AudienceBenefit[] }) {
   return <div className="illustrated-benefits">{benefits.map((benefit, index) => (
     <article className="illustrated-benefits__card" key={benefit.title}>
       <span className="illustrated-benefits__number" aria-hidden="true">0{index + 1}</span>
-      {benefit.preview && talentVideoPreviews.has(benefit.preview) ? (
+      {benefit.preview && talentVideoPreviews[benefit.preview] ? (
         <TalentPortfolioVideo
-          src={benefit.preview === "talent-discovery" ? "/marketing/videos/site-talent-2.mp4" : undefined}
-          poster={benefit.preview === "talent-discovery" ? "/marketing/videos/site-talent-2-poster.jpg" : undefined}
+          src={`${talentVideoPreviews[benefit.preview]}.mp4`}
+          poster={`${talentVideoPreviews[benefit.preview]}-poster.jpg`}
         />
       ) : (
         <BenefitIllustration name={illustrations[benefit.icon] ?? "community-connections"} />

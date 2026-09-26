@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import { LegalPageShell } from "@/components/landing/LegalPageShell";
 import { legalMarketingViewport, type LegalPageSection } from "@/lib/marketing/legal-page";
+
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description: "Read the terms for using the Motiion platform.",
+  alternates: { canonical: "/terms" },
+};
 
 export const viewport = legalMarketingViewport;
 

@@ -57,6 +57,7 @@ export function AudienceLandingSections({
   illustratedBenefits = false,
   afterBenefits,
   afterWorkflow,
+  featureShowcase,
   showPricing = true,
 }: {
   content: AudiencePageContent;
@@ -64,6 +65,7 @@ export function AudienceLandingSections({
   illustratedBenefits?: boolean;
   afterBenefits?: ReactNode;
   afterWorkflow?: ReactNode;
+  featureShowcase?: ReactNode;
   showPricing?: boolean;
 }) {
   return (
@@ -77,7 +79,7 @@ export function AudienceLandingSections({
 
       {afterBenefits}
 
-      <AudienceSection id="workflow" altBackground={true} dark={dark}>
+      {featureShowcase ?? <AudienceSection id="workflow" altBackground={true} dark={dark}>
         <Reveal amount={0.15} distance={20}>
           <div className="audience-workflow">
             <div className="audience-workflow__steps">
@@ -112,17 +114,17 @@ export function AudienceLandingSections({
 
           </div>
         </Reveal>
-      </AudienceSection>
+      </AudienceSection>}
 
       {afterWorkflow}
 
-      <AudienceSection id="features" altBackground={false} dark={dark}>
+      {!featureShowcase && <AudienceSection id="features" altBackground={false} dark={dark}>
         <h2 className="mkt-heading">Features</h2>
         <p className="mkt-lead mt-4">{content.trustTitle}</p>
         <ul className="audience-features">
           {content.trustPoints.map(point => <li key={point}>{point}</li>)}
         </ul>
-      </AudienceSection>
+      </AudienceSection>}
 
       {showPricing && content.pricing ? (
         <AudienceSection id="pricing" altBackground={true} dark={dark}>

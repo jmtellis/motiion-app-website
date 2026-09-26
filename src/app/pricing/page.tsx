@@ -8,7 +8,7 @@ import { parseAudienceParam } from "@/lib/marketing/marketing-pages";
 import "@/components/landing/home-split-landing.css";
 import "@/components/landing/pricing-page.css";
 
-export const metadata: Metadata = { title: "Pricing | Motiion", description: "Compare Motiion plans for talent and industry professionals." };
+export const metadata: Metadata = { title: "Pricing", alternates: { canonical: "/pricing" }, description: "Compare Motiion plans for talent and industry professionals." };
 
 export default async function PricingPage({ searchParams }: { searchParams: Promise<{ audience?: string }> }) {
   const params = await searchParams;

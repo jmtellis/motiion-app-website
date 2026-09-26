@@ -1,24 +1,10 @@
 import type { MetadataRoute } from "next";
-
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.motiion.app").replace(/\/$/, "");
+import { SITE_URL } from "@/lib/marketing/site-seo";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date();
-
-  const routes: { path: string; priority: number; changeFrequency: "daily" | "weekly" | "monthly" }[] = [
-    { path: "/", priority: 1, changeFrequency: "weekly" },
-    { path: "/search", priority: 0.8, changeFrequency: "daily" },
-    { path: "/signup", priority: 0.7, changeFrequency: "monthly" },
-    { path: "/login", priority: 0.5, changeFrequency: "monthly" },
-    { path: "/signup", priority: 0.7, changeFrequency: "monthly" },
-    { path: "/privacy", priority: 0.3, changeFrequency: "monthly" },
-    { path: "/terms", priority: 0.3, changeFrequency: "monthly" },
-  ];
-
-  return routes.map((route) => ({
-    url: `${SITE_URL}${route.path}`,
-    lastModified: now,
-    changeFrequency: route.changeFrequency,
-    priority: route.priority,
+  // Only public discovery/content pages; omit account flows and redirects.
+  // Add lastModified only when an actual content modification date is available.
+  return ["/", "/pricing", "/search", "/privacy", "/terms", "/cookies"].map((path) => ({
+    url: `${SITE_URL}${path}`,
   }));
 }

@@ -63,7 +63,7 @@ export const talentPageContent: AudiencePageContent = {
   eyebrow: "Professional Dancers",
   headline: "Your work deserves to be seen.",
   summary:
-    "Bring your portfolio and experience together, get discovered, and find your next opportunity.",
+    "Our mobile app brings your portfolio and experience together, helps you get discovered, and connects you to your next opportunity.",
   heroCtas: {
     primary: { label: "Create your profile", href: "/signup" },
   },
@@ -118,14 +118,20 @@ export const talentPageContent: AudiencePageContent = {
       answer: "No. Motiion supports both represented and independent talent.",
     },
     {
+      question: "Can I keep my agent involved?",
+      answer:
+        "Yes. Add your agent’s contact information, and they’ll be CC’d on all correspondence about jobs you book through Motiion.",
+    },
+    {
       question: "Can I update my profile after every booking?",
       answer:
-        "Yes. Your Motiion portfolio is meant to evolve as reels, credits, and availability change.",
+        "Yes. Your profile updates automatically from Motiion-tracked events, and you can easily add other experiences as you go. With a Pro membership, you can generate an updated résumé to print right from the Motiion app.",
     },
     {
       question: "Is there a cost to join?",
       answer:
-        "You can start on the Free plan and upgrade to Pro when you need more visibility, media, and workflow tools. See pricing above for dancer and choreographer plans.",
+        "You can start on the Free plan and upgrade to Pro when you need more visibility, media, and workflow tools.",
+      answerLink: { label: "See pricing", href: "/pricing" },
     },
   ],
   pricing: talentPricingContent,
@@ -135,7 +141,7 @@ export const castingPageContent: AudiencePageContent = {
   eyebrow: "Industry Professionals",
   headline: "Find your talent. Bring your project together.",
   summary:
-    "Discover dancers and choreographers, build rosters, and manage castings in one workspace.",
+    "Our mobile app helps you discover dancers and choreographers, build rosters, and manage castings on the go.",
   heroCtas: {
     primary: { label: "Create an industry account", href: "/signup" },
   },
@@ -202,7 +208,7 @@ export const communityPageContent: AudiencePageContent = {
   eyebrow: "Community Members",
   headline: "Find your place in dance.",
   summary:
-    "Discover the people, classes, and events that keep you connected to the dance world.",
+    "Our mobile app connects you to the people, classes, and events that keep you part of the dance world.",
   heroCtas: {
     primary: { label: "Join the community", href: "/signup" },
   },

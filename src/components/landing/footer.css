@@ -21,7 +21,7 @@
    instead of hiding the nav below `md`. */
 .landing-footer__nav {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.75rem 1.25rem;
 }
 
@@ -38,9 +38,15 @@
   min-width: 0;
 }
 
+.landing-footer__column-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  min-width: 0;
+}
+
 @media (min-width: 64rem) {
-  /* Wide enough for the longest destination ("Industry Professionals") to sit on
-     one line — wrapped nav labels read as a layout bug. */
+  /* Give each footer section its own readable column. */
   .landing-footer__column {
     width: 9.75rem;
     flex-shrink: 0;

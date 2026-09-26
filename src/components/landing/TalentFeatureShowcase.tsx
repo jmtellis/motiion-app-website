@@ -29,7 +29,7 @@ export function TalentFeatureShowcase() {
   return (
     <section id="features" className="talent-features" aria-labelledby="talent-features-heading">
       <div className="mkt-container mkt-section-y">
-        <h2 id="talent-features-heading" className="mkt-heading">Features</h2>
+        <h2 id="talent-features-heading" className="mkt-heading text-center">Features</h2>
         <div className="talent-features__grid">
           {features.map(({ title, icon: Icon, description }) => (
             <article className="talent-features__card" key={title}>

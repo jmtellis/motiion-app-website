@@ -3,6 +3,7 @@
 import { IosDownloadHeroButton } from "./IosDownloadHeroButton";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
@@ -101,6 +102,7 @@ export function HomeMarketingHeaderClient({
   overlayHero?: boolean;
   showAudienceTabs?: boolean;
 }) {
+  const pathname = usePathname();
   const reduceMotion = useReducedMotion();
   const landingAudience = useLandingAudienceOptional();
   const [pastHero, setPastHero] = useState(wordmarkHeader);
@@ -251,7 +253,8 @@ export function HomeMarketingHeaderClient({
                 {menuOpen ? <X aria-hidden /> : <Menu aria-hidden />}
                 <span className="sr-only">{menuOpen ? "Close menu" : "Open menu"}</span>
               </button>
-              <nav id="landing-header-menu" aria-label="Account and download" className="landing-header__menu-panel" inert={!menuOpen} aria-hidden={!menuOpen}>
+              <nav id="landing-header-menu" aria-label="Main navigation" className="landing-header__menu-panel" inert={!menuOpen} aria-hidden={!menuOpen}>
+                <Link href="/services" aria-current={pathname === "/services" ? "page" : undefined} className="landing-header__menu-item" onClick={closeMenu}>Services</Link>
                 <Link href="/pricing" className="landing-header__menu-item" onClick={closeMenu}>Pricing</Link>
                 {accountUser ? <AccountPill user={accountUser} /> : <>
                   <Link href="/login" className="landing-header__menu-item" onClick={closeMenu}>Login</Link>
@@ -262,6 +265,7 @@ export function HomeMarketingHeaderClient({
             </div>
           ) : (
             <div className="landing-header__end landing-header__desktop-actions">
+              <Link href="/services" aria-current={pathname === "/services" ? "page" : undefined} className="landing-header__pricing">Services</Link>
               <Link href="/pricing" className="landing-header__pricing">Pricing</Link>
               <IosDownloadHeroButton label="Download" className="landing-header__download" />
               <span className="landing-header__action-divider" aria-hidden />

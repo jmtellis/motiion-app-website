@@ -1,6 +1,7 @@
 export type FaqItem = {
   question: string;
   answer: string;
+  answerLink?: { label: string; href: string };
 };
 
 export type CtaLink = {

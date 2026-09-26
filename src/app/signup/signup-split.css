@@ -591,6 +591,14 @@
   color: rgb(255 255 255 / 0.35);
 }
 
+/* iOS zooms focused inputs below 16px. Keep touch forms readable without
+   restricting the user's ability to pinch to zoom. */
+@media (max-width: 959px), (any-pointer: coarse) {
+  .signup-split-field input {
+    font-size: max(16px, 1rem);
+  }
+}
+
 .signup-split-field input:focus,
 .signup-split-field input:focus-visible {
   border-color: rgb(255 255 255 / 0.35);

@@ -60,7 +60,24 @@ html:has(.home-split) .landing-audience-tabs__tab { font-size: 12px; min-height:
   .home-split__headline { font-size: clamp(43px, 10.2vw, 72px); max-width: 580px; }
   .home-split__subtext { font-size: 14px; line-height: 1.7; margin: 22px 0 24px; max-width: 390px; }
   .home-split__ctas { gap: 8px; }
-  .home-split__cta { font-size: 13px; min-height: 46px; padding-inline: 18px; gap: 12px; }
+  .home-split .home-split__cta {
+    font-size: 13px;
+    min-height: 46px;
+    padding-inline: 0;
+    gap: 12px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--accent);
+  }
+  .home-split .home-split__cta:hover:not(:disabled),
+  .home-split .home-split__cta:active:not(:disabled) {
+    background: transparent;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .home-split .home-split__cta:focus-visible { outline-color: var(--accent); }
   .home-split__app-link { font-size: 12px; }
   .home-split__events { top: 108px; right: 0; bottom: auto; left: 0; height: 320px; align-items: flex-start; -webkit-mask-image: none; mask-image: none; }
   .home-split__event { width: 220px; height: 274px; padding: 16px; border-radius: 24px; }

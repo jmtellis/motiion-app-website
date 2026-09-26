@@ -151,9 +151,14 @@ export function Footer({
           {/* Every destination stays reachable at every width — a reveal must
               never cost navigation access. */}
           <nav aria-label="Footer" className="landing-footer__nav">
-            {footerColumns.map((column) => (
+            {footerColumns.slice(0, 2).map((column) => (
               <FooterColumn key={column.title} title={column.title} links={column.links} />
             ))}
+            <div className="landing-footer__column-group">
+              {footerColumns.slice(2).map((column) => (
+                <FooterColumn key={column.title} title={column.title} links={column.links} />
+              ))}
+            </div>
           </nav>
         </div>
 

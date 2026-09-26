@@ -8,36 +8,33 @@ export type FooterColumn = {
   links: FooterLink[];
 };
 
+export const CONTACT_HREF = "mailto:hello@motiion.com";
+
 /** Placeholder `#` links can be replaced when pages ship. */
 export const footerColumns: FooterColumn[] = [
   {
     title: "Platform",
     links: [
-      { label: "Community Members", href: "/?audience=community" },
-      { label: "Professional Dancers", href: "/?audience=talent" },
-      { label: "Industry Professionals", href: "/?audience=casting" },
-      { label: "Log In", href: "/login" },
-      { label: "Sign Up", href: "/signup" },
+      { label: "Auditions", href: "#" },
+      { label: "Agency", href: "#" },
+      { label: "Login", href: "/login" },
+      { label: "Download App", href: "https://apps.apple.com/app/id6759847766" },
     ],
   },
   {
     title: "Company",
     links: [
-      { label: "About", href: "https://www.motiion.io/about" },
-      { label: "Careers", href: "https://www.motiion.io/careers" },
+      { label: "Services", href: "/services" },
+      { label: "Pricing", href: "/pricing" },
       { label: "Partnerships", href: "https://www.motiion.io/partnerships" },
-      { label: "Contact", href: "mailto:hello@motiion.com" },
-      { label: "Beta Program", href: "/#signup" },
+      { label: "Contact", href: CONTACT_HREF },
     ],
   },
   {
     title: "Resources",
     links: [
-      { label: "Help Center", href: "#" },
-      { label: "Trust & Safety", href: "#" },
-      { label: "Verified Talent", href: "#" },
-      { label: "Blog", href: "#" },
-      { label: "System Status", href: "#" },
+      { label: "Dancers Alliance", href: "https://www.dancersalliance.org/" },
+      { label: "SAG-AFTRA", href: "https://www.sagaftra.org/" },
     ],
   },
   {

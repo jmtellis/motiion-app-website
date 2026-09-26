@@ -28,7 +28,6 @@ export function TalentCredentialSection() {
           <p className="talent-credential__eyebrow">Your Motiion credential</p>
           <h2 id="credential-heading">Make your<br />{" "}<em>introduction.</em></h2>
           <p className="talent-credential__description">Your name. Your work. One scan away. Share a direct connection to your portfolio, wherever you meet.</p>
-          <div className="talent-credential__caption"><span /> Made for the moments that connect us.</div>
         </div>
 
         <div className="talent-credential__visual">

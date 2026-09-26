@@ -1,17 +1,14 @@
 "use client";
 
 import { Minus, Plus } from "lucide-react";
+import Link from "next/link";
 import { useId, useState } from "react";
+import type { FaqItem } from "@/lib/marketing/homepage-content";
 
 import "./faq-accordion.css";
 
-type FAQItem = {
-  question: string;
-  answer: string;
-};
-
 type FAQAccordionProps = {
-  items: FAQItem[];
+  items: FaqItem[];
   dark?: boolean;
 };
 
@@ -59,7 +56,10 @@ export function FAQAccordion({ items, dark = false }: FAQAccordionProps) {
               data-open={isOpen ? "true" : "false"}
             >
               <div className="faq-accordion__answer-inner">
-                <p className="faq-accordion__answer-text">{item.answer}</p>
+                <p className="faq-accordion__answer-text">
+                  {item.answer}
+                  {item.answerLink && <> <Link className="underline underline-offset-4 hover:opacity-80" href={item.answerLink.href}>{item.answerLink.label}</Link>.</>}
+                </p>
               </div>
             </div>
           </article>

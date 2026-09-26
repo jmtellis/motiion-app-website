@@ -42,7 +42,11 @@ export function LandingAudiencePanel() {
           aria-label={segment.label}
         >
           <div className="landing-audience-intro__inner">
-            <p className="mkt-lead landing-audience-intro__summary">{segment.content.summary}</p>
+            <p className="mkt-lead landing-audience-intro__summary">
+              {segment.content.summary.split(/(mobile app)/g).map((part, index) =>
+                part === "mobile app" ? <strong key={index} className="font-semibold text-white">{part}</strong> : part,
+              )}
+            </p>
           </div>
         </section>
 

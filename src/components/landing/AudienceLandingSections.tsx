@@ -119,7 +119,7 @@ export function AudienceLandingSections({
       {afterWorkflow}
 
       {!featureShowcase && <AudienceSection id="features" altBackground={false} dark={dark}>
-        <h2 className="mkt-heading">Features</h2>
+        <h2 className="mkt-heading text-center">Features</h2>
         <p className="mkt-lead mt-4">{content.trustTitle}</p>
         <ul className="audience-features">
           {content.trustPoints.map(point => <li key={point}>{point}</li>)}

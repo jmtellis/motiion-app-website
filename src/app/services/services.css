@@ -1,0 +1,21 @@
+.services-page { background: #0b0b0b; color: #f5f5f5; padding: 150px 0 88px; }
+.services-page h1 { margin: 0 0 60px; font-size: clamp(42px, 5vw, 64px); font-weight: 400; letter-spacing: -.055em; line-height: 1.1; }
+.services-live { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(36px, 7vw, 100px); }
+.services-live h2 { font-size: clamp(30px, 3.5vw, 44px); font-weight: 400; line-height: 1.15; letter-spacing: -.04em; margin-bottom: 22px; }
+.services-page p { color: #aaa; line-height: 1.7; }
+.services-live .services-intro { color: #e5e5e5; font-size: clamp(20px, 2vw, 24px); line-height: 1.5; letter-spacing: -.02em; margin-bottom: 18px; max-width: 440px; }
+.services-live .btn-hero-pill { margin-top: 28px; }
+.services-details { list-style: none; padding: 0; margin: 0; }
+.services-details li + li { margin-top: 24px; padding-top: 24px; border-top: 1px solid #ffffff16; }
+.services-details h3 { font-size: 17px; font-weight: 500; margin-bottom: 8px; }
+.services-details p, .services-upcoming p { font-size: 15px; }
+.services-upcoming { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 7vw, 100px); margin-top: 64px; padding-top: 36px; border-top: 1px solid #ffffff1c; }
+.services-upcoming h2 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; color: #ccc; font-size: 20px; font-weight: 400; letter-spacing: -.02em; margin-bottom: 12px; }
+.services-upcoming h2 span { font-size: 12px; letter-spacing: 0; color: #aaa; white-space: nowrap; }
+.services-page a:focus-visible { outline: 2px solid #2dd4bf; outline-offset: 6px; }
+@media (max-width: 767px) {
+  .services-page { padding: 110px 0 56px; }
+  .services-page h1 { margin-bottom: 36px; }
+  .services-live, .services-upcoming { grid-template-columns: 1fr; }
+  .services-upcoming { margin-top: 40px; padding-top: 28px; }
+}

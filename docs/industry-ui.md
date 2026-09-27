@@ -81,3 +81,15 @@ projects and drafts within the published-casting limit, applications, rosters,
 bookings, activities and attendance, synthetic conversations, and sample files.
 It never changes subscriptions. Portraits represent demo personas, not real
 identity claims. `.staging/demo-manifest.json` stays private and ignored.
+
+## Hierarchy and spacing
+
+Use 30px page titles (28px on phones), 18–20px section headings, 14px
+working text, and 12px supporting metadata. Status labels may be compact but
+must remain readable. Controls are at least 40px high, with primary mobile
+actions at least 44px. Use 24px between sections, 16–24px inside surfaces,
+and 8–12px between related controls. Keep settings content to a readable form
+width; let tables, calendars, and talent grids use the available workspace.
+Casting review keeps role and view controls in one toolbar. The Talent Navigator
+keeps its existing image-led composition. Responsive grids must size cards from
+available content width rather than assuming the sidebar has a fixed width.

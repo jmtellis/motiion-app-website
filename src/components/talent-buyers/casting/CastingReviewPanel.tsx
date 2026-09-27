@@ -9,11 +9,6 @@ import {
   upsertCastingEvaluation,
 } from "@/app/(buyer-app)/(paid)/projects/[id]/casting-workflow/actions";
 import {
-  deriveCastingWorkflowState,
-  getCastingPanelHeader,
-  getCastingPrimaryAction,
-} from "@/lib/talent-buyers/casting/casting-navigation";
-import {
   filterCastingCandidates,
   roleMatchIds,
 } from "@/lib/talent-buyers/casting/casting-filters";
@@ -24,7 +19,6 @@ import type {
   CastingRole,
   ReviewViewMode,
 } from "@/lib/talent-buyers/casting/casting-types";
-import { castingWorkspaceHref } from "@/lib/talent-buyers/casting/casting-routes";
 
 import { EmptyState } from "@/components/talent-buyers/dashboard/EmptyState";
 import { SegmentedControl } from "@/components/talent-buyers/dashboard/SegmentedControl";
@@ -32,7 +26,6 @@ import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
 import { useProjectWorkspace } from "@/components/talent-buyers/project/ProjectWorkspaceContext";
 
 import { CastingCandidateDrawer } from "./CastingCandidateDrawer";
-import { CastingPanelHeader } from "./CastingPanelHeader";
 import { CastingReviewFocusProfile } from "./CastingReviewFocusProfile";
 import { PROFILE_DRAG_MIME } from "./CastingTalentCarousel";
 
@@ -44,13 +37,20 @@ const VIEW_MODES: { value: ReviewViewMode; label: string }[] = [
 ];
 
 const SHORTLIST_STATUSES: CastingCandidateStatus[] = ["shortlisted"];
-const SUBMISSION_QUEUE_STATUSES: CastingCandidateStatus[] = ["submitted", "in_review"];
+const SUBMISSION_QUEUE_STATUSES: CastingCandidateStatus[] = [
+  "submitted",
+  "in_review",
+];
 
 function replaceReviewQuery(params: { role: string }) {
   const next = new URLSearchParams();
   next.set("role", params.role);
   const query = next.toString();
-  window.history.replaceState(null, "", query ? `?${query}` : window.location.pathname);
+  window.history.replaceState(
+    null,
+    "",
+    query ? `?${query}` : window.location.pathname,
+  );
 }
 
 function candidateMatchesRole(
@@ -59,7 +59,9 @@ function candidateMatchesRole(
   roles: CastingRole[],
 ) {
   if (roleId === "all") return true;
-  const role = roles.find((item) => item.id === roleId || item.bridgedRoleId === roleId);
+  const role = roles.find(
+    (item) => item.id === roleId || item.bridgedRoleId === roleId,
+  );
   if (!role) return candidate.roleIds.includes(roleId);
   const ids = roleMatchIds(role);
   return candidate.roleIds.some((id) => ids.includes(id));
@@ -71,12 +73,17 @@ export function CastingReviewPanel() {
   const { showToast } = useToast();
   const { projectId, castingWorkflow, currentUserId } = useProjectWorkspace();
   const [viewMode, setViewMode] = useState<ReviewViewMode>("cards");
-  const [activeCandidate, setActiveCandidate] = useState<CastingCandidate | null>(null);
+  const [activeCandidate, setActiveCandidate] =
+    useState<CastingCandidate | null>(null);
   const [focusIndex, setFocusIndex] = useState(0);
   const [dropActive, setDropActive] = useState(false);
-  const [pendingShortlistIds, setPendingShortlistIds] = useState<Set<string>>(new Set());
+  const [pendingShortlistIds, setPendingShortlistIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [isPending, startTransition] = useTransition();
-  const [roleFilter, setRoleFilter] = useState(searchParams.get("role") ?? "all");
+  const [roleFilter, setRoleFilter] = useState(
+    searchParams.get("role") ?? "all",
+  );
 
   const workflow = castingWorkflow ?? {
     primaryCasting: null,
@@ -92,13 +99,17 @@ export function CastingReviewPanel() {
     () =>
       workflow.candidates
         .filter(isReviewableCastingCandidate)
-        .filter((candidate) => candidateMatchesRole(candidate, roleFilter, workflow.roles)),
+        .filter((candidate) =>
+          candidateMatchesRole(candidate, roleFilter, workflow.roles),
+        ),
     [workflow.candidates, workflow.roles, roleFilter],
   );
 
   const shortlisted = useMemo(
     () =>
-      roleScopedCandidates.filter((candidate) => SHORTLIST_STATUSES.includes(candidate.status)),
+      roleScopedCandidates.filter((candidate) =>
+        SHORTLIST_STATUSES.includes(candidate.status),
+      ),
     [roleScopedCandidates],
   );
 
@@ -138,15 +149,6 @@ export function CastingReviewPanel() {
     replaceReviewQuery({ role: next });
   }
 
-  const state = deriveCastingWorkflowState({ ...workflow, candidates: roleScopedCandidates });
-  const header = getCastingPanelHeader("review");
-  const primaryAction = {
-    ...getCastingPrimaryAction("review", state),
-    label: "Go to Cast",
-    actionId: "go-to-cast",
-    disabled: shortlisted.length === 0,
-  };
-
   useEffect(() => {
     if (!submissions.length) {
       setFocusIndex(0);
@@ -158,7 +160,8 @@ export function CastingReviewPanel() {
   }, [submissions.length, focusIndex]);
 
   const focusCandidate =
-    submissions[Math.min(focusIndex, Math.max(submissions.length - 1, 0))] ?? null;
+    submissions[Math.min(focusIndex, Math.max(submissions.length - 1, 0))] ??
+    null;
 
   function moveCandidate(candidateId: string, status: CastingCandidateStatus) {
     startTransition(async () => {
@@ -175,7 +178,10 @@ export function CastingReviewPanel() {
           next.delete(candidateId);
           return next;
         });
-        showToast({ message: result.error ?? "Update failed", variant: "error" });
+        showToast({
+          message: result.error ?? "Update failed",
+          variant: "error",
+        });
         return;
       }
       showToast({
@@ -192,7 +198,11 @@ export function CastingReviewPanel() {
   }
 
   function shortlistCandidate(candidate: CastingCandidate) {
-    if (shortlistedIds.has(candidate.id) || pendingShortlistIds.has(candidate.id)) return;
+    if (
+      shortlistedIds.has(candidate.id) ||
+      pendingShortlistIds.has(candidate.id)
+    )
+      return;
     setPendingShortlistIds((current) => new Set(current).add(candidate.id));
     moveCandidate(candidate.id, "shortlisted");
   }
@@ -205,12 +215,6 @@ export function CastingReviewPanel() {
       return next;
     });
     moveCandidate(candidate.id, "submitted");
-  }
-
-  function handlePrimaryAction(actionId: string) {
-    if (actionId === "go-to-cast" || actionId === "review-next") {
-      router.push(castingWorkspaceHref(projectId, "cast"));
-    }
   }
 
   function handleDrop(event: React.DragEvent<HTMLElement>) {
@@ -244,13 +248,6 @@ export function CastingReviewPanel() {
 
   return (
     <>
-      <CastingPanelHeader
-        title={header.title}
-        center={roleToggle}
-        primaryAction={primaryAction}
-        onPrimaryAction={handlePrimaryAction}
-      />
-
       <div
         className={`project-workspace__panel-body casting-review${
           viewMode === "focus" ? " casting-review--focus" : ""
@@ -259,7 +256,7 @@ export function CastingReviewPanel() {
         <div className="casting-review__layout">
           <div className="casting-review__main">
             <div className="casting-review__toolbar">
-              <span className="casting-review__toolbar-spacer" aria-hidden />
+              {roleToggle}
               <div className="casting-review__toolbar-center">
                 <SegmentedControl
                   options={VIEW_MODES}
@@ -298,7 +295,9 @@ export function CastingReviewPanel() {
                     : "Invite talent and wait for submissions, or add candidates from Find Talent."
                 }
                 actionLabel={
-                  shortlisted.length || roleScopedCandidates.length ? undefined : "Find talent"
+                  shortlisted.length || roleScopedCandidates.length
+                    ? undefined
+                    : "Find talent"
                 }
                 actionHref={
                   shortlisted.length || roleScopedCandidates.length
@@ -316,7 +315,10 @@ export function CastingReviewPanel() {
                       className="casting-candidate-card casting-review__draggable-card"
                       draggable
                       onDragStart={(event) => {
-                        event.dataTransfer.setData(PROFILE_DRAG_MIME, candidate.id);
+                        event.dataTransfer.setData(
+                          PROFILE_DRAG_MIME,
+                          candidate.id,
+                        );
                         event.dataTransfer.effectAllowed = "copy";
                       }}
                     >
@@ -343,14 +345,18 @@ export function CastingReviewPanel() {
                               {candidate.agency.trim()}
                             </span>
                           ) : (
-                            <span className="casting-review__card-meta">Independent</span>
+                            <span className="casting-review__card-meta">
+                              Independent
+                            </span>
                           )}
                         </div>
                       </button>
                       <button
                         type="button"
                         className="casting-review__card-shortlist"
-                        disabled={isPending || pendingShortlistIds.has(candidate.id)}
+                        disabled={
+                          isPending || pendingShortlistIds.has(candidate.id)
+                        }
                         aria-label={`Add ${candidate.displayName} to shortlist`}
                         title="Add to shortlist"
                         onMouseDown={(event) => event.stopPropagation()}
@@ -368,7 +374,9 @@ export function CastingReviewPanel() {
               </ul>
             ) : null}
 
-            {submissions.length > 0 && viewMode === "focus" && focusCandidate ? (
+            {submissions.length > 0 &&
+            viewMode === "focus" &&
+            focusCandidate ? (
               <CastingReviewFocusProfile
                 candidate={focusCandidate}
                 indexLabel={`${focusIndex + 1} of ${submissions.length}`}
@@ -376,9 +384,13 @@ export function CastingReviewPanel() {
                 canGoNext={submissions.length > 1}
                 isPending={isPending}
                 onPrevious={() =>
-                  setFocusIndex((i) => (i - 1 + submissions.length) % submissions.length)
+                  setFocusIndex(
+                    (i) => (i - 1 + submissions.length) % submissions.length,
+                  )
                 }
-                onNext={() => setFocusIndex((i) => (i + 1) % submissions.length)}
+                onNext={() =>
+                  setFocusIndex((i) => (i + 1) % submissions.length)
+                }
               />
             ) : null}
           </div>
@@ -396,55 +408,62 @@ export function CastingReviewPanel() {
             onDragLeave={() => setDropActive(false)}
             onDrop={handleDrop}
           >
-              <div className="casting-find-talent-board__section-header">
-                <h3 id="casting-shortlist-heading">Shortlist ({shortlisted.length})</h3>
-              </div>
+            <div className="casting-find-talent-board__section-header">
+              <h3 id="casting-shortlist-heading">
+                Shortlist ({shortlisted.length})
+              </h3>
+            </div>
 
-              {shortlisted.length === 0 ? (
-                <div className="casting-find-talent-dropzone">
-                  <p>Drop submissions here to shortlist.</p>
-                </div>
-              ) : (
-                <ul className="casting-find-talent-invite-list">
-                  {shortlisted.map((candidate) => (
-                    <li key={candidate.id} className="casting-find-talent-invite-item">
-                      <div className="casting-find-talent-invite-item__identity">
-                        {candidate.headshotUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={candidate.headshotUrl}
-                            alt=""
-                            className="casting-find-talent-invite-item__avatar"
-                          />
-                        ) : (
-                          <div className="casting-find-talent-invite-item__avatar casting-review__avatar-empty" />
-                        )}
-                        <div className="casting-find-talent-invite-item__main">
-                          <button
-                            type="button"
-                            className="casting-find-talent-invite-item__name casting-review__shortlist-name"
-                            onClick={() => setActiveCandidate(candidate)}
-                          >
-                            {candidate.displayName}
-                          </button>
-                          <span className="casting-find-talent-invite-item__status">Shortlisted</span>
-                        </div>
+            {shortlisted.length === 0 ? (
+              <div className="casting-find-talent-dropzone">
+                <p>Drop submissions here to shortlist.</p>
+              </div>
+            ) : (
+              <ul className="casting-find-talent-invite-list">
+                {shortlisted.map((candidate) => (
+                  <li
+                    key={candidate.id}
+                    className="casting-find-talent-invite-item"
+                  >
+                    <div className="casting-find-talent-invite-item__identity">
+                      {candidate.headshotUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={candidate.headshotUrl}
+                          alt=""
+                          className="casting-find-talent-invite-item__avatar"
+                        />
+                      ) : (
+                        <div className="casting-find-talent-invite-item__avatar casting-review__avatar-empty" />
+                      )}
+                      <div className="casting-find-talent-invite-item__main">
+                        <button
+                          type="button"
+                          className="casting-find-talent-invite-item__name casting-review__shortlist-name"
+                          onClick={() => setActiveCandidate(candidate)}
+                        >
+                          {candidate.displayName}
+                        </button>
+                        <span className="casting-find-talent-invite-item__status">
+                          Shortlisted
+                        </span>
                       </div>
-                      <button
-                        type="button"
-                        className="casting-find-talent-invite-item__remove"
-                        onClick={() => unshortlistCandidate(candidate)}
-                        aria-label={`Remove ${candidate.displayName} from shortlist`}
-                        title="Remove from shortlist"
-                        disabled={isPending}
-                      >
-                        <X className="size-3.5" aria-hidden />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+                    </div>
+                    <button
+                      type="button"
+                      className="casting-find-talent-invite-item__remove"
+                      onClick={() => unshortlistCandidate(candidate)}
+                      aria-label={`Remove ${candidate.displayName} from shortlist`}
+                      title="Remove from shortlist"
+                      disabled={isPending}
+                    >
+                      <X className="size-3.5" aria-hidden />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </div>
       </div>
 
@@ -452,7 +471,8 @@ export function CastingReviewPanel() {
         <CastingCandidateDrawer
           candidate={activeCandidate}
           evaluations={workflow.evaluations.filter(
-            (evaluation) => evaluation.castingCandidateId === activeCandidate.id,
+            (evaluation) =>
+              evaluation.castingCandidateId === activeCandidate.id,
           )}
           currentUserId={currentUserId}
           onClose={() => setActiveCandidate(null)}

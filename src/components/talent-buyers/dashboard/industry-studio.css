@@ -1226,3 +1226,27 @@
     min-width: 0;
   }
 }
+/* Inbox inherits a legacy framed wrapper; keep the page heading outside its surface. */
+.workspace-shell--industry
+  .workspace-frame
+  .industry-studio-canvas
+  .buyer-messages-workspace {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+.workspace-shell--industry
+  .workspace-frame
+  .industry-studio-canvas
+  .buyer-messages-workspace
+  input[placeholder="Search conversations"] {
+  padding-left: 36px;
+}
+@media (min-width: 768px) {
+  .workspace-shell--industry
+    .workspace-frame
+    .buyer-messages-workspace
+    > div:last-child {
+    grid-template-columns: minmax(280px, 32%) minmax(0, 1fr);
+  }
+}

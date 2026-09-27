@@ -1,0 +1,12 @@
+# Vercel CLI does not inherit every .gitignore rule. Never upload local secrets.
+.env*
+.staging/
+.git/
+.next/
+node_modules/
+.vercel/
+.agents/
+.claude/
+.cursor/
+supabase/.temp/
+*.tsbuildinfo

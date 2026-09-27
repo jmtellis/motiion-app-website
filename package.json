@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:environment": "npx tsx --test scripts/environment-isolation.test.ts",
     "test:casting": "node scripts/casting-workflow.test.mjs",
     "test:breakdown-prefill": "npx tsx --test scripts/breakdown-prefill.test.ts",
     "test:industry-onboarding": "npx tsx --test scripts/industry-onboarding.test.ts",

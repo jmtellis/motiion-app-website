@@ -20,13 +20,20 @@ import { BuyerProfileModal } from "./BuyerProfileModal";
 import { DashboardScrollLock } from "./DashboardScrollLock";
 import { SidebarNav } from "./SidebarNav";
 
-import { useWorkspaceSidebar, WorkspaceSidebarResize } from "@/components/workspace/WorkspaceSidebar";
+import {
+  useWorkspaceSidebar,
+  WorkspaceSidebarResize,
+} from "@/components/workspace/WorkspaceSidebar";
 import "@/components/workspace/workspace.css";
 import "./industry-light.css";
 import "./industry-experience.css";
+import "./industry-studio.css";
 
 /** Match Find Talent hubs: no top chrome unless the page needs nested crumbs or end actions. */
-function buyerShellNeedsChrome(pathname: string, chrome: BuyerPageChromeConfig) {
+function buyerShellNeedsChrome(
+  pathname: string,
+  chrome: BuyerPageChromeConfig,
+) {
   if (pathname.startsWith("/talent")) return false;
   if (chrome.end != null || chrome.leading != null) return true;
   const crumbs = chrome.breadcrumbs ?? defaultBuyerChromeBreadcrumbs(pathname);
@@ -79,7 +86,10 @@ export function BuyerDashboardShell({
   }, []);
 
   function toggleSidebar() {
-    if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 1023px)").matches
+    ) {
       setMobileOpen((open) => !open);
       return;
     }
@@ -110,61 +120,64 @@ export function BuyerDashboardShell({
           sidebarExpanded={sidebarExpanded}
         />
 
-        <WorkspaceSidebarResize sidebar={sidebar} controls="buyer-sidebar-nav" />
+        <WorkspaceSidebarResize
+          sidebar={sidebar}
+          controls="buyer-sidebar-nav"
+        />
         <div className="workspace-frame">
-        <NavigationProgress />
+          <NavigationProgress />
 
-        {showChrome ? (
-          <div className="relative h-auto min-h-0 buyer-dashboard-shell__chrome lg:h-full">
-            <BuyerChromeBar
-              className="buyer-chrome-bar--dashboard h-full"
-              progressPercent={chrome.progressPercent}
-              start={
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setMobileOpen(true)}
-                    className="inline-flex size-8 items-center justify-center rounded-full text-white/70 transition hover:bg-white/6 hover:text-white lg:hidden"
-                    aria-label="Open navigation menu"
-                    aria-expanded={mobileOpen}
-                    aria-controls="buyer-sidebar-nav"
-                  >
-                    <Menu className="size-4" aria-hidden />
-                  </button>
-                  <BuyerChromeTitle />
-                </>
-              }
-              end={chrome.end}
-            />
-          </div>
-        ) : null}
+          {showChrome ? (
+            <div className="relative h-auto min-h-0 buyer-dashboard-shell__chrome lg:h-full">
+              <BuyerChromeBar
+                className="buyer-chrome-bar--dashboard h-full"
+                progressPercent={chrome.progressPercent}
+                start={
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setMobileOpen(true)}
+                      className="inline-flex size-8 items-center justify-center rounded-full text-white/70 transition hover:bg-white/6 hover:text-white lg:hidden"
+                      aria-label="Open navigation menu"
+                      aria-expanded={mobileOpen}
+                      aria-controls="buyer-sidebar-nav"
+                    >
+                      <Menu className="size-4" aria-hidden />
+                    </button>
+                    <BuyerChromeTitle />
+                  </>
+                }
+                end={chrome.end}
+              />
+            </div>
+          ) : null}
 
-        {!showChrome && !mobileOpen ? (
-          <div className="workspace-industry-mobile-toolbar">
-          <button
-            type="button"
-            onClick={() => setMobileOpen(true)}
-            className="workspace-icon-button"
-            aria-label="Open navigation menu"
-            aria-expanded={mobileOpen}
-            aria-controls="buyer-sidebar-nav"
+          {!showChrome && !mobileOpen ? (
+            <div className="workspace-industry-mobile-toolbar">
+              <button
+                type="button"
+                onClick={() => setMobileOpen(true)}
+                className="workspace-icon-button"
+                aria-label="Open navigation menu"
+                aria-expanded={mobileOpen}
+                aria-controls="buyer-sidebar-nav"
+              >
+                <Menu className="size-4" aria-hidden />
+              </button>
+              <span>Motiion</span>
+            </div>
+          ) : null}
+
+          <main
+            ref={mainRef}
+            className={`buyer-dashboard-shell__main ${isTalentRoute ? "" : "industry-studio-canvas"} relative flex min-h-0 flex-col text-white ${
+              isTalentRoute
+                ? "overflow-hidden overscroll-none p-0"
+                : "overflow-y-auto overscroll-none px-5 pt-5 pb-0 lg:px-8 lg:pt-7 lg:pb-0"
+            }`}
           >
-            <Menu className="size-4" aria-hidden />
-          </button>
-          <span>Motiion</span>
-          </div>
-        ) : null}
-
-        <main
-          ref={mainRef}
-          className={`buyer-dashboard-shell__main relative flex min-h-0 flex-col text-white ${
-            isTalentRoute
-              ? "overflow-hidden overscroll-none p-0"
-              : "overflow-y-auto overscroll-none px-5 pt-5 pb-0 lg:px-8 lg:pt-7 lg:pb-0"
-          }`}
-        >
-          {children}
-        </main>
+            {children}
+          </main>
         </div>
       </div>
 

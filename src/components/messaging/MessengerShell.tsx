@@ -64,7 +64,9 @@ export function MessengerShell({
   pendingRequests?: HomePendingRequest[];
   initialFilter?: ChatInboxFilter;
 }) {
-  const [activeId, setActiveId] = useState<string | null>(initialConversationId ?? null);
+  const [activeId, setActiveId] = useState<string | null>(
+    initialConversationId ?? null,
+  );
   const [query, setQuery] = useState("");
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
   const [filter, setFilter] = useState<ChatInboxFilter>(initialFilter);
@@ -101,7 +103,9 @@ export function MessengerShell({
     let rows = partitioned;
     if (projectFilterTitle?.trim()) {
       const needle = projectFilterTitle.trim().toLowerCase();
-      rows = rows.filter((row) => row.context_title?.toLowerCase().includes(needle));
+      rows = rows.filter((row) =>
+        row.context_title?.toLowerCase().includes(needle),
+      );
     }
     if (query.trim()) {
       const needle = query.trim().toLowerCase();
@@ -160,7 +164,11 @@ export function MessengerShell({
   if (!conversations.length && !requestRows.length) {
     if (isDashboard) {
       return (
-        <div className={isWorkspace ? "flex h-full min-h-0 flex-1 flex-col" : undefined}>
+        <div
+          className={
+            isWorkspace ? "flex h-full min-h-0 flex-1 flex-col" : undefined
+          }
+        >
           <InboxEmptyState />
         </div>
       );
@@ -168,17 +176,36 @@ export function MessengerShell({
 
     return (
       <div className="ui-muted-panel px-6 py-10 text-center">
-        <h2 className="text-xl font-semibold text-[var(--ds-text-default)]">No conversations yet</h2>
+        <h2 className="text-xl font-semibold text-[var(--ds-text-default)]">
+          No conversations yet
+        </h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-[var(--ds-muted)]">
-          When you message talent or respond to invites, threads will show up here.
+          When you message talent or respond to invites, threads will show up
+          here.
         </p>
       </div>
     );
   }
 
   return (
-    <div className={isWorkspace ? "buyer-messages-workspace flex h-full min-h-0 flex-1 flex-col" : "space-y-3"}>
-      {isDashboard && <IndustryPageHeader eyebrow="Stay connected" title="Inbox" description={projectFilterTitle ? `Conversations for ${projectFilterTitle}` : "The conversation behind every great collaboration."} />}
+    <div
+      className={
+        isWorkspace
+          ? "buyer-messages-workspace flex h-full min-h-0 flex-1 flex-col"
+          : "space-y-3"
+      }
+    >
+      {isDashboard && (
+        <IndustryPageHeader
+          eyebrow="Stay connected"
+          title="Inbox"
+          description={
+            projectFilterTitle
+              ? `Conversations for ${projectFilterTitle}`
+              : "The conversation behind every great collaboration."
+          }
+        />
+      )}
       {showPartitions ? (
         <div className="flex flex-wrap gap-1.5">
           {(
@@ -207,7 +234,9 @@ export function MessengerShell({
               >
                 {label}
                 {count > 0 ? (
-                  <span className="font-mono text-[11px] text-[var(--ds-subtle)]">{count}</span>
+                  <span className="font-mono text-[11px] text-[var(--ds-subtle)]">
+                    {count}
+                  </span>
                 ) : null}
               </button>
             );
@@ -216,9 +245,13 @@ export function MessengerShell({
       ) : null}
 
       {!isWorkspace && projectFilterTitle ? (
-        <p className={`text-sm ${isDashboard ? "text-white/55" : "text-[var(--ds-muted)]"}`}>
+        <p
+          className={`text-sm ${isDashboard ? "text-white/55" : "text-[var(--ds-muted)]"}`}
+        >
           Showing conversations related to{" "}
-          <span className="font-medium text-[var(--ds-on-surface)]">{projectFilterTitle}</span>
+          <span className="font-medium text-[var(--ds-on-surface)]">
+            {projectFilterTitle}
+          </span>
         </p>
       ) : null}
 
@@ -241,7 +274,9 @@ export function MessengerShell({
               isDashboard ? "border-white/8" : "border-[var(--ds-border)]"
             } ${active ? "hidden" : "block"}`}
           >
-            <div className={`border-b p-3 ${isDashboard ? "border-white/8" : "border-[var(--ds-border)]"}`}>
+            <div
+              className={`border-b p-3 ${isDashboard ? "border-white/8" : "border-[var(--ds-border)]"}`}
+            >
               <label className="relative block">
                 <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/35" />
                 <input
@@ -266,12 +301,12 @@ export function MessengerShell({
                   const isActive = row.conversation_id === activeId;
                   const isPinned = pinnedIds.includes(row.conversation_id);
                   return (
-                    <li key={row.conversation_id}>
+                    <li key={row.conversation_id} data-active={isActive}>
                       <div className="flex items-stretch">
                         <button
                           type="button"
                           onClick={() => setActiveId(row.conversation_id)}
-                          className={`flex flex-1 items-start gap-3 px-4 py-3 text-left transition ${
+                          className={`studio-conversation-row flex min-w-0 flex-1 items-start gap-3 px-4 py-3 text-left transition ${
                             isActive
                               ? isDashboard
                                 ? "bg-white/8"
@@ -281,39 +316,48 @@ export function MessengerShell({
                                 : "hover:bg-[var(--ds-surface-raised)]/70"
                           }`}
                         >
-                          <ListAvatar url={row.participant_avatar_url} name={row.participant_name} />
+                          <ListAvatar
+                            url={row.participant_avatar_url}
+                            name={row.participant_name}
+                          />
                           <span className="min-w-0 flex-1">
                             <span className="flex items-baseline justify-between gap-2">
                               <span
                                 className={`truncate text-sm font-semibold ${
-                                  isDashboard ? "text-white/90" : "text-[var(--ds-text-default)]"
+                                  isDashboard
+                                    ? "text-white/90"
+                                    : "text-[var(--ds-text-default)]"
                                 }`}
                               >
                                 {row.participant_name}
                               </span>
                               <span
                                 className={`shrink-0 text-[11px] ${
-                                  isDashboard ? "text-white/40" : "text-[var(--ds-subtle)]"
+                                  isDashboard
+                                    ? "text-white/40"
+                                    : "text-[var(--ds-subtle)]"
                                 }`}
                               >
                                 {formatWhen(row.last_message_at)}
                               </span>
                             </span>
                             {row.context_title ? (
-                              <span className="mt-0.5 block truncate text-[11px] text-[var(--ds-accent)]/80">
+                              <span className="studio-conversation-context mt-0.5 block truncate text-[11px] text-[var(--ds-accent)]/80">
                                 {row.context_title}
                               </span>
                             ) : null}
                             <span
-                              className={`mt-0.5 line-clamp-1 block text-xs ${
-                                isDashboard ? "text-white/50" : "text-[var(--ds-muted)]"
+                              className={`studio-conversation-preview mt-0.5 line-clamp-1 block text-xs ${
+                                isDashboard
+                                  ? "text-white/50"
+                                  : "text-[var(--ds-muted)]"
                               }`}
                             >
                               {formatConversationPreview(row.last_message_body)}
                             </span>
                           </span>
                           {row.unread_count > 0 ? (
-                            <span className="mt-1 inline-flex min-w-[1.15rem] shrink-0 items-center justify-center rounded-full bg-[var(--ds-accent)] px-1.5 py-0.5 font-mono text-[10px] font-bold text-[var(--ds-on-accent)]">
+                            <span className="studio-conversation-unread mt-1 inline-flex min-w-[1.15rem] shrink-0 items-center justify-center rounded-full bg-[var(--ds-accent)] px-1.5 py-0.5 font-mono text-[10px] font-bold text-[var(--ds-on-accent)]">
                               {row.unread_count > 99 ? "99+" : row.unread_count}
                             </span>
                           ) : null}
@@ -322,7 +366,9 @@ export function MessengerShell({
                           type="button"
                           onClick={() => togglePin(row.conversation_id)}
                           className={`px-2 text-white/30 hover:text-[var(--ds-accent)] ${isPinned ? "text-[var(--ds-accent)]" : ""}`}
-                          aria-label={isPinned ? "Unpin conversation" : "Pin conversation"}
+                          aria-label={
+                            isPinned ? "Unpin conversation" : "Pin conversation"
+                          }
                         >
                           <Pin className="size-3.5" />
                         </button>
@@ -334,7 +380,9 @@ export function MessengerShell({
             )}
           </aside>
 
-          <section className={`min-h-0 ${active ? "block" : "hidden md:block"}`}>
+          <section
+            className={`min-h-0 ${active ? "block" : "hidden md:block"}`}
+          >
             {active ? (
               <div className="flex h-full min-h-0 flex-col">
                 <button
@@ -346,11 +394,17 @@ export function MessengerShell({
                 >
                   <ArrowLeft className="size-3.5" /> All conversations
                 </button>
-                <ConversationPane conversation={active} currentUserId={currentUserId} variant={variant} />
+                <ConversationPane
+                  conversation={active}
+                  currentUserId={currentUserId}
+                  variant={variant}
+                />
               </div>
             ) : (
               <div className="flex h-full items-center justify-center p-8 text-center">
-                <p className={`text-sm ${isDashboard ? "text-white/45" : "text-[var(--ds-subtle)]"}`}>
+                <p
+                  className={`text-sm ${isDashboard ? "text-white/45" : "text-[var(--ds-subtle)]"}`}
+                >
                   Select a conversation to read and reply.
                 </p>
               </div>
@@ -370,7 +424,9 @@ function RequestsPane({
   if (!rows.length) {
     return (
       <div className="rounded-[var(--ds-radius-card)] border border-dashed border-[var(--ds-border)] bg-[var(--ds-surface)] px-6 py-14 text-center">
-        <h2 className="text-base font-semibold text-[var(--ds-text-default)]">No requests</h2>
+        <h2 className="text-base font-semibold text-[var(--ds-text-default)]">
+          No requests
+        </h2>
         <p className="mx-auto mt-2 max-w-sm text-sm text-[var(--ds-muted)]">
           Invites and join requests will show up here.
         </p>
@@ -385,8 +441,12 @@ function RequestsPane({
           <div className="flex items-center gap-3 px-4 py-3.5">
             <ListAvatar url={row.coverUrl} name={row.title} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-[var(--ds-text-default)]">{row.title}</p>
-              <p className="mt-0.5 truncate text-xs text-[var(--ds-muted)]">{row.detail}</p>
+              <p className="truncate text-sm font-medium text-[var(--ds-text-default)]">
+                {row.title}
+              </p>
+              <p className="mt-0.5 truncate text-xs text-[var(--ds-muted)]">
+                {row.detail}
+              </p>
             </div>
             <span className="shrink-0 font-mono text-[10px] tracking-[0.08em] text-[var(--ds-subtle)] uppercase">
               {row.kind.replace(/_/g, " ")}
@@ -396,7 +456,10 @@ function RequestsPane({
         return (
           <li key={row.id}>
             {row.href ? (
-              <Link href={row.href} className="block transition-colors hover:bg-[var(--ds-surface-raised)]">
+              <Link
+                href={row.href}
+                className="block transition-colors hover:bg-[var(--ds-surface-raised)]"
+              >
                 {body}
               </Link>
             ) : (

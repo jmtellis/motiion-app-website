@@ -2,6 +2,8 @@
 
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { WorkSpotlight } from "./WorkSpotlight";
 import { Search, ArrowUpRight, Plus } from "lucide-react";
 import {
   IndustryPageHeader,
@@ -73,6 +75,7 @@ export function ProjectsHubView({
   drafts: ProjectHubSummary[];
   inboxFiles: BuyerInboxFile[];
 }) {
+  const [workType, setWorkType] = useState("all");
   const [query, setQuery] = useState("");
   const [layout, setLayout] = useState<"list" | "grid">("list");
   const [selected, setSelected] = useState<ProjectHubSummary | null>(null);
@@ -89,22 +92,40 @@ export function ProjectsHubView({
   );
   const browseProjects = useMemo(
     () =>
-      filterByScope(allProjects, scopeFilter).filter((project) =>
-        `${project.title} ${project.workTypeLabel ?? project.projectType}`
-          .toLowerCase()
-          .includes(query.trim().toLowerCase()),
-      ),
-    [allProjects, scopeFilter, query],
+      filterByScope(allProjects, scopeFilter)
+        .filter(
+          (project) =>
+            workType === "all" ||
+            (workType === "casting"
+              ? project.projectType === "casting" &&
+                project.workKind !== "activity"
+              : project.workTypeLabel?.toLowerCase() === workType),
+        )
+        .filter((project) =>
+          `${project.title} ${project.workTypeLabel ?? project.projectType}`
+            .toLowerCase()
+            .includes(query.trim().toLowerCase()),
+        ),
+    [allProjects, scopeFilter, query, workType],
   );
   // Focus carousel includes drafts (All) plus active/archived by scope — same pool as Browse.
   const focusProjects = useMemo(
     () =>
-      filterByScope(allProjects, scopeFilter).filter((project) =>
-        `${project.title} ${project.workTypeLabel ?? project.projectType}`
-          .toLowerCase()
-          .includes(query.trim().toLowerCase()),
-      ),
-    [allProjects, scopeFilter, query],
+      filterByScope(allProjects, scopeFilter)
+        .filter(
+          (project) =>
+            workType === "all" ||
+            (workType === "casting"
+              ? project.projectType === "casting" &&
+                project.workKind !== "activity"
+              : project.workTypeLabel?.toLowerCase() === workType),
+        )
+        .filter((project) =>
+          `${project.title} ${project.workTypeLabel ?? project.projectType}`
+            .toLowerCase()
+            .includes(query.trim().toLowerCase()),
+        ),
+    [allProjects, scopeFilter, query, workType],
   );
   const isEmpty = allProjects.length === 0;
   const hasVisibleProjects =
@@ -147,38 +168,26 @@ export function ProjectsHubView({
           </button>
         }
       />
-      <div className="industry-work-summary" aria-label="Workspace overview">
-        {[
-          {
-            label: "All work",
-            value: "all" as const,
-            count: allProjects.length,
-            detail: "Projects, jobs & events",
-          },
-          {
-            label: "Active",
-            value: "active" as const,
-            count: allProjects.filter((p) => p.status === "active").length,
-            detail: "Moving forward",
-          },
-          {
-            label: "Drafts",
-            value: "draft" as const,
-            count: allProjects.filter((p) => p.status === "draft").length,
-            detail: "Ready for your next step",
-          },
-        ].map((item) => (
-          <button
-            key={item.value}
-            className="industry-summary-item"
-            aria-pressed={scopeFilter === item.value}
-            onClick={() => setScopeFilter(item.value)}
-          >
-            <span>{item.label}</span>
-            <strong>{item.count}</strong>
-            <small>{item.detail}</small>
-          </button>
-        ))}
+      {!query && scopeFilter === "all" && viewMode === "browse" && (
+        <WorkSpotlight projects={allProjects} />
+      )}
+      <div className="studio-work-counts" aria-label="Workspace summary">
+        <span>
+          <strong>
+            {allProjects.filter((p) => p.status === "active").length}
+          </strong>{" "}
+          active
+        </span>
+        <span>
+          <strong>
+            {allProjects.filter((p) => p.status === "draft").length}
+          </strong>{" "}
+          drafts
+        </span>
+        <span>
+          <strong>{allProjects.reduce((n, p) => n + p.talentCount, 0)}</strong>{" "}
+          applications & guests
+        </span>
       </div>
       <div className="industry-section-heading">
         <h2>Your work</h2>
@@ -192,6 +201,22 @@ export function ProjectsHubView({
           options={PROJECT_SCOPE_OPTIONS}
         />
         <div className="industry-work-tools">
+          <select
+            className="studio-type-filter"
+            aria-label="Work type"
+            value={workType}
+            onChange={(event) => setWorkType(event.target.value)}
+          >
+            {["all", "casting", "event", "class", "session", "job"].map(
+              (type) => (
+                <option key={type} value={type}>
+                  {type === "all"
+                    ? "All types"
+                    : type[0].toUpperCase() + type.slice(1)}
+                </option>
+              ),
+            )}
+          </select>
           <label className="industry-search">
             <Search size={16} aria-hidden />
             <input
@@ -247,6 +272,7 @@ export function ProjectsHubView({
               className="bd-btn-secondary"
               onClick={() => {
                 setQuery("");
+                setWorkType("all");
                 setScopeFilter("all");
               }}
             >
@@ -263,7 +289,7 @@ export function ProjectsHubView({
               <div className="industry-work-list__labels" aria-hidden>
                 <span>Project</span>
                 <span>Status</span>
-                <span>Last updated</span>
+                <span>People</span>
                 <span />
               </div>
               {browseProjects.map((project) => (
@@ -272,10 +298,17 @@ export function ProjectsHubView({
                     className="industry-work-row__name"
                     href={project.href ?? `/projects/${project.id}`}
                   >
-                    <span className="industry-work-monogram" aria-hidden>
-                      {project.title
-                        .replace(/^STAGING ONLY [—–-] /, "")
-                        .slice(0, 1)}
+                    <span className="studio-work-thumbnail" aria-hidden>
+                      {project.coverImageUrl ? (
+                        <Image
+                          src={project.coverImageUrl}
+                          alt=""
+                          fill
+                          sizes="44px"
+                        />
+                      ) : (
+                        <span>{project.title.slice(0, 1)}</span>
+                      )}
                     </span>
                     <span>
                       <strong>{project.title}</strong>
@@ -290,8 +323,30 @@ export function ProjectsHubView({
                   >
                     {labelFromSnake(project.status)}
                   </IndustryBadge>
-                  <span className="industry-work-row__date">
-                    {formatBuyerRelativeDate(project.lastUpdated)}
+                  <span className="industry-work-row__date studio-work-people">
+                    <span className="studio-avatars">
+                      {project.rosterPreview.slice(0, 3).map((person) => (
+                        <span key={person.id}>
+                          {person.headshotUrl ? (
+                            <Image
+                              src={person.headshotUrl}
+                              alt={person.displayName}
+                              fill
+                              sizes="24px"
+                            />
+                          ) : (
+                            person.displayName.slice(0, 1)
+                          )}
+                        </span>
+                      ))}
+                    </span>
+                    {project.talentCount || project.rosterCount ? (
+                      <small>
+                        {project.talentCount || project.rosterCount}
+                      </small>
+                    ) : (
+                      <small>—</small>
+                    )}
                   </span>
                   <button
                     className="industry-icon-action"

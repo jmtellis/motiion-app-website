@@ -36,8 +36,9 @@ Use visible labels, retain native input semantics, and provide a focus-visible o
 ## Industry workflow redesign
 
 The workspace keeps the dark navigation shell, white inset panel, and Talent
-Navigator dancer grid. New workflow components use a quiet sage accent, charcoal
-actions, light borders, and consistent action placement.
+Navigator dancer grid. The studio redesign uses a soft neutral gray canvas, elevated white content
+surfaces, charcoal actions, and restrained separators. Color is reserved for
+photography and meaningful states.
 
 - `IndustryPageHeader`: page purpose and primary action at the top right; actions
   wrap beneath the title on small screens.
@@ -59,3 +60,24 @@ actions, light borders, and consistent action placement.
 
 These changes are frontend workflow changes. Existing creation, casting, booking,
 and payment operations retain their authorization and staging isolation.
+
+## Populated studio design
+
+`industry-studio.css` is the final scoped layer. The Talent Navigator retains its
+existing grid and canvas. Other industry pages use gray space to separate white
+content surfaces; do not wrap every block in an outlined card. Use compact
+controls, subtle shadows, and a single strong focal point per page.
+
+`WorkSpotlight` chooses actual active work with applications and shows real role
+and application counts. It puts drafts alongside the feature and a searchable,
+type-filtered list below. Bookings queries only projects owned by the signed-in
+industry profile and summarizes real booking states.
+
+To refresh fictional demo data, run `node scripts/seed-industry-demo.mjs` with the
+existing staging `.env.local`. The script rejects any other Supabase URL and
+verifies the fictional owner email before writing. Deterministic IDs make repeat
+runs idempotent. It creates eight fictional talent personas with stock portraits,
+projects and drafts within the published-casting limit, applications, rosters,
+bookings, activities and attendance, synthetic conversations, and sample files.
+It never changes subscriptions. Portraits represent demo personas, not real
+identity claims. `.staging/demo-manifest.json` stays private and ignored.

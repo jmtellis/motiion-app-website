@@ -51,9 +51,11 @@ function mapActivityRow(
   counts: Map<string, number>,
 ): ProjectActivitySummary {
   const today = new Date().toISOString().slice(0, 10);
-  const eventType = (["class", "session", "event"].includes(row.type as string)
-    ? row.type
-    : "event") as ProjectActivitySummary["eventType"];
+  const eventType = (
+    ["class", "session", "event"].includes(row.type as string)
+      ? row.type
+      : "event"
+  ) as ProjectActivitySummary["eventType"];
   const activityDate = row.activity_date as string | null;
   const isUpcoming = !activityDate || activityDate >= today;
 
@@ -73,7 +75,8 @@ function mapActivityRow(
 
 async function fetchRolesByProject(projectIds: string[]) {
   const supabase = await createServerSupabaseClient();
-  if (!supabase || !projectIds.length) return new Map<string, ProjectHubRole[]>();
+  if (!supabase || !projectIds.length)
+    return new Map<string, ProjectHubRole[]>();
 
   const { data } = await supabase
     .from("roles")
@@ -97,11 +100,14 @@ async function fetchRolesByProject(projectIds: string[]) {
 
 async function fetchActivitiesByProject(projectIds: string[]) {
   const supabase = await createServerSupabaseClient();
-  if (!supabase || !projectIds.length) return new Map<string, ProjectActivitySummary[]>();
+  if (!supabase || !projectIds.length)
+    return new Map<string, ProjectActivitySummary[]>();
 
   const { data } = await supabase
     .from("activities")
-    .select("id, project_id, title, type, status, location, activity_date, start_time, cover_image_url")
+    .select(
+      "id, project_id, title, type, status, location, activity_date, start_time, cover_image_url",
+    )
     .in("project_id", projectIds)
     .neq("status", "cancelled")
     .order("activity_date", { ascending: true, nullsFirst: false });
@@ -141,7 +147,10 @@ async function fetchRosterPreviewsByProject(
   projectIds: string[],
 ): Promise<Map<string, { count: number; preview: ProjectHubRosterPreview[] }>> {
   const supabase = await createServerSupabaseClient();
-  const map = new Map<string, { count: number; preview: ProjectHubRosterPreview[] }>();
+  const map = new Map<
+    string,
+    { count: number; preview: ProjectHubRosterPreview[] }
+  >();
   if (!supabase || !projectIds.length) return map;
 
   const { data: lists } = await supabase
@@ -154,17 +163,24 @@ async function fetchRosterPreviewsByProject(
   if (!lists?.length) return map;
 
   const listIds = lists.map((list) => list.id as string);
-  const listByProject = new Map(lists.map((list) => [list.id as string, list.project_id as string]));
+  const listByProject = new Map(
+    lists.map((list) => [list.id as string, list.project_id as string]),
+  );
 
   const { data: members } = await supabase
     .from("talent_list_members")
-    .select("id, list_id, profile_id, added_at, professional_profiles(slug, media_assets(url, kind, position))")
+    .select(
+      "id, list_id, profile_id, added_at, professional_profiles(slug, media_assets(url, kind, position))",
+    )
     .in("list_id", listIds)
     .order("added_at", { ascending: false });
 
   const admin = createAdminSupabaseClient();
-  const profileIds = [...new Set((members ?? []).map((row) => row.profile_id as string))];
+  const profileIds = [
+    ...new Set((members ?? []).map((row) => row.profile_id as string)),
+  ];
   const nameByProfileId = new Map<string, string>();
+  const headshotByProfileId = new Map<string, string>();
 
   if (admin && profileIds.length) {
     const { data: profiles } = await admin
@@ -172,18 +188,26 @@ async function fetchRosterPreviewsByProject(
       .select("id, user_id, slug")
       .in("id", profileIds);
 
-    const userIds = (profiles ?? []).map((profile) => profile.user_id as string);
+    const userIds = (profiles ?? []).map(
+      (profile) => profile.user_id as string,
+    );
     const userIdByProfileId = new Map(
-      (profiles ?? []).map((profile) => [profile.id as string, profile.user_id as string]),
+      (profiles ?? []).map((profile) => [
+        profile.id as string,
+        profile.user_id as string,
+      ]),
     );
     const slugByProfileId = new Map(
-      (profiles ?? []).map((profile) => [profile.id as string, profile.slug as string | null]),
+      (profiles ?? []).map((profile) => [
+        profile.id as string,
+        profile.slug as string | null,
+      ]),
     );
 
     if (userIds.length) {
       const { data: names } = await admin
         .from("profiles")
-        .select("user_id, display_name, first_name, last_name")
+        .select("user_id, display_name, first_name, last_name, headshot_urls")
         .in("user_id", userIds);
 
       const nameByUserId = new Map(
@@ -203,6 +227,15 @@ async function fetchRosterPreviewsByProject(
           slug?.replace(/-/g, " ") ??
           "Talent";
         nameByProfileId.set(profileId, displayName);
+        const account = (names ?? []).find(
+          (person) => person.user_id === userId,
+        );
+        const headshots = account?.headshot_urls;
+        const headshot = Array.isArray(headshots)
+          ? headshots.find((url) => typeof url === "string" && url.length > 0)
+          : null;
+        if (typeof headshot === "string")
+          headshotByProfileId.set(profileId, headshot);
       }
     }
   }
@@ -224,15 +257,18 @@ async function fetchRosterPreviewsByProject(
         : row.professional_profiles;
       const media =
         profile && typeof profile === "object"
-          ? ((profile as { media_assets?: { url: string; kind: string }[] }).media_assets ?? [])
+          ? ((profile as { media_assets?: { url: string; kind: string }[] })
+              .media_assets ?? [])
           : [];
-      const headshot = media.find((asset) => asset.kind === "headshot") ?? media[0];
+      const headshot =
+        media.find((asset) => asset.kind === "headshot") ?? media[0];
       const profileId = row.profile_id as string;
 
       preview.push({
         id: row.id as string,
         displayName: nameByProfileId.get(profileId) ?? "Talent",
-        headshotUrl: headshot?.url ?? null,
+        headshotUrl:
+          headshot?.url ?? headshotByProfileId.get(profileId) ?? null,
       });
       previewsByProject.set(projectId, preview);
     }
@@ -307,7 +343,10 @@ function enrichSummaries(
   rolesByProject: Map<string, ProjectHubRole[]>,
   castingsByProject: Map<string, ProjectHubCasting[]>,
   activitiesByProject: Map<string, ProjectActivitySummary[]>,
-  rosterByProject: Map<string, { count: number; preview: ProjectHubRosterPreview[] }>,
+  rosterByProject: Map<
+    string,
+    { count: number; preview: ProjectHubRosterPreview[] }
+  >,
 ): ProjectHubSummary[] {
   return summaries.map((project) => {
     const roster = rosterByProject.get(project.id) ?? { count: 0, preview: [] };
@@ -330,15 +369,23 @@ function activityProjectType(
   return "event";
 }
 
-function activityWorkTypeLabel(eventType: ProjectActivitySummary["eventType"]): string {
+function activityWorkTypeLabel(
+  eventType: ProjectActivitySummary["eventType"],
+): string {
   if (eventType === "class") return "Class";
   if (eventType === "session") return "Session";
   return "Event";
 }
 
-function activityToHubSummary(activity: ProjectActivitySummary): ProjectHubSummary {
+function activityToHubSummary(
+  activity: ProjectActivitySummary,
+): ProjectHubSummary {
   const status: BuyerProjectSummary["status"] =
-    activity.status === "draft" ? "draft" : activity.status === "past" ? "archived" : "active";
+    activity.status === "draft"
+      ? "draft"
+      : activity.status === "past"
+        ? "archived"
+        : "active";
 
   return {
     id: activity.id,
@@ -360,13 +407,17 @@ function activityToHubSummary(activity: ProjectActivitySummary): ProjectHubSumma
 }
 
 /** Hosted activities that appear as first-class work in the Projects hub. */
-async function fetchHostedActivityHubItems(posterId: string): Promise<ProjectHubSummary[]> {
+async function fetchHostedActivityHubItems(
+  posterId: string,
+): Promise<ProjectHubSummary[]> {
   const supabase = await createServerSupabaseClient();
   if (!supabase) return [];
 
   const { data } = await supabase
     .from("activities")
-    .select("id, title, type, status, location, activity_date, start_time, cover_image_url")
+    .select(
+      "id, title, type, status, location, activity_date, start_time, cover_image_url, updated_at",
+    )
     .eq("creator_id", posterId)
     .neq("status", "cancelled")
     .order("activity_date", { ascending: false, nullsFirst: false })
@@ -390,7 +441,10 @@ async function fetchHostedActivityHubItems(posterId: string): Promise<ProjectHub
     counts.set(activityId, (counts.get(activityId) ?? 0) + 1);
   }
 
-  return rows.map((row) => activityToHubSummary(mapActivityRow(row, counts)));
+  return rows.map((row) => ({
+    ...activityToHubSummary(mapActivityRow(row, counts)),
+    lastUpdated: (row.updated_at as string | null) ?? new Date().toISOString(),
+  }));
 }
 
 /**
@@ -398,7 +452,11 @@ async function fetchHostedActivityHubItems(posterId: string): Promise<ProjectHub
  * Hide event-type project cards so the hub does not double-list empty containers.
  */
 function isLegacyEventProjectShell(project: ProjectHubSummary): boolean {
-  return project.workKind !== "activity" && project.workKind !== "job" && project.projectType === "event";
+  return (
+    project.workKind !== "activity" &&
+    project.workKind !== "job" &&
+    project.projectType === "event"
+  );
 }
 
 /** Legacy `projects.project_type = job` workspace — not the lightweight production Job card. */
@@ -416,7 +474,9 @@ function productionJobToHubSummary(row: {
 }): ProjectHubSummary {
   const rawStatus = (row.status ?? "upcoming").toLowerCase();
   const status: BuyerProjectSummary["status"] =
-    rawStatus === "completed" || rawStatus === "cancelled" ? "archived" : "active";
+    rawStatus === "completed" || rawStatus === "cancelled"
+      ? "archived"
+      : "active";
 
   return {
     id: row.id,
@@ -437,7 +497,9 @@ function productionJobToHubSummary(row: {
   };
 }
 
-async function fetchProductionJobHubItems(posterId: string): Promise<ProjectHubSummary[]> {
+async function fetchProductionJobHubItems(
+  posterId: string,
+): Promise<ProjectHubSummary[]> {
   const supabase = await createServerSupabaseClient();
   if (!supabase) return [];
 
@@ -456,7 +518,9 @@ async function fetchProductionJobHubItems(posterId: string): Promise<ProjectHubS
     .limit(200);
 
   if (organizedIds.length) {
-    query = query.or(`poster_id.eq.${posterId},id.in.(${organizedIds.join(",")})`);
+    query = query.or(
+      `poster_id.eq.${posterId},id.in.(${organizedIds.join(",")})`,
+    );
   } else {
     query = query.eq("poster_id", posterId);
   }
@@ -518,7 +582,9 @@ export async function fetchProjectsHubData(posterId: string) {
     activitiesByProject,
     rosterByProject,
   ).filter(
-    (project) => !isLegacyEventProjectShell(project) && !isLegacyJobProjectContainer(project),
+    (project) =>
+      !isLegacyEventProjectShell(project) &&
+      !isLegacyJobProjectContainer(project),
   );
 
   const projectPublished = enrichSummaries(
@@ -528,16 +594,29 @@ export async function fetchProjectsHubData(posterId: string) {
     activitiesByProject,
     rosterByProject,
   ).filter(
-    (project) => !isLegacyEventProjectShell(project) && !isLegacyJobProjectContainer(project),
+    (project) =>
+      !isLegacyEventProjectShell(project) &&
+      !isLegacyJobProjectContainer(project),
   );
 
-  const activityDrafts = hostedActivities.filter((item) => item.status === "draft");
-  const activityPublished = hostedActivities.filter((item) => item.status !== "draft");
+  const activityDrafts = hostedActivities.filter(
+    (item) => item.status === "draft",
+  );
+  const activityPublished = hostedActivities.filter(
+    (item) => item.status !== "draft",
+  );
   const jobActive = productionJobs.filter((item) => item.status !== "archived");
-  const jobArchived = productionJobs.filter((item) => item.status === "archived");
+  const jobArchived = productionJobs.filter(
+    (item) => item.status === "archived",
+  );
 
   return {
     drafts: [...projectDrafts, ...activityDrafts],
-    published: [...projectPublished, ...activityPublished, ...jobActive, ...jobArchived],
+    published: [
+      ...projectPublished,
+      ...activityPublished,
+      ...jobActive,
+      ...jobArchived,
+    ],
   };
 }

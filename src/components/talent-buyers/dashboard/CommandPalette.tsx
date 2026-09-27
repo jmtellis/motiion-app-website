@@ -88,7 +88,9 @@ export function CommandPalette() {
       icon: NAV_ICONS[item.segment] ?? Search,
       keywords: item.label.toLowerCase(),
     }));
-    return [...nav, ...QUICK_ACTIONS];
+    return [...nav, ...QUICK_ACTIONS].filter(
+      (item, index, all) => all.findIndex(other => other.href === item.href && other.label === item.label) === index,
+    );
   }, []);
 
   const filtered = useMemo(() => {

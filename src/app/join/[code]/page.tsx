@@ -29,21 +29,34 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     : `Download Motiion and use referral code ${code || rawCode} when you sign up.`;
   const appStoreId = getIosAppStoreId();
 
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.motiion.app").replace(/\/$/, "");
+  const ogImage = `${siteUrl}/motiion-og-join-invite.png`;
+
   return {
     title,
     description,
-    metadataBase: new URL((process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.motiion.app").replace(/\/$/, "")),
+    metadataBase: new URL(siteUrl),
     openGraph: {
       title,
       description,
       url: pageUrl,
       siteName: "Motiion",
       type: "website",
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: "Join with my invite",
+          type: "image/png",
+        },
+      ],
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title,
       description,
+      images: [ogImage],
     },
     ...(appStoreId
       ? {

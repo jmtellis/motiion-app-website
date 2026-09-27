@@ -191,7 +191,6 @@ html:has(.workspace-shell--industry) .buyer-modal-panel :is(button,a,input,texta
 .workspace-shell--industry .workspace-frame :is(.talent-navigator__card-sub,.talent-navigator__card-why) { color:#fff; }
 .workspace-shell--industry .workspace-frame .talent-navigator-grid-bg__ambient { background:linear-gradient(#fafbfc,#f1f3f4); }
 .workspace-shell--industry .workspace-frame .talent-navigator-grid-bg__lines { opacity:0.18; }
-.workspace-shell--industry .workspace-frame .talent-navigator__nl-compose-inner .talent-navigator__nl-input { border:0; background:transparent; box-shadow:none; }
 .workspace-shell--industry .workspace-frame .buyer-chrome-bar__cta { color:#fff; background:linear-gradient(#383b3d,#202223); border:1px solid #202223; box-shadow:inset 0 1px 0 #ffffff25,0 1px 2px #20222320; }
 .workspace-shell--industry .workspace-frame .buyer-chrome-bar__cta:hover { background:#111314; color:#fff; }
 .workspace-shell--industry .workspace-frame :is([class*="text-amber-"],[class*="text-yellow-"]) { color:#795600; }
@@ -199,9 +198,8 @@ html:has(.workspace-shell--industry) .buyer-modal-panel :is(button,a,input,texta
 .workspace-shell--industry .workspace-frame :is([class*="text-green-"],[class*="text-emerald-"]) { color:#17653b; }
 .workspace-shell--industry .workspace-frame :is([class*="text-cyan-"],[class*="text-teal-"]) { color:#006b80; }
 html:has(.workspace-shell--industry) :is(.buyer-command-panel,.buyer-toast) { background:#fff; border:1px solid #d5d8da; box-shadow:0 8px 32px #20222320; }
-.workspace-shell--industry .workspace-frame .talent-navigator .talent-navigator__nl-compose-inner .talent-navigator__nl-input { border:0; background:transparent; box-shadow:none; }
+.workspace-shell--industry .workspace-frame .talent-navigator .talent-navigator__nl-compose-inner textarea.talent-navigator__nl-input { border:0; background:transparent; box-shadow:none; }
 .workspace-shell--industry .workspace-frame .talent-navigator__focus-card { background:#fff; box-shadow:0 8px 32px #2022231a; }
-.workspace-shell--industry .workspace-frame .talent-navigator__filter-overlay::before { background:#f7f8f9; }
 .workspace-shell--industry .workspace-frame .talent-navigator__main-header { background:linear-gradient(#fffffff5,#ffffffd9,transparent); }
 .workspace-shell--industry .workspace-frame :is(.talent-navigator__focus-view-menu,.talent-navigator__focus-footer-dropdown,.talent-navigator__focus-add-menu,.talent-navigator__filter-dropdown-menu) { box-shadow:0 8px 24px #2022231a; }
 .workspace-shell--industry .workspace-frame .talent-navigator__filter-backdrop::after { background:#f7f8f9; }
@@ -218,3 +216,12 @@ html:has(.workspace-shell--industry) :is(.buyer-modal-panel,.buyer-command-panel
 .workspace-shell--industry .workspace-frame .casting-create-wizard__scroll-fade { background:linear-gradient(to top,#fff, #ffffffcc 35%,transparent); }
 .workspace-shell--industry .workspace-frame .talent-navigator__stage--filters-open .talent-navigator__grid-canvas { filter:blur(20px); opacity:0.15; }
 .workspace-shell--industry .workspace-frame :is(.talent-navigator__filter-dropdown-trigger,.talent-navigator__filter-swatch) { border-color:#858b8f; }
+/* Keep the staging notice away from Find Talent's floating composer. */
+html:has(.workspace-shell--industry) .staging-environment-badge {
+  left:12px; bottom:84px; transform:none; translate:none; max-width:190px;
+  padding:6px 10px; font-size:10px; line-height:1.4; border-radius:12px;
+}
+html:has(.buyer-dashboard-shell--sidebar-collapsed) .staging-environment-badge { left:84px; bottom:12px; }
+@media(max-width:1023px) {
+  html:has(.workspace-shell--industry) .staging-environment-badge { top:7px; right:12px; bottom:auto; left:auto; max-width:190px; }
+}

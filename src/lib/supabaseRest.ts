@@ -1,11 +1,9 @@
-import { normalizeSupabaseUrl } from "@/lib/supabase/env";
+import { getSupabaseEnv, hasSupabaseEnv } from "@/lib/supabase/env";
 
 export function getSupabaseConfig() {
-  const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseUrl = rawUrl ? normalizeSupabaseUrl(rawUrl) : "";
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !anon) return null;
-  return { supabaseUrl, anon };
+  if (!hasSupabaseEnv()) return null;
+  const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
+  return { supabaseUrl, anon: supabaseAnonKey };
 }
 
 export async function supabaseRestGet<T>(

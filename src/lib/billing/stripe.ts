@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { assertTestStripeKey, getAppEnvironment } from "@/lib/environment";
 
 import type { IndustryIdentityStatus } from "@/types/talent-buyers";
 
@@ -7,6 +8,7 @@ let stripeClient: Stripe | null = null;
 export function getStripeClient(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) return null;
+  assertTestStripeKey(key, getAppEnvironment());
   if (!stripeClient) {
     stripeClient = new Stripe(key, { apiVersion: "2026-06-24.dahlia" });
   }

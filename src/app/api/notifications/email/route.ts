@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
+import { getAppEnvironment, isEmailRecipientAllowed } from "@/lib/environment";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
@@ -19,8 +20,12 @@ export async function POST(request: Request) {
   }
 
   const { to, subject, html } = body as { to?: string; subject?: string; html?: string };
-  if (!to || !subject || !html) {
+  if (typeof to !== "string" || typeof subject !== "string" || typeof html !== "string" || !to || !subject || !html) {
     return NextResponse.json({ ok: false, error: "Missing to, subject, or html" }, { status: 400 });
+  }
+
+  if (!isEmailRecipientAllowed(to, getAppEnvironment(), process.env.STAGING_EMAIL_ALLOWLIST)) {
+    return NextResponse.json({ ok: false, error: "Recipient is not on the staging allowlist" }, { status: 403 });
   }
 
   try {

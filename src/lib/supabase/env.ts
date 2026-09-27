@@ -1,3 +1,5 @@
+import { assertSupabaseIsolation, getAppEnvironment } from "@/lib/environment";
+
 export function hasSupabaseEnv() {
   return Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&
@@ -27,5 +29,6 @@ export function getSupabaseEnv() {
     throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.");
   }
 
+  assertSupabaseIsolation(supabaseUrl, getAppEnvironment());
   return { supabaseUrl, supabaseAnonKey };
 }

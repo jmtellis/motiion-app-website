@@ -1,7 +1,17 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
+import { assertDeploymentIsolation } from "./src/lib/environment";
+
+const appEnvironment = assertDeploymentIsolation(process.env);
 
 const nextConfig: NextConfig = {
+  env: { NEXT_PUBLIC_APP_ENV: appEnvironment },
+  async headers() {
+    return appEnvironment === "production" ? [] : [{
+      source: "/:path*",
+      headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
+    }];
+  },
   experimental: {
     // Keep recently visited dynamic segments warm so sidebar revisits feel instant.
     staleTimes: {

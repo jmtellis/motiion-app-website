@@ -20,6 +20,7 @@ function seedContainer(): ProjectComposerForm {
     description: "",
     productionCompany: "",
     projectType: "casting",
+    enabledModules: { casting: true, activities: false },
     startDate: "",
     endDate: "",
     location: "",

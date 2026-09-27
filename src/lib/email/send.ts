@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { getAppEnvironment, isEmailRecipientAllowed } from "@/lib/environment";
 
 let resendClient: Resend | null = null;
 
@@ -14,6 +15,9 @@ export async function sendNotificationEmail(input: {
   subject: string;
   html: string;
 }): Promise<{ ok: boolean; error?: string }> {
+  if (!isEmailRecipientAllowed(input.to, getAppEnvironment(), process.env.STAGING_EMAIL_ALLOWLIST)) {
+    return { ok: false, error: "Email blocked: recipient is not on the staging allowlist" };
+  }
   const resend = getResend();
   if (!resend) return { ok: false, error: "Resend not configured" };
 

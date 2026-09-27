@@ -7,6 +7,7 @@ import { ArrowNavigationFocusCleanup } from "@/components/layout/ArrowNavigation
 import { AutoHideScrollbars } from "@/components/layout/AutoHideScrollbars";
 import { SITE_URL, SITE_TITLE, SITE_DESCRIPTION } from "@/lib/marketing/site-seo";
 import "./globals.css";
+import { getAppEnvironment } from "@/lib/environment";
 
 /** Product / design-system typography (docs/design.md) */
 const geistSans = GeistSans;
@@ -97,6 +98,11 @@ export default function RootLayout({
       >
         <ArrowNavigationFocusCleanup />
         <AutoHideScrollbars />
+        {getAppEnvironment() !== "production" ? (
+          <div role="status" className="pointer-events-none fixed bottom-3 left-1/2 z-[9999] -translate-x-1/2 rounded-full border border-amber-400 bg-amber-100 px-4 py-2 text-center text-xs font-semibold text-amber-950 shadow-lg">
+            TEST ENVIRONMENT · Test accounts and content only
+          </div>
+        ) : null}
         {children}
       </body>
     </html>

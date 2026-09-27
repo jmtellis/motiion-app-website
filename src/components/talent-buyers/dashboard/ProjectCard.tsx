@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { createElement } from "react";
 
 import { formatBuyerRelativeDate, labelFromSnake } from "@/lib/talent-buyers/dashboard-data";
 import {
@@ -10,6 +11,8 @@ import { getProjectTypeLabel } from "@/lib/talent-buyers/project-types";
 import type { ProjectHubSummary } from "@/lib/talent-buyers/projects-hub";
 import { resolveBuyerCoverSrc } from "@/lib/talent-buyers/stock-images";
 import type { BuyerProjectSummary } from "@/types/talent-buyer-dashboard";
+
+import { IndustryBadge } from "./IndustryUI";
 
 import { BuyerCoverImage } from "./BuyerCoverImage";
 
@@ -43,7 +46,7 @@ export function ProjectCard({
     return (
       <Link
         href={href}
-        className="group relative block min-h-[320px] overflow-hidden rounded-xl border border-[var(--buyer-line)] text-white transition-colors hover:border-white/18 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+        className="industry-photo-surface group relative block min-h-[320px] overflow-hidden rounded-xl border border-[var(--buyer-line)] text-white transition-colors hover:border-white/18 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
       >
         <BuyerCoverImage
           src={coverSrc}
@@ -103,9 +106,7 @@ export function ProjectCard({
             allowStockFallback
           />
 
-          <span className="bd-visual-card__status bd-chip shrink-0 px-2.5 py-1 text-xs font-semibold">
-            {labelFromSnake(project.status)}
-          </span>
+          <span className="bd-visual-card__status"><IndustryBadge tone={project.status === "active" ? "success" : "neutral"}>{labelFromSnake(project.status)}</IndustryBadge></span>
 
           <div className="bd-project-card__overlay">
             <p className="bd-project-card__type-label">{typeLabel}</p>
@@ -118,7 +119,7 @@ export function ProjectCard({
             className={`bd-project-card__footer-icon bd-project-card__footer-icon--${typeAccent}`}
             aria-hidden
           >
-            <TypeIcon className="size-3.5" strokeWidth={2.25} />
+            {createElement(TypeIcon, { className: "size-3.5", strokeWidth: 2.25 })}
           </span>
           <div className="bd-project-card__footer-copy">
             <p className="bd-project-card__footer-title">{project.title}</p>

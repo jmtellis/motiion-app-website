@@ -49,7 +49,7 @@
   margin: 0 0 1.5rem;
   font-size: 0.875rem;
   line-height: 1.6;
-  color: rgb(255 255 255 / 0.52);
+  color: var(--industry-muted, rgb(255 255 255 / 0.52));
 }
 
 .project-create__fields {
@@ -71,7 +71,7 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.42);
+  color: var(--industry-muted, rgb(255 255 255 / 0.42));
   padding-inline-start: var(--field-label-indent);
 }
 
@@ -79,15 +79,15 @@
   margin: 0;
   font-size: 0.8125rem;
   line-height: 1.5;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .project-create__input,
 .project-create__textarea {
   width: 100%;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.03);
-  color: rgb(255 255 255 / 0.92);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
+  background: var(--industry-fill, rgb(255 255 255 / 0.03));
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
   font-size: 0.875rem;
   outline: none;
   transition:
@@ -110,21 +110,21 @@
 
 .project-create__input::placeholder,
 .project-create__textarea::placeholder {
-  color: rgb(255 255 255 / 0.32);
+  color: var(--industry-muted, rgb(255 255 255 / 0.32));
 }
 
 .project-create__input:focus,
 .project-create__textarea:focus,
 .project-create__location-input:focus,
 .project-create__date-trigger:focus-visible {
-  border-color: rgb(255 255 255 / 0.28);
-  background: rgb(255 255 255 / 0.04);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.28));
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
   box-shadow: none;
 }
 
 .project-create__location-shell:focus-within {
-  border-color: rgb(255 255 255 / 0.28);
-  background: rgb(255 255 255 / 0.04);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.28));
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
 }
 
 .project-create__choice-grid {
@@ -144,13 +144,13 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.42);
+  color: var(--industry-muted, rgb(255 255 255 / 0.42));
 }
 
 .project-create__type-locked {
   border-radius: 0.75rem;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.02);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
+  background: var(--industry-fill, rgb(255 255 255 / 0.02));
   padding: 1rem;
 }
 
@@ -158,21 +158,21 @@
   margin: 0;
   font-size: 0.875rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .project-create__type-locked-copy {
   margin: 0.375rem 0 0;
   font-size: 0.8125rem;
   line-height: 1.5;
-  color: rgb(255 255 255 / 0.52);
+  color: var(--industry-muted, rgb(255 255 255 / 0.52));
 }
 
 .project-create__type-locked-note {
   margin: 0.75rem 0 0;
   font-size: 0.75rem;
   line-height: 1.5;
-  color: rgb(255 255 255 / 0.38);
+  color: var(--industry-muted, rgb(255 255 255 / 0.38));
 }
 
 @media (min-width: 640px) {
@@ -185,8 +185,8 @@
   display: block;
   width: 100%;
   border-radius: 0.75rem;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.02);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
+  background: var(--industry-fill, rgb(255 255 255 / 0.02));
   padding: 1rem;
   text-align: left;
   cursor: pointer;
@@ -196,8 +196,8 @@
 }
 
 .project-create__choice:hover {
-  border-color: rgb(255 255 255 / 0.18);
-  background: rgb(255 255 255 / 0.04);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.18));
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
 }
 
 .project-create__choice--selected {
@@ -206,21 +206,21 @@
 }
 
 .project-create__choice--picker:hover {
-  border-color: rgb(255 255 255 / 0.22);
-  background: rgb(255 255 255 / 0.05);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.22));
+  background: var(--industry-fill, rgb(255 255 255 / 0.05));
 }
 
 .project-create__choice-title {
   font-size: 0.875rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .project-create__choice-copy {
   margin: 0.25rem 0 0;
   font-size: 0.8125rem;
   line-height: 1.5;
-  color: rgb(255 255 255 / 0.52);
+  color: var(--industry-muted, rgb(255 255 255 / 0.52));
 }
 
 .project-create__error-banner {
@@ -230,13 +230,13 @@
   background: rgb(248 113 113 / 0.1);
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
-  color: #fca5a5;
+  color: var(--industry-danger, #fca5a5);
 }
 
 .project-create__status-banner {
   margin-bottom: 1rem;
   border-radius: 0.625rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.12));
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
   line-height: 1.5;
@@ -245,7 +245,7 @@
 .project-create__status-banner--draft {
   border-color: rgb(251 191 36 / 0.35);
   background: rgb(251 191 36 / 0.08);
-  color: #fcd34d;
+  color: var(--industry-warning, #fcd34d);
 }
 
 .project-create__notice-banner {
@@ -255,7 +255,7 @@
   background: rgb(45 212 191 / 0.08);
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
-  color: #5eead4;
+  color: var(--industry-success, #5eead4);
 }
 
 .project-create__actions {
@@ -264,7 +264,7 @@
   gap: 1rem;
   margin-top: 2rem;
   padding-top: 1.5rem;
-  border-top: 1px solid rgb(255 255 255 / 0.08);
+  border-top: 1px solid var(--industry-line, rgb(255 255 255 / 0.08));
 }
 
 .project-create__actions-primary {
@@ -296,7 +296,7 @@
 .project-create__btn--primary {
   border: 1px solid var(--buyer-accent-border, color-mix(in oklab, var(--accent) 45%, transparent));
   background: var(--buyer-accent-fill, color-mix(in oklab, var(--accent) 16%, #111111));
-  color: #fafafa;
+  color: var(--industry-text, #fafafa);
   font-weight: 500;
 }
 
@@ -306,20 +306,20 @@
 }
 
 .project-create__btn--secondary {
-  border: 1px solid rgb(255 255 255 / 0.14);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.14));
   background: transparent;
-  color: rgb(255 255 255 / 0.85);
+  color: var(--industry-text, rgb(255 255 255 / 0.85));
 }
 
 .project-create__btn--secondary:hover:not(:disabled) {
-  border-color: rgb(255 255 255 / 0.24);
-  background: rgb(255 255 255 / 0.04);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.24));
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
 }
 
 .project-create__btn--danger {
   border: 1px solid rgb(248 113 113 / 0.35);
   background: rgb(248 113 113 / 0.08);
-  color: #fca5a5;
+  color: var(--industry-danger, #fca5a5);
 }
 
 .project-create__btn--danger:hover:not(:disabled) {
@@ -333,7 +333,7 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.42);
+  color: var(--industry-muted, rgb(255 255 255 / 0.42));
 }
 
 .project-create__cover-drop {
@@ -450,15 +450,15 @@
   gap: 0.5rem;
   min-width: 0;
   border-radius: 0.75rem;
-  border: 1px solid rgb(255 255 255 / 0.08);
-  background: rgb(255 255 255 / 0.03);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.08));
+  background: var(--industry-fill, rgb(255 255 255 / 0.03));
   overflow: hidden;
 }
 
 .project-create__attachment-item {
   border-radius: 0.625rem;
-  border: 1px solid rgb(255 255 255 / 0.08);
-  background: rgb(255 255 255 / 0.03);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.08));
+  background: var(--industry-fill, rgb(255 255 255 / 0.03));
 }
 
 .project-create__attachment-media {
@@ -482,10 +482,10 @@
   width: 1.75rem;
   height: 1.75rem;
   padding: 0;
-  border: 1px solid rgb(255 255 255 / 0.14);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.14));
   border-radius: 999px;
-  background: rgb(10 10 10 / 0.72);
-  color: rgb(255 255 255 / 0.82);
+  background: var(--industry-surface, rgb(10 10 10 / 0.72));
+  color: var(--industry-text, rgb(255 255 255 / 0.82));
   cursor: pointer;
   backdrop-filter: blur(8px);
   opacity: 0;
@@ -508,8 +508,8 @@
 }
 
 .project-create__attachment-remove:hover:not(:disabled) {
-  background: rgb(20 20 20 / 0.9);
-  color: rgb(255 255 255 / 0.96);
+  background: var(--industry-surface, rgb(20 20 20 / 0.9));
+  color: var(--industry-text, rgb(255 255 255 / 0.96));
 }
 
 .project-create__attachment-remove:disabled {
@@ -537,7 +537,7 @@
   margin: 0;
   font-size: 0.8125rem;
   font-weight: 550;
-  color: rgb(255 255 255 / 0.88);
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
 }
 
 .project-create__attachment-meta {
@@ -546,7 +546,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.6875rem;
-  color: rgb(255 255 255 / 0.42);
+  color: var(--industry-muted, rgb(255 255 255 / 0.42));
 }
 
 .project-create__add-attachment {
@@ -555,9 +555,9 @@
   justify-content: center;
   gap: 0.375rem;
   border-radius: 9999px;
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
   background: transparent;
-  color: rgb(255 255 255 / 0.7);
+  color: var(--industry-text, rgb(255 255 255 / 0.7));
   font-size: 0.8125rem;
   font-weight: 500;
   padding: 0.5rem 0.75rem;
@@ -573,7 +573,7 @@
 .project-create__error {
   margin: 0;
   font-size: 0.8125rem;
-  color: #f87171;
+  color: var(--industry-danger, #f87171);
 }
 
 .project-create__selections {
@@ -599,8 +599,8 @@
   align-items: center;
   gap: 0.625rem;
   border-radius: 9999px;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.03);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
+  background: var(--industry-fill, rgb(255 255 255 / 0.03));
   padding: 0.625rem 0.875rem;
   font-size: 0.875rem;
   text-align: left;
@@ -614,15 +614,15 @@
   width: 1rem;
   height: 1rem;
   flex-shrink: 0;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .project-create__date-trigger-value {
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .project-create__date-trigger-placeholder {
-  color: rgb(255 255 255 / 0.32);
+  color: var(--industry-muted, rgb(255 255 255 / 0.32));
 }
 
 .project-create__date-popover {
@@ -631,7 +631,7 @@
   margin-top: 0.375rem;
   width: min(100%, 18rem);
   border-radius: 0.75rem;
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
   background: #141414;
   padding: 0.75rem;
   box-shadow: 0 16px 40px rgb(0 0 0 / 0.45);
@@ -648,7 +648,7 @@
   margin: 0;
   font-size: 0.875rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.9);
+  color: var(--industry-text, rgb(255 255 255 / 0.9));
 }
 
 .project-create__date-nav {
@@ -658,15 +658,15 @@
   width: 2rem;
   height: 2rem;
   border-radius: 9999px;
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
   background: transparent;
-  color: rgb(255 255 255 / 0.7);
+  color: var(--industry-text, rgb(255 255 255 / 0.7));
   cursor: pointer;
 }
 
 .project-create__date-nav:hover {
-  border-color: rgb(255 255 255 / 0.2);
-  background: rgb(255 255 255 / 0.04);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.2));
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
 }
 
 .project-create__date-weekdays {
@@ -682,7 +682,7 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.35);
+  color: var(--industry-muted, rgb(255 255 255 / 0.35));
 }
 
 .project-create__date-grid {
@@ -700,25 +700,25 @@
   border: none;
   background: transparent;
   font-size: 0.8125rem;
-  color: rgb(255 255 255 / 0.82);
+  color: var(--industry-text, rgb(255 255 255 / 0.82));
   cursor: pointer;
 }
 
 .project-create__date-day:hover {
-  background: rgb(255 255 255 / 0.06);
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
 }
 
 .project-create__date-day--muted {
-  color: rgb(255 255 255 / 0.28);
+  color: var(--industry-muted, rgb(255 255 255 / 0.28));
 }
 
 .project-create__date-day--today {
-  border: 1px solid rgb(255 255 255 / 0.18);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.18));
 }
 
 .project-create__date-day--selected {
-  background: rgb(255 255 255 / 0.14);
-  color: rgb(255 255 255 / 0.95);
+  background: var(--industry-fill, rgb(255 255 255 / 0.14));
+  color: var(--industry-text, rgb(255 255 255 / 0.95));
 }
 
 .project-create__date-day--disabled,
@@ -738,18 +738,18 @@
   border: none;
   background: transparent;
   font-size: 0.75rem;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
   cursor: pointer;
 }
 
 .project-create__date-clear:hover {
-  color: rgb(255 255 255 / 0.7);
+  color: var(--industry-text, rgb(255 255 255 / 0.7));
 }
 
 .project-create__multi-calendar {
   border-radius: 0.75rem;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.03);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
+  background: var(--industry-fill, rgb(255 255 255 / 0.03));
   padding: 0.75rem;
 }
 
@@ -769,28 +769,28 @@
   gap: 0.75rem;
   padding: 0.45rem 0.55rem;
   border-radius: 0.55rem;
-  background: rgb(255 255 255 / 0.04);
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
   font-size: 0.8125rem;
-  color: rgb(255 255 255 / 0.82);
+  color: var(--industry-text, rgb(255 255 255 / 0.82));
 }
 
 .project-create__multi-calendar-list button {
   border: 0;
   background: transparent;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
   font-size: 0.75rem;
   cursor: pointer;
 }
 
 .project-create__multi-calendar-list button:hover {
-  color: rgb(255 255 255 / 0.8);
+  color: var(--industry-text, rgb(255 255 255 / 0.8));
 }
 
 .project-create__multi-calendar-empty {
   margin: 0.75rem 0 0;
   font-size: 0.8125rem;
   line-height: 1.45;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .project-create__location-shell {
@@ -798,8 +798,8 @@
   align-items: center;
   gap: 0.625rem;
   border-radius: 9999px;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.03);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
+  background: var(--industry-fill, rgb(255 255 255 / 0.03));
   padding: 0.625rem 0.875rem;
   transition:
     border-color 150ms ease,
@@ -810,7 +810,7 @@
   width: 1rem;
   height: 1rem;
   flex-shrink: 0;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .project-create__location-input {
@@ -819,12 +819,12 @@
   border: none;
   background: transparent;
   font-size: 0.875rem;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
   outline: none;
 }
 
 .project-create__location-input::placeholder {
-  color: rgb(255 255 255 / 0.32);
+  color: var(--industry-muted, rgb(255 255 255 / 0.32));
 }
 
 .project-create__location-dropdown {
@@ -834,7 +834,7 @@
   width: 100%;
   overflow: hidden;
   border-radius: 0.75rem;
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
   background: #141414;
   box-shadow: 0 16px 40px rgb(0 0 0 / 0.45);
 }
@@ -847,11 +847,11 @@
 }
 
 .project-create__location-hint {
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .project-create__location-error {
-  color: #fca5a5;
+  color: var(--industry-danger, #fca5a5);
 }
 
 .project-create__location-option {
@@ -862,12 +862,12 @@
   padding: 0.75rem 1rem;
   text-align: left;
   font-size: 0.875rem;
-  color: rgb(255 255 255 / 0.85);
+  color: var(--industry-text, rgb(255 255 255 / 0.85));
   cursor: pointer;
 }
 
 .project-create__location-option:hover {
-  background: rgb(255 255 255 / 0.05);
+  background: var(--industry-fill, rgb(255 255 255 / 0.05));
 }
 
 .project-create__breakdown-drop {
@@ -878,8 +878,8 @@
   justify-content: center;
   gap: 0.5rem;
   border-radius: 0.875rem;
-  border: 2px dashed rgb(255 255 255 / 0.14);
-  background: rgb(255 255 255 / 0.02);
+  border: 2px dashed var(--industry-line, rgb(255 255 255 / 0.14));
+  background: var(--industry-fill, rgb(255 255 255 / 0.02));
   padding: 1.25rem 1rem;
   text-align: center;
   cursor: pointer;
@@ -889,8 +889,8 @@
 }
 
 .project-create__breakdown-drop:hover:not(:disabled) {
-  border-color: rgb(255 255 255 / 0.24);
-  background: rgb(255 255 255 / 0.04);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.24));
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
 }
 
 .project-create__breakdown-drop:disabled {
@@ -901,12 +901,12 @@
 .project-create__breakdown-drop-title {
   font-size: 0.875rem;
   font-weight: 500;
-  color: rgb(255 255 255 / 0.85);
+  color: var(--industry-text, rgb(255 255 255 / 0.85));
 }
 
 .project-create__breakdown-drop-meta {
   font-size: 0.75rem;
-  color: rgb(255 255 255 / 0.42);
+  color: var(--industry-muted, rgb(255 255 255 / 0.42));
 }
 
 .project-create-picker {
@@ -930,14 +930,14 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.42);
+  color: var(--industry-muted, rgb(255 255 255 / 0.42));
 }
 
 .project-create-picker__title {
   margin: 0;
   font-size: 1.75rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .project-create-picker__lede {
@@ -945,19 +945,19 @@
   max-width: 36rem;
   font-size: 0.875rem;
   line-height: 1.6;
-  color: rgb(255 255 255 / 0.52);
+  color: var(--industry-muted, rgb(255 255 255 / 0.52));
 }
 
 .project-create-picker__cancel {
   flex-shrink: 0;
   font-size: 0.875rem;
   font-weight: 500;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
   text-decoration: none;
 }
 
 .project-create-picker__cancel:hover {
-  color: rgb(255 255 255 / 0.85);
+  color: var(--industry-text, rgb(255 255 255 / 0.85));
 }
 
 .project-create-picker__groups {
@@ -996,14 +996,14 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.38);
+  color: var(--industry-muted, rgb(255 255 255 / 0.38));
 }
 
 .project-create-picker__section-title {
   margin: 0;
   font-size: 1.125rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .project-create-picker__choices {
@@ -1023,12 +1023,12 @@
   align-items: center;
   gap: 0.375rem;
   border-radius: 9999px;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.12));
   background: transparent;
   padding: 0.5rem 0.75rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: rgb(255 255 255 / 0.78);
+  color: var(--industry-text, rgb(255 255 255 / 0.78));
   cursor: pointer;
   transition:
     border-color 150ms ease,
@@ -1037,9 +1037,9 @@
 }
 
 .project-create-picker__nav-btn:hover:not(:disabled) {
-  border-color: rgb(255 255 255 / 0.22);
-  background: rgb(255 255 255 / 0.04);
-  color: rgb(255 255 255 / 0.92);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.22));
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .project-create-picker__nav-btn:disabled {
@@ -1059,13 +1059,13 @@
   height: 0.5rem;
   border-radius: 9999px;
   border: none;
-  background: rgb(255 255 255 / 0.18);
+  background: var(--industry-fill, rgb(255 255 255 / 0.18));
   padding: 0;
   cursor: pointer;
   transition: background 150ms ease, transform 150ms ease;
 }
 
 .project-create-picker__dot--active {
-  background: rgb(255 255 255 / 0.72);
+  background: var(--industry-fill, rgb(255 255 255 / 0.72));
   transform: scale(1.15);
 }

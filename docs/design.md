@@ -235,6 +235,8 @@ components:
     padding: 2px 6px
 ---
 
+> Industry website workspaces use the light admin foundations documented in [industry-ui.md](industry-ui.md). The dark palette below remains the baseline for other surfaces.
+
 # Motiion Design System
 
 ## Overview

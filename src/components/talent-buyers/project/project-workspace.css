@@ -16,7 +16,7 @@
   flex-direction: column;
   min-height: 0;
   align-self: stretch;
-  border-right: 1px solid rgb(255 255 255 / 0.1);
+  border-right: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
   background: var(--buyer-bg, #000);
 }
 
@@ -74,10 +74,10 @@
   justify-content: center;
   width: 1.75rem;
   height: 1.75rem;
-  border: 1px solid rgb(255 255 255 / 0.16);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.16));
   border-radius: 999px;
   background: rgb(0 0 0 / 0.45);
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
   backdrop-filter: blur(6px);
   cursor: default;
   transition:
@@ -88,7 +88,7 @@
 .casting-cover-visibility:hover .casting-cover-visibility__icon,
 .casting-cover-visibility:focus-visible .casting-cover-visibility__icon {
   background: rgb(0 0 0 / 0.62);
-  border-color: rgb(255 255 255 / 0.24);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.24));
 }
 
 .casting-cover-visibility__tooltip {
@@ -102,7 +102,7 @@
   min-width: 11rem;
   max-width: 14rem;
   padding: 0.5rem 0.625rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.12));
   border-radius: 0.5rem;
   background: rgb(18 18 18 / 0.96);
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
@@ -123,13 +123,13 @@
 .casting-cover-visibility__tooltip-label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .casting-cover-visibility__tooltip-hint {
   font-size: 0.6875rem;
   line-height: 1.35;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
 }
 
 .project-workspace__nav-section {
@@ -140,7 +140,7 @@
 .project-workspace__nav-section--workspace {
   margin-top: 0;
   padding-top: 0.875rem;
-  border-top: 1px solid rgb(255 255 255 / 0.06);
+  border-top: 1px solid var(--industry-line, rgb(255 255 255 / 0.06));
 }
 
 .project-workspace__nav-btn--disabled {
@@ -153,7 +153,7 @@
   margin: 0.25rem 0 0;
   font-size: 0.8125rem;
   line-height: 1.4;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .project-workspace__overview {
@@ -175,13 +175,13 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.4);
+  color: var(--industry-muted, rgb(255 255 255 / 0.4));
 }
 
 .project-workspace__overview-meta dd {
   margin: 0.25rem 0 0;
   font-size: 0.9375rem;
-  color: rgb(255 255 255 / 0.88);
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
 }
 
 .project-workspace__overview-section {
@@ -201,14 +201,14 @@
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .project-workspace__overview-section-description {
   margin: 0.35rem 0 0;
   font-size: 0.875rem;
   line-height: 1.45;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .project-workspace__overview-section-header--candidates {
@@ -232,7 +232,7 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .project-workspace__overview-stats {
@@ -245,7 +245,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  border: 1px solid rgb(255 255 255 / 0.08);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.08));
   border-radius: 0.75rem;
   padding: 0.875rem 1rem;
   text-decoration: none;
@@ -255,19 +255,19 @@
 }
 
 .project-workspace__overview-stat:hover {
-  border-color: rgb(255 255 255 / 0.16);
-  background: rgb(255 255 255 / 0.03);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.16));
+  background: var(--industry-fill, rgb(255 255 255 / 0.03));
 }
 
 .project-workspace__overview-stat-value {
   font-size: 1.25rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .project-workspace__overview-stat-label {
   font-size: 0.75rem;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .project-workspace__overview-tools-title {
@@ -276,7 +276,7 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.4);
+  color: var(--industry-muted, rgb(255 255 255 / 0.4));
 }
 
 .project-workspace__overview-tools-list {
@@ -292,11 +292,11 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
   border-radius: 9999px;
   padding: 0.5rem 0.875rem;
   font-size: 0.8125rem;
-  color: rgb(255 255 255 / 0.72);
+  color: var(--industry-text, rgb(255 255 255 / 0.72));
   text-decoration: none;
   transition:
     border-color 150ms ease,
@@ -305,9 +305,9 @@
 }
 
 .project-workspace__overview-tool:hover {
-  border-color: rgb(255 255 255 / 0.2);
-  color: rgb(255 255 255 / 0.92);
-  background: rgb(255 255 255 / 0.04);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.2));
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
 }
 
 .project-workspace__rail .buyer-sidebar__section-label {
@@ -338,7 +338,7 @@
   font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.01em;
-  color: rgb(255 255 255 / 0.42);
+  color: var(--industry-muted, rgb(255 255 255 / 0.42));
 }
 
 .project-workspace__nav-status + .project-workspace__nav-count {
@@ -388,7 +388,7 @@
 
 .project-workspace__edit-btn:hover {
   background: var(--buyer-fill, rgb(255 255 255 / 0.06));
-  color: #eaeaea;
+  color: var(--industry-text, #eaeaea);
 }
 
 .project-workspace__edit-btn:focus-visible {
@@ -407,9 +407,9 @@
   width: 100%;
   align-items: flex-start;
   gap: 0.75rem;
-  border: 1px solid rgb(255 255 255 / 0.08);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.08));
   border-radius: 10px;
-  background: rgb(255 255 255 / 0.02);
+  background: var(--industry-fill, rgb(255 255 255 / 0.02));
   padding: 0.75rem;
   text-align: left;
   cursor: pointer;
@@ -419,8 +419,8 @@
 }
 
 .project-add-option:hover {
-  border-color: rgb(255 255 255 / 0.14);
-  background: rgb(255 255 255 / 0.05);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.14));
+  background: var(--industry-fill, rgb(255 255 255 / 0.05));
 }
 
 .project-add-option__icon {
@@ -431,8 +431,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  background: rgb(255 255 255 / 0.06);
-  color: rgb(255 255 255 / 0.75);
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
+  color: var(--industry-text, rgb(255 255 255 / 0.75));
 }
 
 .project-add-option__copy {
@@ -445,13 +445,13 @@
 .project-add-option__label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .project-add-option__description {
   font-size: 0.8125rem;
   line-height: 1.35;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .project-workspace__rail-body {
@@ -553,12 +553,12 @@
 }
 
 .project-workspace-tabs__tab:hover {
-  color: #eaeaea;
+  color: var(--industry-text, #eaeaea);
 }
 
 .project-workspace-tabs__tab--active {
   font-weight: 600;
-  color: #fff;
+  color: var(--industry-text, #fff);
 }
 
 .project-workspace-tabs__tab--disabled {
@@ -576,11 +576,11 @@
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
-  color: rgb(255 255 255 / 0.42);
+  color: var(--industry-muted, rgb(255 255 255 / 0.42));
 }
 
 .project-workspace-tabs__tab--active .project-workspace-tabs__status {
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
 }
 
 .project-workspace-tabs__badge {
@@ -624,7 +624,7 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.75rem var(--buyer-main-padding-inline, 1.25rem);
-  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+  border-bottom: 1px solid var(--industry-line, rgb(255 255 255 / 0.06));
 }
 
 .project-workspace__panel-header--actions {
@@ -661,7 +661,7 @@
 .project-workspace__panel-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .project-workspace__panel-actions {
@@ -681,28 +681,28 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   padding: 0 var(--buyer-main-padding-inline, 1.25rem) 1rem;
-  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+  border-bottom: 1px solid var(--industry-line, rgb(255 255 255 / 0.06));
 }
 
 .project-workspace__chip {
   border-radius: 9999px;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.12));
   padding: 0.375rem 0.875rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: rgb(255 255 255 / 0.6);
+  color: var(--industry-muted, rgb(255 255 255 / 0.6));
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .project-workspace__chip:hover {
-  border-color: rgb(255 255 255 / 0.2);
-  color: rgb(255 255 255 / 0.85);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.2));
+  color: var(--industry-text, rgb(255 255 255 / 0.85));
 }
 
 .project-workspace__chip--active {
   border-color: rgb(45 212 191 / 0.4);
   background: rgb(45 212 191 / 0.1);
-  color: rgb(45 212 191);
+  color: var(--industry-success, rgb(45 212 191));
 }
 
 .project-workspace__messenger {
@@ -722,7 +722,7 @@
   gap: 0.5rem;
   flex-shrink: 0;
   padding: 0.625rem 0.875rem;
-  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+  border-bottom: 1px solid var(--industry-line, rgb(255 255 255 / 0.06));
 }
 
 .project-workspace__talent-grid {
@@ -744,13 +744,13 @@
 .project-workspace__empty-title {
   font-size: 1rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.85);
+  color: var(--industry-text, rgb(255 255 255 / 0.85));
 }
 
 .project-workspace__empty-text {
   max-width: 24rem;
   font-size: 0.875rem;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 @media (max-width: 768px) {

@@ -10,9 +10,9 @@
   margin: 0;
   padding: 0;
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 0.08);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.08));
   border-radius: 14px;
-  background: rgb(255 255 255 / 0.015);
+  background: var(--industry-fill, rgb(255 255 255 / 0.015));
 }
 
 .buyer-notifications__item {
@@ -20,7 +20,7 @@
   align-items: flex-start;
   gap: 0.85rem;
   padding: 1rem 1.1rem;
-  border-bottom: 1px solid rgb(255 255 255 / 0.05);
+  border-bottom: 1px solid var(--industry-line, rgb(255 255 255 / 0.05));
 }
 
 .buyer-notifications__item:last-child {
@@ -28,7 +28,7 @@
 }
 
 .buyer-notifications__item--unread {
-  background: rgb(255 255 255 / 0.025);
+  background: var(--industry-fill, rgb(255 255 255 / 0.025));
 }
 
 .buyer-notifications__dot {
@@ -37,7 +37,7 @@
   margin-top: 0.45rem;
   flex-shrink: 0;
   border-radius: 9999px;
-  background: rgb(255 255 255 / 0.12);
+  background: var(--industry-fill, rgb(255 255 255 / 0.12));
 }
 
 .buyer-notifications__dot--unread {
@@ -53,7 +53,7 @@
   margin: 0;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
   text-transform: capitalize;
 }
 
@@ -61,22 +61,22 @@
   margin: 0.3rem 0 0;
   font-size: 0.8125rem;
   line-height: 1.45;
-  color: rgb(255 255 255 / 0.5);
+  color: var(--industry-muted, rgb(255 255 255 / 0.5));
 }
 
 .buyer-notifications__time {
   margin: 0.45rem 0 0;
   font-size: 0.75rem;
-  color: rgb(255 255 255 / 0.35);
+  color: var(--industry-muted, rgb(255 255 255 / 0.35));
 }
 
 .buyer-notifications-empty__list {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 0.08);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.08));
   border-radius: 14px;
-  background: rgb(255 255 255 / 0.015);
+  background: var(--industry-fill, rgb(255 255 255 / 0.015));
 }
 
 .buyer-notifications-empty__row {
@@ -84,7 +84,7 @@
   align-items: flex-start;
   gap: 0.85rem;
   padding: 1rem 1.1rem;
-  border-bottom: 1px solid rgb(255 255 255 / 0.04);
+  border-bottom: 1px solid var(--industry-line, rgb(255 255 255 / 0.04));
 }
 
 .buyer-notifications-empty__row:last-child {
@@ -97,7 +97,7 @@
   margin-top: 0.45rem;
   flex-shrink: 0;
   border-radius: 9999px;
-  background: rgb(255 255 255 / 0.1);
+  background: var(--industry-fill, rgb(255 255 255 / 0.1));
 }
 
 .buyer-notifications-empty__copy {

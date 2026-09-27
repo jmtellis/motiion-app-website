@@ -4,7 +4,7 @@
 .project-bookings p { color: #70787a; font-size: 13px; line-height: 1.6; }
 .project-bookings__heading { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:24px; }
 .project-bookings__eyebrow { font-size:10px!important; letter-spacing:.14em; margin-bottom:8px; }
-.project-bookings button { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 16px; border-radius:9px; background:#222829; color:white; cursor:pointer; font-size:13px; }
+.project-bookings button { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 16px; border-radius:9px; background:#222829; color:var(--industry-text, white); cursor:pointer; font-size:13px; }
 .project-bookings button:disabled { opacity:.45; cursor:default; }
 .project-bookings button.secondary { background:#f4f5f5; color:#424b4d; }
 .project-bookings button[aria-pressed=true] { box-shadow:inset 0 0 0 1px #78aba7; background:#edf6f5; color:#24514d; }

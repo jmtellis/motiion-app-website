@@ -43,8 +43,8 @@ export function SegmentedControl<T extends string>({
       aria-label={ariaLabel}
       className={
         equalWidth
-          ? "relative inline-grid grid-flow-col auto-cols-fr gap-1 rounded-full border border-white/10 bg-white/[0.06] p-1 shadow-none backdrop-blur-[14px]"
-          : "relative inline-flex w-fit flex-nowrap gap-1 rounded-full border border-white/10 bg-white/[0.06] p-1 shadow-none backdrop-blur-[14px]"
+          ? "industry-segments relative inline-grid grid-flow-col auto-cols-fr gap-1 rounded-full border border-white/10 bg-white/[0.06] p-1 shadow-none backdrop-blur-[14px]"
+          : "industry-segments relative inline-flex w-fit flex-nowrap gap-1 rounded-full border border-white/10 bg-white/[0.06] p-1 shadow-none backdrop-blur-[14px]"
       }
     >
       {options.map((option) => {

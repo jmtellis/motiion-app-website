@@ -69,3 +69,152 @@
 html:has(.workspace-shell--industry) .buyer-modal-panel { --buyer-card:#fff; --buyer-line:#e2e6e6; background:#fff; color:#252b2d; }
 html:has(.workspace-shell--industry) .buyer-modal-panel :is([class*="text-white"],h1,h2,h3,p,label) { color:#505a5c; }
 html:has(.workspace-shell--industry) .buyer-modal-panel :is(input,textarea,select) { color:#252b2d; background:#f8fafa; border-color:#dce2e2; }
+
+/* Industry UI foundations: opaque text colors meet AA on white and gray surfaces.
+   These tokens are opt-in so marketing and the dark navigation retain their palette. */
+.workspace-shell--industry .workspace-frame,
+html:has(.workspace-shell--industry) :is(.buyer-modal-panel, .buyer-command-panel, .buyer-toast) {
+  --industry-text: #202223;
+  --industry-muted: #595f62;
+  --industry-surface: #fff;
+  --industry-fill: #f1f2f3;
+  --industry-line: #d5d8da;
+  --industry-control-line: #858b8f;
+  --industry-focus: #006b80;
+  --industry-shadow: 0 1px 2px #2022230d, 0 4px 14px #20222306;
+  --ink: #202223;
+  --ink-soft: #595f62;
+  --line: #d5d8da;
+  --surface-card: #fff;
+  --surface-soft: #f1f2f3;
+  --paper: #fff;
+  --accent: #006b80;
+  --accent-dark: #005365;
+  --buyer-text: #202223;
+  --buyer-text-soft: #595f62;
+  --buyer-text-muted: #595f62;
+  --buyer-line: #d5d8da;
+  --buyer-line-subtle: #e4e6e7;
+  --buyer-focus-ring: #006b80;
+  --ds-text-low: #595f62;
+  --ds-text-disabled: #666d71;
+  --ds-on-background: #202223;
+  --ds-muted: #595f62;
+  --ds-subtle: #595f62;
+  --ds-surface-default: #fff;
+  --ds-surface-high: #f1f2f3;
+  --ds-surface-low: #f7f8f9;
+  --ds-border-default: #858b8f;
+  --ds-border-low: #d5d8da;
+  color: var(--industry-text);
+}
+
+.workspace-shell--industry .workspace-frame :is(.industry-card,.bd-panel,.bd-muted-panel) {
+  background: #fff;
+  border: 1px solid var(--industry-line);
+  border-radius: 18px;
+  box-shadow: var(--industry-shadow);
+}
+.industry-card { padding: 1.25rem; }
+.industry-field { display:flex; flex-direction:column; gap:0.5rem; min-width:0; }
+.industry-field__label { color:var(--industry-text); font-size:0.875rem; font-weight:550; }
+.industry-field__hint { color:var(--industry-muted); font-size:0.8125rem; }
+.industry-form-grid { display:grid; gap:1.25rem; }
+@media(min-width:768px) { .industry-form-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
+.workspace-shell--industry .workspace-frame :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select),
+html:has(.workspace-shell--industry) .buyer-modal-panel :is(input:not([type=checkbox]):not([type=radio]),textarea,select) {
+  color:#202223;
+  background-color:#fff;
+  border:1px solid #858b8f;
+  border-radius:10px;
+  padding:0.65rem 0.8rem;
+  font-size:0.875rem;
+  min-height:42px;
+  box-shadow:0 1px 0 #20222308 inset;
+}
+.workspace-shell--industry .workspace-frame :is(input,textarea)::placeholder,
+html:has(.workspace-shell--industry) .buyer-modal-panel :is(input,textarea)::placeholder { color:#666d71; opacity:1; }
+.workspace-shell--industry .workspace-frame :is(input,textarea,select):disabled { background:#f1f2f3; color:#666d71; opacity:1; cursor:not-allowed; }
+.workspace-shell--industry .workspace-frame :is(button,a,input,textarea,select,[tabindex]):focus-visible,
+html:has(.workspace-shell--industry) .buyer-modal-panel :is(button,a,input,textarea,select):focus-visible {
+  outline:2px solid #006b80;
+  outline-offset:3px;
+}
+.workspace-shell--industry .workspace-frame :is(.bd-btn-secondary,.btn-outline) {
+  color:#202223; background:#fff; border:1px solid #b4b9bc;
+  box-shadow:0 1px 2px #20222312; border-radius:999px;
+}
+.workspace-shell--industry .workspace-frame :is(.bd-btn-secondary,.btn-outline):hover { background:#f1f2f3; border-color:#858b8f; }
+.workspace-shell--industry .workspace-frame :is(.bd-btn-accent,.btn-primary) {
+  color:#fff; background:linear-gradient(#383b3d,#202223);
+  border:1px solid #202223; box-shadow:inset 0 1px 0 #ffffff25,0 1px 2px #20222320;
+}
+.workspace-shell--industry .workspace-frame :is(.bd-btn-accent,.btn-primary):hover { background:#111314; color:#fff; }
+.workspace-shell--industry .workspace-frame :is([class*="__description"],[class*="__subtitle"],[class*="__label"],[class*="__meta"],[class*="__hint"],[class*="__empty"]) { color:var(--industry-muted); }
+.workspace-shell--industry .workspace-frame .industry-segments { background:#f1f2f3; border-color:#d5d8da; backdrop-filter:none; }
+.workspace-shell--industry .workspace-frame .industry-segments button { color:#595f62; }
+.workspace-shell--industry .workspace-frame .industry-segments button[aria-pressed=true] { color:#202223; }
+.workspace-shell--industry .workspace-frame .industry-segments button[aria-pressed=true] > span[aria-hidden] { background:#fff; box-shadow:0 1px 3px #20222326; }
+.workspace-shell--industry .workspace-frame .industry-segments button:hover { color:#202223; }
+.industry-badge { display:inline-flex; align-items:center; border-radius:8px; padding:0.25rem 0.5rem; font-size:0.75rem; line-height:1.25; font-weight:550; background:#eef0f1; color:#3f474b; }
+.industry-badge--success { background:#d7f1df; color:#175b32; }
+.industry-badge--attention { background:#fff0b0; color:#614900; }
+
+/* Photo content has its own contrast context, separate from the light canvas. */
+.workspace-shell--industry .workspace-frame :is(.industry-photo-surface,.bd-project-card__overlay,.project-workspace__cover,.talent-navigator__card-overlay-content) :is(h1,h2,h3,p,span,dt,dd) { color:#fff; }
+.workspace-shell--industry .workspace-frame :is(.bd-project-card__footer,.bd-visual-card) { background:#fff; border-color:#d5d8da; }
+.workspace-shell--industry .workspace-frame .bd-project-card { border-radius:18px; box-shadow:var(--industry-shadow); }
+.workspace-shell--industry .workspace-frame .bd-project-card__footer { padding:1rem; }
+.workspace-shell--industry .workspace-frame .bd-project-card__footer-title { color:#202223; }
+.workspace-shell--industry .workspace-frame .bd-project-card__footer-meta { color:#595f62; }
+.workspace-shell--industry .workspace-frame .bd-project-card__overlay-title { color:#fff; text-shadow:0 1px 3px #0008; }
+.workspace-shell--industry .workspace-frame .projects-hub__files-dropzone { border:1px dashed #858b8f; background:#f7f8f9; border-radius:18px; }
+
+/* Find Talent: replace cinematic black fog with a quiet white working surface. */
+.workspace-shell--industry .workspace-frame .talent-navigator {
+  --tn-success:#217346;
+  --tn-elevated-shadow:var(--industry-shadow);
+  --tn-elevated-border:#d5d8da;
+  --tn-elevated-border-strong:#858b8f;
+}
+.workspace-shell--industry .workspace-frame :is(.talent-navigator__nl-rail,.talent-navigator__nl-rail:hover,.talent-navigator__nl-rail:focus-within) { background:#ffffffed; }
+.workspace-shell--industry .workspace-frame .talent-navigator__grid-vignette { background:radial-gradient(ellipse at center,transparent 45%,#ffffff80 100%); }
+.workspace-shell--industry .workspace-frame .talent-navigator__grid-shell--labeled .talent-navigator__grid-vignette { background:radial-gradient(ellipse at center,transparent 40%,#ffffffa6 100%); }
+.workspace-shell--industry .workspace-frame .talent-navigator__card { opacity:max(0.65,var(--tn-card-opacity)); filter:none; box-shadow:0 3px 12px #20222314; }
+.workspace-shell--industry .workspace-frame .talent-navigator__nl-compose-inner { background:#fff; border:1px solid #b4b9bc; border-radius:24px; box-shadow:0 3px 16px #20222314; }
+.workspace-shell--industry .workspace-frame .talent-navigator__nl-input { background:transparent; border:0; box-shadow:none; border-radius:12px; }
+.workspace-shell--industry .workspace-frame .talent-navigator__nl-send { background:#202223; color:#fff; }
+.workspace-shell--industry .workspace-frame .talent-navigator__nl-send:hover:not(:disabled) { background:#000; color:#fff; }
+.workspace-shell--industry .workspace-frame .talent-navigator__grid-hint { color:#595f62; text-shadow:none; }
+.workspace-shell--industry .workspace-frame .talent-navigator--chat-focused .talent-navigator__grid-canvas { filter:blur(3px); opacity:0.35; }
+.workspace-shell--industry .workspace-frame :is(.talent-navigator__card-sub,.talent-navigator__card-why) { color:#fff; }
+.workspace-shell--industry .workspace-frame .talent-navigator-grid-bg__ambient { background:linear-gradient(#fafbfc,#f1f3f4); }
+.workspace-shell--industry .workspace-frame .talent-navigator-grid-bg__lines { opacity:0.18; }
+.workspace-shell--industry .workspace-frame .talent-navigator__nl-compose-inner .talent-navigator__nl-input { border:0; background:transparent; box-shadow:none; }
+.workspace-shell--industry .workspace-frame .buyer-chrome-bar__cta { color:#fff; background:linear-gradient(#383b3d,#202223); border:1px solid #202223; box-shadow:inset 0 1px 0 #ffffff25,0 1px 2px #20222320; }
+.workspace-shell--industry .workspace-frame .buyer-chrome-bar__cta:hover { background:#111314; color:#fff; }
+.workspace-shell--industry .workspace-frame :is([class*="text-amber-"],[class*="text-yellow-"]) { color:#795600; }
+.workspace-shell--industry .workspace-frame :is([class*="text-red-"],[class*="text-rose-"]) { color:#b42318; }
+.workspace-shell--industry .workspace-frame :is([class*="text-green-"],[class*="text-emerald-"]) { color:#17653b; }
+.workspace-shell--industry .workspace-frame :is([class*="text-cyan-"],[class*="text-teal-"]) { color:#006b80; }
+html:has(.workspace-shell--industry) :is(.buyer-command-panel,.buyer-toast) { background:#fff; border:1px solid #d5d8da; box-shadow:0 8px 32px #20222320; }
+.workspace-shell--industry .workspace-frame .talent-navigator .talent-navigator__nl-compose-inner .talent-navigator__nl-input { border:0; background:transparent; box-shadow:none; }
+.workspace-shell--industry .workspace-frame .talent-navigator__focus-card { background:#fff; box-shadow:0 8px 32px #2022231a; }
+.workspace-shell--industry .workspace-frame .talent-navigator__filter-overlay::before { background:#f7f8f9; }
+.workspace-shell--industry .workspace-frame .talent-navigator__main-header { background:linear-gradient(#fffffff5,#ffffffd9,transparent); }
+.workspace-shell--industry .workspace-frame :is(.talent-navigator__focus-view-menu,.talent-navigator__focus-footer-dropdown,.talent-navigator__focus-add-menu,.talent-navigator__filter-dropdown-menu) { box-shadow:0 8px 24px #2022231a; }
+.workspace-shell--industry .workspace-frame .talent-navigator__filter-backdrop::after { background:#f7f8f9; }
+.workspace-shell--industry .workspace-frame .talent-navigator__filter-backdrop { backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); }
+.workspace-shell--industry .workspace-frame,
+html:has(.workspace-shell--industry) :is(.buyer-modal-panel,.buyer-command-panel,.buyer-toast) {
+  --industry-success:#17653b;
+  --industry-warning:#795600;
+  --industry-danger:#b42318;
+}
+.workspace-shell--industry .workspace-frame .talent-navigator__action-btn--primary,
+.workspace-shell--industry .workspace-frame [class~="bg-[var(--accent)]"] { color:#fff; }
+.workspace-shell--industry .workspace-frame .project-workspace-tabs__badge { color:#fff; }
+.workspace-shell--industry .workspace-frame .casting-create-wizard__scroll-fade { background:linear-gradient(to top,#fff, #ffffffcc 35%,transparent); }
+.workspace-shell--industry .workspace-frame .talent-navigator__stage--filters-open .talent-navigator__grid-canvas { filter:blur(20px); opacity:0.15; }
+.workspace-shell--industry .workspace-frame :is(.talent-navigator__filter-dropdown-trigger,.talent-navigator__filter-swatch) { border-color:#858b8f; }

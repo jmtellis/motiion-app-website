@@ -208,8 +208,8 @@
 }
 
 .projects-hub__focus-empty-card--cta:hover {
-  border-color: rgb(255 255 255 / 0.14);
-  background: rgb(255 255 255 / 0.035);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.14));
+  background: var(--industry-fill, rgb(255 255 255 / 0.035));
 }
 
 .projects-hub__focus-empty-card--cta:focus-visible {
@@ -231,14 +231,14 @@
   font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1.15;
-  color: rgb(255 255 255 / 0.96);
+  color: var(--industry-text, rgb(255 255 255 / 0.96));
 }
 
 .projects-hub__focus-empty-copy {
   max-width: 18.5rem;
   font-size: 0.875rem;
   line-height: 1.5;
-  color: rgb(255 255 255 / 0.52);
+  color: var(--industry-muted, rgb(255 255 255 / 0.52));
 }
 
 .projects-hub__focus-empty-button {
@@ -268,7 +268,7 @@
   max-width: 70%;
   height: 0.9rem;
   border-radius: 0.35rem;
-  background: rgb(255 255 255 / 0.12);
+  background: var(--industry-fill, rgb(255 255 255 / 0.12));
 }
 
 .projects-hub__focus-empty-footer-meta {
@@ -356,8 +356,8 @@
 }
 
 .projects-hub__files-drop--active .projects-hub__files-dropzone {
-  border-color: rgb(255 255 255 / 0.22);
-  background: rgb(255 255 255 / 0.055);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.22));
+  background: var(--industry-fill, rgb(255 255 255 / 0.055));
 }
 
 .projects-hub__files-drop--disabled {
@@ -374,7 +374,7 @@
   padding: 1.25rem;
   font-size: 0.9375rem;
   line-height: 1.5;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
   text-align: center;
 }
 
@@ -387,7 +387,7 @@
   min-height: 11rem;
   padding: 1rem;
   font-size: 0.875rem;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
 }
 
 .projects-hub__files-skeleton {
@@ -406,7 +406,7 @@
   padding: 0.85rem 1rem;
   border: 1px solid transparent;
   border-radius: 12px;
-  background: rgb(255 255 255 / 0.02);
+  background: var(--industry-fill, rgb(255 255 255 / 0.02));
 }
 
 .projects-hub__files-skeleton-main {
@@ -421,7 +421,7 @@
   width: min(14rem, 55%);
   height: 0.75rem;
   border-radius: 0.3rem;
-  background: rgb(255 255 255 / 0.11);
+  background: var(--industry-fill, rgb(255 255 255 / 0.11));
 }
 
 .projects-hub__files-skeleton-meta {
@@ -448,7 +448,7 @@
   padding: 1.75rem 1.25rem;
   border: 1px solid transparent;
   border-radius: 14px;
-  background: rgb(255 255 255 / 0.02);
+  background: var(--industry-fill, rgb(255 255 255 / 0.02));
   color: inherit;
   text-align: center;
   cursor: pointer;
@@ -458,8 +458,8 @@
 }
 
 .projects-hub__files-dropzone:hover {
-  border-color: rgb(255 255 255 / 0.14);
-  background: rgb(255 255 255 / 0.04);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.14));
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
 }
 
 .projects-hub__files-dropzone[aria-disabled="true"] {
@@ -479,21 +479,21 @@
   height: 3rem;
   margin-bottom: 0.15rem;
   border-radius: 9999px;
-  background: rgb(255 255 255 / 0.06);
-  color: rgb(255 255 255 / 0.72);
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
+  color: var(--industry-text, rgb(255 255 255 / 0.72));
 }
 
 .projects-hub__files-dropzone-title {
   font-size: 0.9375rem;
   font-weight: 550;
-  color: rgb(255 255 255 / 0.9);
+  color: var(--industry-text, rgb(255 255 255 / 0.9));
 }
 
 .projects-hub__files-dropzone-meta {
   max-width: 26rem;
   font-size: 0.8125rem;
   line-height: 1.45;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .projects-hub__files-list {
@@ -511,9 +511,9 @@
   gap: 0;
   min-width: 0;
   padding: 0;
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
   border-radius: 12px;
-  background: rgb(255 255 255 / 0.03);
+  background: var(--industry-fill, rgb(255 255 255 / 0.03));
   overflow: hidden;
 }
 
@@ -560,7 +560,7 @@
   white-space: nowrap;
   font-size: 0.875rem;
   font-weight: 550;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .projects-hub__files-item-meta {
@@ -569,7 +569,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.75rem;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .projects-hub__files-item-actions {
@@ -608,10 +608,10 @@
   gap: 0.3rem;
   margin: 0;
   padding: 0.35rem 0.55rem;
-  border: 1px solid rgb(255 255 255 / 0.14);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.14));
   border-radius: 9999px;
-  background: rgb(10 10 10 / 0.72);
-  color: rgb(255 255 255 / 0.88);
+  background: var(--industry-surface, rgb(10 10 10 / 0.72));
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
   font: inherit;
   font-size: 0.6875rem;
   font-weight: 550;
@@ -621,9 +621,9 @@
 }
 
 .projects-hub__files-action:hover:not(:disabled) {
-  border-color: rgb(255 255 255 / 0.22);
-  background: rgb(20 20 20 / 0.9);
-  color: rgb(255 255 255 / 0.95);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.22));
+  background: var(--industry-surface, rgb(20 20 20 / 0.9));
+  color: var(--industry-text, rgb(255 255 255 / 0.95));
 }
 
 .projects-hub__files-action:disabled {
@@ -657,9 +657,9 @@
   gap: 0.2rem;
   margin: 0;
   padding: 0.75rem 0.85rem;
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
   border-radius: 10px;
-  background: rgb(255 255 255 / 0.03);
+  background: var(--industry-fill, rgb(255 255 255 / 0.03));
   color: inherit;
   font: inherit;
   text-align: left;
@@ -668,8 +668,8 @@
 }
 
 .projects-hub__assign-item:hover:not(:disabled) {
-  border-color: rgb(255 255 255 / 0.22);
-  background: rgb(255 255 255 / 0.06);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.22));
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
 }
 
 .projects-hub__assign-item:disabled {
@@ -680,11 +680,11 @@
 .projects-hub__assign-item-title {
   font-size: 0.9375rem;
   font-weight: 550;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .projects-hub__assign-item-meta {
   font-size: 0.75rem;
   text-transform: capitalize;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }

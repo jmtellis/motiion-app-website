@@ -6,7 +6,7 @@
   height: 2.75rem;
   overflow: hidden;
   border-radius: 0.45rem;
-  background: rgb(255 255 255 / 0.06);
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
 }
 
@@ -31,7 +31,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
 }
 
 .project-attachment-thumb--card.project-attachment-thumb--fallback,

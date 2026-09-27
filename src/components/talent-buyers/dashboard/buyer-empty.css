@@ -26,7 +26,7 @@
   font-size: 1.25rem;
   font-weight: 600;
   letter-spacing: -0.02em;
-  color: rgb(255 255 255 / 0.95);
+  color: var(--industry-text, rgb(255 255 255 / 0.95));
 }
 
 .buyer-empty__lede {
@@ -34,7 +34,7 @@
   max-width: 28rem;
   font-size: 0.875rem;
   line-height: 1.45;
-  color: rgb(255 255 255 / 0.5);
+  color: var(--industry-muted, rgb(255 255 255 / 0.5));
 }
 
 .buyer-empty__intro-copy {
@@ -52,7 +52,7 @@
 .buyer-empty__bone {
   display: block;
   border-radius: 9999px;
-  background: rgb(255 255 255 / 0.08);
+  background: var(--industry-fill, rgb(255 255 255 / 0.08));
 }
 
 .buyer-empty__bone--chip {
@@ -62,7 +62,7 @@
   width: 3.5rem;
   height: 1.35rem;
   border-radius: 9999px;
-  background: rgb(255 255 255 / 0.07);
+  background: var(--industry-fill, rgb(255 255 255 / 0.07));
 }
 
 .buyer-empty__bone--type {
@@ -74,7 +74,7 @@
   width: 72%;
   height: 0.85rem;
   border-radius: 0.35rem;
-  background: rgb(255 255 255 / 0.11);
+  background: var(--industry-fill, rgb(255 255 255 / 0.11));
 }
 
 .buyer-empty__bone--label {
@@ -86,7 +86,7 @@
   width: 2.25rem;
   height: 0.7rem;
   border-radius: 0.3rem;
-  background: rgb(255 255 255 / 0.1);
+  background: var(--industry-fill, rgb(255 255 255 / 0.1));
 }
 
 .buyer-empty__bone--avatar {
@@ -94,7 +94,7 @@
   height: 2.5rem;
   border-radius: 9999px;
   flex-shrink: 0;
-  background: rgb(255 255 255 / 0.07);
+  background: var(--industry-fill, rgb(255 255 255 / 0.07));
 }
 
 .buyer-empty__bone--line {
@@ -140,11 +140,11 @@
 }
 
 .buyer-empty__card--interactive:hover {
-  border-color: rgb(255 255 255 / 0.14);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.14));
 }
 
 .buyer-empty__card--interactive:hover .buyer-empty__card-body {
-  background: rgb(255 255 255 / 0.04);
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
 }
 
 .buyer-empty__card--interactive:focus-visible {
@@ -168,7 +168,7 @@
   gap: 0.55rem;
   padding: 1rem;
   /* Match projects file-drag dropzone fill */
-  background: rgb(255 255 255 / 0.02);
+  background: var(--industry-fill, rgb(255 255 255 / 0.02));
 }
 
 .buyer-empty__card-meta {
@@ -223,9 +223,9 @@
   flex: 1 1 auto;
   min-height: 22rem;
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 0.08);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.08));
   border-radius: 14px;
-  background: rgb(255 255 255 / 0.015);
+  background: var(--industry-fill, rgb(255 255 255 / 0.015));
   grid-template-columns: minmax(220px, 1fr) 2fr;
 }
 
@@ -233,19 +233,19 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  border-right: 1px solid rgb(255 255 255 / 0.06);
+  border-right: 1px solid var(--industry-line, rgb(255 255 255 / 0.06));
 }
 
 .buyer-inbox-empty__search {
   padding: 0.75rem;
-  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+  border-bottom: 1px solid var(--industry-line, rgb(255 255 255 / 0.06));
 }
 
 .buyer-inbox-empty__search-bone {
   width: 100%;
   height: 2.25rem;
   border-radius: 9999px;
-  background: rgb(255 255 255 / 0.06);
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
 }
 
 .buyer-inbox-empty__row {
@@ -253,7 +253,7 @@
   align-items: flex-start;
   gap: 0.75rem;
   padding: 0.85rem 1rem;
-  border-bottom: 1px solid rgb(255 255 255 / 0.04);
+  border-bottom: 1px solid var(--industry-line, rgb(255 255 255 / 0.04));
 }
 
 .buyer-inbox-empty__row-copy {
@@ -292,7 +292,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+  border-bottom: 1px solid var(--industry-line, rgb(255 255 255 / 0.06));
 }
 
 .buyer-inbox-empty__pane-header-copy {
@@ -314,7 +314,7 @@
 .buyer-inbox-empty__bubble {
   height: 2.75rem;
   border-radius: 12px;
-  background: rgb(255 255 255 / 0.06);
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
 }
 
 .buyer-inbox-empty__bubble--left {
@@ -325,7 +325,7 @@
 .buyer-inbox-empty__bubble--right {
   width: 48%;
   align-self: flex-end;
-  background: rgb(255 255 255 / 0.08);
+  background: var(--industry-fill, rgb(255 255 255 / 0.08));
 }
 
 .buyer-inbox-empty__bubble--short {
@@ -335,14 +335,14 @@
 
 .buyer-inbox-empty__composer {
   padding: 0.85rem 1rem 1rem;
-  border-top: 1px solid rgb(255 255 255 / 0.06);
+  border-top: 1px solid var(--industry-line, rgb(255 255 255 / 0.06));
 }
 
 .buyer-inbox-empty__composer-bone {
   width: 100%;
   height: 2.75rem;
   border-radius: 14px;
-  background: rgb(255 255 255 / 0.05);
+  background: var(--industry-fill, rgb(255 255 255 / 0.05));
 }
 
 @media (max-width: 767px) {

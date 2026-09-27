@@ -8,7 +8,7 @@ import {
   updateBuyerProfile,
   updateBuyerVerificationLinks,
 } from "@/app/(buyer-app)/dashboard/settings/actions";
-import { AuthButton, AuthField, AuthInput, AuthMuted } from "@/components/auth/ui";
+import { AuthButton, AuthMuted } from "@/components/auth/ui";
 import { roleOptions } from "@/lib/talent-buyers/onboarding";
 import type {
   BuyerOrganizationInfo,
@@ -20,6 +20,8 @@ import type {
   TalentBuyerRole,
   TalentBuyerVerificationLinks,
 } from "@/types/talent-buyers";
+
+import { IndustryCard, IndustryField, IndustryInput } from "./IndustryUI";
 
 import { useToast } from "./ToastProvider";
 import { SignOutButton } from "./SignOutButton";
@@ -36,7 +38,7 @@ export function BuyerSettingsProfileForm({
   const [isPending, startTransition] = useTransition();
   const markets = profile.markets?.join(", ") ?? "";
   const isDashboard = variant === "dashboard";
-  const wrapperClass = isDashboard ? "bd-muted-panel space-y-5 p-5" : "ui-card space-y-5 p-5";
+  const wrapperClass = isDashboard ? "industry-card industry-settings-form space-y-5 p-5" : "ui-card space-y-5 p-5";
   const selectClass = isDashboard
     ? "w-full rounded-full border border-white/10 bg-white/[0.06] px-3.5 py-2.5 text-sm text-white outline-none transition-colors focus:border-white/35 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none"
     : "w-full rounded-full border border-[var(--line)] bg-[var(--surface-card)] px-3 py-3 text-sm text-[var(--ink)] outline-none focus:border-[rgb(17_17_17_/_0.35)]";
@@ -69,29 +71,29 @@ export function BuyerSettingsProfileForm({
 
   return (
     <form className={wrapperClass} onSubmit={handleSubmit}>
-      <div className="space-y-4">
-        <AuthField label="Full name">
-          <AuthInput name="fullName" defaultValue={profile.fullName} placeholder="Your name" required />
-        </AuthField>
-        <AuthField label="Work email">
-          <AuthInput name="email" type="email" defaultValue={profile.email ?? ""} placeholder="you@company.com" />
-        </AuthField>
-        <AuthField label="Organization">
-          <AuthInput
+      <div className="industry-form-grid">
+        <IndustryField label="Full name">
+          <IndustryInput name="fullName" defaultValue={profile.fullName} placeholder="Your name" required />
+        </IndustryField>
+        <IndustryField label="Work email">
+          <IndustryInput name="email" type="email" defaultValue={profile.email ?? ""} placeholder="you@company.com" />
+        </IndustryField>
+        <IndustryField label="Organization">
+          <IndustryInput
             name="organizationName"
             defaultValue={profile.organizationName ?? profile.companyName ?? ""}
             placeholder="Organization name"
           />
-        </AuthField>
-        <AuthField label="Organization website">
-          <AuthInput
+        </IndustryField>
+        <IndustryField label="Organization website">
+          <IndustryInput
             name="organizationWebsite"
             type="url"
             defaultValue={profile.organizationWebsite ?? ""}
             placeholder="https://"
           />
-        </AuthField>
-        <AuthField label="Title">
+        </IndustryField>
+        <IndustryField label="Title">
           <select
             name="buyerRole"
             defaultValue={profile.buyerRole ?? ""}
@@ -104,10 +106,10 @@ export function BuyerSettingsProfileForm({
               </option>
             ))}
           </select>
-        </AuthField>
-        <AuthField label="Markets">
-          <AuthInput name="markets" defaultValue={markets} readOnly disabled placeholder="Markets from onboarding" />
-        </AuthField>
+        </IndustryField>
+        <IndustryField label="Markets">
+          <IndustryInput name="markets" defaultValue={markets} readOnly disabled placeholder="Markets from onboarding" />
+        </IndustryField>
       </div>
 
       <AuthMuted>Changes sync to your Motiion account immediately.</AuthMuted>
@@ -184,7 +186,7 @@ export function BuyerSettingsWorkspaceSections({
 
   return (
     <div className="grid gap-3 md:grid-cols-2">
-      <div className="bd-muted-panel px-5 py-5">
+      <IndustryCard className="px-5 py-5">
         <h3 className="text-base font-semibold text-white/92">Organization</h3>
         {organization ? (
           <dl className="mt-3 space-y-2 text-sm">
@@ -212,9 +214,9 @@ export function BuyerSettingsWorkspaceSections({
         ) : (
           <p className="mt-2 text-sm text-white/50">Add an organization name in your account profile above.</p>
         )}
-      </div>
+      </IndustryCard>
 
-      <div className="bd-muted-panel px-5 py-5">
+      <IndustryCard className="px-5 py-5">
         <h3 className="text-base font-semibold text-white/92">Team Members</h3>
         {teamMembers.length ? (
           <ul className="mt-3 space-y-2">
@@ -231,9 +233,9 @@ export function BuyerSettingsWorkspaceSections({
         ) : (
           <p className="mt-2 text-sm text-white/50">Team invites are coming soon. Your organization workspace will list collaborators here.</p>
         )}
-      </div>
+      </IndustryCard>
 
-      <div className="bd-muted-panel space-y-4 px-5 py-5">
+      <IndustryCard className="space-y-4 px-5 py-5">
         <h3 className="text-base font-semibold text-white/92">Notifications</h3>
         <label className="flex items-center justify-between gap-3 text-sm text-white/75">
           New talent matches
@@ -265,35 +267,41 @@ export function BuyerSettingsWorkspaceSections({
         <button type="button" className="bd-btn-secondary" disabled={isPending} onClick={saveNotifications}>
           Save preferences
         </button>
-      </div>
+      </IndustryCard>
 
-      <div className="bd-muted-panel space-y-3 px-5 py-5">
+      <IndustryCard className="space-y-3 px-5 py-5">
         <h3 className="text-base font-semibold text-white/92">Verification</h3>
-        <input
+        <IndustryField label="Website">
+        <IndustryInput
           type="url"
           className={inputClass}
           placeholder="Website"
           value={website}
           onChange={(event) => setWebsite(event.target.value)}
         />
-        <input
+        </IndustryField>
+        <IndustryField label="LinkedIn URL">
+        <IndustryInput
           type="url"
           className={inputClass}
           placeholder="LinkedIn URL"
           value={linkedin}
           onChange={(event) => setLinkedin(event.target.value)}
         />
-        <input
+        </IndustryField>
+        <IndustryField label="Instagram URL">
+        <IndustryInput
           type="url"
           className={inputClass}
           placeholder="Instagram URL"
           value={instagram}
           onChange={(event) => setInstagram(event.target.value)}
         />
+        </IndustryField>
         <button type="button" className="bd-btn-secondary" disabled={isPending} onClick={saveVerification}>
           Save links
         </button>
-      </div>
+      </IndustryCard>
     </div>
   );
 }

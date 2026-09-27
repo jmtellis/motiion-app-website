@@ -40,7 +40,7 @@
   min-height: 0;
   height: 100%;
   background: var(--tn-bg);
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
   overflow: hidden;
   overscroll-behavior: none;
 }
@@ -115,8 +115,8 @@
 }
 
 .talent-navigator__stage-toolbar-center nav {
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.06);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
   box-shadow: none;
   backdrop-filter: blur(14px);
 }
@@ -129,19 +129,19 @@
   border: none;
   border-radius: 0;
   background: transparent;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
   cursor: pointer;
   transition: color 150ms ease;
 }
 
 .talent-navigator__header-icon-btn:hover {
   background: transparent;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .talent-navigator__header-icon-btn--active {
   background: transparent;
-  color: #fff;
+  color: var(--industry-text, #fff);
 }
 
 .talent-navigator__header-icon-btn:focus-visible {
@@ -205,22 +205,22 @@
   padding: 0 0.875rem;
   font-size: 0.75rem;
   font-weight: 600;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.04);
-  color: rgb(255 255 255 / 0.85);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
+  color: var(--industry-text, rgb(255 255 255 / 0.85));
   transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
   cursor: pointer;
 }
 
 .talent-navigator__chrome-pill:hover {
-  background: rgb(255 255 255 / 0.08);
-  border-color: rgb(255 255 255 / 0.16);
+  background: var(--industry-fill, rgb(255 255 255 / 0.08));
+  border-color: var(--industry-line, rgb(255 255 255 / 0.16));
 }
 
 .talent-navigator__chrome-pill--active {
-  border-color: rgb(255 255 255 / 0.22);
-  background: rgb(255 255 255 / 0.1);
-  color: rgb(255 255 255 / 0.98);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.22));
+  background: var(--industry-fill, rgb(255 255 255 / 0.1));
+  color: var(--industry-text, rgb(255 255 255 / 0.98));
 }
 
 .talent-navigator__detail-scrim {
@@ -268,7 +268,7 @@
   border-top: 1px solid rgb(251 191 36 / 0.15);
   background: rgb(251 191 36 / 0.06);
   font-size: 0.6875rem;
-  color: rgb(254 243 199 / 0.85);
+  color: var(--industry-warning, rgb(254 243 199 / 0.85));
   text-align: center;
 }
 
@@ -282,7 +282,7 @@
   gap: 1rem;
   padding: 0.625rem 1rem;
   border-bottom: 1px solid var(--tn-border);
-  background: rgb(10 10 10 / 0.96);
+  background: var(--industry-surface, rgb(10 10 10 / 0.96));
 }
 
 .talent-navigator__topbar-brand {
@@ -367,7 +367,7 @@
   min-width: 0;
   min-height: 0;
   padding: 1.15rem 1.25rem;
-  border-bottom: 1px solid rgb(255 255 255 / 0.1);
+  border-bottom: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
   background: transparent;
 }
 
@@ -401,10 +401,10 @@
   width: 100%;
   margin: 0;
   padding: 0.65rem 0.85rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.12));
   border-radius: 999px;
   background: transparent;
-  color: rgb(255 255 255 / 0.72);
+  color: var(--industry-text, rgb(255 255 255 / 0.72));
   font-size: 0.8125rem;
   font-weight: 550;
   cursor: pointer;
@@ -417,7 +417,7 @@
 .talent-navigator__filter-rail-delete:hover {
   background: rgb(255 80 80 / 0.1);
   border-color: rgb(255 120 120 / 0.35);
-  color: rgb(255 210 210 / 0.95);
+  color: var(--industry-danger, rgb(255 210 210 / 0.95));
 }
 
 .talent-navigator__filter-active-chips {
@@ -430,7 +430,7 @@
   margin: 0;
   font-size: 0.75rem;
   line-height: 1.4;
-  color: rgb(255 255 255 / 0.4);
+  color: var(--industry-muted, rgb(255 255 255 / 0.4));
 }
 
 .talent-navigator__filter-main {
@@ -461,8 +461,8 @@
   width: 100%;
   min-width: 0;
   max-width: none;
-  background: rgb(255 255 255 / 0.035);
-  border-color: rgb(255 255 255 / 0.11);
+  background: var(--industry-fill, rgb(255 255 255 / 0.035));
+  border-color: var(--industry-line, rgb(255 255 255 / 0.11));
 }
 
 @media (width >= 720px) {
@@ -473,7 +473,7 @@
 
   .talent-navigator__filter-rail {
     border-bottom: 0;
-    border-right: 1px solid rgb(255 255 255 / 0.1);
+    border-right: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
     overflow-x: hidden;
     overflow-y: auto;
   }
@@ -494,7 +494,7 @@
   font-weight: 600;
   line-height: 1.5;
   letter-spacing: 0.01em;
-  color: rgb(255 255 255 / 0.88);
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
 }
 
 .talent-navigator__filter-body--shared {
@@ -559,14 +559,14 @@
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: -0.01em;
-  color: rgb(255 255 255 / 0.78);
+  color: var(--industry-text, rgb(255 255 255 / 0.78));
 }
 
 .talent-navigator__filter-section-count {
   font-size: 0.75rem;
   font-weight: 550;
   font-variant-numeric: tabular-nums;
-  color: rgb(255 255 255 / 0.42);
+  color: var(--industry-muted, rgb(255 255 255 / 0.42));
 }
 
 .talent-navigator__filter-field-options {
@@ -591,7 +591,7 @@
   font-size: 0.9375rem;
   font-weight: 600;
   letter-spacing: -0.01em;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .talent-navigator__filter-section-body {
@@ -624,10 +624,10 @@
   min-height: 2.5rem;
   margin: 0;
   padding: 0.45rem 0.75rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.12));
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.04);
-  color: rgb(255 255 255 / 0.88);
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
   text-align: left;
   cursor: pointer;
   transition:
@@ -636,8 +636,8 @@
 }
 
 .talent-navigator__filter-dropdown-trigger:hover:not(:disabled) {
-  background: rgb(255 255 255 / 0.06);
-  border-color: rgb(255 255 255 / 0.2);
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
+  border-color: var(--industry-line, rgb(255 255 255 / 0.2));
 }
 
 .talent-navigator__filter-dropdown-trigger:disabled {
@@ -668,7 +668,7 @@
 }
 
 .talent-navigator__filter-dropdown-input::placeholder {
-  color: rgb(255 255 255 / 0.35);
+  color: var(--industry-muted, rgb(255 255 255 / 0.35));
 }
 
 .talent-navigator__filter-dropdown-chevron {
@@ -681,7 +681,7 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
 }
 
 .talent-navigator__filter-dropdown-thumb {
@@ -689,8 +689,8 @@
   height: 1.5rem;
   flex-shrink: 0;
   border-radius: 0.4rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
-  background: rgb(255 255 255 / 0.04);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.12));
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
   object-fit: contain;
 }
 
@@ -712,9 +712,9 @@
   gap: 0.45rem;
   margin: 0.55rem 0.65rem 0.25rem;
   padding: 0.45rem 0.65rem;
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.03);
+  background: var(--industry-fill, rgb(255 255 255 / 0.03));
 }
 
 .talent-navigator__filter-dropdown-search-input {
@@ -722,13 +722,13 @@
   min-width: 0;
   border: 0;
   background: transparent;
-  color: rgb(255 255 255 / 0.9);
+  color: var(--industry-text, rgb(255 255 255 / 0.9));
   font-size: 0.8125rem;
   outline: none;
 }
 
 .talent-navigator__filter-dropdown-search-input::placeholder {
-  color: rgb(255 255 255 / 0.35);
+  color: var(--industry-muted, rgb(255 255 255 / 0.35));
 }
 
 .talent-navigator__filter-dropdown-results {
@@ -751,8 +751,8 @@
 }
 
 .talent-navigator__filter-dropdown-option--selected {
-  background: rgb(255 255 255 / 0.08);
-  color: #fff;
+  background: var(--industry-fill, rgb(255 255 255 / 0.08));
+  color: var(--industry-text, #fff);
 }
 
 .talent-navigator__filter-swatch-grid {
@@ -777,10 +777,10 @@
   width: 100%;
   margin: 0;
   padding: 0.45rem 0.55rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.12));
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.03);
-  color: rgb(255 255 255 / 0.78);
+  background: var(--industry-fill, rgb(255 255 255 / 0.03));
+  color: var(--industry-text, rgb(255 255 255 / 0.78));
   font-size: 0.8125rem;
   font-weight: 500;
   white-space: nowrap;
@@ -793,15 +793,15 @@
 }
 
 .talent-navigator__filter-swatch-btn:hover {
-  background: rgb(255 255 255 / 0.06);
-  border-color: rgb(255 255 255 / 0.2);
-  color: #fff;
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
+  border-color: var(--industry-line, rgb(255 255 255 / 0.2));
+  color: var(--industry-text, #fff);
 }
 
 .talent-navigator__filter-swatch-btn--selected {
-  border-color: rgb(255 255 255 / 0.38);
-  background: rgb(255 255 255 / 0.1);
-  color: #fff;
+  border-color: var(--industry-line, rgb(255 255 255 / 0.38));
+  background: var(--industry-fill, rgb(255 255 255 / 0.1));
+  color: var(--industry-text, #fff);
 }
 
 .talent-navigator__filter-swatch {
@@ -809,7 +809,7 @@
   height: 0.85rem;
   flex-shrink: 0;
   border-radius: 999px;
-  border: 1px solid rgb(255 255 255 / 0.25);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.25));
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.25);
 }
 
@@ -831,7 +831,7 @@
   flex-direction: column;
   gap: 0.3rem;
   font-size: 0.75rem;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
 }
 
 .talent-navigator__filter-height-slider input[type="range"] {
@@ -850,7 +850,7 @@
   margin: 0;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.88);
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
 }
 
 .talent-navigator__filter-height-dual-track {
@@ -867,14 +867,14 @@
   right: 0;
   height: 0.25rem;
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.12);
+  background: var(--industry-fill, rgb(255 255 255 / 0.12));
 }
 
 .talent-navigator__filter-height-dual-fill {
   position: absolute;
   height: 0.25rem;
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.72);
+  background: var(--industry-fill, rgb(255 255 255 / 0.72));
   pointer-events: none;
 }
 
@@ -958,7 +958,7 @@
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: rgb(6 6 6 / 0.96);
+  background: var(--industry-surface, rgb(6 6 6 / 0.96));
   backdrop-filter: blur(64px) brightness(0.4);
   -webkit-backdrop-filter: blur(64px) brightness(0.4);
   pointer-events: auto;
@@ -982,7 +982,7 @@
   flex-direction: column;
   min-height: 0;
   height: 100%;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
   pointer-events: none;
 }
 
@@ -994,7 +994,7 @@
   font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: rgb(255 255 255 / 0.95);
+  color: var(--industry-text, rgb(255 255 255 / 0.95));
   white-space: nowrap;
 }
 
@@ -1007,17 +1007,17 @@
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.04);
-  color: rgb(255 255 255 / 0.65);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
+  color: var(--industry-text, rgb(255 255 255 / 0.65));
   cursor: pointer;
   transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
 }
 
 .talent-navigator__filter-close:hover {
-  background: rgb(255 255 255 / 0.08);
-  border-color: rgb(255 255 255 / 0.16);
-  color: rgb(255 255 255 / 0.9);
+  background: var(--industry-fill, rgb(255 255 255 / 0.08));
+  border-color: var(--industry-line, rgb(255 255 255 / 0.16));
+  color: var(--industry-text, rgb(255 255 255 / 0.9));
 }
 
 .talent-navigator__filter-body {
@@ -1053,33 +1053,33 @@
 }
 
 .talent-navigator__filter-panel .casting-role-attr {
-  background: rgb(255 255 255 / 0.03);
-  border-color: rgb(255 255 255 / 0.1);
+  background: var(--industry-fill, rgb(255 255 255 / 0.03));
+  border-color: var(--industry-line, rgb(255 255 255 / 0.1));
 }
 
 .talent-navigator__filter-panel .casting-role-attr__label {
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .talent-navigator__filter-panel .casting-role-attr__preview {
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
 }
 
 .talent-navigator__filter-panel .casting-role-attr__trigger {
-  color: rgb(255 255 255 / 0.9);
+  color: var(--industry-text, rgb(255 255 255 / 0.9));
 }
 
 .talent-navigator__filter-panel .project-create__input {
   width: 100%;
   border-radius: 0.75rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.12));
   background: rgb(0 0 0 / 0.35);
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
   padding: 0.65rem 0.8rem;
 }
 
 .talent-navigator__filter-panel .casting-role-bound__hint {
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .talent-navigator__filter-toprow {
@@ -1120,7 +1120,7 @@
   font-weight: 600;
   letter-spacing: -0.01em;
   text-transform: none;
-  color: rgb(255 255 255 / 0.78);
+  color: var(--industry-text, rgb(255 255 255 / 0.78));
 }
 
 .talent-navigator__filter-grid {
@@ -1148,8 +1148,8 @@
   min-width: 0;
   padding: 0.875rem 1rem 1rem;
   border-radius: 14px;
-  border: 1px solid rgb(255 255 255 / 0.08);
-  background: rgb(12 12 12 / 0.92);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.08));
+  background: var(--industry-surface, rgb(12 12 12 / 0.92));
 }
 
 .talent-navigator__filter-grid .talent-navigator__filter-section:first-child {
@@ -1172,22 +1172,22 @@
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  border: 1px solid rgb(255 255 255 / 0.08);
-  background: rgb(255 255 255 / 0.05);
-  color: rgb(255 255 255 / 0.6);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.08));
+  background: var(--industry-fill, rgb(255 255 255 / 0.05));
+  color: var(--industry-muted, rgb(255 255 255 / 0.6));
 }
 
 .talent-navigator__filter-section-title {
   margin: 0;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.9);
+  color: var(--industry-text, rgb(255 255 255 / 0.9));
 }
 
 .talent-navigator__filter-section-hint {
   margin-left: auto;
   font-size: 0.6875rem;
-  color: rgb(255 255 255 / 0.32);
+  color: var(--industry-muted, rgb(255 255 255 / 0.32));
 }
 
 .talent-navigator__filter-options {
@@ -1200,26 +1200,26 @@
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.03);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
+  background: var(--industry-fill, rgb(255 255 255 / 0.03));
   padding: 0.3125rem 0.75rem;
   font-size: 0.75rem;
   font-weight: 500;
-  color: rgb(255 255 255 / 0.65);
+  color: var(--industry-text, rgb(255 255 255 / 0.65));
   cursor: pointer;
   transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
 .talent-navigator__filter-option:hover {
-  background: rgb(255 255 255 / 0.07);
-  border-color: rgb(255 255 255 / 0.18);
-  color: rgb(255 255 255 / 0.88);
+  background: var(--industry-fill, rgb(255 255 255 / 0.07));
+  border-color: var(--industry-line, rgb(255 255 255 / 0.18));
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
 }
 
 .talent-navigator__filter-option--selected {
-  border-color: rgb(255 255 255 / 0.28);
-  background: rgb(255 255 255 / 0.14);
-  color: rgb(255 255 255 / 0.98);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.28));
+  background: var(--industry-fill, rgb(255 255 255 / 0.14));
+  color: var(--industry-text, rgb(255 255 255 / 0.98));
 }
 
 .talent-navigator__filter-footer {
@@ -1227,8 +1227,8 @@
   display: grid;
   gap: 0.5rem;
   padding: 1rem 1.25rem;
-  border-top: 1px solid rgb(255 255 255 / 0.08);
-  background: rgb(8 8 8 / 0.96);
+  border-top: 1px solid var(--industry-line, rgb(255 255 255 / 0.08));
+  background: var(--industry-surface, rgb(8 8 8 / 0.96));
 }
 
 @media (width >= 640px) {
@@ -1288,8 +1288,8 @@
   display: flex;
   flex-direction: column;
   width: min(320px, 92vw);
-  border-left: 1px solid rgb(255 255 255 / 0.08);
-  background: rgb(10 10 10 / 0.94);
+  border-left: 1px solid var(--industry-line, rgb(255 255 255 / 0.08));
+  background: var(--industry-surface, rgb(10 10 10 / 0.94));
   backdrop-filter: blur(16px);
   transform: translateX(100%);
   transition: transform 240ms ease;
@@ -1346,7 +1346,7 @@
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: rgb(255 255 255 / 0.28);
+  color: var(--industry-muted, rgb(255 255 255 / 0.28));
   cursor: pointer;
   transform: translateY(-50%);
   transition:
@@ -1355,14 +1355,14 @@
 }
 
 .talent-navigator__browse-edge-nav:hover {
-  color: rgb(255 255 255 / 0.72);
-  background: rgb(255 255 255 / 0.05);
+  color: var(--industry-text, rgb(255 255 255 / 0.72));
+  background: var(--industry-fill, rgb(255 255 255 / 0.05));
 }
 
 .talent-navigator__browse-edge-nav:focus-visible {
   outline: none;
-  color: rgb(255 255 255 / 0.85);
-  background: rgb(255 255 255 / 0.08);
+  color: var(--industry-text, rgb(255 255 255 / 0.85));
+  background: var(--industry-fill, rgb(255 255 255 / 0.08));
 }
 
 .talent-navigator__browse-edge-nav--left {
@@ -1417,13 +1417,13 @@
   background: transparent;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
   cursor: pointer;
   transition: color 160ms ease;
 }
 
 .talent-navigator__focus-footer-close:hover {
-  color: rgb(255 255 255 / 0.85);
+  color: var(--industry-text, rgb(255 255 255 / 0.85));
 }
 
 .talent-navigator__focus-footer-spacer {
@@ -1452,7 +1452,7 @@
   min-height: 0;
   overflow: hidden;
   border-radius: 1.125rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.12));
   background:
     radial-gradient(
       ellipse 80% 60% at 70% -20%,
@@ -1544,13 +1544,13 @@
   font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1.15;
-  color: #fafafa;
+  color: var(--industry-text, #fafafa);
 }
 
 .talent-navigator__focus-card-body .talent-navigator__detail-location {
   margin-top: 0.25rem;
   font-size: 0.875rem;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
 }
 
 .talent-navigator__focus-header-actions {
@@ -1571,10 +1571,10 @@
   gap: 0.35rem;
   margin: 0;
   padding: 0.4rem 0.7rem;
-  border: 1px solid rgb(255 255 255 / 0.18);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.18));
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.04);
-  color: rgb(255 255 255 / 0.88);
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
   font-size: 0.75rem;
   font-weight: 550;
   cursor: pointer;
@@ -1585,9 +1585,9 @@
 }
 
 .talent-navigator__focus-view-trigger:hover {
-  background: rgb(255 255 255 / 0.08);
-  border-color: rgb(255 255 255 / 0.28);
-  color: #fff;
+  background: var(--industry-fill, rgb(255 255 255 / 0.08));
+  border-color: var(--industry-line, rgb(255 255 255 / 0.28));
+  color: var(--industry-text, #fff);
 }
 
 .talent-navigator__focus-view-trigger--disabled {
@@ -1605,9 +1605,9 @@
   min-width: 8.5rem;
   flex-direction: column;
   gap: 0.125rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.12));
   border-radius: 0.75rem;
-  background: #1a1a1a;
+  background: var(--industry-surface, #1a1a1a);
   padding: 0.35rem;
   box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
 }
@@ -1620,7 +1620,7 @@
   border: 0;
   border-radius: 0.5rem;
   background: transparent;
-  color: rgb(255 255 255 / 0.78);
+  color: var(--industry-text, rgb(255 255 255 / 0.78));
   font-size: 0.8125rem;
   font-weight: 500;
   text-align: left;
@@ -1628,13 +1628,13 @@
 }
 
 .talent-navigator__focus-view-option:hover {
-  background: rgb(255 255 255 / 0.06);
-  color: #fff;
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
+  color: var(--industry-text, #fff);
 }
 
 .talent-navigator__focus-view-option--active {
-  background: rgb(255 255 255 / 0.08);
-  color: #fff;
+  background: var(--industry-fill, rgb(255 255 255 / 0.08));
+  color: var(--industry-text, #fff);
 }
 
 .talent-navigator__focus-footer-menu {
@@ -1647,10 +1647,10 @@
   gap: 0.4rem;
   margin: 0;
   padding: 0.55rem 0.9rem;
-  border: 1px solid rgb(255 255 255 / 0.18);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.18));
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.05);
-  color: rgb(255 255 255 / 0.9);
+  background: var(--industry-fill, rgb(255 255 255 / 0.05));
+  color: var(--industry-text, rgb(255 255 255 / 0.9));
   font-size: 0.8125rem;
   font-weight: 550;
   text-decoration: none;
@@ -1662,19 +1662,19 @@
 }
 
 .talent-navigator__focus-footer-btn:hover:not(:disabled) {
-  background: rgb(255 255 255 / 0.1);
-  border-color: rgb(255 255 255 / 0.3);
-  color: #fff;
+  background: var(--industry-fill, rgb(255 255 255 / 0.1));
+  border-color: var(--industry-line, rgb(255 255 255 / 0.3));
+  color: var(--industry-text, #fff);
 }
 
 .talent-navigator__focus-footer-btn--primary {
-  border-color: rgb(255 255 255 / 0.92);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.92));
   background: #fff;
   color: #0a0a0a;
 }
 
 .talent-navigator__focus-footer-btn--primary:hover:not(:disabled) {
-  background: rgb(255 255 255 / 0.92);
+  background: var(--industry-fill, rgb(255 255 255 / 0.92));
   border-color: #fff;
   color: #0a0a0a;
 }
@@ -1693,9 +1693,9 @@
   min-width: 12.5rem;
   flex-direction: column;
   gap: 0.125rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.12));
   border-radius: 0.75rem;
-  background: #1a1a1a;
+  background: var(--industry-surface, #1a1a1a);
   padding: 0.35rem;
   box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
   transform: translateX(-50%);
@@ -1711,7 +1711,7 @@
   border: 0;
   border-radius: 0.5rem;
   background: transparent;
-  color: rgb(255 255 255 / 0.88);
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
   font-size: 0.8125rem;
   font-weight: 500;
   text-align: left;
@@ -1719,8 +1719,8 @@
 }
 
 .talent-navigator__focus-footer-dropdown-item:hover {
-  background: rgb(255 255 255 / 0.06);
-  color: #fff;
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
+  color: var(--industry-text, #fff);
 }
 
 .talent-navigator__focus-icon-btn {
@@ -1729,10 +1729,10 @@
   justify-content: center;
   width: 2.25rem;
   height: 2.25rem;
-  border: 1px solid rgb(255 255 255 / 0.22);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.22));
   border-radius: 999px;
   background: transparent;
-  color: rgb(255 255 255 / 0.85);
+  color: var(--industry-text, rgb(255 255 255 / 0.85));
   cursor: pointer;
   transition:
     background 160ms ease,
@@ -1741,9 +1741,9 @@
 }
 
 .talent-navigator__focus-icon-btn:hover {
-  background: rgb(255 255 255 / 0.06);
-  border-color: rgb(255 255 255 / 0.35);
-  color: #fff;
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
+  border-color: var(--industry-line, rgb(255 255 255 / 0.35));
+  color: var(--industry-text, #fff);
 }
 
 .talent-navigator__focus-add-wrap {
@@ -1759,9 +1759,9 @@
   min-width: 11.5rem;
   flex-direction: column;
   gap: 0.125rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.12));
   border-radius: 0.75rem;
-  background: #1a1a1a;
+  background: var(--industry-surface, #1a1a1a);
   padding: 0.35rem;
   box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
 }
@@ -1777,14 +1777,14 @@
   padding: 0.55rem 0.65rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: rgb(255 255 255 / 0.88);
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
   text-align: left;
   cursor: pointer;
 }
 
 .talent-navigator__focus-add-menu-item:hover {
-  background: rgb(255 255 255 / 0.06);
-  color: #fff;
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
+  color: var(--industry-text, #fff);
 }
 
 .talent-navigator__focus-card-content {
@@ -1837,11 +1837,11 @@
   margin: 0;
   padding: 0 1.25rem;
   font-size: 0.8125rem;
-  color: rgb(255 255 255 / 0.7);
+  color: var(--industry-text, rgb(255 255 255 / 0.7));
 }
 
 .talent-navigator__focus-profile-status--muted {
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .talent-navigator__focus-card .buyer-talent-profile__attribute-strip-wrap {
@@ -1867,7 +1867,7 @@
   margin: 0;
   padding: 1rem 1.25rem;
   border-block: 1px solid rgb(255 255 255 / 0.1);
-  background: #151515;
+  background: var(--industry-surface, #151515);
 }
 
 .talent-navigator__focus-attribute-wrap .buyer-talent-profile__attribute-strip {
@@ -1885,7 +1885,7 @@
   flex-shrink: 0;
   gap: 1.1rem;
   margin: 0;
-  border-bottom: 1px solid rgb(255 255 255 / 0.1);
+  border-bottom: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
 }
 
 .talent-navigator__focus-profile-tab {
@@ -1897,17 +1897,17 @@
   padding: 0.45rem 0;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
   cursor: pointer;
   transition: color 200ms ease;
 }
 
 .talent-navigator__focus-profile-tab:hover {
-  color: rgb(255 255 255 / 0.75);
+  color: var(--industry-text, rgb(255 255 255 / 0.75));
 }
 
 .talent-navigator__focus-profile-tab[data-active="true"] {
-  color: rgb(255 255 255 / 0.95);
+  color: var(--industry-text, rgb(255 255 255 / 0.95));
   font-weight: 600;
 }
 
@@ -1963,14 +1963,14 @@
   font-weight: 600;
   letter-spacing: -0.015em;
   line-height: 1.25;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .talent-navigator__focus-section-count {
   font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0;
-  color: rgb(255 255 255 / 0.38);
+  color: var(--industry-muted, rgb(255 255 255 / 0.38));
   font-variant-numeric: tabular-nums;
 }
 
@@ -1989,10 +1989,10 @@
   height: 1.75rem;
   margin: 0;
   padding: 0;
-  border: 1px solid rgb(255 255 255 / 0.16);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.16));
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.04);
-  color: rgb(255 255 255 / 0.82);
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
+  color: var(--industry-text, rgb(255 255 255 / 0.82));
   cursor: pointer;
   transition:
     background 160ms ease,
@@ -2002,9 +2002,9 @@
 }
 
 .talent-navigator__focus-section-nav-btn:hover:not(:disabled) {
-  background: rgb(255 255 255 / 0.09);
-  border-color: rgb(255 255 255 / 0.28);
-  color: #fff;
+  background: var(--industry-fill, rgb(255 255 255 / 0.09));
+  border-color: var(--industry-line, rgb(255 255 255 / 0.28));
+  color: var(--industry-text, #fff);
 }
 
 .talent-navigator__focus-section-nav-btn:disabled {
@@ -2040,7 +2040,7 @@
   font-size: 0.75rem;
   font-weight: 500;
   line-height: 1.25;
-  color: rgb(255 255 255 / 0.72);
+  color: var(--industry-text, rgb(255 255 255 / 0.72));
 }
 
 .talent-navigator__focus-experience-caption {
@@ -2062,13 +2062,13 @@
 .talent-navigator__focus-experience-tile-title {
   font-size: 0.75rem;
   font-weight: 500;
-  color: rgb(255 255 255 / 0.82);
+  color: var(--industry-text, rgb(255 255 255 / 0.82));
 }
 
 .talent-navigator__focus-experience-tile-company {
   font-size: 0.625rem;
   font-weight: 500;
-  color: rgb(255 255 255 / 0.48);
+  color: var(--industry-muted, rgb(255 255 255 / 0.48));
 }
 
 .talent-navigator__focus-media-slot {
@@ -2122,7 +2122,7 @@
   overflow: hidden;
   border-radius: 1rem;
   border: 1.5px solid transparent;
-  background: rgb(255 255 255 / 0.04);
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
   transition: border-color 160ms ease;
 }
 
@@ -2137,13 +2137,13 @@
   height: 100%;
   object-fit: cover;
   object-position: center top;
-  background: #000;
+  background: var(--industry-surface, #000);
 }
 
 .talent-navigator__focus-media-tile-fallback {
   width: 100%;
   height: 100%;
-  background: rgb(255 255 255 / 0.05);
+  background: var(--industry-fill, rgb(255 255 255 / 0.05));
 }
 
 .talent-navigator__focus-video-badge {
@@ -2153,7 +2153,7 @@
   align-items: center;
   justify-content: center;
   background: rgb(0 0 0 / 0.28);
-  color: #fff;
+  color: var(--industry-text, #fff);
   pointer-events: none;
 }
 
@@ -2164,7 +2164,7 @@
   height: 2.5rem;
   border-radius: 999px;
   background: rgb(0 0 0 / 0.45);
-  border: 1px solid rgb(255 255 255 / 0.18);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.18));
 }
 
 .talent-navigator__focus-video-badge > svg {
@@ -2185,10 +2185,10 @@
   padding: 0 0.35rem;
   border-radius: 999px;
   background: rgb(0 0 0 / 0.72);
-  border: 1px solid rgb(255 255 255 / 0.16);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.16));
   font-size: 0.625rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--industry-text, #fff);
   font-variant-numeric: tabular-nums;
 }
 
@@ -2200,9 +2200,9 @@
 .talent-navigator__focus-artist-menu {
   z-index: 80;
   width: min(16.5rem, 70vw);
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.12));
   border-radius: 0.85rem;
-  background: #1a1a1a;
+  background: var(--industry-surface, #1a1a1a);
   padding: 0.45rem;
   box-shadow: 0 16px 40px rgb(0 0 0 / 0.5);
 }
@@ -2218,7 +2218,7 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.42);
+  color: var(--industry-muted, rgb(255 255 255 / 0.42));
 }
 
 .talent-navigator__focus-artist-menu-list {
@@ -2246,7 +2246,7 @@
 }
 
 .talent-navigator__focus-artist-menu-item:hover {
-  background: rgb(255 255 255 / 0.06);
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
 }
 
 .talent-navigator__focus-artist-menu-thumb {
@@ -2255,7 +2255,7 @@
   flex-shrink: 0;
   border-radius: 0.45rem;
   object-fit: cover;
-  background: rgb(255 255 255 / 0.06);
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
 }
 
 .talent-navigator__focus-artist-menu-item-copy {
@@ -2271,7 +2271,7 @@
   white-space: nowrap;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: rgb(255 255 255 / 0.9);
+  color: var(--industry-text, rgb(255 255 255 / 0.9));
 }
 
 .talent-navigator__focus-artist-menu-item-meta {
@@ -2279,7 +2279,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.6875rem;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .talent-navigator__focus-project {
@@ -2319,12 +2319,12 @@
   background: transparent;
   font-size: 0.75rem;
   font-weight: 500;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
   cursor: pointer;
 }
 
 .talent-navigator__focus-project-back:hover {
-  color: rgb(255 255 255 / 0.88);
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
 }
 
 .talent-navigator__focus-project-header {
@@ -2339,13 +2339,13 @@
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.25;
-  color: #fafafa;
+  color: var(--industry-text, #fafafa);
 }
 
 .talent-navigator__focus-project-company {
   margin: 0;
   font-size: 0.8125rem;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
 }
 
 .talent-navigator__focus-project-meta {
@@ -2368,14 +2368,14 @@
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.38);
+  color: var(--industry-muted, rgb(255 255 255 / 0.38));
 }
 
 .talent-navigator__focus-project-meta-row dd {
   margin: 0;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: rgb(255 255 255 / 0.88);
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
   word-break: break-word;
 }
 
@@ -2417,7 +2417,7 @@
   height: 100%;
   object-fit: cover;
   object-position: center top;
-  background: #000;
+  background: var(--industry-surface, #000);
 }
 
 .talent-navigator__focus-media-row-title {
@@ -2477,7 +2477,7 @@
   flex-shrink: 0;
   overflow: hidden;
   border-radius: 12px;
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
   background: rgb(0 0 0 / 0.5);
 }
 
@@ -2510,20 +2510,20 @@
 .talent-navigator__detail-name {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.95);
+  color: var(--industry-text, rgb(255 255 255 / 0.95));
   line-height: 1.25;
 }
 
 .talent-navigator__detail-pronouns {
   font-size: 0.6875rem;
-  color: rgb(255 255 255 / 0.42);
+  color: var(--industry-muted, rgb(255 255 255 / 0.42));
   white-space: nowrap;
 }
 
 .talent-navigator__detail-location {
   margin-top: 0.125rem;
   font-size: 0.75rem;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
 }
 
 .talent-navigator__grid-shell {
@@ -2666,7 +2666,7 @@
   text-align: center;
   text-transform: uppercase;
   text-wrap: balance;
-  color: rgb(255 255 255 / 0.72);
+  color: var(--industry-text, rgb(255 255 255 / 0.72));
   text-shadow: 0 1px 10px rgb(0 0 0 / 0.65);
   animation: talent-navigator-category-enter 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -2699,17 +2699,17 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  border: 1px solid rgb(255 255 255 / 0.08);
-  background: rgb(255 255 255 / 0.04);
-  color: rgb(255 255 255 / 0.35);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.08));
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
+  color: var(--industry-muted, rgb(255 255 255 / 0.35));
   cursor: pointer;
   transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
 }
 
 .talent-navigator__nav-arrow:hover {
-  background: rgb(255 255 255 / 0.08);
-  color: rgb(255 255 255 / 0.7);
-  border-color: rgb(255 255 255 / 0.14);
+  background: var(--industry-fill, rgb(255 255 255 / 0.08));
+  color: var(--industry-text, rgb(255 255 255 / 0.7));
+  border-color: var(--industry-line, rgb(255 255 255 / 0.14));
 }
 
 .talent-navigator__nav-arrow--left {
@@ -2758,7 +2758,7 @@
   height: 100%;
   border-radius: 14px;
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 0.08);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.08));
   background: rgb(0 0 0 / 0.6);
   box-shadow: 0 8px 32px rgb(0 0 0 / 0.5);
   transform: scale(var(--tn-card-scale, 1));
@@ -2859,7 +2859,7 @@
 .talent-navigator__card-tag {
   font-size: 0.625rem;
   font-weight: 500;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
 }
 
 .talent-navigator__card-save {
@@ -2903,9 +2903,9 @@
   line-height: 1.2;
   letter-spacing: 0;
   text-transform: none;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.05);
-  color: rgb(255 255 255 / 0.75);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
+  background: var(--industry-fill, rgb(255 255 255 / 0.05));
+  color: var(--industry-text, rgb(255 255 255 / 0.75));
 }
 
 button.talent-navigator__chip {
@@ -2920,7 +2920,7 @@ button.talent-navigator__chip {
   padding: 0.3125rem 0.625rem;
   background: color-mix(in oklab, var(--accent) 12%, transparent);
   border-color: color-mix(in oklab, var(--accent) 25%, transparent);
-  color: rgb(255 255 255 / 0.88);
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
 }
 
 .talent-navigator__style-chips-list {
@@ -2932,22 +2932,22 @@ button.talent-navigator__chip {
 .talent-navigator__field {
   width: 100%;
   border-radius: 9999px;
-  border: 1px solid rgb(255 255 255 / 0.08);
-  background: rgb(255 255 255 / 0.03);
-  color: rgb(255 255 255 / 0.88);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.08));
+  background: var(--industry-fill, rgb(255 255 255 / 0.03));
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
   padding: 0.4375rem 0.875rem;
   font-size: 0.8125rem;
 }
 
 .talent-navigator__field::placeholder {
-  color: rgb(255 255 255 / 0.32);
+  color: var(--industry-muted, rgb(255 255 255 / 0.32));
 }
 
 .talent-navigator__field:focus,
 .talent-navigator__field:focus-visible {
   outline: none;
   outline-offset: 0;
-  border-color: rgb(255 255 255 / 0.35);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.35));
   box-shadow: none;
 }
 
@@ -2964,7 +2964,7 @@ button.talent-navigator__chip {
   left: 0.625rem;
   top: 50%;
   translate: 0 -50%;
-  color: rgb(255 255 255 / 0.35);
+  color: var(--industry-muted, rgb(255 255 255 / 0.35));
   pointer-events: none;
 }
 
@@ -2983,22 +2983,22 @@ button.talent-navigator__chip {
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0.5rem 0;
-  border-bottom: 1px solid rgb(255 255 255 / 0.04);
+  border-bottom: 1px solid var(--industry-line, rgb(255 255 255 / 0.04));
   cursor: pointer;
   font-size: 0.8125rem;
-  color: rgb(255 255 255 / 0.65);
+  color: var(--industry-text, rgb(255 255 255 / 0.65));
 }
 
 .talent-navigator__accordion-group {
   display: flex;
   flex-direction: column;
   gap: 0;
-  border-top: 1px solid rgb(255 255 255 / 0.06);
+  border-top: 1px solid var(--industry-line, rgb(255 255 255 / 0.06));
   margin-top: 0.25rem;
 }
 
 .talent-navigator__accordion {
-  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+  border-bottom: 1px solid var(--industry-line, rgb(255 255 255 / 0.06));
 }
 
 .talent-navigator__accordion-trigger {
@@ -3012,11 +3012,11 @@ button.talent-navigator__chip {
   border: 0;
   cursor: pointer;
   text-align: left;
-  color: rgb(255 255 255 / 0.72);
+  color: var(--industry-text, rgb(255 255 255 / 0.72));
 }
 
 .talent-navigator__accordion-trigger:hover {
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .talent-navigator__accordion-title {
@@ -3024,7 +3024,7 @@ button.talent-navigator__chip {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.42);
+  color: var(--industry-muted, rgb(255 255 255 / 0.42));
 }
 
 .talent-navigator__accordion-meta {
@@ -3040,12 +3040,12 @@ button.talent-navigator__chip {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.75rem;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
 }
 
 .talent-navigator__accordion-chevron {
   flex-shrink: 0;
-  color: rgb(255 255 255 / 0.28);
+  color: var(--industry-muted, rgb(255 255 255 / 0.28));
   transition: transform 160ms ease;
 }
 
@@ -3062,7 +3062,7 @@ button.talent-navigator__chip {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.38);
+  color: var(--industry-muted, rgb(255 255 255 / 0.38));
 }
 
 .talent-navigator__action-btn {
@@ -3075,17 +3075,17 @@ button.talent-navigator__chip {
   padding: 0 0.75rem;
   font-size: 0.75rem;
   font-weight: 600;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.04);
-  color: rgb(255 255 255 / 0.85);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
+  color: var(--industry-text, rgb(255 255 255 / 0.85));
   transition: background 160ms ease, border-color 160ms ease;
   cursor: pointer;
   text-decoration: none;
 }
 
 .talent-navigator__action-btn:hover {
-  background: rgb(255 255 255 / 0.08);
-  border-color: rgb(255 255 255 / 0.16);
+  background: var(--industry-fill, rgb(255 255 255 / 0.08));
+  border-color: var(--industry-line, rgb(255 255 255 / 0.16));
 }
 
 .talent-navigator__action-btn--primary {
@@ -3114,7 +3114,7 @@ button.talent-navigator__chip {
 .talent-navigator__action-btn--ghost {
   border-color: transparent;
   background: transparent;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
 }
 
 .talent-navigator__action-btn--block {
@@ -3137,7 +3137,7 @@ button.talent-navigator__chip {
 .talent-navigator__tab {
   border: 0;
   background: transparent;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
   font-size: 0.8125rem;
   font-weight: 500;
   padding: 0.25rem 0;
@@ -3147,7 +3147,7 @@ button.talent-navigator__chip {
 }
 
 .talent-navigator__tab[data-active="true"] {
-  color: rgb(255 255 255 / 0.95);
+  color: var(--industry-text, rgb(255 255 255 / 0.95));
   border-top-color: var(--tn-accent);
   font-weight: 600;
 }
@@ -3158,17 +3158,17 @@ button.talent-navigator__chip {
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.375rem 0;
-  border-bottom: 1px solid rgb(255 255 255 / 0.05);
+  border-bottom: 1px solid var(--industry-line, rgb(255 255 255 / 0.05));
   font-size: 0.8125rem;
 }
 
 .talent-navigator__meta-row dt {
-  color: rgb(255 255 255 / 0.42);
+  color: var(--industry-muted, rgb(255 255 255 / 0.42));
   font-weight: 400;
 }
 
 .talent-navigator__meta-row dd {
-  color: rgb(255 255 255 / 0.88);
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
   font-weight: 500;
   text-align: right;
 }
@@ -3215,13 +3215,13 @@ button.talent-navigator__chip {
   font-weight: 600;
   background: color-mix(in oklab, var(--accent) 18%, transparent);
   border: 1px solid color-mix(in oklab, var(--accent) 35%, transparent);
-  color: rgb(255 255 255 / 0.95);
+  color: var(--industry-text, rgb(255 255 255 / 0.95));
   backdrop-filter: blur(8px);
 }
 
 .talent-navigator__hint {
   font-size: 0.6875rem;
-  color: rgb(255 255 255 / 0.35);
+  color: var(--industry-muted, rgb(255 255 255 / 0.35));
   white-space: nowrap;
 }
 
@@ -3230,11 +3230,11 @@ button.talent-navigator__chip {
   margin: 0 0.125rem;
   padding: 0.0625rem 0.3125rem;
   border-radius: 4px;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.04);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
   font-family: inherit;
   font-size: 0.625rem;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
 }
 
 .talent-navigator-grid-bg {
@@ -3362,7 +3362,7 @@ button.talent-navigator__chip {
 .talent-navigator__nl-rail--end {
   inset-inline-start: auto;
   inset-inline-end: var(--tn-stage-inset-inline);
-  background: rgb(10 10 10 / 0.9);
+  background: var(--industry-surface, rgb(10 10 10 / 0.9));
   padding: 0 1.25rem 0.5rem 0.75rem;
   /* Top/bottom soft edges only — no left-side vignette. */
   -webkit-mask-image: linear-gradient(
@@ -3407,7 +3407,7 @@ button.talent-navigator__chip {
 
 .talent-navigator__nl-rail--end:hover,
 .talent-navigator__nl-rail--end:focus-within {
-  background: rgb(10 10 10 / 0.96);
+  background: var(--industry-surface, rgb(10 10 10 / 0.96));
 }
 
 .talent-navigator--chat-focused .talent-navigator__grid-canvas {
@@ -3493,13 +3493,13 @@ button.talent-navigator__chip {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.12));
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.06);
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
   padding: 0.375rem 0.75rem 0.375rem 0.625rem;
   font-size: 0.75rem;
   font-weight: 550;
-  color: rgb(255 255 255 / 0.88);
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
   cursor: pointer;
   transition:
     background 150ms ease,
@@ -3507,21 +3507,21 @@ button.talent-navigator__chip {
 }
 
 .talent-navigator__chat-dismiss:hover {
-  background: rgb(255 255 255 / 0.1);
-  border-color: rgb(255 255 255 / 0.2);
+  background: var(--industry-fill, rgb(255 255 255 / 0.1));
+  border-color: var(--industry-line, rgb(255 255 255 / 0.2));
 }
 
 .talent-navigator__search-reopen {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.12));
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.06);
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
   padding: 0.4375rem 0.875rem;
   font-size: 0.75rem;
   font-weight: 550;
-  color: rgb(255 255 255 / 0.9);
+  color: var(--industry-text, rgb(255 255 255 / 0.9));
   cursor: pointer;
   transition:
     background 150ms ease,
@@ -3529,8 +3529,8 @@ button.talent-navigator__chip {
 }
 
 .talent-navigator__search-reopen:hover {
-  background: rgb(255 255 255 / 0.1);
-  border-color: rgb(255 255 255 / 0.2);
+  background: var(--industry-fill, rgb(255 255 255 / 0.1));
+  border-color: var(--industry-line, rgb(255 255 255 / 0.2));
 }
 
 .talent-navigator__chat-focus-scroll {
@@ -3565,8 +3565,8 @@ button.talent-navigator__chip {
 }
 
 .talent-navigator__chat-focus-compose .talent-navigator__nl-compose-inner {
-  border-color: rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.06);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.1));
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
   backdrop-filter: blur(14px);
   box-shadow: none;
   padding: 0.4375rem 0.4375rem 0.4375rem 1.125rem;
@@ -3591,14 +3591,14 @@ button.talent-navigator__chip {
 .talent-navigator__nl-empty-results {
   margin: 0;
   font-size: 0.8125rem;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
 }
 
 .talent-navigator__nl-response-prose {
   margin: 0;
   font-size: 0.9375rem;
   line-height: 1.55;
-  color: rgb(255 255 255 / 0.88);
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
 }
 
 .talent-navigator__nl-portrait-results {
@@ -3635,7 +3635,7 @@ button.talent-navigator__chip {
 }
 
 .talent-navigator__nl-portrait-stack:focus-visible .talent-navigator__nl-portrait-photo {
-  border-color: rgb(255 255 255 / 0.4);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.4));
   box-shadow: 0 0 0 2px rgb(255 255 255 / 0.18);
 }
 
@@ -3652,9 +3652,9 @@ button.talent-navigator__chip {
   width: 7.25rem;
   aspect-ratio: 3 / 4;
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
   border-radius: 0.875rem;
-  background: rgb(20 20 20);
+  background: var(--industry-surface, rgb(20 20 20));
   box-shadow: 0 8px 20px rgb(0 0 0 / 0.35);
 }
 
@@ -3694,14 +3694,14 @@ button.talent-navigator__chip {
   min-width: 1.75rem;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgb(255 255 255 / 0.2);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.2));
   border-radius: 999px;
   background: rgb(0 0 0 / 0.72);
   padding: 0.2rem 0.45rem;
   font-size: 0.6875rem;
   font-weight: 650;
   letter-spacing: 0.01em;
-  color: rgb(255 255 255 / 0.95);
+  color: var(--industry-text, rgb(255 255 255 / 0.95));
   backdrop-filter: blur(8px);
 }
 
@@ -3723,7 +3723,7 @@ button.talent-navigator__chip {
 .talent-navigator__nl-portrait-card:hover .talent-navigator__nl-portrait-photo,
 .talent-navigator__nl-portrait-card:focus-visible .talent-navigator__nl-portrait-photo,
 .talent-navigator__nl-portrait-stack:hover .talent-navigator__nl-portrait-stack-lead .talent-navigator__nl-portrait-photo {
-  border-color: rgb(255 255 255 / 0.35);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.35));
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
 }
 
@@ -3735,9 +3735,9 @@ button.talent-navigator__chip {
   position: relative;
   aspect-ratio: 3 / 4;
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.12));
   border-radius: 0.875rem;
-  background: rgb(255 255 255 / 0.06);
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease;
@@ -3758,7 +3758,7 @@ button.talent-navigator__chip {
   justify-content: center;
   font-size: 1.25rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
 }
 
 .talent-navigator__nl-portrait-name {
@@ -3766,7 +3766,7 @@ button.talent-navigator__chip {
   font-size: 0.75rem;
   font-weight: 600;
   line-height: 1.25;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -3775,7 +3775,7 @@ button.talent-navigator__chip {
   overflow: hidden;
   font-size: 0.625rem;
   line-height: 1.3;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -3806,7 +3806,7 @@ button.talent-navigator__chip {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.38);
+  color: var(--industry-muted, rgb(255 255 255 / 0.38));
 }
 
 .talent-navigator__nl-messages {
@@ -3846,7 +3846,7 @@ button.talent-navigator__chip {
   padding: 0.55rem 0.75rem;
   font-size: 0.8125rem;
   line-height: 1.45;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .talent-navigator__nl-assistant {
@@ -3856,7 +3856,7 @@ button.talent-navigator__chip {
   gap: 0.875rem;
   font-size: 0.8125rem;
   line-height: 1.5;
-  color: rgb(255 255 255 / 0.78);
+  color: var(--industry-text, rgb(255 255 255 / 0.78));
 }
 
 .talent-navigator__nl-assistant p {
@@ -3875,18 +3875,18 @@ button.talent-navigator__chip {
   max-width: 100%;
   align-items: center;
   gap: 0.375rem;
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.05);
+  background: var(--industry-fill, rgb(255 255 255 / 0.05));
   padding: 0.2rem 0.55rem 0.2rem 0.2rem;
   font-size: 0.75rem;
   font-weight: 500;
   line-height: 1.2;
-  color: rgb(255 255 255 / 0.88);
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
 }
 
 .talent-navigator__nl-result-chip--empty {
-  color: rgb(255 255 255 / 0.62);
+  color: var(--industry-muted, rgb(255 255 255 / 0.62));
 }
 
 .talent-navigator__nl-result-chip-avatar {
@@ -3898,8 +3898,8 @@ button.talent-navigator__chip {
   overflow: hidden;
   border-radius: 999px;
   object-fit: cover;
-  background: rgb(255 255 255 / 0.08);
-  color: rgb(255 255 255 / 0.55);
+  background: var(--industry-fill, rgb(255 255 255 / 0.08));
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
 }
 
 .talent-navigator__nl-result-chip-avatar--fallback {
@@ -3919,7 +3919,7 @@ button.talent-navigator__chip {
   margin: 0.5rem 0 0;
   padding-inline-start: 1rem;
   font-size: 0.75rem;
-  color: rgb(255 255 255 / 0.5);
+  color: var(--industry-muted, rgb(255 255 255 / 0.5));
 }
 
 .talent-navigator__nl-bullets li + li {
@@ -3931,7 +3931,7 @@ button.talent-navigator__chip {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.75rem;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .talent-navigator__nl-compose {
@@ -4003,9 +4003,9 @@ button.talent-navigator__chip {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.06);
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
   box-shadow: none;
   backdrop-filter: blur(14px);
   padding: 0.3rem 0.7rem;
@@ -4021,15 +4021,15 @@ button.talent-navigator__chip {
 }
 
 .talent-navigator__nl-chip:hover {
-  background: rgb(255 255 255 / 0.1);
-  border-color: rgb(255 255 255 / 0.14);
-  color: #eaeaea;
+  background: var(--industry-fill, rgb(255 255 255 / 0.1));
+  border-color: var(--industry-line, rgb(255 255 255 / 0.14));
+  color: var(--industry-text, #eaeaea);
 }
 
 .talent-navigator__nl-chip--active {
-  border-color: rgb(255 255 255 / 0.14);
-  background: rgb(255 255 255 / 0.12);
-  color: #fafafa;
+  border-color: var(--industry-line, rgb(255 255 255 / 0.14));
+  background: var(--industry-fill, rgb(255 255 255 / 0.12));
+  color: var(--industry-text, #fafafa);
   box-shadow: none;
 }
 
@@ -4087,13 +4087,13 @@ button.talent-navigator__chip {
   padding: 0.4rem 0.5rem;
   font-size: 0.75rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.5);
+  color: var(--industry-muted, rgb(255 255 255 / 0.5));
   cursor: pointer;
 }
 
 .talent-navigator__worked-with-tab--active {
   background: var(--tn-elevated-bg);
-  color: #fafafa;
+  color: var(--industry-text, #fafafa);
   box-shadow: var(--tn-elevated-shadow);
 }
 
@@ -4140,10 +4140,10 @@ button.talent-navigator__chip {
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  background: rgb(255 255 255 / 0.08);
+  background: var(--industry-fill, rgb(255 255 255 / 0.08));
   font-size: 0.6875rem;
   font-weight: 700;
-  color: rgb(255 255 255 / 0.85);
+  color: var(--industry-text, rgb(255 255 255 / 0.85));
 }
 
 .talent-navigator__worked-with-tile-name {
@@ -4153,7 +4153,7 @@ button.talent-navigator__chip {
   white-space: nowrap;
   font-size: 0.75rem;
   font-weight: 550;
-  color: rgb(255 255 255 / 0.9);
+  color: var(--industry-text, rgb(255 255 255 / 0.9));
 }
 
 .talent-navigator__nl-chip-menu-item {
@@ -4179,19 +4179,19 @@ button.talent-navigator__chip {
 .talent-navigator__nl-chip-menu-title {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .talent-navigator__nl-chip-menu-meta {
   font-size: 0.6875rem;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .talent-navigator__nl-chip-menu-empty {
   margin: 0;
   padding: 0.5rem 0.625rem;
   font-size: 0.75rem;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .talent-navigator__nl-compose-inner {
@@ -4200,9 +4200,9 @@ button.talent-navigator__chip {
   align-items: center;
   gap: 0.375rem;
   min-height: 3rem;
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
   border-radius: 9999px;
-  background: rgb(255 255 255 / 0.06);
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
   box-shadow: none;
   backdrop-filter: blur(14px);
   padding: 0.375rem 0.375rem 0.375rem 1.125rem;
@@ -4230,7 +4230,7 @@ button.talent-navigator__chip {
   font-family: inherit;
   font-size: 0.8125rem;
   line-height: 1.4;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
   outline: none;
   box-shadow: none;
 }
@@ -4242,7 +4242,7 @@ button.talent-navigator__chip {
 }
 
 .talent-navigator__nl-input::placeholder {
-  color: rgb(255 255 255 / 0.38);
+  color: var(--industry-muted, rgb(255 255 255 / 0.38));
 }
 
 .talent-navigator__nl-send {
@@ -4265,7 +4265,7 @@ button.talent-navigator__chip {
 }
 
 .talent-navigator__nl-send:hover:not(:disabled) {
-  background: rgb(255 255 255 / 0.92);
+  background: var(--industry-fill, rgb(255 255 255 / 0.92));
 }
 
 .talent-navigator__nl-mic {
@@ -4278,15 +4278,15 @@ button.talent-navigator__chip {
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
   transition:
     background 160ms ease,
     color 160ms ease;
 }
 
 .talent-navigator__nl-mic:hover:not(:disabled) {
-  background: rgb(255 255 255 / 0.08);
-  color: rgb(255 255 255 / 0.9);
+  background: var(--industry-fill, rgb(255 255 255 / 0.08));
+  color: var(--industry-text, rgb(255 255 255 / 0.9));
 }
 
 .talent-navigator__nl-mic:disabled {
@@ -4314,7 +4314,7 @@ button.talent-navigator__chip {
   width: 2rem;
   font-size: 0.6875rem;
   font-variant-numeric: tabular-nums;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .talent-navigator__nl-voice-wave {
@@ -4335,7 +4335,7 @@ button.talent-navigator__chip {
   max-width: 3px;
   height: 0.875rem;
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.62);
+  background: var(--industry-fill, rgb(255 255 255 / 0.62));
   transform: scaleY(var(--voice-scale, 0.14));
   transform-origin: center center;
   transition: transform 80ms ease-out;
@@ -4362,18 +4362,18 @@ button.talent-navigator__chip {
 }
 
 .talent-navigator__nl-voice-btn--cancel {
-  background: rgb(255 255 255 / 0.08);
-  color: rgb(255 255 255 / 0.72);
+  background: var(--industry-fill, rgb(255 255 255 / 0.08));
+  color: var(--industry-text, rgb(255 255 255 / 0.72));
 }
 
 .talent-navigator__nl-voice-btn--cancel:hover {
-  background: rgb(255 255 255 / 0.14);
-  color: rgb(255 255 255 / 0.95);
+  background: var(--industry-fill, rgb(255 255 255 / 0.14));
+  color: var(--industry-text, rgb(255 255 255 / 0.95));
 }
 
 .talent-navigator__nl-voice-btn--confirm {
   background: var(--buyer-accent-fill, color-mix(in oklab, var(--accent) 16%, #111111));
-  color: #fafafa;
+  color: var(--industry-text, #fafafa);
   box-shadow: inset 0 0 0 1px var(--buyer-accent-border, color-mix(in oklab, var(--accent) 45%, transparent));
 }
 
@@ -4386,7 +4386,7 @@ button.talent-navigator__chip {
   margin: 0.5rem 0 0;
   padding-inline-start: 0.25rem;
   font-size: 0.625rem;
-  color: rgb(255 255 255 / 0.32);
+  color: var(--industry-muted, rgb(255 255 255 / 0.32));
 }
 
 .talent-navigator__nl-compose-host {
@@ -4402,8 +4402,8 @@ button.talent-navigator__chip {
 }
 
 .talent-navigator__nl-compose-host .talent-navigator__nl-compose-inner {
-  border-color: rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.06);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.1));
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
   backdrop-filter: blur(14px);
   box-shadow: none;
   padding: 0.4375rem 0.4375rem 0.4375rem 1.125rem;
@@ -4453,7 +4453,7 @@ button.talent-navigator__chip {
   padding: 0 1rem;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.9);
+  color: var(--industry-text, rgb(255 255 255 / 0.9));
 }
 
 .talent-navigator__nl-sheet {
@@ -4494,9 +4494,9 @@ button.talent-navigator__chip {
   flex-direction: column;
   gap: 0.5rem;
   margin-top: 0;
-  border: 1px solid rgb(255 255 255 / 0.08);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.08));
   border-radius: 0.75rem;
-  background: rgb(255 255 255 / 0.03);
+  background: var(--industry-fill, rgb(255 255 255 / 0.03));
   overflow: hidden;
 }
 
@@ -4519,7 +4519,7 @@ button.talent-navigator__chip {
 }
 
 .talent-navigator__brief-toggle:hover {
-  background: rgb(255 255 255 / 0.04);
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
 }
 
 .talent-navigator__brief-toggle-copy {
@@ -4535,7 +4535,7 @@ button.talent-navigator__chip {
   width: 0.875rem;
   height: 0.875rem;
   margin-top: 0.125rem;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
   transition: transform 150ms ease;
 }
 
@@ -4547,7 +4547,7 @@ button.talent-navigator__chip {
   margin: 0;
   font-size: 0.75rem;
   line-height: 1.4;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4561,7 +4561,7 @@ button.talent-navigator__chip {
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
-  border-top: 1px solid rgb(255 255 255 / 0.06);
+  border-top: 1px solid var(--industry-line, rgb(255 255 255 / 0.06));
   padding: 0.625rem 0.75rem 0.75rem;
 }
 
@@ -4571,13 +4571,13 @@ button.talent-navigator__chip {
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.5);
+  color: var(--industry-muted, rgb(255 255 255 / 0.5));
 }
 
 .talent-navigator__brief-query {
   margin: 0;
   font-size: 0.75rem;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4586,14 +4586,14 @@ button.talent-navigator__chip {
 .talent-navigator__brief-degraded {
   margin: 0;
   font-size: 0.6875rem;
-  color: rgb(251 191 36 / 0.9);
+  color: var(--industry-warning, rgb(251 191 36 / 0.9));
 }
 
 .talent-navigator__brief-section-label {
   margin: 0 0 0.375rem;
   font-size: 0.6875rem;
   font-weight: 550;
-  color: rgb(255 255 255 / 0.7);
+  color: var(--industry-text, rgb(255 255 255 / 0.7));
 }
 
 .talent-navigator__brief-tokens {
@@ -4610,12 +4610,12 @@ button.talent-navigator__chip {
   align-items: center;
   gap: 0.375rem;
   max-width: 100%;
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.06);
+  background: var(--industry-fill, rgb(255 255 255 / 0.06));
   padding: 0.25rem 0.5rem 0.25rem 0.625rem;
   font-size: 0.6875rem;
-  color: rgb(255 255 255 / 0.88);
+  color: var(--industry-text, rgb(255 255 255 / 0.88));
 }
 
 .talent-navigator__brief-token--inferred {
@@ -4640,7 +4640,7 @@ button.talent-navigator__chip {
   flex-shrink: 0;
   font-size: 0.5625rem;
   letter-spacing: 0.02em;
-  color: rgb(255 255 255 / 0.4);
+  color: var(--industry-muted, rgb(255 255 255 / 0.4));
 }
 
 .talent-navigator__brief-token-remove {
@@ -4651,12 +4651,12 @@ button.talent-navigator__chip {
   padding: 0 0.125rem;
   font-size: 0.875rem;
   line-height: 1;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
   cursor: pointer;
 }
 
 .talent-navigator__brief-token-remove:hover {
-  color: rgb(255 255 255 / 0.9);
+  color: var(--industry-text, rgb(255 255 255 / 0.9));
 }
 
 /* Clarification chips */
@@ -4668,9 +4668,9 @@ button.talent-navigator__chip {
 }
 
 .talent-navigator__clarify-card {
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
   border-radius: 0.875rem;
-  background: rgb(255 255 255 / 0.05);
+  background: var(--industry-fill, rgb(255 255 255 / 0.05));
   padding: 0.75rem;
 }
 
@@ -4680,21 +4680,21 @@ button.talent-navigator__chip {
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.45);
+  color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
 
 .talent-navigator__clarify-question {
   margin: 0 0 0.25rem;
   font-size: 0.8125rem;
   font-weight: 550;
-  color: rgb(255 255 255 / 0.92);
+  color: var(--industry-text, rgb(255 255 255 / 0.92));
 }
 
 .talent-navigator__clarify-effect,
 .talent-navigator__clarify-hint {
   margin: 0 0 0.5rem;
   font-size: 0.6875rem;
-  color: rgb(255 255 255 / 0.5);
+  color: var(--industry-muted, rgb(255 255 255 / 0.5));
 }
 
 .talent-navigator__clarify-options {
@@ -4704,28 +4704,28 @@ button.talent-navigator__chip {
 }
 
 .talent-navigator__clarify-option {
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.12));
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.04);
+  background: var(--industry-fill, rgb(255 255 255 / 0.04));
   padding: 0.375rem 0.625rem;
   font-size: 0.6875rem;
-  color: rgb(255 255 255 / 0.82);
+  color: var(--industry-text, rgb(255 255 255 / 0.82));
   cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease;
 }
 
 .talent-navigator__clarify-option:hover,
 .talent-navigator__clarify-option:focus-visible {
-  border-color: rgb(255 255 255 / 0.28);
-  background: rgb(255 255 255 / 0.08);
+  border-color: var(--industry-line, rgb(255 255 255 / 0.28));
+  background: var(--industry-fill, rgb(255 255 255 / 0.08));
   outline: none;
 }
 
 .talent-navigator__clarify-option--selected,
 .talent-navigator__clarify-option--recommended.talent-navigator__clarify-option--selected {
-  border-color: rgb(255 255 255 / 0.45);
-  background: rgb(255 255 255 / 0.14);
-  color: white;
+  border-color: var(--industry-line, rgb(255 255 255 / 0.45));
+  background: var(--industry-fill, rgb(255 255 255 / 0.14));
+  color: var(--industry-text, white);
 }
 
 .talent-navigator__clarify-option--recommended:not(.talent-navigator__clarify-option--selected) {
@@ -4746,7 +4746,7 @@ button.talent-navigator__chip {
   background: transparent;
   padding: 0.25rem 0.125rem;
   font-size: 0.6875rem;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--industry-muted, rgb(255 255 255 / 0.55));
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -4776,16 +4776,16 @@ button.talent-navigator__chip {
 }
 
 .talent-navigator__nl-relax-btn {
-  border: 1px solid rgb(255 255 255 / 0.14);
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.14));
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.05);
+  background: var(--industry-fill, rgb(255 255 255 / 0.05));
   padding: 0.3rem 0.55rem;
   font-size: 0.6875rem;
-  color: rgb(255 255 255 / 0.8);
+  color: var(--industry-text, rgb(255 255 255 / 0.8));
   cursor: pointer;
 }
 
 .talent-navigator__nl-relax-btn:hover {
-  background: rgb(255 255 255 / 0.1);
+  background: var(--industry-fill, rgb(255 255 255 / 0.1));
 }
 

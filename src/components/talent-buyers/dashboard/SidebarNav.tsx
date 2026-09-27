@@ -23,7 +23,10 @@ import { useEffect, useRef, useState, useTransition } from "react";
 
 import { MotiionWordmark } from "@/components/brand/MotiionWordmark";
 import { getProfileInitials } from "@/lib/auth/avatar";
-import { openBillingPortal, startIndustryCheckout } from "@/lib/billing/actions";
+import {
+  openBillingPortal,
+  startIndustryCheckout,
+} from "@/lib/billing/actions";
 import type { UserEntitlement } from "@/lib/billing/entitlement";
 import {
   BUYER_HOME_PATH,
@@ -33,6 +36,7 @@ import {
   buyerSettingsNavItem,
 } from "@/lib/talent-buyers/dashboard-data";
 import { useBuyerInboxUnread } from "@/hooks/use-buyer-inbox-unread";
+import { openBuyerCommandPalette } from "@/lib/talent-buyers/command-palette";
 import { useBuyerNotifications } from "@/hooks/use-buyer-notifications";
 import type { DashboardProfile } from "@/types/database";
 
@@ -68,7 +72,9 @@ function isNavActive(pathname: string, href: string) {
     return pathname === "/messages" || pathname.startsWith("/messages/");
   }
   if (href === "/notifications") {
-    return pathname === "/notifications" || pathname.startsWith("/notifications/");
+    return (
+      pathname === "/notifications" || pathname.startsWith("/notifications/")
+    );
   }
   if (href === "/events") {
     return (
@@ -98,7 +104,11 @@ function NavSection({
 }) {
   return (
     <div className="buyer-sidebar__section">
-      <p className={`buyer-sidebar__section-label ${collapsed ? "sr-only" : ""}`}>{label}</p>
+      <p
+        className={`buyer-sidebar__section-label ${collapsed ? "sr-only" : ""}`}
+      >
+        {label}
+      </p>
       <div className="buyer-sidebar__section-links">{children}</div>
     </div>
   );
@@ -141,7 +151,9 @@ function NavLink({
       ) : (
         <>
           <span className="buyer-sidebar__link-label">{label}</span>
-          {statusLabel ? <span className="buyer-sidebar__link-status">{statusLabel}</span> : null}
+          {statusLabel ? (
+            <span className="buyer-sidebar__link-status">{statusLabel}</span>
+          ) : null}
           {badge ? <span className="buyer-sidebar__badge">{badge}</span> : null}
         </>
       )}
@@ -229,7 +241,9 @@ function SidebarPlanCta({
           className="buyer-sidebar__cta-icon"
           disabled={isPending}
           aria-label={isTrial ? "Manage billing" : "Upgrade to Industry Pro"}
-          onClick={() => go(isTrial ? openBillingPortal : startIndustryCheckout)}
+          onClick={() =>
+            go(isTrial ? openBillingPortal : startIndustryCheckout)
+          }
         >
           <BadgeCheck className="size-4" aria-hidden />
         </button>
@@ -295,7 +309,9 @@ function SidebarContent({
   const inboxBadge = formatBadge(inboxUnread);
   const initials = getProfileInitials(profile.fullName);
   const orgName = profile.organizationName || profile.companyName;
-  const profileMeta = [orgName, planLabel(entitlement)].filter(Boolean).join(" · ");
+  const profileMeta = [orgName, planLabel(entitlement)]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div
@@ -310,9 +326,15 @@ function SidebarContent({
         if (event.target !== event.currentTarget) onContentFadeInEnd?.();
       }}
     >
-      <div className={`buyer-sidebar__header ${collapsed ? "buyer-sidebar__header--collapsed" : ""}`}>
+      <div
+        className={`buyer-sidebar__header ${collapsed ? "buyer-sidebar__header--collapsed" : ""}`}
+      >
         {collapsed ? null : (
-          <Link href={BUYER_HOME_PATH} className="buyer-sidebar__brand" aria-label="Motiion home">
+          <Link
+            href={BUYER_HOME_PATH}
+            className="buyer-sidebar__brand"
+            aria-label="Motiion home"
+          >
             <MotiionWordmark height={10} />
           </Link>
         )}
@@ -322,7 +344,11 @@ function SidebarContent({
             onClick={onToggleSidebar}
             className="buyer-sidebar__collapse"
             aria-label={
-              isMobileDrawer ? "Close navigation menu" : showExpanded ? "Collapse sidebar" : "Expand sidebar"
+              isMobileDrawer
+                ? "Close navigation menu"
+                : showExpanded
+                  ? "Collapse sidebar"
+                  : "Expand sidebar"
             }
             aria-expanded={showExpanded}
           >
@@ -337,6 +363,21 @@ function SidebarContent({
         ) : null}
       </div>
 
+      <button
+        type="button"
+        className={`industry-sidebar-search${collapsed ? " industry-sidebar-search--collapsed" : ""}`}
+        title="Quick navigation (⌘K / Ctrl K)"
+        aria-label="Quick navigation"
+        onClick={openBuyerCommandPalette}
+      >
+        <Search size={16} aria-hidden />
+        {!collapsed && (
+          <>
+            <span>Jump to…</span>
+            <kbd>⌘ K</kbd>
+          </>
+        )}
+      </button>
       <div className="buyer-sidebar__scroll buyer-dashboard-shell__sidebar-scroll">
         <NavSection label="Workflow" collapsed={collapsed}>
           {buyerMenuNavItems.map((item) => {
@@ -392,7 +433,14 @@ function SidebarContent({
         >
           <span className="buyer-sidebar__avatar">
             {profile.avatarUrl ? (
-              <Image src={profile.avatarUrl} alt="" fill className="object-cover" sizes="32px" unoptimized />
+              <Image
+                src={profile.avatarUrl}
+                alt=""
+                fill
+                className="object-cover"
+                sizes="32px"
+                unoptimized
+              />
             ) : (
               initials || "?"
             )}
@@ -402,10 +450,17 @@ function SidebarContent({
           ) : (
             <>
               <span className="buyer-sidebar__profile-copy">
-                <p className="buyer-sidebar__profile-name">{profile.fullName || "Your profile"}</p>
-                <p className="buyer-sidebar__profile-meta">{profileMeta || planLabel(entitlement)}</p>
+                <p className="buyer-sidebar__profile-name">
+                  {profile.fullName || "Your profile"}
+                </p>
+                <p className="buyer-sidebar__profile-meta">
+                  {profileMeta || planLabel(entitlement)}
+                </p>
               </span>
-              <ChevronsUpDown className="buyer-sidebar__profile-chevron" aria-hidden />
+              <ChevronsUpDown
+                className="buyer-sidebar__profile-chevron"
+                aria-hidden
+              />
             </>
           )}
         </button>

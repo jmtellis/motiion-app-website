@@ -40,6 +40,8 @@ export function ProjectWorkspaceTabs() {
   const navigation = getProjectNavigation({ projectType: project.projectType });
   const active = resolveProjectNavActive(pathname, projectId, navigation);
   const items = navigation.sections.flatMap((section) => section.items);
+  const isCasting = project.projectType === "casting";
+  const currentItem = items.find(item => item.id === active.id);
   const fileBadge = attachments.length > 0 ? formatBadge(attachments.length) : null;
   const castingLifecycleStatus = castingWorkflow?.primaryCasting?.status;
   const castStatusLabel =
@@ -52,9 +54,9 @@ export function ProjectWorkspaceTabs() {
   if (items.length === 0) return null;
 
   return (
-    <nav className="project-workspace-tabs">
-      <div className="project-workspace-tabs__scroller" role="tablist" aria-label="Project sections">
-        {items.map((tab) => {
+    <nav className={`project-workspace-tabs${isCasting ? " industry-casting-navigation" : ""}`} aria-label="Project sections">
+      <div className="project-workspace-tabs__scroller">
+        {items.map((tab, index) => {
           const isActive = active.id === tab.id;
           const href = projectNavItemHref(projectId, tab);
           const badge =
@@ -76,6 +78,7 @@ export function ProjectWorkspaceTabs() {
 
           const content = (
             <>
+              {isCasting && <span className="industry-stage-number" aria-hidden>{String(index + 1).padStart(2, "0")}</span>}
               <span className="project-workspace-tabs__label">{tab.label}</span>
               {statusLabel ? (
                 <span className="project-workspace-tabs__status">{statusLabel}</span>
@@ -101,8 +104,6 @@ export function ProjectWorkspaceTabs() {
               <span
                 key={tab.id}
                 className={className}
-                role="tab"
-                aria-selected={false}
                 aria-disabled="true"
                 title={title}
               >
@@ -116,8 +117,6 @@ export function ProjectWorkspaceTabs() {
               key={tab.id}
               href={href}
               className={className}
-              role="tab"
-              aria-selected={isActive}
               aria-current={isActive ? "page" : undefined}
               title={statusLabel ? title : undefined}
             >
@@ -126,6 +125,7 @@ export function ProjectWorkspaceTabs() {
           );
         })}
       </div>
+      {isCasting && currentItem?.description && <p className="industry-stage-description">{currentItem.description}</p>}
     </nav>
   );
 }

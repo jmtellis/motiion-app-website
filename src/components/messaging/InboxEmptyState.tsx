@@ -1,59 +1,47 @@
-import { BuyerEmptyIntro } from "@/components/talent-buyers/dashboard/BuyerEmptyIntro";
-
-function GhostConversationRow() {
-  return (
-    <div className="buyer-inbox-empty__row" aria-hidden>
-      <span className="buyer-empty__bone buyer-empty__bone--avatar" />
-      <div className="buyer-inbox-empty__row-copy">
-        <div className="buyer-inbox-empty__row-top">
-          <span className="buyer-empty__bone buyer-empty__bone--title buyer-inbox-empty__name" />
-          <span className="buyer-empty__bone buyer-inbox-empty__time" />
-        </div>
-        <span className="buyer-empty__bone buyer-empty__bone--line-mid" />
-        <span className="buyer-empty__bone buyer-empty__bone--line-short" />
-      </div>
-    </div>
-  );
-}
-
+import Link from "next/link";
+import { MessageCircle } from "lucide-react";
+import {
+  IndustryEmptyState,
+  IndustryJourney,
+  IndustryPageHeader,
+} from "@/components/talent-buyers/dashboard/IndustryUI";
 export function InboxEmptyState() {
   return (
-    <div className="buyer-empty buyer-inbox-empty">
-      <BuyerEmptyIntro
-        title="Your inbox will live here"
-        lede="When you message talent or respond to invites, threads will show up here."
-        primaryLabel="Find Talent"
-        primaryHref="/talent"
+    <div className="industry-inbox-intro">
+      <IndustryPageHeader
+        eyebrow="Stay connected"
+        title="Inbox"
+        description="The conversation behind every great collaboration."
       />
-
-      <div className="buyer-inbox-empty__shell" aria-hidden>
-        <aside className="buyer-inbox-empty__list">
-          <div className="buyer-inbox-empty__search">
-            <span className="buyer-empty__bone buyer-inbox-empty__search-bone" />
-          </div>
-          {Array.from({ length: 6 }, (_, index) => (
-            <GhostConversationRow key={index} />
-          ))}
-        </aside>
-
-        <section className="buyer-inbox-empty__pane">
-          <div className="buyer-inbox-empty__pane-header">
-            <span className="buyer-empty__bone buyer-empty__bone--avatar" />
-            <div className="buyer-inbox-empty__pane-header-copy">
-              <span className="buyer-empty__bone buyer-empty__bone--title" />
-              <span className="buyer-empty__bone buyer-empty__bone--line-short" />
-            </div>
-          </div>
-          <div className="buyer-inbox-empty__pane-body">
-            <span className="buyer-empty__bone buyer-inbox-empty__bubble buyer-inbox-empty__bubble--left" />
-            <span className="buyer-empty__bone buyer-inbox-empty__bubble buyer-inbox-empty__bubble--right" />
-            <span className="buyer-empty__bone buyer-inbox-empty__bubble buyer-inbox-empty__bubble--left buyer-inbox-empty__bubble--short" />
-          </div>
-          <div className="buyer-inbox-empty__composer">
-            <span className="buyer-empty__bone buyer-inbox-empty__composer-bone" />
-          </div>
-        </section>
-      </div>
+      <IndustryEmptyState
+        icon={<MessageCircle size={25} />}
+        title="Start a conversation. Build a connection."
+        description="Reach out from a dancer’s profile. Your conversations will be here when you’re ready to work out the details."
+        actions={
+          <Link href="/talent" className="buyer-chrome-bar__cta">
+            Find talent
+          </Link>
+        }
+      >
+        <IndustryJourney
+          steps={[
+            {
+              title: "Find your people",
+              description:
+                "Explore dancers and open a profile that catches your eye.",
+            },
+            {
+              title: "Make the introduction",
+              description: "Share the opportunity and start a conversation.",
+            },
+            {
+              title: "Keep it moving",
+              description:
+                "Return here to discuss availability and next steps.",
+            },
+          ]}
+        />
+      </IndustryEmptyState>
     </div>
   );
 }

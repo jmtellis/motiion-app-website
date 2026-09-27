@@ -1,6 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
+import { Search, ArrowUpRight, Plus } from "lucide-react";
+import {
+  IndustryPageHeader,
+  IndustryEmptyState,
+  IndustryBadge,
+} from "./IndustryUI";
+import { Modal } from "./Modal";
+import {
+  formatBuyerRelativeDate,
+  labelFromSnake,
+} from "@/lib/talent-buyers/dashboard-data";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import type { BuyerInboxFile } from "@/types/buyer-file-inbox";
@@ -12,28 +24,37 @@ import { PROJECTS_CREATE_QUERY } from "@/lib/talent-buyers/projects-hub-constant
 import { FadeInSection } from "./FadeInSection";
 import { ProjectCarousel } from "./ProjectCarousel";
 import { ProjectGridView } from "./ProjectGridView";
-import { ProjectsEmptyState } from "./ProjectsEmptyState";
 import { ProjectsHubFilesSection } from "./ProjectsHubFilesSection";
-import { ProjectsHubViewToggle, useProjectsViewMode } from "./ProjectsViewModeContext";
+import {
+  ProjectsHubViewToggle,
+  useProjectsViewMode,
+} from "./ProjectsViewModeContext";
 import { UnderlineTabs } from "./UnderlineTabs";
 
 import "./projects-hub.css";
 
-type ProjectScopeFilter = "all" | "active" | "archived";
+type ProjectScopeFilter = "all" | "active" | "draft" | "archived";
 
 const PROJECT_SCOPE_OPTIONS: { value: ProjectScopeFilter; label: string }[] = [
-  { value: "all", label: "All Projects" },
+  { value: "all", label: "All work" },
   { value: "active", label: "Active" },
+  { value: "draft", label: "Drafts" },
   { value: "archived", label: "Archived" },
 ];
 
 function sortByLastUpdated(projects: ProjectHubSummary[]) {
   return [...projects].sort(
-    (a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime(),
+    (a, b) =>
+      new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime(),
   );
 }
 
-function filterByScope(projects: ProjectHubSummary[], scope: ProjectScopeFilter) {
+function filterByScope(
+  projects: ProjectHubSummary[],
+  scope: ProjectScopeFilter,
+) {
+  if (scope === "draft")
+    return projects.filter((project) => project.status === "draft");
   if (scope === "active") {
     return projects.filter((project) => project.status === "active");
   }
@@ -52,10 +73,13 @@ export function ProjectsHubView({
   drafts: ProjectHubSummary[];
   inboxFiles: BuyerInboxFile[];
 }) {
+  const [query, setQuery] = useState("");
+  const [layout, setLayout] = useState<"list" | "grid">("list");
+  const [selected, setSelected] = useState<ProjectHubSummary | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { viewMode } = useProjectsViewMode();
-  const [createPickerOpen, setCreatePickerOpen] = useState(false);
+  const createPickerOpen = searchParams.get(PROJECTS_CREATE_QUERY) === "1";
   const [focusIndex, setFocusIndex] = useState(0);
   const [scopeFilter, setScopeFilter] = useState<ProjectScopeFilter>("all");
 
@@ -64,84 +88,291 @@ export function ProjectsHubView({
     [published, drafts],
   );
   const browseProjects = useMemo(
-    () => filterByScope(allProjects, scopeFilter),
-    [allProjects, scopeFilter],
+    () =>
+      filterByScope(allProjects, scopeFilter).filter((project) =>
+        `${project.title} ${project.workTypeLabel ?? project.projectType}`
+          .toLowerCase()
+          .includes(query.trim().toLowerCase()),
+      ),
+    [allProjects, scopeFilter, query],
   );
   // Focus carousel includes drafts (All) plus active/archived by scope — same pool as Browse.
   const focusProjects = useMemo(
-    () => filterByScope(allProjects, scopeFilter),
-    [allProjects, scopeFilter],
+    () =>
+      filterByScope(allProjects, scopeFilter).filter((project) =>
+        `${project.title} ${project.workTypeLabel ?? project.projectType}`
+          .toLowerCase()
+          .includes(query.trim().toLowerCase()),
+      ),
+    [allProjects, scopeFilter, query],
   );
   const isEmpty = allProjects.length === 0;
   const hasVisibleProjects =
-    viewMode === "browse" ? browseProjects.length > 0 : focusProjects.length > 0;
+    viewMode === "browse"
+      ? browseProjects.length > 0
+      : focusProjects.length > 0;
   const focusItem = focusProjects[focusIndex] ?? focusProjects[0] ?? null;
   // File inbox attaches to project rows only — skip activity cards.
   const focusProjectId =
-    focusItem && focusItem.workKind !== "activity" && focusItem.workKind !== "job"
+    focusItem &&
+    focusItem.workKind !== "activity" &&
+    focusItem.workKind !== "job"
       ? focusItem.id
       : null;
 
   const openCreatePicker = useCallback(() => {
-    setCreatePickerOpen(true);
     const params = new URLSearchParams(searchParams.toString());
     params.set(PROJECTS_CREATE_QUERY, "1");
     router.replace(`/projects?${params.toString()}`, { scroll: false });
   }, [router, searchParams]);
 
   const closeCreatePicker = useCallback(() => {
-    setCreatePickerOpen(false);
     const params = new URLSearchParams(searchParams.toString());
     params.delete(PROJECTS_CREATE_QUERY);
     const query = params.toString();
-    router.replace(query ? `/projects?${query}` : "/projects", { scroll: false });
+    router.replace(query ? `/projects?${query}` : "/projects", {
+      scroll: false,
+    });
   }, [router, searchParams]);
-
-  useEffect(() => {
-    const wantsCreate = searchParams.get(PROJECTS_CREATE_QUERY) === "1";
-    setCreatePickerOpen(wantsCreate);
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (focusIndex >= focusProjects.length) {
-      setFocusIndex(0);
-    }
-  }, [focusIndex, focusProjects.length]);
 
   return (
     <div className={`projects-hub${isEmpty ? " projects-hub--empty" : ""}`}>
-      <div className="projects-hub__sticky-header">
-        <div className="projects-hub__mode-row">
-          <ProjectsHubViewToggle />
-        </div>
+      <IndustryPageHeader
+        eyebrow="Your workspace"
+        title="Projects"
+        description="Cast your team, bring people together, and keep every detail in one place."
+        actions={
+          <button className="buyer-chrome-bar__cta" onClick={openCreatePicker}>
+            <Plus size={16} /> Create new
+          </button>
+        }
+      />
+      <div className="industry-work-summary" aria-label="Workspace overview">
+        {[
+          {
+            label: "All work",
+            value: "all" as const,
+            count: allProjects.length,
+            detail: "Projects, jobs & events",
+          },
+          {
+            label: "Active",
+            value: "active" as const,
+            count: allProjects.filter((p) => p.status === "active").length,
+            detail: "Moving forward",
+          },
+          {
+            label: "Drafts",
+            value: "draft" as const,
+            count: allProjects.filter((p) => p.status === "draft").length,
+            detail: "Ready for your next step",
+          },
+        ].map((item) => (
+          <button
+            key={item.value}
+            className="industry-summary-item"
+            aria-pressed={scopeFilter === item.value}
+            onClick={() => setScopeFilter(item.value)}
+          >
+            <span>{item.label}</span>
+            <strong>{item.count}</strong>
+            <small>{item.detail}</small>
+          </button>
+        ))}
       </div>
-
-      <div className="projects-hub__title-row">
-        <h1 className="sr-only">Projects</h1>
+      <div className="industry-section-heading">
+        <h2>Your work</h2>
+        <ProjectsHubViewToggle />
+      </div>
+      <div className="industry-work-toolbar">
         <UnderlineTabs
           ariaLabel="Project scope"
           value={scopeFilter}
           onChange={setScopeFilter}
           options={PROJECT_SCOPE_OPTIONS}
         />
-        <button
-          type="button"
-          className="buyer-chrome-bar__cta projects-hub__new-project"
-          onClick={openCreatePicker}
-        >
-          Create
-        </button>
+        <div className="industry-work-tools">
+          <label className="industry-search">
+            <Search size={16} aria-hidden />
+            <input
+              aria-label="Search your work"
+              placeholder="Search your work…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            {query && (
+              <button aria-label="Clear search" onClick={() => setQuery("")}>
+                ×
+              </button>
+            )}
+          </label>
+          {viewMode === "browse" && (
+            <div className="industry-layout-switch" aria-label="Work layout">
+              <button
+                aria-pressed={layout === "list"}
+                onClick={() => setLayout("list")}
+              >
+                List
+              </button>
+              <button
+                aria-pressed={layout === "grid"}
+                onClick={() => setLayout("grid")}
+              >
+                Cards
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {isEmpty || !hasVisibleProjects ? (
-        <ProjectsEmptyState onCreateProject={openCreatePicker} viewMode={viewMode} />
+      {isEmpty ? (
+        <IndustryEmptyState
+          title="Every great production starts here"
+          description="Create a casting, job, or event. Your team, applications, and project files will stay connected."
+          actions={
+            <button
+              className="buyer-chrome-bar__cta"
+              onClick={openCreatePicker}
+            >
+              Create your first project
+            </button>
+          }
+        />
+      ) : !hasVisibleProjects ? (
+        <IndustryEmptyState
+          title="No work matches this view"
+          description="Try another search or show all of your work."
+          actions={
+            <button
+              className="bd-btn-secondary"
+              onClick={() => {
+                setQuery("");
+                setScopeFilter("all");
+              }}
+            >
+              Clear filters
+            </button>
+          }
+        />
       ) : viewMode === "browse" ? (
         <FadeInSection>
-          <ProjectGridView projects={browseProjects} />
+          {layout === "grid" ? (
+            <ProjectGridView projects={browseProjects} />
+          ) : (
+            <div className="industry-work-list">
+              <div className="industry-work-list__labels" aria-hidden>
+                <span>Project</span>
+                <span>Status</span>
+                <span>Last updated</span>
+                <span />
+              </div>
+              {browseProjects.map((project) => (
+                <div className="industry-work-row" key={project.id}>
+                  <Link
+                    className="industry-work-row__name"
+                    href={project.href ?? `/projects/${project.id}`}
+                  >
+                    <span className="industry-work-monogram" aria-hidden>
+                      {project.title
+                        .replace(/^STAGING ONLY [—–-] /, "")
+                        .slice(0, 1)}
+                    </span>
+                    <span>
+                      <strong>{project.title}</strong>
+                      <small>
+                        {project.workTypeLabel ??
+                          labelFromSnake(project.projectType)}
+                      </small>
+                    </span>
+                  </Link>
+                  <IndustryBadge
+                    tone={project.status === "active" ? "success" : "neutral"}
+                  >
+                    {labelFromSnake(project.status)}
+                  </IndustryBadge>
+                  <span className="industry-work-row__date">
+                    {formatBuyerRelativeDate(project.lastUpdated)}
+                  </span>
+                  <button
+                    className="industry-icon-action"
+                    aria-label={`Preview ${project.title}`}
+                    onClick={() => setSelected(project)}
+                  >
+                    <ArrowUpRight size={18} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </FadeInSection>
       ) : (
-        <ProjectCarousel projects={focusProjects} onActiveIndexChange={setFocusIndex} />
+        <ProjectCarousel
+          projects={focusProjects}
+          onActiveIndexChange={setFocusIndex}
+        />
       )}
+      <Modal
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        title={selected?.title ?? "Project details"}
+        description={selected?.workTypeLabel ?? "Project overview"}
+        placement="drawer"
+        footer={
+          selected && (
+            <Link
+              className="buyer-chrome-bar__cta"
+              href={selected.href ?? `/projects/${selected.id}`}
+            >
+              Open workspace <ArrowUpRight size={16} />
+            </Link>
+          )
+        }
+      >
+        {selected && (
+          <div className="industry-project-preview">
+            <IndustryBadge
+              tone={selected.status === "active" ? "success" : "neutral"}
+            >
+              {labelFromSnake(selected.status)}
+            </IndustryBadge>
+            <p>Updated {formatBuyerRelativeDate(selected.lastUpdated)}</p>
+            <dl>
+              <div>
+                <dt>
+                  {selected.workKind === "activity" ? "Guests" : "Talent"}
+                </dt>
+                <dd>{selected.talentCount}</dd>
+              </div>
+              <div>
+                <dt>Castings</dt>
+                <dd>{selected.castings.length}</dd>
+              </div>
+              <div>
+                <dt>Roles</dt>
+                <dd>{selected.roles.length}</dd>
+              </div>
+            </dl>
+            <h3>Keep your next step in context</h3>
+            <p>
+              {selected.status === "draft"
+                ? "Continue shaping the details and review your draft before publishing."
+                : selected.workKind === "activity"
+                  ? "Open the event to manage its details and guests."
+                  : "Open this workspace to manage talent, casting details, and bookings."}
+            </p>
+            {selected.roles.length > 0 && (
+              <ul>
+                {selected.roles.map((role) => (
+                  <li key={role.id}>
+                    {role.title}
+                    <IndustryBadge>{labelFromSnake(role.status)}</IndustryBadge>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </Modal>
 
       <ProjectsHubFilesSection
         viewMode={viewMode}
@@ -151,7 +382,10 @@ export function ProjectsHubView({
         skeletonOnly={isEmpty && viewMode === "focus"}
       />
 
-      <ProjectTypePickerOverlay open={createPickerOpen} onClose={closeCreatePicker} />
+      <ProjectTypePickerOverlay
+        open={createPickerOpen}
+        onClose={closeCreatePicker}
+      />
     </div>
   );
 }

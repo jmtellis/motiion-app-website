@@ -11,7 +11,6 @@ import {
   navigateAnchor,
   type CalendarView,
 } from "./calendar-utils";
-import { CalendarEmptyState } from "./CalendarEmptyState";
 import { MonthView } from "./MonthView";
 import { TimeGrid } from "./TimeGrid";
 
@@ -30,7 +29,6 @@ type EventsCalendarProps = {
 export function EventsCalendar({ events, embedded = false }: EventsCalendarProps) {
   const [view, setView] = useState<CalendarView>("week");
   const [anchorDate, setAnchorDate] = useState(() => new Date());
-  const isEmpty = events.length === 0;
 
   function goPrev() {
     setAnchorDate((d) => navigateAnchor(d, view, -1));
@@ -45,9 +43,6 @@ export function EventsCalendar({ events, embedded = false }: EventsCalendarProps
     setView("day");
   }
 
-  if (isEmpty) {
-    return <CalendarEmptyState embedded={embedded} />;
-  }
 
   return (
     <div className={`bd-cal${embedded ? " bd-cal--embedded" : ""}`}>
@@ -69,6 +64,7 @@ export function EventsCalendar({ events, embedded = false }: EventsCalendarProps
         </div>
 
         <div className="bd-cal__toolbar-end">
+          <button className="bd-btn-secondary" onClick={() => setAnchorDate(new Date())}>Today</button>
           <div className="bd-cal__nav">
             <button
               type="button"

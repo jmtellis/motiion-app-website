@@ -13,9 +13,15 @@ export type BuyerNotificationRow = {
   created_at: string;
 };
 
-export function useBuyerNotifications(userId: string, options?: { limit?: number }) {
+export function useBuyerNotifications(
+  userId: string,
+  options?: { limit?: number },
+) {
   const limit = options?.limit ?? 15;
-  const [notifications, setNotifications] = useState<BuyerNotificationRow[]>([]);
+  const [notifications, setNotifications] = useState<BuyerNotificationRow[]>(
+    [],
+  );
+  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const unreadCount = notifications.filter((row) => !row.read_at).length;
@@ -23,22 +29,27 @@ export function useBuyerNotifications(userId: string, options?: { limit?: number
   const loadNotifications = useCallback(async () => {
     const supabase = createClientSupabaseClient();
     if (!supabase) {
+      setError("Notifications are unavailable. Please try again.");
       setIsLoading(false);
       return;
     }
 
-    const { data } = await supabase
+    setError(null);
+    const { data, error: loadError } = await supabase
       .from("notifications")
       .select("id, type, title, body, read_at, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(limit);
 
+    if (loadError) setError("Could not load notifications.");
     if (data) setNotifications(data);
     setIsLoading(false);
   }, [limit, userId]);
 
   useEffect(() => {
+    // Fetch the initial external snapshot, then keep it in sync via realtime.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadNotifications();
   }, [loadNotifications]);
 
@@ -50,7 +61,12 @@ export function useBuyerNotifications(userId: string, options?: { limit?: number
       .channel(`notifications-${userId}-${limit}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${userId}`,
+        },
         () => void loadNotifications(),
       )
       .subscribe();
@@ -62,15 +78,40 @@ export function useBuyerNotifications(userId: string, options?: { limit?: number
 
   const markAllRead = useCallback(async () => {
     const supabase = createClientSupabaseClient();
-    if (!supabase) return;
+    if (!supabase) {
+      setError("Could not update notifications.");
+      return;
+    }
 
-    const unreadIds = notifications.filter((row) => !row.read_at).map((row) => row.id);
+    const unreadIds = notifications
+      .filter((row) => !row.read_at)
+      .map((row) => row.id);
     if (!unreadIds.length) return;
 
     const now = new Date().toISOString();
-    setNotifications((current) => current.map((row) => (row.read_at ? row : { ...row, read_at: now })));
-    await supabase.from("notifications").update({ read_at: now }).in("id", unreadIds);
-  }, [notifications]);
+    const { error: updateError } = await supabase
+      .from("notifications")
+      .update({ read_at: now })
+      .eq("user_id", userId)
+      .in("id", unreadIds);
+    if (updateError) {
+      setError("Could not mark updates as read. Please try again.");
+      return;
+    }
+    setError(null);
+    setNotifications((current) =>
+      current.map((row) =>
+        unreadIds.includes(row.id) ? { ...row, read_at: now } : row,
+      ),
+    );
+  }, [notifications, userId]);
 
-  return { notifications, unreadCount, isLoading, loadNotifications, markAllRead };
+  return {
+    error,
+    notifications,
+    unreadCount,
+    isLoading,
+    loadNotifications,
+    markAllRead,
+  };
 }

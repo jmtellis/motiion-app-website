@@ -23,6 +23,7 @@ import { SidebarNav } from "./SidebarNav";
 import { useWorkspaceSidebar, WorkspaceSidebarResize } from "@/components/workspace/WorkspaceSidebar";
 import "@/components/workspace/workspace.css";
 import "./industry-light.css";
+import "./industry-experience.css";
 
 /** Match Find Talent hubs: no top chrome unless the page needs nested crumbs or end actions. */
 function buyerShellNeedsChrome(pathname: string, chrome: BuyerPageChromeConfig) {

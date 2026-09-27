@@ -1,5 +1,6 @@
 "use client";
 
+import { IndustryPageHeader } from "@/components/talent-buyers/dashboard/IndustryUI";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { LayoutGrid, Search, Rows3 } from "lucide-react";
@@ -255,6 +256,7 @@ export function LibraryPage({
     <div className="library-page">
       <div className="library-page__shell">
         <div className="library-page__main">
+          <IndustryPageHeader eyebrow="Your people" title="Roster" description="Keep the right people close. Save talent and organize your next team." />
           {error ? (
             <p className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
               {error}{" "}
@@ -285,10 +287,10 @@ export function LibraryPage({
                   value={view}
                   onChange={setView}
                   options={[
-                    { value: "saved", label: "Browse" },
+                    { value: "saved", label: "Saved talent" },
                     {
                       value: "collections",
-                      label: "Roster",
+                      label: "Rosters",
                       badge: !hasIndustryPro ? (
                         <ProChip tone={view === "collections" ? "on-active" : "accent"} />
                       ) : undefined,
@@ -317,9 +319,9 @@ export function LibraryPage({
               ) : null}
 
               <div className="library-page__title-row">
-                <h1 className="library-page__title-heading">
-                  {view === "saved" ? "Saved Talent" : "Roster"}
-                </h1>
+                <h2 className="library-page__title-heading">
+                  {view === "saved" ? "Saved talent" : "Your rosters"}
+                </h2>
                 <div className="library-page__title-end">
                   {view === "saved"
                     ? browseControls

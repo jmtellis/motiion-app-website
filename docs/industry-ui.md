@@ -32,3 +32,30 @@ Use visible labels, retain native input semantics, and provide a focus-visible o
 ## Staging portrait
 
 `public/images/staging/fictional-talent.png` is an AI-generated fictional adult headshot, created for this staging exercise. It was uploaded to the staging Supabase headshots bucket and attached only to the existing Test Talent profile. No production profiles or photos were changed. Do not present the portrait as a real person's identity or credits.
+
+## Industry workflow redesign
+
+The workspace keeps the dark navigation shell, white inset panel, and Talent
+Navigator dancer grid. New workflow components use a quiet sage accent, charcoal
+actions, light borders, and consistent action placement.
+
+- `IndustryPageHeader`: page purpose and primary action at the top right; actions
+  wrap beneath the title on small screens.
+- `IndustryEmptyState` and `IndustryJourney`: actionable starting points and short
+  workflow explanations. Skeletons are reserved for actual loading.
+- Projects: searchable work list by default, Cards and Focus alternatives, status
+  filters, real summary counts, and contextual previews. Opening a preview does
+  not navigate away or mutate the project.
+- `Modal placement="drawer"`: reusable contextual detail panel with Escape,
+  keyboard focus containment, focus restoration, and reduced-motion support.
+- Settings: accessible section tabs that retain mounted forms and unsaved edits;
+  account edits reveal explicit Save and Discard controls.
+- Quick navigation: sidebar entry and Command/Ctrl K, keyboard-searchable pages
+  and existing creation actions. This is navigation, not an AI assistant.
+- Notifications: explicit mark-shown-as-read action, unread filter, error feedback,
+  and realtime updates; simply opening the page does not mark notifications read.
+- Calendar: real empty calendar grid plus Today, previous/next, and range controls.
+- Project overview: local shortcuts to team, bookings, and files.
+
+These changes are frontend workflow changes. Existing creation, casting, booking,
+and payment operations retain their authorization and staging isolation.

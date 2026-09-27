@@ -14,6 +14,7 @@ type ModalProps = {
   children: ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
   footer?: ReactNode;
+  placement?: "center" | "drawer";
 };
 
 const SIZE_CLASS = {
@@ -31,50 +32,53 @@ export function Modal({
   children,
   size = "md",
   footer,
+  placement = "center",
 }: ModalProps) {
   const titleId = useId();
   const descriptionId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
   const reducedMotion = useReducedMotion();
 
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onClose();
-      }
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      onCloseRef.current();
+    }
 
-      if (event.key !== "Tab" || !panelRef.current) return;
+    if (event.key !== "Tab" || !panelRef.current) return;
 
-      const focusable = panelRef.current.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      );
-      if (!focusable.length) return;
+    const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    if (!focusable.length) return;
 
-      const first = focusable[0]!;
-      const last = focusable[focusable.length - 1]!;
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
 
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    },
-    [onClose],
-  );
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }, []);
 
   useEffect(() => {
     if (!open) return;
 
     document.addEventListener("keydown", handleKeyDown);
+    const previousFocus = document.activeElement as HTMLElement | null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     const timer = window.setTimeout(() => {
       const firstFocusable = panelRef.current?.querySelector<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])',
+        "button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])",
       );
       firstFocusable?.focus();
     }, 50);
@@ -83,17 +87,21 @@ export function Modal({
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
       window.clearTimeout(timer);
+      previousFocus?.focus();
     };
   }, [open, handleKeyDown]);
 
   return (
     <AnimatePresence>
       {open ? (
-        <div className="buyer-modal-root">
+        <div
+          className={`buyer-modal-root${placement === "drawer" ? " industry-drawer" : ""}`}
+        >
           <motion.button
             type="button"
             className="buyer-modal-backdrop"
             aria-label="Close dialog"
+            tabIndex={-1}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -107,10 +115,29 @@ export function Modal({
             aria-labelledby={titleId}
             aria-describedby={description ? descriptionId : undefined}
             className={`buyer-modal-panel ${SIZE_CLASS[size]}`}
-            initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.97 }}
-            animate={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98 }}
-            transition={{ duration: reducedMotion ? 0.12 : 0.32, ease: [0.22, 1, 0.36, 1] }}
+            initial={
+              reducedMotion
+                ? { opacity: 0 }
+                : placement === "drawer"
+                  ? { opacity: 0, x: 36 }
+                  : { opacity: 0, y: 20, scale: 0.97 }
+            }
+            animate={
+              reducedMotion
+                ? { opacity: 1 }
+                : { opacity: 1, x: 0, y: 0, scale: 1 }
+            }
+            exit={
+              reducedMotion
+                ? { opacity: 0 }
+                : placement === "drawer"
+                  ? { opacity: 0, x: 36 }
+                  : { opacity: 0, y: 12, scale: 0.98 }
+            }
+            transition={{
+              duration: reducedMotion ? 0.12 : 0.32,
+              ease: [0.22, 1, 0.36, 1],
+            }}
           >
             <div className="buyer-modal-header">
               <div className="min-w-0 flex-1">
@@ -123,7 +150,12 @@ export function Modal({
                   </p>
                 ) : null}
               </div>
-              <button type="button" className="buyer-modal-close" aria-label="Close" onClick={onClose}>
+              <button
+                type="button"
+                className="buyer-modal-close"
+                aria-label="Close"
+                onClick={onClose}
+              >
                 <X className="size-4" aria-hidden />
               </button>
             </div>

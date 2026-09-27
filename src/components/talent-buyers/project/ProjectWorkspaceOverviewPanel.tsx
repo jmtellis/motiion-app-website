@@ -1,8 +1,12 @@
 "use client";
 
+import { ArrowUpRight, Users, FileText, CalendarCheck } from "lucide-react";
 import Link from "next/link";
 
-import { getProjectTypeLabel, getProjectOverviewSections } from "@/lib/talent-buyers/project-types";
+import {
+  getProjectTypeLabel,
+  getProjectOverviewSections,
+} from "@/lib/talent-buyers/project-types";
 import { projectTabPath } from "@/lib/talent-buyers/project-routes";
 
 import { ProjectOverviewItemsSection } from "./ProjectOverviewItemsSection";
@@ -44,6 +48,30 @@ export function ProjectWorkspaceOverviewPanel() {
 
   return (
     <div className="project-workspace__panel-body">
+      <div
+        className="industry-project-launchpad"
+        aria-label="Project shortcuts"
+      >
+        <Link href={`${projectTabPath(projectId, "overview")}#talent`}>
+          <Users size={19} />
+          <strong>Your team</strong>
+          <span>{rosterMembers.length} people in this project</span>
+          <ArrowUpRight size={16} />
+        </Link>
+        <Link href={`/projects/${projectId}/bookings`}>
+          <CalendarCheck size={19} />
+          <strong>Bookings</strong>
+          <span>Manage people and terms</span>
+          <ArrowUpRight size={16} />
+        </Link>
+        <Link href={projectTabPath(projectId, "files")}>
+          <FileText size={19} />
+          <strong>Project files</strong>
+          <span>{attachments.length} files, all together</span>
+          <ArrowUpRight size={16} />
+        </Link>
+      </div>
+
       {!hasSummary && overviewSections.length === 0 ? (
         <ProjectWorkspaceEmpty
           title="Project overview"
@@ -94,9 +122,16 @@ export function ProjectWorkspaceOverviewPanel() {
           ) : null}
 
           <div className="project-workspace__overview-stats">
-            <Link href={projectTabPath(projectId, "files")} className="project-workspace__overview-stat">
-              <span className="project-workspace__overview-stat-value">{attachments.length}</span>
-              <span className="project-workspace__overview-stat-label">Files</span>
+            <Link
+              href={projectTabPath(projectId, "files")}
+              className="project-workspace__overview-stat"
+            >
+              <span className="project-workspace__overview-stat-value">
+                {attachments.length}
+              </span>
+              <span className="project-workspace__overview-stat-label">
+                Files
+              </span>
             </Link>
           </div>
         </div>

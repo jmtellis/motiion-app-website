@@ -11,7 +11,7 @@ import {
   Settings,
   Users,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 
 import { BUYER_OPEN_COMMAND_PALETTE_EVENT } from "@/lib/talent-buyers/command-palette";
 import { buyerNavItems } from "@/lib/talent-buyers/dashboard-data";
@@ -55,7 +55,12 @@ const QUICK_ACTIONS = [
     icon: Calendar,
     keywords: "session practice jam",
   },
-  { href: "/library", label: "Roster", icon: Users, keywords: "roster library save collection" },
+  {
+    href: "/library",
+    label: "Roster",
+    icon: Users,
+    keywords: "roster library save collection",
+  },
 ] as const;
 
 const NAV_ICONS: Record<string, typeof Search> = {
@@ -69,6 +74,7 @@ const NAV_ICONS: Record<string, typeof Search> = {
 };
 
 export function CommandPalette() {
+  const panelRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -109,6 +115,8 @@ export function CommandPalette() {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         setOpen((value) => !value);
+        setQuery("");
+        setActiveIndex(0);
         return;
       }
 
@@ -122,7 +130,9 @@ export function CommandPalette() {
 
       if (event.key === "ArrowDown") {
         event.preventDefault();
-        setActiveIndex((index) => Math.min(index + 1, filtered.length - 1));
+        setActiveIndex((index) =>
+          Math.max(0, Math.min(index + 1, filtered.length - 1)),
+        );
         return;
       }
 
@@ -144,21 +154,34 @@ export function CommandPalette() {
 
   useEffect(() => {
     function onOpenPalette() {
+      setQuery("");
+      setActiveIndex(0);
       setOpen(true);
     }
     window.addEventListener(BUYER_OPEN_COMMAND_PALETTE_EVENT, onOpenPalette);
-    return () => window.removeEventListener(BUYER_OPEN_COMMAND_PALETTE_EVENT, onOpenPalette);
+    return () =>
+      window.removeEventListener(
+        BUYER_OPEN_COMMAND_PALETTE_EVENT,
+        onOpenPalette,
+      );
   }, []);
 
   useEffect(() => {
-    setActiveIndex(0);
-  }, [query]);
-
-  useEffect(() => {
-    if (!open) {
-      setQuery("");
-      setActiveIndex(0);
+    if (!open) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    function trap(event: KeyboardEvent) {
+      if (event.key !== "Tab") return;
+      event.preventDefault();
+      panelRef.current?.querySelector<HTMLInputElement>("input")?.focus();
     }
+    document.addEventListener("keydown", trap);
+    return () => {
+      document.removeEventListener("keydown", trap);
+      document.body.style.overflow = overflow;
+      previousFocus?.focus();
+    };
   }, [open]);
 
   return (
@@ -169,6 +192,7 @@ export function CommandPalette() {
             type="button"
             className="buyer-command-backdrop"
             aria-label="Close command palette"
+            tabIndex={-1}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -176,28 +200,59 @@ export function CommandPalette() {
             onClick={() => setOpen(false)}
           />
           <motion.div
+            ref={panelRef}
             className="buyer-command-panel"
             role="dialog"
             aria-modal="true"
             aria-label="Quick navigation"
-            initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -12, scale: 0.98 }}
-            animate={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.99 }}
-            transition={{ duration: reducedMotion ? 0.12 : 0.28, ease: [0.22, 1, 0.36, 1] }}
+            initial={
+              reducedMotion
+                ? { opacity: 0 }
+                : { opacity: 0, y: -12, scale: 0.98 }
+            }
+            animate={
+              reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }
+            }
+            exit={
+              reducedMotion
+                ? { opacity: 0 }
+                : { opacity: 0, y: -8, scale: 0.99 }
+            }
+            transition={{
+              duration: reducedMotion ? 0.12 : 0.28,
+              ease: [0.22, 1, 0.36, 1],
+            }}
           >
             <div className="buyer-command-input-wrap">
               <Search className="size-4 shrink-0 text-white/40" aria-hidden />
               <input
                 type="search"
+                role="combobox"
+                aria-label="Search pages and actions"
+                aria-expanded="true"
+                aria-controls="industry-command-results"
+                aria-activedescendant={
+                  filtered.length
+                    ? `industry-command-${activeIndex}`
+                    : undefined
+                }
                 className="buyer-command-input"
                 placeholder="Jump to talent, projects, library…"
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setActiveIndex(0);
+                }}
                 autoFocus
               />
               <kbd className="buyer-command-kbd">esc</kbd>
             </div>
-            <div className="buyer-command-list" role="listbox">
+            <div
+              className="buyer-command-list"
+              role="listbox"
+              id="industry-command-results"
+              aria-label="Pages and actions"
+            >
               {filtered.length ? (
                 filtered.map((item, index) => {
                   const Icon = item.icon;
@@ -206,6 +261,8 @@ export function CommandPalette() {
                       key={item.href + item.label}
                       type="button"
                       role="option"
+                      id={`industry-command-${index}`}
+                      tabIndex={-1}
                       aria-selected={index === activeIndex}
                       data-active={index === activeIndex}
                       className="buyer-command-item"
@@ -229,5 +286,3 @@ export function CommandPalette() {
     </AnimatePresence>
   );
 }
-
-

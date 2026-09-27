@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Pin, Search } from "lucide-react";
 
 import { ConversationPane } from "@/components/messaging/ConversationPane";
+import { IndustryPageHeader } from "@/components/talent-buyers/dashboard/IndustryUI";
 import { InboxEmptyState } from "@/components/messaging/InboxEmptyState";
 import { formatAttachmentPreviewLabel } from "@/lib/messaging/attachment-payload";
 import {
@@ -177,6 +178,7 @@ export function MessengerShell({
 
   return (
     <div className={isWorkspace ? "buyer-messages-workspace flex h-full min-h-0 flex-1 flex-col" : "space-y-3"}>
+      {isDashboard && <IndustryPageHeader eyebrow="Stay connected" title="Inbox" description={projectFilterTitle ? `Conversations for ${projectFilterTitle}` : "The conversation behind every great collaboration."} />}
       {showPartitions ? (
         <div className="flex flex-wrap gap-1.5">
           {(

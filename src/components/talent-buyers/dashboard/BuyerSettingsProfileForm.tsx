@@ -36,9 +36,12 @@ export function BuyerSettingsProfileForm({
   const router = useRouter();
   const { showToast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const [isDirty, setIsDirty] = useState(false);
   const markets = profile.markets?.join(", ") ?? "";
   const isDashboard = variant === "dashboard";
-  const wrapperClass = isDashboard ? "industry-card industry-settings-form space-y-5 p-5" : "ui-card space-y-5 p-5";
+  const wrapperClass = isDashboard
+    ? "industry-card industry-settings-form space-y-5 p-5"
+    : "ui-card space-y-5 p-5";
   const selectClass = isDashboard
     ? "w-full rounded-full border border-white/10 bg-white/[0.06] px-3.5 py-2.5 text-sm text-white outline-none transition-colors focus:border-white/35 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none"
     : "w-full rounded-full border border-[var(--line)] bg-[var(--surface-card)] px-3 py-3 text-sm text-[var(--ink)] outline-none focus:border-[rgb(17_17_17_/_0.35)]";
@@ -58,25 +61,44 @@ export function BuyerSettingsProfileForm({
       });
 
       if (result.ok) {
+        setIsDirty(false);
         showToast({
           message: result.message ?? "Profile saved",
           variant: "success",
         });
         router.refresh();
       } else {
-        showToast({ message: result.error ?? "Could not save profile.", variant: "error" });
+        showToast({
+          message: result.error ?? "Could not save profile.",
+          variant: "error",
+        });
       }
     });
   }
 
   return (
-    <form className={wrapperClass} onSubmit={handleSubmit}>
+    <form
+      className={wrapperClass}
+      onSubmit={handleSubmit}
+      onChange={() => setIsDirty(true)}
+      onReset={() => setIsDirty(false)}
+    >
       <div className="industry-form-grid">
         <IndustryField label="Full name">
-          <IndustryInput name="fullName" defaultValue={profile.fullName} placeholder="Your name" required />
+          <IndustryInput
+            name="fullName"
+            defaultValue={profile.fullName}
+            placeholder="Your name"
+            required
+          />
         </IndustryField>
         <IndustryField label="Work email">
-          <IndustryInput name="email" type="email" defaultValue={profile.email ?? ""} placeholder="you@company.com" />
+          <IndustryInput
+            name="email"
+            type="email"
+            defaultValue={profile.email ?? ""}
+            placeholder="you@company.com"
+          />
         </IndustryField>
         <IndustryField label="Organization">
           <IndustryInput
@@ -108,13 +130,31 @@ export function BuyerSettingsProfileForm({
           </select>
         </IndustryField>
         <IndustryField label="Markets">
-          <IndustryInput name="markets" defaultValue={markets} readOnly disabled placeholder="Markets from onboarding" />
+          <IndustryInput
+            name="markets"
+            defaultValue={markets}
+            readOnly
+            disabled
+            placeholder="Markets from onboarding"
+          />
         </IndustryField>
       </div>
 
-      <AuthMuted>Changes sync to your Motiion account immediately.</AuthMuted>
+      <AuthMuted>Save your changes to update your Motiion account.</AuthMuted>
 
-      <div className="flex flex-wrap items-center gap-3 pt-2">
+      <div
+        className={`industry-save-bar flex flex-wrap items-center gap-3 pt-2${isDirty ? " industry-save-bar--dirty" : ""}`}
+      >
+        {isDirty && <span role="status">Unsaved changes</span>}
+        {isDirty && (
+          <button
+            type="reset"
+            disabled={isPending}
+            className="bd-btn-secondary"
+          >
+            Discard
+          </button>
+        )}
         <AuthButton type="submit" disabled={isPending}>
           {isPending ? "Saving…" : "Save changes"}
         </AuthButton>
@@ -147,9 +187,13 @@ export function BuyerSettingsWorkspaceSections({
   const [industryAnnouncements, setIndustryAnnouncements] = useState(
     notificationPreferences?.industryAnnouncements ?? false,
   );
-  const [website, setWebsite] = useState(verificationLinks?.companyWebsite ?? "");
+  const [website, setWebsite] = useState(
+    verificationLinks?.companyWebsite ?? "",
+  );
   const [linkedin, setLinkedin] = useState(verificationLinks?.linkedin ?? "");
-  const [instagram, setInstagram] = useState(verificationLinks?.instagram ?? "");
+  const [instagram, setInstagram] = useState(
+    verificationLinks?.instagram ?? "",
+  );
 
   function saveNotifications() {
     startTransition(async () => {
@@ -161,7 +205,10 @@ export function BuyerSettingsWorkspaceSections({
       showToast(
         result.ok
           ? { message: "Notification preferences saved", variant: "success" }
-          : { message: result.error ?? "Could not save preferences.", variant: "error" },
+          : {
+              message: result.error ?? "Could not save preferences.",
+              variant: "error",
+            },
       );
     });
   }
@@ -176,7 +223,10 @@ export function BuyerSettingsWorkspaceSections({
       showToast(
         result.ok
           ? { message: "Verification links saved", variant: "success" }
-          : { message: result.error ?? "Could not save links.", variant: "error" },
+          : {
+              message: result.error ?? "Could not save links.",
+              variant: "error",
+            },
       );
     });
   }
@@ -198,7 +248,12 @@ export function BuyerSettingsWorkspaceSections({
               <div>
                 <dt className="text-white/45">Website</dt>
                 <dd>
-                  <a href={organization.website} className="text-[var(--accent)] hover:underline" target="_blank" rel="noreferrer">
+                  <a
+                    href={organization.website}
+                    className="text-[var(--accent)] hover:underline"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     {organization.website}
                   </a>
                 </dd>
@@ -207,12 +262,16 @@ export function BuyerSettingsWorkspaceSections({
             {organization.type ? (
               <div>
                 <dt className="text-white/45">Type</dt>
-                <dd className="font-medium text-white/85 capitalize">{organization.type.replace(/_/g, " ")}</dd>
+                <dd className="font-medium text-white/85 capitalize">
+                  {organization.type.replace(/_/g, " ")}
+                </dd>
               </div>
             ) : null}
           </dl>
         ) : (
-          <p className="mt-2 text-sm text-white/50">Add an organization name in your account profile above.</p>
+          <p className="mt-2 text-sm text-white/50">
+            Add an organization name in the Account section.
+          </p>
         )}
       </IndustryCard>
 
@@ -221,17 +280,27 @@ export function BuyerSettingsWorkspaceSections({
         {teamMembers.length ? (
           <ul className="mt-3 space-y-2">
             {teamMembers.map((member) => (
-              <li key={member.userId} className="flex items-center justify-between gap-3 text-sm">
+              <li
+                key={member.userId}
+                className="flex items-center justify-between gap-3 text-sm"
+              >
                 <div>
                   <p className="font-medium text-white/85">{member.name}</p>
-                  {member.email ? <p className="text-white/45">{member.email}</p> : null}
+                  {member.email ? (
+                    <p className="text-white/45">{member.email}</p>
+                  ) : null}
                 </div>
-                <span className="bd-chip px-2 py-0.5 text-[10px] uppercase">{member.role}</span>
+                <span className="bd-chip px-2 py-0.5 text-[10px] uppercase">
+                  {member.role}
+                </span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="mt-2 text-sm text-white/50">Team invites are coming soon. Your organization workspace will list collaborators here.</p>
+          <p className="mt-2 text-sm text-white/50">
+            Team invites are coming soon. Your organization workspace will list
+            collaborators here.
+          </p>
         )}
       </IndustryCard>
 
@@ -264,7 +333,12 @@ export function BuyerSettingsWorkspaceSections({
             className="size-4 rounded border-white/20 bg-transparent accent-[var(--accent)]"
           />
         </label>
-        <button type="button" className="bd-btn-secondary" disabled={isPending} onClick={saveNotifications}>
+        <button
+          type="button"
+          className="bd-btn-secondary"
+          disabled={isPending}
+          onClick={saveNotifications}
+        >
           Save preferences
         </button>
       </IndustryCard>
@@ -272,33 +346,38 @@ export function BuyerSettingsWorkspaceSections({
       <IndustryCard className="space-y-3 px-5 py-5">
         <h3 className="text-base font-semibold text-white/92">Verification</h3>
         <IndustryField label="Website">
-        <IndustryInput
-          type="url"
-          className={inputClass}
-          placeholder="Website"
-          value={website}
-          onChange={(event) => setWebsite(event.target.value)}
-        />
+          <IndustryInput
+            type="url"
+            className={inputClass}
+            placeholder="Website"
+            value={website}
+            onChange={(event) => setWebsite(event.target.value)}
+          />
         </IndustryField>
         <IndustryField label="LinkedIn URL">
-        <IndustryInput
-          type="url"
-          className={inputClass}
-          placeholder="LinkedIn URL"
-          value={linkedin}
-          onChange={(event) => setLinkedin(event.target.value)}
-        />
+          <IndustryInput
+            type="url"
+            className={inputClass}
+            placeholder="LinkedIn URL"
+            value={linkedin}
+            onChange={(event) => setLinkedin(event.target.value)}
+          />
         </IndustryField>
         <IndustryField label="Instagram URL">
-        <IndustryInput
-          type="url"
-          className={inputClass}
-          placeholder="Instagram URL"
-          value={instagram}
-          onChange={(event) => setInstagram(event.target.value)}
-        />
+          <IndustryInput
+            type="url"
+            className={inputClass}
+            placeholder="Instagram URL"
+            value={instagram}
+            onChange={(event) => setInstagram(event.target.value)}
+          />
         </IndustryField>
-        <button type="button" className="bd-btn-secondary" disabled={isPending} onClick={saveVerification}>
+        <button
+          type="button"
+          className="bd-btn-secondary"
+          disabled={isPending}
+          onClick={saveVerification}
+        >
           Save links
         </button>
       </IndustryCard>

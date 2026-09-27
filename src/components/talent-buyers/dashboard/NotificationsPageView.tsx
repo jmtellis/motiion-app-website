@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useState } from "react";
+import { Bell } from "lucide-react";
+import { IndustryPageHeader, IndustryEmptyState } from "./IndustryUI";
 
 import { BuyerEmptyIntro } from "@/components/talent-buyers/dashboard/BuyerEmptyIntro";
 import { useBuyerNotifications } from "@/hooks/use-buyer-notifications";
@@ -21,34 +23,22 @@ function GhostNotificationRow() {
   );
 }
 
-function NotificationsEmptyState() {
-  return (
-    <div className="buyer-empty">
-      <BuyerEmptyIntro
-        title="Notifications will show up here"
-        lede="Casting updates, messages, and activity across your projects land in one place."
-      />
-      <div className="buyer-notifications-empty__list" aria-hidden>
-        {Array.from({ length: 6 }, (_, index) => (
-          <GhostNotificationRow key={index} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function NotificationsPageView({ userId }: { userId: string }) {
-  const { notifications, unreadCount, isLoading, markAllRead } = useBuyerNotifications(userId, {
+  const {
+    notifications,
+    unreadCount,
+    isLoading,
+    markAllRead,
+    error,
+    loadNotifications,
+  } = useBuyerNotifications(userId, {
     limit: 50,
   });
-  const didMarkRead = useRef(false);
-
-  useEffect(() => {
-    if (isLoading || didMarkRead.current || unreadCount === 0) return;
-    didMarkRead.current = true;
-    void markAllRead();
-  }, [isLoading, unreadCount, markAllRead]);
-
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const visible = unreadOnly
+    ? notifications.filter((row) => !row.read_at)
+    : notifications;
   if (isLoading) {
     return (
       <div className="buyer-empty" aria-busy="true">
@@ -62,25 +52,71 @@ export function NotificationsPageView({ userId }: { userId: string }) {
     );
   }
 
-  if (!notifications.length) {
-    return <NotificationsEmptyState />;
-  }
-
   return (
     <div className="buyer-notifications">
-      <BuyerEmptyIntro
+      <IndustryPageHeader
+        eyebrow="Keep up with your work"
         title="Notifications"
-        lede={
-          unreadCount
-            ? `${unreadCount} unread`
-            : "You're all caught up."
+        description="Updates across your projects, gathered in one place."
+        actions={
+          unreadCount > 0 && (
+            <button
+              disabled={saving}
+              className="bd-btn-secondary"
+              onClick={async () => {
+                setSaving(true);
+                try {
+                  await markAllRead();
+                } finally {
+                  setSaving(false);
+                }
+              }}
+            >
+              {saving ? "Updating…" : "Mark shown as read"}
+            </button>
+          )
         }
-        primaryLabel={unreadCount ? "Mark all read" : undefined}
-        primaryOnClick={unreadCount ? () => void markAllRead() : undefined}
       />
-
+      {error && (
+        <p role="alert">
+          {error}{" "}
+          <button
+            className="bd-btn-secondary"
+            onClick={() => void loadNotifications()}
+          >
+            Try again
+          </button>
+        </p>
+      )}
+      <div className="industry-notification-tools">
+        <div className="industry-layout-switch">
+          <button
+            aria-pressed={!unreadOnly}
+            onClick={() => setUnreadOnly(false)}
+          >
+            All updates
+          </button>
+          <button aria-pressed={unreadOnly} onClick={() => setUnreadOnly(true)}>
+            Unread ({unreadCount})
+          </button>
+        </div>
+        <span className="industry-result-count">{visible.length} updates</span>
+      </div>
+      {!visible.length && !error && (
+        <IndustryEmptyState
+          icon={<Bell size={25} />}
+          title={
+            unreadOnly ? "You’re all caught up" : "A little quiet, for now"
+          }
+          description={
+            unreadOnly
+              ? "There are no unread updates in this view. Switch to all updates to revisit recent activity."
+              : "Your project updates will appear here as the work moves forward."
+          }
+        />
+      )}
       <ul className="buyer-notifications__list">
-        {notifications.map((row) => {
+        {visible.map((row) => {
           const unread = !row.read_at;
           return (
             <li
@@ -95,8 +131,12 @@ export function NotificationsPageView({ userId }: { userId: string }) {
                 <p className="buyer-notifications__title">
                   {row.title ?? row.type.replace(/_/g, " ")}
                 </p>
-                {row.body ? <p className="buyer-notifications__body">{row.body}</p> : null}
-                <p className="buyer-notifications__time">{formatBuyerRelativeDate(row.created_at)}</p>
+                {row.body ? (
+                  <p className="buyer-notifications__body">{row.body}</p>
+                ) : null}
+                <p className="buyer-notifications__time">
+                  {formatBuyerRelativeDate(row.created_at)}
+                </p>
               </div>
             </li>
           );

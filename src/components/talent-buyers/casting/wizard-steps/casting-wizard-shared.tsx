@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { CheckCircle2, Circle } from "lucide-react";
 
 import { AuthField } from "@/components/auth/ui";
+import { ChipGroup } from "@/components/ui/ChipGroup";
 
 export function castingWizardChoiceCard(selected: boolean) {
   return `casting-wizard-choice${selected ? " casting-wizard-choice--selected" : ""}`;
@@ -43,29 +44,9 @@ export function CastingTagSelector({
   selected: string[];
   onChange: (values: string[]) => void;
 }) {
-  function toggle(value: string) {
-    onChange(selected.includes(value) ? selected.filter((item) => item !== value) : [...selected, value]);
-  }
-
   return (
     <AuthField label={label}>
-      <div className="flex flex-wrap gap-2">
-        {options.map((option) => {
-          const isSelected = selected.includes(option);
-          return (
-            <button
-              key={option}
-              type="button"
-              onClick={() => toggle(option)}
-              className={castingWizardPill(isSelected)}
-              aria-pressed={isSelected}
-            >
-              <span>{option}</span>
-              <CastingWizardChoiceCheck selected={isSelected} />
-            </button>
-          );
-        })}
-      </div>
+      <ChipGroup multiple ariaLabel={label} options={options} value={selected} onChange={onChange} />
     </AuthField>
   );
 }

@@ -330,11 +330,14 @@ export function MessengerShell({
         <InboxEmptyState hideHeader />
       ) : (
         <div
-          className={`grid min-h-0 overflow-hidden md:grid-cols-[minmax(240px,1fr)_2fr] ${
+          key={filter}
+          className={`ui-swap grid min-h-0 overflow-hidden md:grid-cols-[minmax(240px,1fr)_2fr] ${
             isWorkspace
               ? "h-full flex-1"
-              : `h-[70vh] min-h-[420px] rounded-2xl border ${
-                  isDashboard ? "border-white/8 bg-white/2" : "border-[var(--ds-border)] bg-[var(--ds-surface)]"
+              : `rounded-2xl border ${
+                  isDashboard
+                    ? "h-[70vh] min-h-[420px] border-white/8 bg-white/2"
+                    : "inbox-page__panes border-[var(--ds-border)] bg-[var(--ds-surface)]"
                 }`
           }`}
         >

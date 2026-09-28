@@ -168,7 +168,7 @@ export function PortfolioProfileTabs({
         ))}
       </div>
 
-      <div className="portfolio-editor" role="tabpanel" key={revision}>
+      <div className="portfolio-editor" role="tabpanel" key={`${revision}-${tab}`}>
         {tab === "about" ? (
           <AboutFields
             draft={draft}

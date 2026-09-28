@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import type { CalendarEvent } from "@/app/(buyer-app)/(paid)/events/actions";
@@ -29,6 +29,9 @@ type EventsCalendarProps = {
   /** Overrides the popover link. Defaults to the industry calendar detail route. */
   eventHref?: (event: CalendarEvent) => string;
   actionLabel?: string;
+  /** "page": date navigation leads, range + `filter` trail; no centered switcher. */
+  layout?: "centered" | "page";
+  filter?: ReactNode;
 };
 
 export function EventsCalendar({
@@ -36,23 +39,112 @@ export function EventsCalendar({
   embedded = false,
   eventHref,
   actionLabel,
+  layout = "centered",
+  filter,
 }: EventsCalendarProps) {
   const [view, setView] = useState<CalendarView>("week");
   const [anchorDate, setAnchorDate] = useState(() => new Date());
+  const [transition, setTransition] = useState<{ step: number; motion: "swap" | "swap-forward" | "swap-back" }>({
+    step: 0,
+    motion: "swap",
+  });
+  const animate = (motion: "swap" | "swap-forward" | "swap-back") =>
+    setTransition((current) => ({ step: current.step + 1, motion }));
 
   function goPrev() {
     setAnchorDate((d) => navigateAnchor(d, view, -1));
+    animate("swap-back");
   }
 
   function goNext() {
     setAnchorDate((d) => navigateAnchor(d, view, 1));
+    animate("swap-forward");
+  }
+
+  function changeView(next: CalendarView) {
+    setView(next);
+    animate("swap");
+  }
+
+  function goToday() {
+    setAnchorDate(new Date());
+    animate("swap");
   }
 
   function selectDay(date: Date) {
     setAnchorDate(date);
-    setView("day");
+    changeView("day");
   }
 
+
+  const rangeSwitch = (
+    <SegmentedControl
+      ariaLabel="Calendar range"
+      value={view}
+      onChange={changeView}
+      options={VIEW_OPTIONS}
+      equalWidth
+      hug
+      activeTone="white"
+    />
+  );
+  const dateNav = (
+    <div className="bd-cal__nav">
+      <button type="button" className="bd-cal__nav-btn" onClick={goPrev} aria-label="Previous">
+        <ChevronLeft className="size-4" />
+      </button>
+      <button type="button" className="bd-cal__nav-btn" onClick={goNext} aria-label="Next">
+        <ChevronRight className="size-4" />
+      </button>
+    </div>
+  );
+
+  const body = (
+    <div className="bd-cal-workspace">
+      <div
+        key={transition.step}
+        className={`bd-cal__body${transition.step ? ` ui-${transition.motion}` : ""}`}
+      >
+        {view === "month" ? (
+          <MonthView
+            anchorDate={anchorDate}
+            events={events}
+            onSelectDay={selectDay}
+            onVisibleMonthChange={setAnchorDate}
+            eventHref={eventHref}
+            actionLabel={actionLabel}
+          />
+        ) : (
+          <TimeGrid
+            anchorDate={anchorDate}
+            events={events}
+            mode={view}
+            eventHref={eventHref}
+            actionLabel={actionLabel}
+          />
+        )}
+      </div>
+    </div>
+  );
+
+  if (layout === "page") {
+    return (
+      <div className={`bd-cal bd-cal--page${embedded ? " bd-cal--embedded" : ""}`}>
+        <div className="bd-cal__toolbar bd-cal__toolbar--page">
+          <div className="bd-cal__toolbar-start">
+            <button type="button" className="bd-btn-secondary" onClick={goToday}>Today</button>
+            {dateNav}
+            <h3 className="bd-cal__title">{formatMonthYear(anchorDate)}</h3>
+          </div>
+          <div className="bd-cal__toolbar-end">
+            {filter}
+            {rangeSwitch}
+          </div>
+        </div>
+        {body}
+      </div>
+    );
+  }
 
   return (
     <div className={`bd-cal${embedded ? " bd-cal--embedded" : ""}`}>
@@ -61,63 +153,15 @@ export function EventsCalendar({
           <h3 className="bd-cal__title">{formatMonthYear(anchorDate)}</h3>
         </div>
 
-        <div className="bd-cal__toolbar-center">
-          <SegmentedControl
-            ariaLabel="Calendar range"
-            value={view}
-            onChange={setView}
-            options={VIEW_OPTIONS}
-            equalWidth
-            hug
-            activeTone="white"
-          />
-        </div>
+        <div className="bd-cal__toolbar-center">{rangeSwitch}</div>
 
         <div className="bd-cal__toolbar-end">
-          <button className="bd-btn-secondary" onClick={() => setAnchorDate(new Date())}>Today</button>
-          <div className="bd-cal__nav">
-            <button
-              type="button"
-              className="bd-cal__nav-btn"
-              onClick={goPrev}
-              aria-label="Previous"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-            <button
-              type="button"
-              className="bd-cal__nav-btn"
-              onClick={goNext}
-              aria-label="Next"
-            >
-              <ChevronRight className="size-4" />
-            </button>
-          </div>
+          <button className="bd-btn-secondary" onClick={goToday}>Today</button>
+          {dateNav}
         </div>
       </div>
 
-      <div className="bd-cal-workspace">
-        <div className="bd-cal__body">
-          {view === "month" ? (
-            <MonthView
-              anchorDate={anchorDate}
-              events={events}
-              onSelectDay={selectDay}
-              onVisibleMonthChange={setAnchorDate}
-              eventHref={eventHref}
-              actionLabel={actionLabel}
-            />
-          ) : (
-            <TimeGrid
-              anchorDate={anchorDate}
-              events={events}
-              mode={view}
-              eventHref={eventHref}
-              actionLabel={actionLabel}
-            />
-          )}
-        </div>
-      </div>
+      {body}
     </div>
   );
 }

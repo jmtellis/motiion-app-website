@@ -99,67 +99,69 @@ export function OpportunitiesView({
         ))}
       </div>
 
-      {tab === "open" ? (
-        <CardGrid
-          cards={opportunities.openCalls}
-          empty="No open calls right now. New public castings will show up here."
-          onOpen={(card) => openCasting(card.roleId, false)}
-        />
-      ) : null}
+      <div key={tab} className="opportunities-page__lens ui-swap">
+        {tab === "open" ? (
+          <CardGrid
+            cards={opportunities.openCalls}
+            empty="No open calls right now. New public castings will show up here."
+            onOpen={(card) => openCasting(card.roleId, false)}
+          />
+        ) : null}
 
-      {tab === "invited" ? (
-        opportunities.invited.length ? (
-          <ul className="home-open-call-grid">
-            {opportunities.invited.map((card) => (
-              <li key={card.key}>
-                <CastingCard card={card} badge="Invited" onOpen={() => openCasting(card.roleId, true)} />
-                <button
-                  type="button"
-                  className="opportunities-decline"
-                  disabled={decliningId === card.requestId}
-                  onClick={() => void decline(card)}
-                >
-                  {decliningId === card.requestId ? "Declining…" : "Decline"}
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <EmptyCopy>Private castings you’re invited to submit for will show up here.</EmptyCopy>
-        )
-      ) : null}
-
-      {tab === "submitted" ? (
-        <>
-          <div className="home-browser__filters" role="group" aria-label="Submission status">
-            <button type="button" aria-pressed={roster === "active"} onClick={() => setRoster("active")}>
-              Active
-            </button>
-            <button type="button" aria-pressed={roster === "closed"} onClick={() => setRoster("closed")}>
-              Closed
-            </button>
-          </div>
-          {submitted.length ? (
+        {tab === "invited" ? (
+          opportunities.invited.length ? (
             <ul className="home-open-call-grid">
-              {submitted.map((card) => (
+              {opportunities.invited.map((card) => (
                 <li key={card.key}>
-                  <CastingCard
-                    card={card}
-                    badge={outcomeLabel(card.outcome)}
-                    onOpen={() => openCasting(card.roleId, true)}
-                  />
+                  <CastingCard card={card} badge="Invited" onOpen={() => openCasting(card.roleId, true)} />
+                  <button
+                    type="button"
+                    className="opportunities-decline"
+                    disabled={decliningId === card.requestId}
+                    onClick={() => void decline(card)}
+                  >
+                    {decliningId === card.requestId ? "Declining…" : "Decline"}
+                  </button>
                 </li>
               ))}
             </ul>
           ) : (
-            <EmptyCopy>
-              {roster === "closed"
-                ? "Finalized castings will move here."
-                : "Submit to an open call and it will show up here."}
-            </EmptyCopy>
-          )}
-        </>
-      ) : null}
+            <EmptyCopy>Private castings you’re invited to submit for will show up here.</EmptyCopy>
+          )
+        ) : null}
+
+        {tab === "submitted" ? (
+          <>
+            <div className="home-browser__filters" role="group" aria-label="Submission status">
+              <button type="button" aria-pressed={roster === "active"} onClick={() => setRoster("active")}>
+                Active
+              </button>
+              <button type="button" aria-pressed={roster === "closed"} onClick={() => setRoster("closed")}>
+                Closed
+              </button>
+            </div>
+            {submitted.length ? (
+              <ul className="home-open-call-grid">
+                {submitted.map((card) => (
+                  <li key={card.key}>
+                    <CastingCard
+                      card={card}
+                      badge={outcomeLabel(card.outcome)}
+                      onOpen={() => openCasting(card.roleId, true)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyCopy>
+                {roster === "closed"
+                  ? "Finalized castings will move here."
+                  : "Submit to an open call and it will show up here."}
+              </EmptyCopy>
+            )}
+          </>
+        ) : null}
+      </div>
 
       <CastingDetailPanel
         roleId={castingRoleId}

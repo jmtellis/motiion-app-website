@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 
 import {
@@ -13,7 +13,7 @@ import {
 import type { RoleClientMatchFilters } from "@/lib/talent-buyers/casting/role-publication-snapshot";
 import type { CastingRoleForm } from "@/types/casting";
 
-import { CastingWizardChoiceCheck, castingWizardPill } from "./casting-wizard-shared";
+import { ChipGroup } from "@/components/ui/ChipGroup";
 
 function asStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -131,124 +131,25 @@ export function AnyMultiChipField({
   options,
   selected,
   onChange,
+  ariaLabel = "Options",
+  collapsedCount,
 }: {
   options: readonly string[];
   selected: string[];
   onChange: (values: string[]) => void;
+  ariaLabel?: string;
+  collapsedCount?: number;
 }) {
-  const anySelected = selected.length === 0;
-
-  function toggle(option: string) {
-    onChange(
-      selected.includes(option) ? selected.filter((item) => item !== option) : [...selected, option],
-    );
-  }
-
   return (
-    <div className="flex flex-wrap gap-2">
-      <button
-        type="button"
-        className={castingWizardPill(anySelected)}
-        aria-pressed={anySelected}
-        onClick={() => onChange([])}
-      >
-        <span>Any</span>
-        <CastingWizardChoiceCheck selected={anySelected} />
-      </button>
-      {options.map((option) => {
-        const isSelected = selected.includes(option);
-        return (
-          <button
-            key={option}
-            type="button"
-            className={castingWizardPill(isSelected)}
-            aria-pressed={isSelected}
-            onClick={() => toggle(option)}
-          >
-            <span>{option}</span>
-            <CastingWizardChoiceCheck selected={isSelected} />
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-export function SearchableMultiSelect({
-  options,
-  selected,
-  onChange,
-  searchPlaceholder,
-  emptyHint,
-}: {
-  options: readonly string[];
-  selected: string[];
-  onChange: (values: string[]) => void;
-  searchPlaceholder: string;
-  emptyHint: string;
-}) {
-  const [query, setQuery] = useState("");
-  const normalized = query.trim().toLowerCase();
-  const filtered = useMemo(() => {
-    if (!normalized) return options;
-    return options.filter((option) => option.toLowerCase().includes(normalized));
-  }, [normalized, options]);
-
-  function toggle(option: string) {
-    onChange(
-      selected.includes(option) ? selected.filter((item) => item !== option) : [...selected, option],
-    );
-  }
-
-  return (
-    <div className="casting-role-search-select">
-      {selected.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {selected.map((option) => (
-            <button
-              key={option}
-              type="button"
-              className={castingWizardPill(true)}
-              aria-pressed
-              onClick={() => toggle(option)}
-            >
-              <span>{option}</span>
-              <CastingWizardChoiceCheck selected />
-            </button>
-          ))}
-        </div>
-      ) : (
-        <p className="casting-role-bound__hint">{emptyHint}</p>
-      )}
-      <input
-        className="project-create__input"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder={searchPlaceholder}
-      />
-      <div className="casting-role-search-select__results">
-        {filtered.slice(0, 40).map((option) => {
-          const isSelected = selected.includes(option);
-          return (
-            <button
-              key={option}
-              type="button"
-              className={`casting-role-search-select__option${
-                isSelected ? " casting-role-search-select__option--selected" : ""
-              }`}
-              aria-pressed={isSelected}
-              onClick={() => toggle(option)}
-            >
-              <span>{option}</span>
-              <CastingWizardChoiceCheck selected={isSelected} />
-            </button>
-          );
-        })}
-        {filtered.length === 0 ? (
-          <p className="casting-role-bound__hint">No matches for “{query.trim()}”.</p>
-        ) : null}
-      </div>
-    </div>
+    <ChipGroup
+      multiple
+      includeAny
+      ariaLabel={ariaLabel}
+      options={options}
+      value={selected}
+      collapsedCount={collapsedCount}
+      onChange={onChange}
+    />
   );
 }
 
@@ -288,32 +189,13 @@ export function CastingRoleBrowseFiltersFields({
         open={openSection === "profile_type"}
         onToggle={onToggleSection}
       >
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className={castingWizardPill(!selectedProfile)}
-            aria-pressed={!selectedProfile}
-            onClick={() => patchFilters({ talentTypes: [] })}
-          >
-            <span>Any</span>
-            <CastingWizardChoiceCheck selected={!selectedProfile} />
-          </button>
-          {PROFILE_TYPE_OPTIONS.map((option) => {
-            const selected = selectedProfile === option;
-            return (
-              <button
-                key={option}
-                type="button"
-                className={castingWizardPill(selected)}
-                aria-pressed={selected}
-                onClick={() => patchFilters({ talentTypes: [option] })}
-              >
-                <span>{option}</span>
-                <CastingWizardChoiceCheck selected={selected} />
-              </button>
-            );
-          })}
-        </div>
+        <ChipGroup
+          includeAny
+          ariaLabel="Profile type"
+          options={PROFILE_TYPE_OPTIONS}
+          value={selectedProfile}
+          onChange={(value) => patchFilters({ talentTypes: value ? [value] : [] })}
+        />
       </RoleAttributeDisclosure>
 
       <RoleAttributeDisclosure
@@ -351,12 +233,12 @@ export function CastingRoleBrowseFiltersFields({
         open={openSection === "genres"}
         onToggle={onToggleSection}
       >
-        <SearchableMultiSelect
+        <AnyMultiChipField
+          ariaLabel="Genres"
           options={ROLE_GENRE_OPTIONS}
           selected={filters.genres ?? []}
+          collapsedCount={12}
           onChange={(genres) => patchFilters({ genres })}
-          searchPlaceholder="Search genres"
-          emptyHint="Any genre"
         />
       </RoleAttributeDisclosure>
 
@@ -367,12 +249,12 @@ export function CastingRoleBrowseFiltersFields({
         open={openSection === "skills"}
         onToggle={onToggleSection}
       >
-        <SearchableMultiSelect
+        <AnyMultiChipField
+          ariaLabel="Skills"
           options={ROLE_SKILL_OPTIONS}
           selected={filters.skills ?? []}
+          collapsedCount={12}
           onChange={(skills) => patchFilters({ skills })}
-          searchPlaceholder="Search skills"
-          emptyHint="Any skill"
         />
       </RoleAttributeDisclosure>
     </>

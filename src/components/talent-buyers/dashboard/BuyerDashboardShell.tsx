@@ -28,6 +28,8 @@ import "./industry-light.css";
 import "./industry-experience.css";
 import "./industry-studio.css";
 import "@/components/workspace/workspace-controls.css";
+import "@/components/ui/chips.css";
+import "@/components/ui/motion.css";
 
 /** Match Find Talent hubs: no top chrome unless the page needs nested crumbs or end actions. */
 function buyerShellNeedsChrome(

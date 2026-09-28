@@ -81,19 +81,6 @@ export async function AppShell({
             <AppTabNavWithUnread variant={navVariant} placement="sidebar" />
           </Suspense>
         }
-        mobileNavigation={
-          <Suspense
-            fallback={
-              <AppTabNav
-                inboxUnread={0}
-                variant={navVariant}
-                placement="bottom"
-              />
-            }
-          >
-            <AppTabNavWithUnread variant={navVariant} placement="bottom" />
-          </Suspense>
-        }
         account={
           <>
             <WorkspaceFooterNotices

@@ -52,9 +52,31 @@
 .buyer-notifications__title {
   margin: 0;
   font-size: 0.9375rem;
-  font-weight: 600;
+  font-weight: 520;
   color: var(--industry-text, rgb(255 255 255 / 0.92));
   text-transform: capitalize;
+}
+
+.buyer-notifications__item--unread .buyer-notifications__title {
+  font-weight: 680;
+}
+
+.notification-avatar {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  object-fit: cover;
+  object-position: center top;
+  background: var(--buyer-raised, #f1f1f1);
+  color: var(--buyer-text-soft, #616161);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+span.notification-avatar {
+  display: grid;
+  place-items: center;
 }
 
 .buyer-notifications__body {
@@ -91,10 +113,9 @@
   border-bottom: none;
 }
 
-.buyer-notifications-empty__dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  margin-top: 0.45rem;
+.buyer-notifications-empty__avatar {
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
   border-radius: 9999px;
   background: var(--industry-fill, rgb(255 255 255 / 0.1));

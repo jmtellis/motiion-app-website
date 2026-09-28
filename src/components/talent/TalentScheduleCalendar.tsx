@@ -6,8 +6,6 @@ import { useMemo, useState } from "react";
 
 import { ActivityCreateWizard } from "@/components/talent-buyers/activities/ActivityCreateWizard";
 import { EventsCalendar } from "@/components/talent-buyers/dashboard/calendar/EventsCalendar";
-import { IndustryPageHeader } from "@/components/talent-buyers/dashboard/IndustryUI";
-import { SegmentedControl } from "@/components/talent-buyers/dashboard/SegmentedControl";
 import { useNotificationsPanel } from "@/components/workspace/WorkspaceNotifications";
 import { WorkspaceSidePanel } from "@/components/workspace/WorkspaceSidePanel";
 import type { CalendarEvent } from "@/app/(buyer-app)/(paid)/events/actions";
@@ -16,7 +14,7 @@ import { createDefaultActivityDraft } from "@/lib/talent-buyers/activities/defau
 import "@/components/talent-buyers/dashboard/buyer-chrome.css";
 
 const FILTERS: { value: TalentScheduleFilter; label: string }[] = [
-  { value: "all", label: "All" },
+  { value: "all", label: "All activities" },
   { value: "classes", label: "Classes" },
   { value: "sessions", label: "Sessions" },
   { value: "events", label: "Events" },
@@ -79,29 +77,35 @@ export function TalentScheduleCalendar({
 
   return (
     <div className="talent-schedule buyer-dashboard buyer-calendar-page events-hub events-hub--schedule">
-      <IndustryPageHeader
-        title="Schedule"
-        description="Your classes, sessions, and events."
-        actions={
-          <button type="button" className="buyer-chrome-bar__cta" onClick={openCreate}>
-            <Plus className="size-4 shrink-0" aria-hidden />
-            Create session
-          </button>
+      <header className="talent-schedule__header">
+        <h1>Schedule</h1>
+        <button type="button" className="talent-schedule__create" onClick={openCreate}>
+          <Plus size={16} aria-hidden />
+          Create session
+        </button>
+      </header>
+
+      <EventsCalendar
+        events={visible}
+        embedded
+        layout="page"
+        eventHref={talentEventHref}
+        actionLabel="Open"
+        filter={
+          <select
+            className="talent-schedule__type"
+            aria-label="Activity type"
+            value={filter}
+            onChange={(event) => setFilter(event.target.value as TalentScheduleFilter)}
+          >
+            {FILTERS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         }
       />
-      <div className="talent-schedule__filter">
-        <SegmentedControl
-          ariaLabel="Calendar contents"
-          value={filter}
-          onChange={setFilter}
-          options={FILTERS}
-          hug
-          activeTone="white"
-        />
-      </div>
-      <div className="events-hub__schedule">
-        <EventsCalendar events={visible} embedded eventHref={talentEventHref} actionLabel="Open" />
-      </div>
 
       <WorkspaceSidePanel
         id="schedule-create-session"

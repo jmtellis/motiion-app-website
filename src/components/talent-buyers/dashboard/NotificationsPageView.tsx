@@ -7,6 +7,7 @@ import { Bell } from "lucide-react";
 import { IndustryPageHeader, IndustryEmptyState } from "./IndustryUI";
 
 import { BuyerEmptyIntro } from "@/components/talent-buyers/dashboard/BuyerEmptyIntro";
+import { NotificationAvatar, useNotificationActors } from "@/components/workspace/NotificationAvatar";
 import { useBuyerNotifications } from "@/hooks/use-buyer-notifications";
 import { castingNotificationHref } from "@/lib/app/talent-casting-state";
 import { formatBuyerRelativeDate } from "@/lib/talent-buyers/dashboard-data";
@@ -16,7 +17,7 @@ import "./notifications-page.css";
 function GhostNotificationRow() {
   return (
     <div className="buyer-notifications-empty__row" aria-hidden>
-      <span className="buyer-empty__bone buyer-notifications-empty__dot" />
+      <span className="buyer-empty__bone buyer-notifications-empty__avatar" />
       <div className="buyer-notifications-empty__copy">
         <span className="buyer-empty__bone buyer-empty__bone--title" />
         <span className="buyer-empty__bone buyer-empty__bone--line-mid" />
@@ -47,6 +48,7 @@ export function NotificationsPageView({
   });
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [saving, setSaving] = useState(false);
+  const actors = useNotificationActors(notifications);
   const visible = unreadOnly
     ? notifications.filter((row) => !row.read_at)
     : notifications;
@@ -130,15 +132,13 @@ export function NotificationsPageView({
         {visible.map((row) => {
           const unread = !row.read_at;
           const href = linkCastings ? castingNotificationHref(row) : null;
+          const title = row.title ?? row.type.replace(/_/g, " ");
           return (
             <li
               key={row.id}
               className={`buyer-notifications__item${unread ? " buyer-notifications__item--unread" : ""}`}
             >
-              <span
-                className={`buyer-notifications__dot${unread ? " buyer-notifications__dot--unread" : ""}`}
-                aria-hidden
-              />
+              <NotificationAvatar data={row.data} actors={actors} fallback={title} />
               <div className="buyer-notifications__copy">
                 <p className="buyer-notifications__title">
                   {href ? (
@@ -149,10 +149,10 @@ export function NotificationsPageView({
                         router.refresh();
                       }}
                     >
-                      {row.title ?? row.type.replace(/_/g, " ")}
+                      {title}
                     </Link>
                   ) : (
-                    row.title ?? row.type.replace(/_/g, " ")
+                    title
                   )}
                 </p>
                 {row.body ? (

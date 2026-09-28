@@ -1,0 +1,68 @@
+/*
+ * Shared motion language for both workspaces.
+ * Entrances only animate from (no forwards fill) so no transform lingers on
+ * containers that hold position: fixed / sticky descendants.
+ */
+:root {
+  --ui-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ui-ease-emphasized: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@keyframes ui-reveal { from { opacity: 0; transform: translateY(-4px); } }
+@keyframes ui-rise { from { opacity: 0; transform: translateY(8px); } }
+@keyframes ui-fade { from { opacity: 0; } }
+@keyframes ui-pop { from { opacity: 0; transform: scale(0.96) translateY(-4px); } }
+@keyframes ui-pop-up { from { opacity: 0; transform: scale(0.96) translateY(4px); } }
+@keyframes ui-slide-in-right { from { opacity: 0; transform: translateX(32px); } }
+@keyframes ui-slide-in-left { from { opacity: 0; transform: translateX(-32px); } }
+
+/* Route changes: the new page settles in. Query-param updates keep the same nodes. */
+:is(.workspace-talent-main, .buyer-dashboard-shell__main) > * {
+  animation: ui-rise 280ms var(--ui-ease-out) backwards;
+}
+
+/* Tab / segment / lens content crossfades when its keyed panel remounts. */
+.ui-fade-in { animation: ui-fade 260ms ease backwards; }
+.ui-swap { animation: ui-rise 240ms var(--ui-ease-out) backwards; }
+.ui-swap-forward { animation: ui-slide-in-right 260ms var(--ui-ease-out) backwards; }
+.ui-swap-back { animation: ui-slide-in-left 260ms var(--ui-ease-out) backwards; }
+.bd-cal-workspace { overflow-x: clip; }
+
+.industry-settings-panel:not([hidden]),
+.portfolio-editor[role="tabpanel"] { animation: ui-rise 240ms var(--ui-ease-out) backwards; }
+
+/* Side-panel profiles push in from the right, whether first opened or swapped. */
+.workspace-side-panel__body > .talent-profile { animation: ui-slide-in-right 280ms var(--ui-ease-out) backwards; }
+
+/* Menus and popovers grow from their trigger. */
+:is(
+  .library-menu__panel,
+  .casting-find-talent-referral-menu__menu,
+  .talent-navigator__filter-dropdown-menu,
+  .bd-cal-popover,
+  .discover-styles__popover
+) {
+  transform-origin: top;
+  animation: ui-pop 180ms var(--ui-ease-out) backwards;
+}
+.workspace-account-popover {
+  transform-origin: bottom left;
+  animation: ui-pop-up 180ms var(--ui-ease-out) backwards;
+}
+
+/* Drawers and dialogs. */
+.casting-drawer-backdrop { animation: ui-fade 200ms ease backwards; }
+.casting-drawer { animation: ui-slide-in-right 280ms var(--ui-ease-emphasized) backwards; }
+.portfolio-dialog { animation: ui-fade 180ms ease backwards; }
+.portfolio-dialog__card { animation: ui-pop-up 240ms var(--ui-ease-out) backwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.workspace-talent-main, .buyer-dashboard-shell__main) > *,
+  .ui-fade-in, .ui-swap, .ui-swap-forward, .ui-swap-back, .industry-settings-panel, .portfolio-editor, .workspace-side-panel__body > .talent-profile,
+  .library-menu__panel, .casting-find-talent-referral-menu__menu,
+  .talent-navigator__filter-dropdown-menu, .bd-cal-popover, .discover-styles__popover,
+  .workspace-account-popover, .casting-drawer-backdrop, .casting-drawer,
+  .portfolio-dialog, .portfolio-dialog__card, .portfolio-picker {
+    animation: none;
+  }
+}

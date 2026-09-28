@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { NotificationAvatar, useNotificationActors } from "@/components/workspace/NotificationAvatar";
 import { useBuyerNotifications } from "@/hooks/use-buyer-notifications";
 import { castingNotificationHref } from "@/lib/app/talent-casting-state";
 import { formatBuyerRelativeDate } from "@/lib/talent-buyers/dashboard-data";
@@ -19,6 +20,7 @@ import { formatBuyerRelativeDate } from "@/lib/talent-buyers/dashboard-data";
 const PANEL_ID = "workspace-notifications-panel";
 
 type NotificationsState = ReturnType<typeof useBuyerNotifications> & {
+  viewerId: string;
   open: boolean;
   setOpen: (open: boolean) => void;
 };
@@ -43,13 +45,17 @@ export function WorkspaceNotificationsProvider({
   const [openPath, setOpenPath] = useState<string | null>(null);
   const open = openPath === pathname;
   const setOpen = useCallback((next: boolean) => setOpenPath(next ? pathname : null), [pathname]);
-  const value = { ...notifications, open, setOpen };
+  const value = { ...notifications, viewerId: userId, open, setOpen };
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;
 }
 
 export function useNotificationsPanel() {
   const { open, setOpen } = useWorkspaceNotifications();
   return { open, setOpen };
+}
+
+export function useWorkspaceViewerId() {
+  return useWorkspaceNotifications().viewerId;
 }
 
 export function NotificationsButton() {
@@ -75,6 +81,7 @@ export function NotificationsPanel() {
   const router = useRouter();
   const closeRef = useRef<HTMLButtonElement>(null);
   const [saving, setSaving] = useState(false);
+  const actors = useNotificationActors(notifications);
 
   useEffect(() => {
     if (!open) return;
@@ -147,11 +154,12 @@ export function NotificationsPanel() {
             <ul>
               {notifications.map((row) => {
                 const href = castingNotificationHref(row);
+                const title = row.title ?? row.type.replace(/_/g, " ");
                 const copy = (
                   <>
-                    <span aria-hidden />
-                    <div>
-                      <p>{row.title ?? row.type.replace(/_/g, " ")}</p>
+                    <NotificationAvatar data={row.data} actors={actors} fallback={title} />
+                    <div className="workspace-notifications__copy">
+                      <p>{title}</p>
                       {row.body ? <p>{row.body}</p> : null}
                       <time dateTime={row.created_at}>{formatBuyerRelativeDate(row.created_at)}</time>
                     </div>

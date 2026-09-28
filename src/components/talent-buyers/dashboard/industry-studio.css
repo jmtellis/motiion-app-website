@@ -1250,3 +1250,37 @@
     grid-template-columns: minmax(280px, 32%) minmax(0, 1fr);
   }
 }
+
+/* Page header system (talent + industry): every page title starts at the top of the
+   content area at the same size, and header actions align to the title row. */
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .industry-page-header, .inbox-page__header, .opportunities-page__header,
+  .discover-browse__header, .discover-saved__header, .talent-schedule__header
+) h1 {
+  margin: 0;
+  color: #242424;
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  font-weight: 620;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-page-header {
+  align-items: flex-start;
+  gap: 24px;
+  padding: 0 0 20px;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-page-header .industry-page-description {
+  margin-top: 6px;
+  color: #616161;
+  font-size: 14px;
+  line-height: 1.5;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(.industry-page-actions, .inbox-page__edit) {
+  margin-top: -3px;
+}
+@media (max-width: 760px) {
+  :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+    .industry-page-header, .inbox-page__header, .opportunities-page__header,
+    .discover-browse__header, .discover-saved__header, .talent-schedule__header
+  ) h1 { font-size: 24px; }
+}

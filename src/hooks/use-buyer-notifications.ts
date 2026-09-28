@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { isPendingCastingInviteNotification } from "@/lib/app/talent-casting-state";
+import { isVisibleAlertNotification } from "@/lib/app/notification-inbox";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 
 export type BuyerNotificationRow = {
@@ -47,7 +47,7 @@ export function useBuyerNotifications(
     if (loadError) setError("Could not load notifications.");
     if (data) {
       setNotifications(
-        data.filter((row) => !isPendingCastingInviteNotification(row)),
+        data.filter((row) => isVisibleAlertNotification(row)),
       );
     }
     setIsLoading(false);

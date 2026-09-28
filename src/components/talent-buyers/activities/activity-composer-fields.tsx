@@ -6,6 +6,7 @@ import {
   LocationAutocomplete,
   type SelectedPlace,
 } from "@/components/talent-buyers/project/LocationAutocomplete";
+import { ChipGroup } from "@/components/ui/ChipGroup";
 import type { ActivityDraft } from "@/lib/talent-buyers/activities/types";
 
 export const activityFieldClass = "project-create__input";
@@ -124,21 +125,7 @@ export function PillSelect({
 }) {
   return (
     <ActivityField label={label}>
-      <div className="flex flex-wrap gap-2">
-        {options.map((option) => {
-          const selected = value === option;
-          return (
-            <button
-              key={option}
-              type="button"
-              onClick={() => onChange(option)}
-              className={`casting-wizard-pill${selected ? " casting-wizard-pill--selected" : ""}`}
-            >
-              {option}
-            </button>
-          );
-        })}
-      </div>
+      <ChipGroup ariaLabel={label} options={options} value={value} onChange={onChange} />
     </ActivityField>
   );
 }
@@ -156,37 +143,13 @@ export function PillMultiSelect({
   max?: number;
   onChange: (values: string[]) => void;
 }) {
-  const selected = new Set(values);
-
   return (
     <ActivityField label={label}>
       <p className="project-create__section-copy mb-2">
         Select up to {max}
         {values.length ? ` · ${values.length} selected` : ""}
       </p>
-      <div className="flex max-h-48 flex-wrap gap-2 overflow-y-auto">
-        {options.map((option) => {
-          const isSelected = selected.has(option);
-          return (
-            <button
-              key={option}
-              type="button"
-              onClick={() => {
-                if (isSelected) {
-                  onChange(values.filter((v) => v !== option));
-                  return;
-                }
-                if (values.length >= max) return;
-                onChange([...values, option]);
-              }}
-              className={`casting-wizard-pill${isSelected ? " casting-wizard-pill--selected" : ""}`}
-              disabled={!isSelected && values.length >= max}
-            >
-              {option}
-            </button>
-          );
-        })}
-      </div>
+      <ChipGroup multiple ariaLabel={label} options={options} value={values} max={max} onChange={onChange} />
     </ActivityField>
   );
 }

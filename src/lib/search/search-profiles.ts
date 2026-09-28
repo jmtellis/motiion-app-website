@@ -4,7 +4,7 @@ import { getProfileAvatarUrl } from "@/lib/auth/avatar";
 import { mockTalentProfiles, portraitWallImages } from "@/lib/mock-data";
 import { readLiveSearchProfiles } from "@/lib/catalog/live-catalog";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { getSupabaseConfig, supabaseRestGet } from "@/lib/supabaseRest";
+import { getSupabaseConfig, supabaseRestGet, supabaseRestGetCounted } from "@/lib/supabaseRest";
 import {
   filterSearchProfiles,
   genderFilterVariants,
@@ -541,6 +541,134 @@ export const searchTalentProfiles = cache(async (filters: SearchFilters): Promis
     usingFallbackData: true,
     source: "mock",
   };
+});
+
+export const BROWSE_PAGE_SIZE = 24;
+
+/** Keys match `HEIGHT_OPTIONS`. */
+const BROWSE_HEIGHT_RANGES: Record<string, string[]> = {
+  "Under 5'6\"": ["lt.66"],
+  "5'6\" – 5'9\"": ["gte.66", "lte.69"],
+  "5'10\" and above": ["gte.70"],
+};
+
+function spellingVariants(value: string): string[] {
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+  const titled = trimmed.replace(/\b\w/g, (char) => char.toUpperCase());
+  const base = [trimmed, titled];
+  return [...new Set(base.flatMap((item) => [item, item.replace(/-/g, " "), item.replace(/ /g, "-")]))];
+}
+
+function jsonbContainsAny(column: string, values: string[]): string[] {
+  return values.map((value) => `${column}.cs.${encodeURIComponent(JSON.stringify([value]))}`);
+}
+
+function buildBrowseQueryPath(filters: SearchFilters, page: number): string {
+  const params = [
+    `select=${TALENT_SELECT}`,
+    "order=full_name.asc.nullslast,id.asc",
+    `limit=${BROWSE_PAGE_SIZE}`,
+    `offset=${(page - 1) * BROWSE_PAGE_SIZE}`,
+  ];
+  const groups: string[] = [];
+
+  const keyword = filters.keyword?.trim();
+  if (keyword) {
+    const pattern = encodeIlike(keyword);
+    const tagVariants = spellingVariants(keyword);
+    groups.push(
+      `or(${[
+        `full_name.ilike.${pattern}`,
+        `username.ilike.${pattern}`,
+        `representation.ilike.${pattern}`,
+        ...jsonbContainsAny("styles", tagVariants),
+        ...jsonbContainsAny("skills", tagVariants),
+      ].join(",")})`,
+    );
+  }
+
+  const location = filters.location?.trim();
+  if (location) params.push(`location=ilike.${encodeIlike(location)}`);
+
+  const subtype = filters.subtype?.trim().toLowerCase();
+  if (subtype) groups.push(`or(${jsonbContainsAny("talent_types", spellingVariants(subtype)).join(",")})`);
+
+  const styles = (filters.styles?.length ? filters.styles : filters.style ? [filters.style] : []).flatMap(spellingVariants);
+  if (styles.length) groups.push(`or(${jsonbContainsAny("styles", styles).join(",")})`);
+
+  const skills = (filters.skills ?? []).flatMap(spellingVariants);
+  if (skills.length) groups.push(`or(${jsonbContainsAny("skills", skills).join(",")})`);
+
+  if (filters.gender?.trim()) {
+    groups.push(`or(${genderVariants(filters.gender).map((value) => `gender.ilike.${encodeURIComponent(value)}`).join(",")})`);
+  }
+  if (filters.unionStatus?.trim()) params.push(`union_status=eq.${encodeURIComponent(filters.unionStatus.trim())}`);
+  if (filters.representation === "Represented") params.push("representation=not.is.null");
+  if (filters.representation === "Independent") params.push("representation=is.null");
+
+  const heightRange = BROWSE_HEIGHT_RANGES[filters.height ?? ""];
+  if (heightRange) params.push(...heightRange.map((clause) => `height_inches=${clause}`));
+
+  const inList = (column: string, values?: string[]) => {
+    if (!values?.length) return;
+    groups.push(`or(${values.map((value) => `${column}.ilike.${encodeIlike(value)}`).join(",")})`);
+  };
+  inList("hair_color", filters.hairColors);
+  inList("eye_color", filters.eyeColors);
+  // Stored ethnicity wording drifts ("African descent" vs "African American"); match on the lead term.
+  inList("ethnicity", filters.ethnicities?.map((value) => value.split("/")[0].trim()));
+
+  if (groups.length) params.push(`and=(${groups.join(",")})`);
+  return `talent?${params.join("&")}`;
+}
+
+async function overlayVerification(rows: SearchProfileRecord[]): Promise<SearchProfileRecord[]> {
+  if (!rows.length) return rows;
+  const ids = rows.map((row) => `"${row.id}"`).join(",");
+  const verified = await supabaseRestGet<ProfessionalProfileRow[]>(
+    `talent_professional_profiles?select=${PROFESSIONAL_PROFILE_SELECT}&is_verified=eq.true&user_id=in.(${ids})`,
+    { revalidate: 120 },
+  );
+  if (!verified?.length) return rows;
+
+  const admin = createAdminSupabaseClient();
+  const enriched = admin ? await enrichProfessionalProfileRows(admin, verified) : [];
+  const verifiedById = new Map(verified.map((row) => [row.user_id, row]));
+  const enrichedById = new Map(enriched.map((profile) => [profile.id, profile]));
+
+  return rows.map((row) => {
+    const pro = verifiedById.get(row.id);
+    if (!pro) return row;
+    const headshot = row.headshot_url || enrichedById.get(row.id)?.headshot_url || null;
+    return { ...row, is_verified: true, professional_profile_id: pro.id, headshot_url: headshot };
+  });
+}
+
+/** Browse grid: SQL-side filtering, ordering, and offset pagination with an exact total. */
+export const searchBrowseTalent = cache(async (filters: SearchFilters): Promise<SearchResult> => {
+  const page = Number.isFinite(filters.page) && (filters.page ?? 0) > 0 ? Math.floor(filters.page!) : 1;
+
+  if (!getSupabaseConfig()) {
+    const filtered = filterSearchProfiles(mockTalentProfiles.map(normalizeSearchProfile), filters);
+    const start = (page - 1) * BROWSE_PAGE_SIZE;
+    return {
+      items: filtered.slice(start, start + BROWSE_PAGE_SIZE),
+      total: filtered.length,
+      page,
+      pageSize: BROWSE_PAGE_SIZE,
+      usingFallbackData: true,
+      source: "mock",
+    };
+  }
+
+  const result = await supabaseRestGetCounted<SearchProfileRecord>(buildBrowseQueryPath(filters, page), {
+    revalidate: 60,
+  });
+  if (!result) return { ...emptySearchResult(filters), page, pageSize: BROWSE_PAGE_SIZE };
+
+  const items = await overlayVerification(result.rows.map(normalizeSearchProfile));
+  return { items, total: result.total, page, pageSize: BROWSE_PAGE_SIZE, usingFallbackData: false, source: "talent" };
 });
 
 type HeroHeadshotRow = {

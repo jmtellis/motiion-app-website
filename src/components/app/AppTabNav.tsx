@@ -92,7 +92,7 @@ export function AppTabNav({
               <Icon className="size-5" strokeWidth={active ? 2.25 : 1.75} aria-hidden />
               <span className="truncate">{tab.label}</span>
               {showBadge ? (
-                <span className="absolute top-1 right-[calc(50%-18px)] inline-flex min-w-[1.125rem] items-center justify-center rounded-full bg-[var(--ds-accent)] px-1 py-0.5 font-mono text-[9px] font-bold text-[var(--ds-on-accent)]">
+                <span className="absolute top-1 right-[calc(50%-18px)] inline-flex min-w-[1.125rem] items-center justify-center rounded-full bg-[#00d4f0] px-1 py-0.5 font-mono text-[9px] font-bold text-[#031a1f]">
                   {badgeCount > 99 ? "99+" : badgeCount}
                 </span>
               ) : null}
@@ -116,7 +116,7 @@ export function AppTabNav({
           >
             {tab.label}
             {showBadge ? (
-              <span className="ml-1.5 inline-flex min-w-[1.125rem] items-center justify-center rounded-full bg-[var(--ds-accent)] px-1.5 py-0.5 font-mono text-[10px] font-bold text-[var(--ds-on-accent)]">
+              <span className="ml-1.5 inline-flex min-w-[1.125rem] items-center justify-center rounded-full bg-[#00d4f0] px-1.5 py-0.5 font-mono text-[10px] font-bold text-[#031a1f]">
                 {badgeCount > 99 ? "99+" : badgeCount}
               </span>
             ) : null}

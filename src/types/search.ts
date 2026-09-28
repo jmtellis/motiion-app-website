@@ -37,6 +37,12 @@ export type SearchFilters = {
   location?: string;
   subtype?: TalentSubtype | "" | string;
   style?: string;
+  /** Multi-select styles (match any). Takes precedence over `style` in Browse. */
+  styles?: string[];
+  skills?: string[];
+  hairColors?: string[];
+  eyeColors?: string[];
+  ethnicities?: string[];
   gender?: string;
   ethnicity?: string;
   height?: string;

@@ -261,7 +261,7 @@ export function TalentNavigatorGrid({
                   active={isActive}
                   distance={cell.distance}
                   tabIndex={isActive ? 0 : -1}
-                  onClick={() => onFocusCell(cell.rowIndex, cell.colIndex)}
+                  onClick={() => (isActive ? onOpenProfile(cell.talent) : onFocusCell(cell.rowIndex, cell.colIndex))}
                   onDoubleClick={() => onOpenProfile(cell.talent)}
                   onSave={onSaveTalent}
                   ariaLabel={`${cell.talent.name}, row ${cell.rowIndex + 1}, column ${cell.colIndex + 1}${isActive ? ", active" : ""}`}

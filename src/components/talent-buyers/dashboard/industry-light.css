@@ -123,8 +123,6 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) :is(.buyer-m
 @media(min-width:768px) { .industry-form-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 
 .workspace-shell--industry .home-browser__filters { display:flex; gap:6px; }
-.workspace-shell--industry .home-browser__filters button { height:32px; padding:0 14px; border:1px solid #e2e2e2; background:#fff; color:#424242; font-size:13px; font-weight:540; }
-.workspace-shell--industry .home-browser__filters button[aria-pressed="true"] { border-color:#171717; background:#171717; color:#fff; }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select),
 html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal-panel :is(input:not([type=checkbox]):not([type=radio]),textarea,select) {
   color:#202223;

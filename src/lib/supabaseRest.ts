@@ -29,6 +29,33 @@ export async function supabaseRestGet<T>(
   }
 }
 
+/** GET with `Prefer: count=exact`; total comes from the Content-Range header. */
+export async function supabaseRestGetCounted<T>(
+  path: string,
+  options?: { revalidate?: number },
+): Promise<{ rows: T[]; total: number } | null> {
+  const config = getSupabaseConfig();
+  if (!config) return null;
+
+  try {
+    const res = await fetch(`${config.supabaseUrl}/rest/v1/${path}`, {
+      headers: {
+        apikey: config.anon,
+        Authorization: `Bearer ${config.anon}`,
+        Prefer: "count=exact",
+      },
+      next: options?.revalidate !== undefined ? { revalidate: options.revalidate } : undefined,
+    });
+    const total = Number(res.headers.get("content-range")?.split("/")[1]);
+    if (res.status === 416) return { rows: [], total: Number.isFinite(total) ? total : 0 };
+    if (!res.ok) return null;
+    const rows = (await res.json()) as T[];
+    return { rows, total: Number.isFinite(total) ? total : rows.length };
+  } catch {
+    return null;
+  }
+}
+
 async function invokeSupabaseFunction<T>(
   slug: string,
   body: Record<string, unknown>,

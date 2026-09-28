@@ -129,8 +129,8 @@
 .portfolio-select-clear button { position:absolute; right:30px; top:50%; translate:0 -50%; display:grid; place-items:center; width:22px; height:22px; color:#737373; background:#f1f1f1; cursor:pointer; }
 .portfolio-field-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
 .portfolio-option-row { display:flex; flex-wrap:wrap; gap:6px; }
-.portfolio-option-row button { min-height:32px; padding:5px 12px; border:1px solid #d6d6d6; background:#fff; color:#424242; font-size:12px; font-weight:550; cursor:pointer; }
-.portfolio-option-row button[aria-pressed="true"] { background:#242424; border-color:#242424; color:#fff; }
+.portfolio-option-row button { min-height:var(--ui-chip-height, 34px); padding:0 14px; border:1px solid #e2e2e2; background:#fff; color:#424242; font-size:13px; font-weight:540; cursor:pointer; transition:background-color 160ms ease, border-color 160ms ease, color 160ms ease; }
+.portfolio-option-row button[aria-pressed="true"] { background:#171717; border-color:#171717; color:#fff; }
 @media (max-width: 959px), (any-pointer: coarse) {
   .workspace-shell--talent .workspace-side-panel .portfolio-form :is(input, select) { font-size:16px; }
 }

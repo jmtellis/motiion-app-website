@@ -41,7 +41,7 @@ export function TalentDiscovery({
   collectionTitle?: string;
 }) {
   const router = useRouter();
-  const [mode, setMode] = useState<DiscoverMode>("discover");
+  const [mode, setMode] = useState<DiscoverMode>("browse");
   const [selected, setSelected] = useState<Talent | null>(null);
   const [viewed, setViewed] = useState(recentlyViewed);
   const rows = useMemo(
@@ -91,7 +91,7 @@ export function TalentDiscovery({
             ariaLabel="Discover view"
             activeTone="white"
           />
-          {filterLabel ? (
+          {filterLabel && mode === "discover" ? (
             <button
               type="button"
               className="talent-discovery-chip"
@@ -105,14 +105,14 @@ export function TalentDiscovery({
           ) : null}
         </div>
         {mode === "saved" ? (
-          <div className="talent-discovery-results">
+          <div key="saved" className="talent-discovery-results ui-swap">
             <DiscoverSaved />
           </div>
         ) : mode === "browse" ? (
-          <div className="talent-discovery-results">{children}</div>
+          <div key="browse" className="talent-discovery-results ui-swap">{children}</div>
         ) : (
           <div
-            className="talent-navigator"
+            className="talent-navigator ui-fade-in"
             aria-label="Discover"
             tabIndex={0}
             onKeyDown={(event) => {

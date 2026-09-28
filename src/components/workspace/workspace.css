@@ -86,7 +86,7 @@ html:has(.workspace-shell) body { overscroll-behavior: none; }
 .workspace-nav-link:hover { background: #1e1f23; color: #e6e6eb; }
 .workspace-nav-link[aria-current="page"] { background: #252527; color: #f0f0f3; }
 .workspace-nav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.workspace-nav-badge { margin-left: auto; font-size: 10px; border-radius: 4px; background: #34363e; padding: 0 5px; color: #dcdde3; }
+.workspace-nav-badge { margin-left: auto; min-width: 18px; font-size: 10px; font-weight: 650; line-height: 16px; text-align: center; border-radius: 4px; background: #00d4f0; padding: 0 5px; color: #031a1f; }
 .workspace-settings { margin-top: 16px; }
 .workspace-mobile-nav, .workspace-mobile-brand { display: none; }
 .workspace-sidebar-resize { position: absolute; z-index: 55; left: calc(var(--workspace-sidebar-width, 240px) - 4px); top: 12px; bottom: 12px; width: 8px; cursor: col-resize; touch-action: none; outline: none; }
@@ -99,7 +99,7 @@ html:has(.workspace-shell) body { overscroll-behavior: none; }
 .workspace-shell[data-collapsed="true"] .workspace-section-label,
 .workspace-shell[data-collapsed="true"] .workspace-nav-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .workspace-shell[data-collapsed="true"] .workspace-nav-link { justify-content: center; }
-.workspace-shell[data-collapsed="true"] .workspace-nav-badge { position: absolute; right: 1px; top: 1px; font-size: 8px; }
+.workspace-shell[data-collapsed="true"] .workspace-nav-badge { position: absolute; right: 1px; top: 1px; min-width: 14px; padding: 0 3px; font-size: 8px; line-height: 14px; box-shadow: 0 0 0 2px var(--workspace-canvas, #0a0a0a); }
 .workspace-shell :is(a, button):focus-visible { outline: 2px solid #80b9b5; outline-offset: 2px; }
 
 /* Industry keeps its existing routes, permissions and page-level chrome. */

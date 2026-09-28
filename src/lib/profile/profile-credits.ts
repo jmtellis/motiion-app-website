@@ -195,6 +195,18 @@ function buildCreditChipItems(
   }));
 }
 
+export function experiencesForCreditChip(
+  chip: CreditChipItem,
+  experiences: ProfileExperience[],
+): ProfileExperience[] {
+  const section: CreditChipSection = chip.id.startsWith("companies|") ? "companies" : "artists";
+  const target = normalizedCreditKey(chip.title);
+  if (!target) return [];
+  return experiences.filter((entry) =>
+    creditCandidateNames(entry, section).some((name) => normalizedCreditKey(name) === target),
+  );
+}
+
 export function buildProfileCredits(experiences: ProfileExperience[]): ProfileCredits {
   return {
     artists: buildCreditChipItems(uniqueMusicVideoArtistNames(experiences), "artists", experiences),

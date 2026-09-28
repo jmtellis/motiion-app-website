@@ -5,22 +5,23 @@ import { usePathname } from "next/navigation";
 import { WorkspaceSidebarHeader } from "./WorkspaceSidebarHeader";
 import { NotificationsPanel, WorkspaceNotificationsProvider } from "./WorkspaceNotifications";
 import { WorkspaceSidePanelHost } from "./WorkspaceSidePanel";
-import { MotiionWordmark } from "@/components/brand/MotiionWordmark";
 import {
   useWorkspaceSidebar,
   WorkspaceSidebarResize,
 } from "./WorkspaceSidebar";
+import { TalentMobileHeader } from "./TalentMobileHeader";
 import "./workspace.css";
 import "@/components/talent-buyers/dashboard/industry-light.css";
 import "@/components/talent-buyers/dashboard/industry-experience.css";
 import "@/components/talent-buyers/dashboard/industry-studio.css";
 import "./talent-studio.css";
 import "@/components/workspace/workspace-controls.css";
+import "@/components/ui/chips.css";
+import "@/components/ui/motion.css";
 
 export function TalentWorkspace({
   children,
   navigation,
-  mobileNavigation,
   account,
   progress,
   community,
@@ -29,7 +30,6 @@ export function TalentWorkspace({
   userId: string;
   children: ReactNode;
   navigation: ReactNode;
-  mobileNavigation: ReactNode;
   account: ReactNode;
   progress: ReactNode;
   community: boolean;
@@ -41,17 +41,6 @@ export function TalentWorkspace({
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0 });
   }, [pathname]);
-  const titles: Record<string, string> = {
-    home: "Home",
-    opportunities: "Opportunities",
-    inbox: "Inbox",
-    discover: community ? "Browse" : "Discover",
-    schedule: "Schedule",
-    portfolio: "Portfolio",
-    settings: "Settings",
-    updates: "Notifications",
-  };
-  const title = titles[pathname.split("/")[1]] ?? "Workspace";
   const mainVariant =
     pathname === "/discover"
       ? "workspace-talent-main--navigator"
@@ -86,19 +75,9 @@ export function TalentWorkspace({
         sidebar={sidebar}
         controls="talent-workspace-sidebar"
       />
+      <TalentMobileHeader homeHref="/home" navigation={navigation} account={account} />
       <div className="workspace-frame">
         {progress}
-        <header className="workspace-toolbar workspace-talent-mobile-toolbar">
-          <div className="workspace-toolbar-title">
-            <span className="workspace-mobile-brand">
-              <MotiionWordmark height={14} className="brightness-0" />
-            </span>
-            <span>{title}</span>
-          </div>
-          <div className="workspace-account">
-            <div className="workspace-mobile-account">{account}</div>
-          </div>
-        </header>
         <main
           ref={mainRef}
           id="main-content"
@@ -109,9 +88,6 @@ export function TalentWorkspace({
         </main>
       </div>
       <NotificationsPanel />
-      <nav aria-label="App" className="workspace-mobile-nav">
-        {mobileNavigation}
-      </nav>
     </div>
     </WorkspaceSidePanelHost>
     </WorkspaceNotificationsProvider>

@@ -6,10 +6,12 @@ import { trackServerEvent } from "@/lib/analytics/track-server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { supabaseRpc } from "@/lib/supabase/rpc";
 
+import type { ConversationParticipant, MessageRequest } from "@/types/app";
+
 export type ConversationMessage = {
   id: string;
   conversation_id: string;
-  sender_id: string;
+  sender_id: string | null;
   sender_name: string | null;
   sender_avatar_url: string | null;
   body: string | null;
@@ -186,4 +188,123 @@ export async function startConversationWith(input: {
     return { ok: true, pendingRequest: true };
   }
   return { ok: false, error: "Could not start the conversation." };
+}
+
+function refreshInboxes() {
+  revalidatePath("/inbox");
+  revalidatePath("/messages");
+}
+
+type MessageRequestResponse = {
+  kind?: string;
+  request_id?: string;
+  conversation_id?: string;
+  status?: string;
+};
+
+type PendingRequestResponse = {
+  ok?: boolean;
+  error?: string;
+};
+
+export async function fetchMessageRequests(): Promise<{
+  requests: MessageRequest[];
+  error: string | null;
+}> {
+  const { data, error } = await supabaseRpc<MessageRequest[]>("list_message_requests");
+  return { requests: error ? [] : (data ?? []), error };
+}
+
+export async function respondToMessageRequest(
+  requestId: string,
+  action: "accept" | "decline" | "block",
+): Promise<{ ok: boolean; conversationId?: string; error?: string }> {
+  const { data, error } = await supabaseRpc<MessageRequestResponse>("respond_to_message_request", {
+    p_request_id: requestId,
+    p_action: action,
+  });
+  if (error) return { ok: false, error };
+  refreshInboxes();
+  return { ok: true, conversationId: data?.conversation_id };
+}
+
+export async function respondToPendingRequest(
+  requestKind: string,
+  sourceId: string,
+  action: "primary" | "negative",
+): Promise<{ ok: boolean; error?: string }> {
+  const { data, error } = await supabaseRpc<PendingRequestResponse>("respond_to_request", {
+    p_request_kind: requestKind,
+    p_source_id: sourceId,
+    p_action: action,
+    p_response_kind: null,
+    p_response_note: "",
+  });
+  if (error) return { ok: false, error };
+  if (data && data.ok === false) {
+    return { ok: false, error: data.error ?? "Could not respond to that request." };
+  }
+  refreshInboxes();
+  return { ok: true };
+}
+
+export async function markConversationsRead(conversationIds: string[]): Promise<{ ok: boolean; error?: string }> {
+  if (!conversationIds.length) return { ok: true };
+  const { error } = await supabaseRpc<null>("mark_conversations_read", {
+    p_conversation_ids: conversationIds,
+  });
+  if (error) return { ok: false, error };
+  refreshInboxes();
+  return { ok: true };
+}
+
+export async function markConversationsUnread(
+  conversationIds: string[],
+): Promise<{ ok: boolean; error?: string }> {
+  if (!conversationIds.length) return { ok: true };
+  const { error } = await supabaseRpc<null>("mark_conversations_unread", {
+    p_conversation_ids: conversationIds,
+  });
+  if (error) return { ok: false, error };
+  refreshInboxes();
+  return { ok: true };
+}
+
+export async function archiveConversations(conversationIds: string[]): Promise<{ ok: boolean; error?: string }> {
+  if (!conversationIds.length) return { ok: true };
+  const { error } = await supabaseRpc<null>("archive_conversations", {
+    p_conversation_ids: conversationIds,
+  });
+  if (error) return { ok: false, error };
+  refreshInboxes();
+  return { ok: true };
+}
+
+export async function fetchConversationParticipants(
+  conversationId: string,
+): Promise<{ participants: ConversationParticipant[]; error: string | null }> {
+  const { data, error } = await supabaseRpc<ConversationParticipant[]>("list_conversation_participants", {
+    p_conversation_id: conversationId,
+  });
+  return { participants: data ?? [], error };
+}
+
+export async function reportMessageOrUser(input: {
+  reportedUserId: string;
+  reason: string;
+  messageId?: string | null;
+  conversationId?: string | null;
+  details?: string | null;
+}): Promise<{ ok: boolean; error?: string }> {
+  const reason = input.reason.trim();
+  if (!reason) return { ok: false, error: "A reason is required." };
+  const { error } = await supabaseRpc<string>("report_message_or_user", {
+    p_reported_user_id: input.reportedUserId,
+    p_message_id: input.messageId ?? null,
+    p_conversation_id: input.conversationId ?? null,
+    p_reason: reason,
+    p_details: input.details?.trim() || null,
+  });
+  if (error) return { ok: false, error };
+  return { ok: true };
 }

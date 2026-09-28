@@ -1,11 +1,13 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { ChevronsUpDown, Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { WorkspaceAccountMenu } from "@/components/workspace/WorkspaceAccountMenu";
+import type { ShellMenuAction } from "@/lib/auth/profile";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 
 export type AccountPillUser = {
@@ -24,7 +26,38 @@ function getMenuLinks(user: AccountPillUser) {
   ];
 }
 
-export function AccountPill({ user }: { user: AccountPillUser }) {
+function AccountAvatar({ user }: { user: AccountPillUser }) {
+  return (
+    <span className="relative inline-flex size-8 shrink-0 overflow-hidden rounded-full bg-[#0c2a26]">
+      {user.avatarUrl ? (
+        <Image
+          src={user.avatarUrl}
+          alt=""
+          width={32}
+          height={32}
+          className="size-full object-cover"
+          unoptimized
+        />
+      ) : (
+        <span className="flex size-full items-center justify-center text-xs font-semibold tracking-tight text-[#2dd4bf]">
+          {user.initials}
+        </span>
+      )}
+    </span>
+  );
+}
+
+export function AccountPill({
+  user,
+  placement = "toolbar",
+  workspaceLabel = "Talent workspace",
+  shellAction = null,
+}: {
+  user: AccountPillUser;
+  placement?: "toolbar" | "sidebar";
+  workspaceLabel?: string;
+  shellAction?: ShellMenuAction | null;
+}) {
   const router = useRouter();
   const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -32,7 +65,7 @@ export function AccountPill({ user }: { user: AccountPillUser }) {
   const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || placement === "sidebar") return;
 
     function handlePointerDown(event: MouseEvent) {
       if (!rootRef.current?.contains(event.target as Node)) {
@@ -50,7 +83,7 @@ export function AccountPill({ user }: { user: AccountPillUser }) {
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [open]);
+  }, [open, placement]);
 
   async function handleSignOut() {
     setSigningOut(true);
@@ -61,6 +94,25 @@ export function AccountPill({ user }: { user: AccountPillUser }) {
     setOpen(false);
     router.push("/");
     router.refresh();
+  }
+
+  if (placement === "sidebar") {
+    return (
+      <WorkspaceAccountMenu
+        className="workspace-account-menu"
+        buttonClassName="inline-flex w-full items-center gap-2.5 border border-[#262626] bg-[#171717] py-2 pl-3 pr-2.5 text-white transition hover:bg-[#222] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+        label={`Account menu for ${user.fullName}`}
+        settingsHref={user.settingsHref ?? "/settings"}
+        shellAction={shellAction}
+      >
+        <AccountAvatar user={user} />
+        <span className="workspace-account-copy">
+          <strong>{user.fullName}</strong>
+          <small>{workspaceLabel}</small>
+        </span>
+        <ChevronsUpDown size={16} aria-hidden />
+      </WorkspaceAccountMenu>
+    );
   }
 
   return (
@@ -74,22 +126,7 @@ export function AccountPill({ user }: { user: AccountPillUser }) {
         onClick={() => setOpen((value) => !value)}
       >
         <Menu className="size-5 shrink-0 text-white/85" aria-hidden />
-        <span className="relative inline-flex size-8 shrink-0 overflow-hidden rounded-full bg-[#0c2a26]">
-          {user.avatarUrl ? (
-            <Image
-              src={user.avatarUrl}
-              alt=""
-              width={32}
-              height={32}
-              className="size-full object-cover"
-              unoptimized
-            />
-          ) : (
-            <span className="flex size-full items-center justify-center text-xs font-semibold tracking-tight text-[#2dd4bf]">
-              {user.initials}
-            </span>
-          )}
-        </span>
+        <AccountAvatar user={user} />
         <span className="sr-only">Account menu for {user.fullName}</span>
       </button>
 
@@ -100,15 +137,15 @@ export function AccountPill({ user }: { user: AccountPillUser }) {
           className="absolute right-0 z-50 mt-2 min-w-[11rem] overflow-hidden rounded-[14px] border border-[#262626] bg-[#151515] py-1"
         >
           {getMenuLinks(user).map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                role="menuitem"
-                className="block px-4 py-2.5 text-sm font-medium text-[#eaeaea] transition hover:bg-[#1e1e1e]"
-                onClick={() => setOpen(false)}
-              >
-                {item.label}
-              </Link>
+            <Link
+              key={item.label}
+              href={item.href}
+              role="menuitem"
+              className="block px-4 py-2.5 text-sm font-medium text-[#eaeaea] transition hover:bg-[#1e1e1e]"
+              onClick={() => setOpen(false)}
+            >
+              {item.label}
+            </Link>
           ))}
           <div className="my-1 border-t border-[#262626]" role="separator" />
           <button

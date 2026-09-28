@@ -59,7 +59,17 @@ export async function fetchConnectAccountStatus(): Promise<{
   }
 }
 
-export async function startStripeConnectOnboarding(): Promise<{
+function safeReturnPath(path: string | undefined) {
+  const value = path?.trim() || "/dashboard/settings";
+  if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\") || value.includes("://")) {
+    return "/dashboard/settings";
+  }
+  return value;
+}
+
+export async function startStripeConnectOnboarding(
+  returnPath = "/dashboard/settings",
+): Promise<{
   ok: boolean;
   url?: string;
   error?: string;
@@ -68,8 +78,11 @@ export async function startStripeConnectOnboarding(): Promise<{
   if (!auth.ok) return { ok: false, error: auth.error };
 
   const origin = siteOrigin();
-  const returnUrl = `${origin}/dashboard/settings?connect=return`;
-  const refreshUrl = `${origin}/dashboard/settings?connect=refresh`;
+  const path = safeReturnPath(returnPath);
+  const returnUrl = `${origin}${path}`;
+  const refreshUrl = returnUrl.includes("connect=")
+    ? returnUrl.replace(/connect=[^&]*/, "connect=refresh")
+    : `${returnUrl}${returnUrl.includes("?") ? "&" : "?"}connect=refresh`;
 
   try {
     await callSupabaseFunctionAsUser<{ connectAccountId?: string }>(

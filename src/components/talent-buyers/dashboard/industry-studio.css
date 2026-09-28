@@ -1,5 +1,5 @@
 /* Second-generation industry surfaces: quiet canvas, content-led focus, restrained elevation. */
-.workspace-shell--industry .workspace-frame {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame {
   --studio-canvas: #f1f1f1;
   --studio-shadow: 0 1px 2px #0000000b, 0 6px 18px #00000005;
   --industry-fill: #f3f3f3;
@@ -8,7 +8,7 @@
   --industry-text: #242424;
   --industry-accent: #303030;
 }
-.workspace-shell--industry .workspace-frame .industry-studio-canvas {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-studio-canvas {
   background: var(--studio-canvas);
   padding-bottom: 32px;
   border-radius: 0 0 26px 26px;
@@ -402,7 +402,7 @@
   color: #545454;
 }
 /* Files are a secondary utility, not an empty hero competing with the work. */
-.workspace-shell--industry .workspace-frame .projects-hub__files {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .projects-hub__files {
   background: #e8e8e8;
   padding: 18px 20px;
   border: 0;
@@ -410,24 +410,24 @@
   margin-top: 2px;
   gap: 8px;
 }
-.workspace-shell--industry .workspace-frame .projects-hub__files-drop {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .projects-hub__files-drop {
   border: 0 !important;
   border-radius: 10px;
   background: #eeeeee;
   box-shadow: none;
 }
-.workspace-shell--industry .workspace-frame .projects-hub__files-dropzone {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .projects-hub__files-dropzone {
   min-height: 90px;
   padding: 15px;
   gap: 6px;
 }
-.workspace-shell--industry .workspace-frame .projects-hub__files-dropzone-icon {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .projects-hub__files-dropzone-icon {
   display: none;
 }
-.workspace-shell--industry .workspace-frame .projects-hub__empty-title {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .projects-hub__empty-title {
   font-size: 14px;
 }
-.workspace-shell--industry .workspace-frame .projects-hub__files-add {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .projects-hub__files-add {
   background: #fff;
   color: #303030;
   box-shadow: 0 1px 3px #0001;
@@ -436,7 +436,7 @@
   font-size: 12px;
 }
 /* Repeated content shares one elevation system across the workspace. */
-.workspace-shell--industry
+:is(.workspace-shell--industry, .workspace-shell--talent)
   .workspace-frame
   :is(.library-collection-card, .library-talent-card, .bd-project-card) {
   border: 0 !important;
@@ -445,37 +445,37 @@
   background: white;
   overflow: hidden;
 }
-.workspace-shell--industry .workspace-frame .library-collection-card__body {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-collection-card__body {
   padding: 18px;
 }
-.workspace-shell--industry .workspace-frame .library-collection-card__name {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-collection-card__name {
   font-weight: 600;
   font-size: 18px;
 }
-.workspace-shell--industry .workspace-frame .library-collection-card__count {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-collection-card__count {
   color: #6e6e6e;
 }
-.workspace-shell--industry .workspace-frame .library-page__mode-row {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-page__mode-row {
   margin: 0;
 }
-.workspace-shell--industry .workspace-frame .library-page__title-heading {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-page__title-heading {
   font-size: 18px;
 }
-.workspace-shell--industry .workspace-frame .buyer-notifications__list {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .buyer-notifications__list {
   border: 0;
   border-radius: 16px;
   background: #fff;
   box-shadow: var(--studio-shadow);
   overflow: hidden;
 }
-.workspace-shell--industry .workspace-frame .buyer-notifications__item {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .buyer-notifications__item {
   border-color: #f0f0f0;
   padding: 18px 22px;
 }
-.workspace-shell--industry .workspace-frame .buyer-notifications__item--unread {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .buyer-notifications__item--unread {
   background: #f5f8fb;
 }
-.workspace-shell--industry
+:is(.workspace-shell--industry, .workspace-shell--talent)
   .workspace-frame
   .buyer-messages-workspace
   > div:last-child {
@@ -484,20 +484,20 @@
   box-shadow: var(--studio-shadow);
   margin-top: 12px;
 }
-.workspace-shell--industry .workspace-frame .events-hub__schedule {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .events-hub__schedule {
   background: white;
   border: 0;
   border-radius: 16px;
   box-shadow: var(--studio-shadow);
 }
-.workspace-shell--industry .workspace-frame .project-workspace__panel {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-workspace__panel {
   border: 0;
   background: white;
   border-radius: 16px;
   box-shadow: var(--studio-shadow);
   overflow: hidden;
 }
-.workspace-shell--industry
+:is(.workspace-shell--industry, .workspace-shell--talent)
   .workspace-frame
   .industry-casting-navigation
   .project-workspace-tabs__scroller {
@@ -506,26 +506,26 @@
   border-radius: 12px;
   padding: 5px;
 }
-.workspace-shell--industry .workspace-frame .industry-stage-number {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-stage-number {
   color: #888;
 }
-.workspace-shell--industry .workspace-frame .casting-toolbar {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .casting-toolbar {
   border: 0;
   background: #f2f2f2;
 }
-.workspace-shell--industry .workspace-frame .casting-role-card {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .casting-role-card {
   border: 0;
   background: #f2f2f2;
 }
-.workspace-shell--industry .workspace-frame .project-bookings__table {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-bookings__table {
   border: 0;
 }
-.workspace-shell--industry .workspace-frame .project-bookings__table th {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-bookings__table th {
   font-size: 12px;
   background: #fafafa;
   color: #777;
 }
-.workspace-shell--industry .workspace-frame .project-bookings__table td {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-bookings__table td {
   font-size: 14px;
   border-color: #f0f0f0;
   padding: 16px;
@@ -688,7 +688,7 @@
   }
 }
 
-.workspace-shell--industry
+:is(.workspace-shell--industry, .workspace-shell--talent)
   .workspace-frame
   :is(
     .projects-hub__files-dropzone,
@@ -717,66 +717,66 @@
 .studio-spotlight__people span {
   color: inherit !important;
 }
-.workspace-shell--industry
+:is(.workspace-shell--industry, .workspace-shell--talent)
   .workspace-frame
   :is(.library-page, .library-page__shell, .library-page__main) {
   background: transparent;
 }
-.workspace-shell--industry .workspace-frame .library-talent-card__meta {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-talent-card__meta {
   padding: 12px 14px 14px;
 }
-.workspace-shell--industry .workspace-frame .library-talent-card__name {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-talent-card__name {
   font-size: 14px;
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 8px;
 }
-.workspace-shell--industry .workspace-frame .library-talent-card__sub {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-talent-card__sub {
   font-size: 12px;
   margin-top: 5px;
   color: #727272;
 }
-.workspace-shell--industry .workspace-frame .library-talent-card__media {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-talent-card__media {
   border-radius: 0;
   aspect-ratio: 4 / 4.5;
 }
-.workspace-shell--industry .workspace-frame .library-search-wrap {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-search-wrap {
   background: #e7e7e7;
   border: 0;
   box-shadow: none;
   border-radius: 8px;
 }
-.workspace-shell--industry .workspace-frame .library-search {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-search {
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
   font-size: 14px;
   border-radius: 0 !important;
 }
-.workspace-shell--industry .workspace-frame .library-select {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-select {
   background-color: #e7e7e7;
   border: 0 !important;
   border-radius: 8px !important;
   font-size: 14px;
 }
-.workspace-shell--industry .workspace-frame .library-talent-card--selected {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-talent-card--selected {
   box-shadow: 0 0 0 2px #303030;
 }
-.workspace-shell--industry .workspace-frame .library-collection-card:hover {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-collection-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 24px #0000000d;
 }
-.workspace-shell--industry .workspace-frame .library-collection-card {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-collection-card {
   transition:
     transform 0.2s,
     box-shadow 0.2s;
 }
 @media (prefers-reduced-motion: reduce) {
-  .workspace-shell--industry .workspace-frame .library-collection-card {
+  :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-collection-card {
     transition: none;
   }
-  .workspace-shell--industry .workspace-frame .library-collection-card:hover {
+  :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-collection-card:hover {
     transform: none;
   }
 }
@@ -821,7 +821,7 @@
 }
 
 /* Shared rhythm: readable content, clear sections, and comfortable controls. */
-.workspace-shell--industry .workspace-frame {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame {
   --studio-space-section: 24px;
   --studio-space-card: 24px;
   --studio-control-height: 40px;
@@ -1012,24 +1012,24 @@
   min-width: 36px;
   min-height: 36px;
 }
-.workspace-shell--industry .workspace-frame .industry-stage-description {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-stage-description {
   padding: 12px 24px;
   font-size: 13px;
 }
-.workspace-shell--industry .workspace-frame .casting-review__toolbar {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .casting-review__toolbar {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
   padding: 16px 24px;
 }
-.workspace-shell--industry .workspace-frame .casting-review__toolbar-spacer {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .casting-review__toolbar-spacer {
   display: none;
 }
-.workspace-shell--industry .workspace-frame .casting-review__toolbar-center {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .casting-review__toolbar-center {
   margin-left: auto;
 }
-.workspace-shell--industry
+:is(.workspace-shell--industry, .workspace-shell--talent)
   .workspace-frame
   .casting-review
   .casting-review__grid {
@@ -1038,7 +1038,7 @@
   grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
   justify-items: stretch;
 }
-.workspace-shell--industry
+:is(.workspace-shell--industry, .workspace-shell--talent)
   .workspace-frame
   :is(
     .casting-section__title,
@@ -1049,29 +1049,29 @@
   font-weight: 600;
   line-height: 1.35;
 }
-.workspace-shell--industry
+:is(.workspace-shell--industry, .workspace-shell--talent)
   .workspace-frame
   :is(.casting-section__body, .project-workspace__panel-description) {
   font-size: 14px;
   line-height: 1.6;
 }
-.workspace-shell--industry .workspace-frame .project-create__label {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-create__label {
   font-size: 14px;
   font-weight: 550;
   letter-spacing: 0;
   text-transform: none;
 }
-.workspace-shell--industry .workspace-frame .project-create__fields {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-create__fields {
   gap: 24px;
 }
-.workspace-shell--industry .workspace-frame .project-create__field {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-create__field {
   gap: 8px;
 }
-.workspace-shell--industry .workspace-frame .project-create__choice-title {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-create__choice-title {
   font-size: 16px;
   line-height: 1.4;
 }
-.workspace-shell--industry .workspace-frame .project-create__choice-copy {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-create__choice-copy {
   font-size: 14px;
   line-height: 1.5;
 }
@@ -1091,7 +1091,7 @@
   }
 }
 @media (max-width: 600px) {
-  .workspace-shell--industry .workspace-frame {
+  :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame {
     --studio-space-section: 20px;
     --studio-space-card: 16px;
   }
@@ -1142,10 +1142,10 @@
   .industry-studio-canvas .bd-cal__toolbar {
     padding: 12px;
   }
-  .workspace-shell--industry .workspace-frame .casting-review__toolbar {
+  :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .casting-review__toolbar {
     padding: 12px 16px;
   }
-  .workspace-shell--industry
+  :is(.workspace-shell--industry, .workspace-shell--talent)
     .workspace-frame
     .casting-review
     .casting-review__grid {
@@ -1164,7 +1164,7 @@
   font-size: 14px;
   padding: 9px 14px;
 }
-.workspace-shell--industry .workspace-frame .buyer-chrome-bar__cta {
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .buyer-chrome-bar__cta {
   min-height: 40px;
 }
 .industry-studio-canvas .industry-empty {
@@ -1227,7 +1227,7 @@
   }
 }
 /* Inbox inherits a legacy framed wrapper; keep the page heading outside its surface. */
-.workspace-shell--industry
+:is(.workspace-shell--industry, .workspace-shell--talent)
   .workspace-frame
   .industry-studio-canvas
   .buyer-messages-workspace {
@@ -1235,7 +1235,7 @@
   border: 0;
   border-radius: 0;
 }
-.workspace-shell--industry
+:is(.workspace-shell--industry, .workspace-shell--talent)
   .workspace-frame
   .industry-studio-canvas
   .buyer-messages-workspace
@@ -1243,7 +1243,7 @@
   padding-left: 36px;
 }
 @media (min-width: 768px) {
-  .workspace-shell--industry
+  :is(.workspace-shell--industry, .workspace-shell--talent)
     .workspace-frame
     .buyer-messages-workspace
     > div:last-child {

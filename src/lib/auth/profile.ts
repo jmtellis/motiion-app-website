@@ -28,6 +28,74 @@ export function isCommunityAccount(accountType: string | null | undefined) {
   return normalizeAccountType(accountType) === "community";
 }
 
+export type ProfileShell = "talent" | "lookingForTalent" | "community";
+
+export type ShellMenuAction =
+  | { kind: "link"; label: string; href: string }
+  | { kind: "passcode"; label: string; href: string }
+  | { kind: "switch"; label: string; shell: "talent" | "lookingForTalent" };
+
+type ShellProfile = Pick<DashboardProfile, "accountType" | "enabledShells" | "activeShell"> | null | undefined;
+
+export function normalizeShell(value: string | null | undefined): ProfileShell | null {
+  if (!value) return null;
+  const lower = value.trim().toLowerCase();
+  if (lower === "looking_for_talent" || lower === "lookingfortalent") return "lookingForTalent";
+  if (lower === "community") return "community";
+  if (lower === "talent") return "talent";
+  return null;
+}
+
+export function getEnabledShells(profile: ShellProfile): ProfileShell[] {
+  const fromColumn = (profile?.enabledShells ?? [])
+    .map((shell) => normalizeShell(shell))
+    .filter((shell): shell is ProfileShell => shell !== null);
+  const unique = [...new Set(fromColumn)];
+  if (unique.length > 0) return unique;
+  const fallback = normalizeShell(profile?.accountType);
+  return fallback ? [fallback] : [];
+}
+
+export function getActiveShell(profile: ShellProfile): ProfileShell | null {
+  const enabled = getEnabledShells(profile);
+  const active = normalizeShell(profile?.activeShell);
+  if (active && enabled.includes(active)) return active;
+  return enabled[0] ?? null;
+}
+
+export function hasEnabledShell(profile: ShellProfile, shell: ProfileShell) {
+  return getEnabledShells(profile).includes(shell);
+}
+
+export function getShellMenuAction(profile: ShellProfile): ShellMenuAction | null {
+  const active = getActiveShell(profile);
+  if (active !== "talent" && active !== "lookingForTalent") return null;
+  const other = active === "talent" ? "lookingForTalent" : "talent";
+  if (hasEnabledShell(profile, other)) {
+    return {
+      kind: "switch",
+      shell: other,
+      label: other === "talent" ? "Switch to talent" : "Switch to industry professional",
+    };
+  }
+  if (other === "lookingForTalent") {
+    return {
+      kind: "passcode",
+      label: "Add profile",
+      href: "/talent-buyers/onboarding?addShell=industry",
+    };
+  }
+  return {
+    kind: "link",
+    label: "Add talent profile",
+    href: "/onboarding?addShell=talent",
+  };
+}
+
+export function isMissingShellRpc(message: string) {
+  return /does not exist|schema cache|could not find the function/i.test(message);
+}
+
 export function isOnboardingComplete(
   profile: Pick<DashboardProfile, "accountType" | "onboardingCompletedAt"> | null | undefined,
 ) {
@@ -39,8 +107,8 @@ export function isOnboardingComplete(
   );
 }
 
-export function getOnboardingPath(profile: Pick<DashboardProfile, "accountType"> | null | undefined) {
-  if (isHiringAccount(profile?.accountType)) {
+export function getOnboardingPath(profile: ShellProfile) {
+  if (getActiveShell(profile) === "lookingForTalent" || isHiringAccount(profile?.accountType)) {
     return "/talent-buyers/onboarding";
   }
 
@@ -50,10 +118,9 @@ export function getOnboardingPath(profile: Pick<DashboardProfile, "accountType">
 export function getProfileDestination(profile: DashboardProfile | null) {
   if (!profile) return "/login";
   if (!isOnboardingComplete(profile)) return getOnboardingPath(profile);
-  if (isHiringAccount(profile.accountType)) return BUYER_HOME_PATH;
-  if (isTalentAccount(profile.accountType) || isCommunityAccount(profile.accountType)) {
-    return "/home";
-  }
+  const shell = getActiveShell(profile);
+  if (shell === "lookingForTalent") return BUYER_HOME_PATH;
+  if (shell === "talent" || shell === "community") return "/home";
   return "/onboarding";
 }
 
@@ -123,5 +190,7 @@ export function toDashboardProfile(
     notificationPreferences: nonTalentProfile?.notification_preferences ?? null,
     buyerOnboardingCompleted: nonTalentProfile?.onboarding_completed ?? null,
     onboardingStep: nonTalentProfile?.onboarding_step ?? null,
+    enabledShells: profile.enabled_shells ?? null,
+    activeShell: profile.active_shell ?? null,
   };
 }

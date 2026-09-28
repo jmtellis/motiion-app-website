@@ -294,15 +294,15 @@
 }
 
 .project-create__btn--primary {
-  border: 1px solid var(--buyer-accent-border, color-mix(in oklab, var(--accent) 45%, transparent));
-  background: var(--buyer-accent-fill, color-mix(in oklab, var(--accent) 16%, #111111));
-  color: var(--industry-text, #fafafa);
+  border: 1px solid var(--btn-surface-default, #fff);
+  background: var(--btn-surface-default, #fff);
+  color: var(--btn-text-on-fill, #111);
   font-weight: 500;
 }
 
 .project-create__btn--primary:hover:not(:disabled) {
-  background: var(--buyer-accent-fill-hover, color-mix(in oklab, var(--accent) 24%, #111111));
-  border-color: var(--buyer-accent-border-hover, color-mix(in oklab, var(--accent) 62%, transparent));
+  background: color-mix(in srgb, var(--btn-surface-default, #fff) 90%, #888);
+  border-color: color-mix(in srgb, var(--btn-surface-default, #fff) 90%, #888);
 }
 
 .project-create__btn--secondary {

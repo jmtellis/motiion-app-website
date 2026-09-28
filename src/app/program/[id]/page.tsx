@@ -5,7 +5,7 @@ import {
   buildEventProgramMetadata,
   eventProgramWebSharePath,
 } from "@/lib/eventProgramPage";
-import { fetchPublicActivity } from "@/lib/publicActivity";
+import { fetchPublicActivity } from "@/lib/catalog/fetch-public-activity";
 
 type PageProps = {
   params: Promise<{ id: string }>;

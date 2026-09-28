@@ -2,8 +2,9 @@ import { redirect } from "next/navigation";
 
 import { MessengerShell } from "@/components/messaging/MessengerShell";
 import { BuyerAppPage } from "@/components/talent-buyers/dashboard/BuyerAppPage";
-import { fetchInboxConversations } from "@/lib/app/inbox";
+import { fetchInboxBundle } from "@/lib/app/inbox";
 import { requireHiringAccount } from "@/lib/auth/session";
+import type { ChatInboxFilter } from "@/lib/messaging/inbox-partition";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { projectWorkspacePath } from "@/lib/talent-buyers/project-routes";
 
@@ -14,6 +15,7 @@ export default async function BuyerMessagesPage({
     conversation?: string;
     project?: string;
     title?: string;
+    filter?: string;
     intent?: string;
     castingId?: string;
     referUrl?: string;
@@ -38,18 +40,26 @@ export default async function BuyerMessagesPage({
     }
   }
 
-  const { conversations, error } = await fetchInboxConversations();
+  const rawFilter = params.filter ?? "primary";
+  const initialFilter: ChatInboxFilter =
+    rawFilter === "general" || rawFilter === "requests" || rawFilter === "primary"
+      ? rawFilter
+      : "primary";
+  const { conversations, error, pendingRequests, messageRequests } = await fetchInboxBundle();
 
   return (
     <BuyerAppPage fullWidth className="buyer-messages-page !space-y-0 flex min-h-0 flex-1 flex-col">
       <MessengerShell
         conversations={conversations}
+        messageRequests={messageRequests}
         currentUserId={profile.id}
         error={error}
         variant="dashboard"
         layout="workspace"
         initialConversationId={params.conversation ?? null}
         projectFilterTitle={params.title ?? (params.project ? "Project" : null)}
+        pendingRequests={pendingRequests}
+        initialFilter={initialFilter}
       />
     </BuyerAppPage>
   );

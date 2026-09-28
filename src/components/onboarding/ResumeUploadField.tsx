@@ -18,11 +18,14 @@ export function ResumeUploadField({
   resumeUrl,
   onProcessed,
   onError,
+  onBusyChange,
 }: {
+  onBusyChange?: (busy: boolean) => void;
   resumeUrl: string;
   onProcessed: (patch: Partial<OnboardingDraft>) => void;
   onError: (message: string | null) => void;
 }) {
+  const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -34,9 +37,12 @@ export function ResumeUploadField({
   }
 
   async function handleFile(file: File | null) {
-    if (!file) return;
+    if (!file || isPending) return;
+    if (file.type !== "application/pdf" && !file.type.startsWith("image/")) { onError("Choose a PDF or image of your resume."); return; }
 
+    if (file.size > 20 * 1024 * 1024) { onError("Choose a resume under 20 MB."); return; }
     onError(null);
+    onBusyChange?.(true);
     setFileName(file.name);
     setPhaseIndex(0);
 
@@ -74,7 +80,7 @@ export function ResumeUploadField({
       } catch (error) {
         onError(error instanceof Error ? error.message : "Resume upload failed.");
         setFileName(null);
-      }
+      } finally { onBusyChange?.(false); }
     });
   }
 
@@ -95,18 +101,22 @@ export function ResumeUploadField({
         type="button"
         onClick={openPicker}
         disabled={isPending}
-            className="flex w-full items-center justify-between gap-4 ui-card-interactive px-5 py-4 text-left disabled:opacity-60"
+        className="resume-dropzone disabled:opacity-60"
+        data-dragging={dragging}
+        onDragOver={event => { event.preventDefault(); if (!isPending) setDragging(true); }}
+        onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }}
+        onDrop={event => { event.preventDefault(); setDragging(false); void handleFile(event.dataTransfer.files[0] ?? null); }}
       >
         <div className="min-w-0">
           <p className="font-semibold text-[var(--ink)]">
-            {fileName ?? (resumeUrl ? "Resume uploaded" : "Upload resume")}
+            {fileName ?? (resumeUrl ? "Resume uploaded" : "Drop your resume here")}
           </p>
           <p className="mt-1 text-sm text-[var(--ink-soft)]">
             {isPending
               ? RESUME_PHASES[Math.min(phaseIndex, RESUME_PHASES.length - 1)]
               : resumeUrl
                 ? "Upload a new file to replace and re-parse your resume."
-                : "PDF or image. We extract profile details and credits like the Motiion app."}
+                : "Or click to choose a PDF or image. We’ll fill in your details and credits."}
           </p>
         </div>
         {isPending ? (

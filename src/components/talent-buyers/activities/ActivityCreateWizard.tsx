@@ -68,6 +68,11 @@ type Props = {
   typeLocked?: boolean;
   initialConnectStatus?: ConnectAccountStatus | null;
   closeHref?: string;
+  /** `panel` is a single-column form for a workspace side panel. */
+  layout?: "page" | "panel";
+  onClose?: () => void;
+  /** When set, publish stays in place instead of opening the industry calendar detail. */
+  onPublished?: (id: string) => void;
 };
 
 export function ActivityCreateWizard({
@@ -77,6 +82,9 @@ export function ActivityCreateWizard({
   typeLocked = false,
   initialConnectStatus = null,
   closeHref = "/events",
+  layout = "page",
+  onClose,
+  onPublished,
 }: Props) {
   const router = useRouter();
   const [draft, setDraft] = useState(initialDraft);
@@ -170,6 +178,10 @@ export function ActivityCreateWizard({
         setError(result.error ?? "Could not save the activity.");
         return;
       }
+      if (onPublished) {
+        onPublished(result.id);
+        return;
+      }
       router.push(`/calendar/${result.id}`);
       router.refresh();
     });
@@ -193,8 +205,15 @@ export function ActivityCreateWizard({
     });
   }
 
+  const panel = layout === "panel";
+
   return (
-    <div className="casting-create-wizard activity-create-wizard">
+    <div
+      className={`casting-create-wizard activity-create-wizard${
+        panel ? " activity-create-wizard--panel" : ""
+      }`}
+    >
+      {panel ? null : (
       <aside className="casting-create-wizard__context">
         <div className="casting-create-wizard__context-body">
           <p className="activity-create-wizard__eyebrow">{mode === "edit" ? "Edit" : "Create"}</p>
@@ -217,16 +236,41 @@ export function ActivityCreateWizard({
           </ol>
         </div>
       </aside>
+      )}
 
       <div
         className="casting-create-wizard__form casting-create-wizard__form--with-progress"
         style={{ ["--casting-progress" as string]: `${progress.percent}%` }}
       >
         <div className="casting-create-wizard__form-top">
-          <Link href={closeHref} className="casting-create-wizard__close">
-            Close
-            <X className="size-4" aria-hidden />
-          </Link>
+          {panel ? (
+            <ol className="activity-create-wizard__steps activity-create-wizard__steps--inline">
+              {steps.map((step, index) => (
+                <li key={step}>
+                  <button
+                    type="button"
+                    onClick={() => setStepIndex(index)}
+                    className={`activity-create-wizard__step${
+                      index === stepIndex ? " activity-create-wizard__step--active" : ""
+                    }`}
+                  >
+                    {index + 1}. {stepLabel(step)}
+                  </button>
+                </li>
+              ))}
+            </ol>
+          ) : null}
+          {panel && onClose ? (
+            <button type="button" onClick={onClose} className="casting-create-wizard__close">
+              Close
+              <X className="size-4" aria-hidden />
+            </button>
+          ) : (
+            <Link href={closeHref} className="casting-create-wizard__close">
+              Close
+              <X className="size-4" aria-hidden />
+            </Link>
+          )}
         </div>
 
         <SetupFlowFormPanel

@@ -3,11 +3,10 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 
 import {
+  getActiveShell,
   getOnboardingPath,
   getProfileDestination,
-  isHiringAccount,
   isOnboardingComplete,
-  isTalentAccount,
   toDashboardProfile,
 } from "@/lib/auth/profile";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -28,7 +27,7 @@ export const getCurrentUserProfile = cache(async (): Promise<DashboardProfile | 
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "user_id, email, first_name, last_name, display_name, account_type, username, talent_types, headshot_urls, onboarding_completed_at",
+      "user_id, email, first_name, last_name, display_name, account_type, username, talent_types, headshot_urls, onboarding_completed_at, enabled_shells, active_shell",
     )
     .eq("user_id", user.id)
     .maybeSingle<ProfileRecord>();
@@ -70,13 +69,13 @@ export async function requireCompleteProfile() {
 
 export async function requireTalentAccount() {
   const profile = await requireCompleteProfile();
-  if (!isTalentAccount(profile.accountType)) redirect(getProfileDestination(profile));
+  if (getActiveShell(profile) !== "talent") redirect(getProfileDestination(profile));
   return profile;
 }
 
 export async function requireHiringAccount() {
   const profile = await requireCompleteProfile();
-  if (!isHiringAccount(profile.accountType)) redirect(getProfileDestination(profile));
+  if (getActiveShell(profile) !== "lookingForTalent") redirect(getProfileDestination(profile));
   return profile;
 }
 

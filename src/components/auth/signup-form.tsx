@@ -1,4 +1,5 @@
 "use client";
+import { ButtonProgress } from "./ButtonProgress";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
@@ -206,7 +207,7 @@ export function SignupForm() {
         {error ? <div className="signup-split-error" role="alert">{error}</div> : null}
 
         <button type="submit" className="signup-split-submit" disabled={loading || (passwordStep ? !canSubmit : !isValidEmail(email.trim()))}>
-          {loading ? "Creating account…" : passwordStep ? "Sign Up" : "Continue with Email"}
+          <ButtonProgress loading={loading}>{passwordStep ? "Sign Up" : "Continue with Email"}</ButtonProgress>
         </button>
       </form>
 

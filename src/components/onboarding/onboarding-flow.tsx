@@ -21,10 +21,15 @@ import { SignupSplitShell } from "@/components/auth/SignupSplitShell";
 import { HeadshotUploadGrid } from "@/components/onboarding/HeadshotUploadGrid";
 import { HeightPicker } from "@/components/onboarding/HeightPicker";
 import { RepresentationEditor } from "@/components/onboarding/RepresentationEditor";
-import { ResumeUploadField } from "@/components/onboarding/ResumeUploadField";
+import { ProfileSetupBenefits } from "./ProfileSetupBenefits";
+import { BirthDateInput } from "./BirthDateInput";
+import { initialProfileNames, normalizeProfileNames, updateProfileNames } from "@/lib/onboarding/names";
+import { birthDateError } from "@/lib/onboarding/birth-date";
+import { ButtonProgress } from "@/components/auth/ButtonProgress";
 import { SizingEditor } from "@/components/onboarding/SizingEditor";
 import { WorkingLocationsEditor } from "@/components/onboarding/WorkingLocationsEditor";
 import type { TalentAgency } from "@/lib/agencies/fetch-talent-agencies";
+import { BUYER_HOME_PATH } from "@/lib/talent-buyers/dashboard-data";
 import {
   clearOnboardingDraft,
   loadOnboardingDraft,
@@ -51,7 +56,6 @@ import { setupChoiceCard, setupPill } from "@/lib/setup-flow/form-styles";
 import {
   accountCreatedCopy,
   acquisitionSourceOptions,
-  talentSetupValueItems,
   type AcquisitionSource,
 } from "@/lib/talent/copy";
 import { styleOptions } from "@/lib/mock-data";
@@ -89,14 +93,6 @@ const skillOptions = [
   "Freestyle",
 ];
 
-function splitName(fullName: string) {
-  const parts = fullName.trim().split(/\s+/).filter(Boolean);
-  return {
-    firstName: parts[0] ?? "",
-    lastName: parts.slice(1).join(" "),
-  };
-}
-
 /**
  * Soft signup stubs default `account_type` to talent before the user answers
  * “What brings you to Motiion?” Only treat the lane as confirmed when the
@@ -120,7 +116,7 @@ function getConfirmedRole(profile: DashboardProfile): OnboardingRole | null {
 }
 
 function createInitialDraft(profile: DashboardProfile): OnboardingDraft {
-  const { firstName, lastName } = splitName(profile.fullName);
+  const { firstName, lastName, displayName } = initialProfileNames(profile.fullName);
   const confirmedRole = getConfirmedRole(profile);
   // Industry continues in talent-buyers flow; force role pick here.
   const role = confirmedRole === "industry" ? null : confirmedRole;
@@ -139,7 +135,7 @@ function createInitialDraft(profile: DashboardProfile): OnboardingDraft {
     accountType:
       role === "community" ? "community" : role === "talent" ? "talent" : null,
     talentTypes,
-    displayName: profile.fullName === "Motiion User" ? "" : profile.fullName,
+    displayName,
     username: "",
     headshotUrls: [],
     headshotOriginalUrls: [],
@@ -301,41 +297,31 @@ function TogglePills({
   );
 }
 
-function getAge(dateOfBirth: string) {
-  const birthDate = new Date(dateOfBirth);
-
-  if (Number.isNaN(birthDate.getTime())) {
-    return 0;
-  }
-
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age -= 1;
-  }
-
-  return age;
-}
-
 export function OnboardingFlow({
   profile,
   agencies,
+  addingTalentShell = false,
 }: {
   profile: DashboardProfile;
   agencies: TalentAgency[];
+  addingTalentShell?: boolean;
 }) {
   const router = useRouter();
   const [draft, setDraft] = useState(() => {
-    const loaded = loadOnboardingDraft(profile.id);
+    const loaded = addingTalentShell ? null : loadOnboardingDraft(profile.id);
     let base = loaded ?? createInitialDraft(profile);
-    // Industry always routes out; never resume mid-draft as industry here.
-    if (base.role === "industry") {
+    base = { ...base, ...normalizeProfileNames(base) };
+    if (addingTalentShell) {
+      base = {
+        ...base,
+        role: "talent",
+        accountType: "talent",
+        talentTypes: [],
+        currentStep: "role",
+      };
+    } else if (base.role === "industry") {
       base = { ...base, role: null, accountType: null, talentTypes: [], currentStep: "role" };
-    }
-    // Stale drafts from when signup pre-selected talent without subtypes.
-    if (base.role === "talent" && base.talentTypes.length < 1) {
+    } else if (base.role === "talent" && base.talentTypes.length < 1) {
       base = { ...base, role: null, accountType: null, currentStep: "role" };
     }
     const steps = getOnboardingSteps(base.role);
@@ -343,7 +329,28 @@ export function OnboardingFlow({
     return { ...base, currentStep };
   });
   const [error, setError] = useState<string | null>(null);
-  const [usernameMessage, setUsernameMessage] = useState<string | null>(null);
+  const [headshotError, setHeadshotError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [finishingChoice, setFinishingChoice] = useState<boolean | null>(null);
+  const [attempted, setAttempted] = useState(false);
+  const [usernameResult, setUsernameResult] = useState<{ username: string; available: boolean; message: string } | null>(null);
+  const usernameValid = /^[a-z0-9_]{3,30}$/.test(draft.username);
+  const usernameCurrent = usernameResult?.username === draft.username ? usernameResult : null;
+  const usernameMessage = !usernameValid ? "Use 3–30 lowercase letters, numbers, or underscores." : usernameCurrent?.message ?? "Checking username…";
+  const dateError = attempted || /^\d{4}-\d{2}-\d{2}$/.test(draft.dateOfBirth) ? birthDateError(draft.dateOfBirth) : null;
+  useEffect(() => {
+    if (draft.currentStep !== "profile" || !usernameValid) return;
+    let active = true;
+    const timer = window.setTimeout(async () => {
+      try {
+        const result = await checkUsernameAvailability(draft.username);
+        if (active) setUsernameResult({ username: draft.username, available: result.available, message: result.message ?? "Unable to check username. Please try again." });
+      } catch {
+        if (active) setUsernameResult({ username: draft.username, available: false, message: "Unable to check username. Edit it to retry." });
+      }
+    }, 450);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [draft.username, draft.currentStep, usernameValid]);
   const [isPending, startTransition] = useTransition();
   const [stepDirection, setStepDirection] = useState<"forward" | "back">("forward");
 
@@ -377,7 +384,8 @@ export function OnboardingFlow({
   );
 
   function updateDraft(patch: Partial<OnboardingDraft>) {
-    setDraft((current) => ({ ...current, ...patch }));
+    if (patch.username !== undefined) setUsernameResult(null);
+    setDraft((current) => ({ ...current, ...patch, ...updateProfileNames(current, patch) }));
     setError(null);
   }
 
@@ -437,14 +445,14 @@ export function OnboardingFlow({
         if (!draft.email.includes("@")) {
           return "Enter a valid email address.";
         }
-        if (!draft.dateOfBirth || getAge(draft.dateOfBirth) < 18) {
+        if (birthDateError(draft.dateOfBirth)) {
           return "You must be at least 18 to join Motiion.";
         }
         return null;
 
       case "profile":
         if (isTalent(draft.role) && draft.headshotUrls.length < 1) {
-          return "Add at least one headshot URL.";
+          return "Add at least one headshot.";
         }
         if (!draft.displayName.trim() || !/^[a-z0-9_]{3,30}$/.test(draft.username)) {
           return "Add a display name and a valid username.";
@@ -471,18 +479,21 @@ export function OnboardingFlow({
       return;
     }
 
+    setAttempted(true);
     const stepError = validateStep(draft.currentStep);
 
     if (stepError) {
-      setError(stepError);
+      if (!["account", "profile"].includes(draft.currentStep)) setError(stepError);
       return;
     }
 
+    setAttempted(false);
     setStepDirection("forward");
     updateDraft({ currentStep: getNextStep(draft.currentStep, draft.role) });
   }
 
   function goBack() {
+    setAttempted(false);
     setStepDirection("back");
     updateDraft({ currentStep: getPreviousStep(draft.currentStep, draft.role) });
   }
@@ -492,13 +503,17 @@ export function OnboardingFlow({
   }
 
   function finishAccount(openProfileSetupAfterComplete: boolean) {
+    setFinishingChoice(openProfileSetupAfterComplete);
     const payload = buildCompletePayload(openProfileSetupAfterComplete);
 
     startTransition(async () => {
       const result = await completeOnboarding(payload);
 
       if (!result.ok) {
-        setError(result.error);
+        if (result.error.toLowerCase().includes("username")) {
+          setDraft(current => ({ ...current, currentStep: "profile" }));
+          setUsernameResult({ username: draft.username, available: false, message: result.error });
+        } else setError(result.error);
         return;
       }
 
@@ -511,48 +526,28 @@ export function OnboardingFlow({
     });
   }
 
-  function checkUsername() {
-    setUsernameMessage("Checking username...");
-    startTransition(async () => {
-      const result = await checkUsernameAvailability(draft.username);
-      setUsernameMessage(result.message ?? (result.available ? "Available." : "Unavailable."));
-    });
-  }
 
   function renderRoleSection() {
-    const roleCards = [
+    const roleCards = (
       [
-        "talent",
-        "Talent",
-        "Build your career and find opportunities.",
-      ],
-      [
-        "industry",
-        "Industry Professional",
-        "Cast, hire, and work with dance talent.",
-      ],
-      [
-        "community",
-        "Community Member",
-        "Discover dancers, events, and stay connected.",
-      ],
-    ] as const;
+        ["talent", "Talent", "Build your career and find opportunities."],
+        ["industry", "Industry Professional", "Cast, hire, and work with dance talent."],
+        ["community", "Community Member", "Discover dancers, events, and stay connected."],
+      ] as const
+    ).filter(([role]) => !addingTalentShell || role === "talent");
 
     return (
-      <div className="space-y-6">
-        <div className="signup-split-choice-grid">
-          {roleCards.map(([role, title, description]) => {
-            const selected = draft.role === role;
-
-            return (
+      <div className="signup-split-choice-grid">
+        {roleCards.map(([role, title, description]) => {
+          const selected = draft.role === role;
+          return (
+            <div key={role}>
               <button
-                key={role}
                 type="button"
-                onClick={() => {
-                  setRole(role);
-                }}
-                className={setupChoiceCard(selected)}
+                onClick={() => setRole(role)}
+                className={`${setupChoiceCard(selected)} w-full`}
                 aria-pressed={selected}
+                aria-controls={role === "talent" && selected ? "onboarding-talent-types" : undefined}
               >
                 <span className="signup-split-choice__copy">
                   <span className="signup-split-choice__title">{title}</span>
@@ -562,31 +557,31 @@ export function OnboardingFlow({
                   {selected ? <Check className="size-4" strokeWidth={2.5} /> : null}
                 </span>
               </button>
-            );
-          })}
-        </div>
-
-        {draft.role === "talent" ? (
-          <div className="space-y-3">
-            <p className="text-sm text-[var(--ink-soft)]">Select all that apply.</p>
-            <div className="flex flex-wrap gap-2.5">
-              {talentSubtypeOptions.map((option) => {
-                const selected = draft.talentTypes.includes(option.value);
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => toggleTalentSubtype(option.value)}
-                    className={setupPill(selected)}
-                    aria-pressed={selected}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
+              {role === "talent" && selected ? (
+                <fieldset id="onboarding-talent-types" className="onboarding-talent-types">
+                  <legend>What kind of talent are you?</legend>
+                  <p id="onboarding-talent-types-help">Select all that apply. Choose at least one to continue.</p>
+                  <div className="flex flex-wrap gap-2.5" aria-describedby="onboarding-talent-types-help">
+                    {talentSubtypeOptions.map((option) => {
+                      const checked = draft.talentTypes.includes(option.value);
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => toggleTalentSubtype(option.value)}
+                          className={setupPill(checked)}
+                          aria-pressed={checked}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              ) : null}
             </div>
-          </div>
-        ) : null}
+          );
+        })}
       </div>
     );
   }
@@ -596,17 +591,22 @@ export function OnboardingFlow({
       <div className="grid gap-5">
         <div className="grid gap-4 md:grid-cols-2">
           <Field label="First name">
-            <AuthInput value={draft.firstName} onChange={(event) => updateDraft({ firstName: event.target.value })} />
+            <AuthInput placeholder="First name" autoComplete="given-name" value={draft.firstName} onChange={(event) => updateDraft({ firstName: event.target.value })} />
+            {attempted && !draft.firstName.trim() ? <span className="setup-field-error">First name is required.</span> : null}
           </Field>
           <Field label="Last name">
-            <AuthInput value={draft.lastName} onChange={(event) => updateDraft({ lastName: event.target.value })} />
+            <AuthInput placeholder="Last name" autoComplete="family-name" value={draft.lastName} onChange={(event) => updateDraft({ lastName: event.target.value })} />
+            {attempted && !draft.lastName.trim() ? <span className="setup-field-error">Last name is required.</span> : null}
           </Field>
         </div>
         <Field label="Email">
           <AuthInput type="email" value={draft.email} onChange={(event) => updateDraft({ email: event.target.value })} />
+          {attempted && !draft.email.includes("@") ? <span className="setup-field-error">Enter a valid email address.</span> : null}
         </Field>
         <Field label="Date of birth">
-          <AuthInput type="date" value={draft.dateOfBirth} onChange={(event) => updateDraft({ dateOfBirth: event.target.value })} />
+          <BirthDateInput value={draft.dateOfBirth} onChange={(dateOfBirth) => updateDraft({ dateOfBirth })} invalid={Boolean(dateError)} />
+          <span id="birth-date-help" className={dateError ? "setup-field-error" : "setup-field-help"}>{dateError ?? "You must be 18 or older to join Motiion."}</span>
+          <span id="birth-date-format" className="sr-only">Enter month, day, and four-digit year.</span>
         </Field>
       </div>
     );
@@ -619,25 +619,18 @@ export function OnboardingFlow({
           <HeadshotUploadGrid
             headshotUrls={draft.headshotUrls}
             headshotOriginalUrls={draft.headshotOriginalUrls}
-            onUploaded={(urls) => updateDraft(urls)}
-            onError={setError}
+            onUploaded={(urls) => { updateDraft(urls); setHeadshotError(null); }}
+            onError={setHeadshotError}
+            onBusyChange={setUploading}
           />
+          {headshotError || (attempted && isTalent(draft.role) && !draft.headshotUrls.length) ? <p role="alert" className="setup-field-error">{headshotError ?? "Add at least one headshot."}</p> : null}
         </SectionBlock>
 
-        {isTalent(draft.role) ? (
-          <SectionBlock title="Resume">
-            <ResumeUploadField
-              resumeUrl={draft.resumeUrl}
-              onProcessed={(patch) => updateDraft(patch)}
-              onError={setError}
-            />
-          </SectionBlock>
-        ) : null}
-
         <SectionBlock title="Public profile">
-          <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+          <div className="grid items-start gap-4 md:grid-cols-2">
             <Field label="Display name">
               <AuthInput value={draft.displayName} onChange={(event) => updateDraft({ displayName: event.target.value })} />
+            {attempted && !draft.displayName.trim() ? <span className="setup-field-error">Display name is required.</span> : null}
             </Field>
             <Field label="Username">
               <AuthInput
@@ -645,12 +638,12 @@ export function OnboardingFlow({
                 onChange={(event) =>
                   updateDraft({ username: event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "") })
                 }
+                aria-describedby="username-help"
+                aria-invalid={Boolean(usernameCurrent && !usernameCurrent.available)}
               />
+              <span id="username-help" role="status" className={usernameCurrent?.available ? "setup-field-success" : usernameCurrent || (!usernameValid && (draft.username || attempted)) ? "setup-field-error" : "setup-field-help"}>{usernameMessage}</span>
             </Field>
-            <AuthButton type="button" variant="secondary" onClick={checkUsername} disabled={isPending || !draft.username}>
-              Check
-            </AuthButton>
-            {usernameMessage ? <p className="text-sm text-[var(--ink-soft)] md:col-span-3">{usernameMessage}</p> : null}
+
           </div>
         </SectionBlock>
       </div>
@@ -811,7 +804,7 @@ export function OnboardingFlow({
                 }
               >
                 <span className="font-medium">{option.label}</span>
-                {selected ? <Check className="size-4 text-[var(--accent)]" /> : null}
+                {selected ? <Check className="size-4 text-white" /> : null}
               </button>
             );
           })}
@@ -834,17 +827,17 @@ export function OnboardingFlow({
   function renderAccountCreatedSection() {
     return (
       <div className="space-y-6">
-        <ul className="divide-y divide-[var(--line)] overflow-hidden rounded-[var(--ds-radius-card)] border border-[var(--line)]">
-          {talentSetupValueItems.map((item) => (
-            <li key={item} className="px-4 py-3.5 text-sm text-[var(--ink)]">
-              {item}
-            </li>
-          ))}
-        </ul>
+        <div className="onboarding-success-avatar relative mx-auto h-24 w-24">
+          {/* Uploaded profile image; a decorative badge confirms the account state. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {draft.headshotUrls[0] ? <img src={draft.headshotUrls[0]} alt="Your profile photo" className="h-24 w-24 rounded-full object-cover"/> : <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white/10 text-3xl">{draft.displayName.charAt(0)}</div>}
+          <span className="absolute bottom-0 right-0 flex size-8 items-center justify-center rounded-full border-4 border-black bg-[#ffffff] text-[#111111]"><Check size={18}/></span>
+        </div>
+        <p className="onboarding-success-name">{draft.displayName}</p>
+        <ProfileSetupBenefits />
         {isTalent(draft.role) ? (
           <p className="text-sm text-[var(--ink-soft)]">
-            You can finish setting up your profile anytime from Home. Progress you&apos;ve already
-            saved will be kept.
+            Your progress is saved. You can finish your profile anytime from Home.
           </p>
         ) : null}
       </div>
@@ -889,32 +882,45 @@ export function OnboardingFlow({
     microStep: draft.currentStep,
   });
   const currentCopy = talentStepCopy[draft.currentStep];
+  const stepTitle =
+    addingTalentShell && draft.currentStep === "role" ? "Add a talent profile" : currentCopy.title;
+  const stepSubtitle =
+    addingTalentShell && draft.currentStep === "role"
+      ? "Choose the talent types you want people to hire you for."
+      : currentCopy.subtitle;
 
   return (
     <SignupSplitShell
       {...shellProps}
+      showWordmark
+      fullBleed
       progressLabel={flowProgress.sectionTitle}
       progressCurrent={flowProgress.currentStep}
-      progressTotal={flowProgress.totalSteps}
-      coverAction={
-        <SetupFlowCancelButton
-          userId={profile.id}
-          disabled={isPending}
-          onCanceled={() => clearOnboardingDraft(profile.id)}
-          onError={setError}
-        />
-      }
+      progressTotal={draft.currentStep === "role" ? getOnboardingSteps("talent").length : flowProgress.totalSteps}
     >
       <SetupFlowFormPanel
-        title={currentCopy.title}
-        subtitle={currentCopy.subtitle}
+        footerProgress
+        progressCurrent={isAccountCreatedStep ? undefined : flowProgress.currentStep}
+        progressTotal={draft.currentStep === "role" ? getOnboardingSteps("talent").length : flowProgress.totalSteps}
+        progressLabel={flowProgress.sectionTitle}
+        title={stepTitle}
+        subtitle={stepSubtitle}
         error={error}
         stepKey={draft.currentStep}
         stepDirection={stepDirection}
         footer={
           <>
             <div className="signup-split-form__footer-start">
-              {!isFirstStep ? (
+              {isFirstStep && !isAccountCreatedStep ? (
+                <SetupFlowCancelButton
+                  userId={profile.id}
+                  disabled={isPending}
+                  exitHref={addingTalentShell ? BUYER_HOME_PATH : undefined}
+                  onCanceled={() => clearOnboardingDraft(profile.id)}
+                  onError={setError}
+                />
+              ) : null}
+              {!isFirstStep && !isAccountCreatedStep ? (
                 <button
                   type="button"
                   className="signup-split-nav-btn signup-split-nav-btn--ghost"
@@ -928,10 +934,9 @@ export function OnboardingFlow({
               ) : null}
             </div>
 
-            <span className="signup-split-form__footer-center" aria-hidden />
 
             {isAccountCreatedStep ? (
-              <div className="signup-split-form__footer-end flex flex-wrap items-center justify-end gap-2">
+              <div className="signup-split-form__footer-end onboarding-completion-actions">
                 {isTalent(draft.role) ? (
                   <button
                     type="button"
@@ -939,7 +944,7 @@ export function OnboardingFlow({
                     onClick={() => finishAccount(false)}
                     disabled={isPending}
                   >
-                    {accountCreatedCopy.secondary}
+                    <ButtonProgress loading={isPending && finishingChoice === false}>{accountCreatedCopy.secondary}</ButtonProgress>
                   </button>
                 ) : null}
                 <button
@@ -948,11 +953,7 @@ export function OnboardingFlow({
                   onClick={() => finishAccount(isTalent(draft.role))}
                   disabled={isPending}
                 >
-                  {isPending
-                    ? "Finishing…"
-                    : isTalent(draft.role)
-                      ? accountCreatedCopy.primary
-                      : "Enter Motiion"}
+                  <ButtonProgress loading={isPending && finishingChoice === isTalent(draft.role)}>{isTalent(draft.role) ? accountCreatedCopy.primary : "Enter Motiion"}</ButtonProgress>
                 </button>
               </div>
             ) : (
@@ -961,10 +962,9 @@ export function OnboardingFlow({
                   type="button"
                   className="signup-split-continue"
                   onClick={goNext}
-                  disabled={isPending || !canContinue}
+                  disabled={isPending || uploading || !canContinue || (draft.currentStep === "account" && Boolean(dateError)) || (draft.currentStep === "profile" && !usernameCurrent?.available)}
                 >
-                  Continue
-                  <ChevronRight className="size-4" strokeWidth={2.25} />
+                  <ButtonProgress loading={isPending}>Continue <ChevronRight className="size-4" strokeWidth={2.25} /></ButtonProgress>
                 </button>
               </div>
             )}
@@ -972,9 +972,7 @@ export function OnboardingFlow({
         }
       >
         {renderStep()}
-        {usernameMessage ? (
-          <p className="text-sm text-[var(--ink-soft)]">{usernameMessage}</p>
-        ) : null}
+
       </SetupFlowFormPanel>
     </SignupSplitShell>
   );

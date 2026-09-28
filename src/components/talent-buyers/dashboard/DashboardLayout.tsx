@@ -1,6 +1,7 @@
 import { AppAnalytics } from "@/components/analytics/AppAnalytics";
 import { getUserEntitlement } from "@/lib/billing/entitlement";
 import { hasIndustryProAccess } from "@/lib/billing/gate";
+import { getAppEnvironment } from "@/lib/environment";
 
 import { BuyerProviders } from "./BuyerProviders";
 import { BuyerDashboardShell } from "./BuyerDashboardShell";
@@ -26,7 +27,11 @@ export async function DashboardLayout({
     <div className="theme-dark min-h-screen bg-black">
       <AppAnalytics />
       <BuyerProviders hasIndustryPro={hasIndustryPro}>
-        <BuyerDashboardShell profile={profile} entitlement={entitlement}>
+        <BuyerDashboardShell
+          profile={profile}
+          entitlement={entitlement}
+          testEnvironment={getAppEnvironment() !== "production"}
+        >
           {children}
         </BuyerDashboardShell>
       </BuyerProviders>

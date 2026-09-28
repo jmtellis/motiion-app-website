@@ -13,6 +13,14 @@ export type TalentSetupSnapshot = {
   highlightsCount: number;
   socialCount: number;
   username: string | null;
+  socials: {
+    instagram: string;
+    x: string;
+    tiktok: string;
+    whatsapp: string;
+    youtube: string;
+  };
+  training: unknown[];
 };
 
 type ProfileRow = {
@@ -35,9 +43,12 @@ type ProfileRow = {
   representation: string | null;
   agent: string | null;
   union_status: string | null;
+  union_member_id: string | null;
+  additional_representations: string[] | null;
   styles: string[] | null;
   skills: string[] | null;
   experiences: unknown[] | null;
+  training: unknown;
   profile_highlights: unknown[] | null;
   profile_setup_completed_at: string | null;
   deferred_setup_skipped: DeferredSetupSkipped | null;
@@ -68,7 +79,7 @@ export const fetchTalentSetupSnapshot = cache(
     const { data } = await supabase
       .from("profiles")
       .select(
-        "user_id, first_name, last_name, display_name, username, talent_types, headshot_urls, headshot_original_urls, resume_url, gender, ethnicity, height, hair_color, eye_color, sizing, working_locations, representation, agent, union_status, styles, skills, experiences, profile_highlights, profile_setup_completed_at, deferred_setup_skipped, profile_review_status, instagram_url, x_url, tiktok_url, whatsapp_url, youtube_url",
+        "user_id, first_name, last_name, display_name, username, talent_types, headshot_urls, headshot_original_urls, resume_url, gender, ethnicity, height, hair_color, eye_color, sizing, working_locations, representation, agent, union_status, union_member_id, additional_representations, styles, skills, experiences, training, profile_highlights, profile_setup_completed_at, deferred_setup_skipped, profile_review_status, instagram_url, x_url, tiktok_url, whatsapp_url, youtube_url",
       )
       .eq("user_id", userId)
       .maybeSingle<ProfileRow>();
@@ -105,6 +116,8 @@ export const fetchTalentSetupSnapshot = cache(
         representation: data.representation,
         agent: data.agent,
         unionStatus: data.union_status,
+        unionMemberId: data.union_member_id,
+        additionalRepresentations: data.additional_representations,
         styles: data.styles,
         skills: data.skills,
         experiences: Array.isArray(data.experiences) ? data.experiences : [],
@@ -115,6 +128,14 @@ export const fetchTalentSetupSnapshot = cache(
       highlightsCount: Array.isArray(data.profile_highlights) ? data.profile_highlights.length : 0,
       socialCount: countSocials(data),
       username: data.username,
+      socials: {
+        instagram: data.instagram_url?.trim() ?? "",
+        x: data.x_url?.trim() ?? "",
+        tiktok: data.tiktok_url?.trim() ?? "",
+        whatsapp: data.whatsapp_url?.trim() ?? "",
+        youtube: data.youtube_url?.trim() ?? "",
+      },
+      training: Array.isArray(data.training) ? data.training : [],
     };
   },
 );

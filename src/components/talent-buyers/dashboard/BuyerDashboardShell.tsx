@@ -16,7 +16,6 @@ import {
 
 import { BuyerChromeBar } from "./BuyerChromeBar";
 import { BuyerChromeTitle } from "./BuyerChromeTitle";
-import { BuyerProfileModal } from "./BuyerProfileModal";
 import { DashboardScrollLock } from "./DashboardScrollLock";
 import { SidebarNav } from "./SidebarNav";
 
@@ -28,6 +27,7 @@ import "@/components/workspace/workspace.css";
 import "./industry-light.css";
 import "./industry-experience.css";
 import "./industry-studio.css";
+import "@/components/workspace/workspace-controls.css";
 
 /** Match Find Talent hubs: no top chrome unless the page needs nested crumbs or end actions. */
 function buyerShellNeedsChrome(
@@ -43,10 +43,12 @@ function buyerShellNeedsChrome(
 export function BuyerDashboardShell({
   profile,
   entitlement,
+  testEnvironment = false,
   children,
 }: {
   profile: DashboardProfile;
   entitlement: UserEntitlement;
+  testEnvironment?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -55,7 +57,6 @@ export function BuyerDashboardShell({
   const sidebar = useWorkspaceSidebar("motiion-industry-sidebar-width");
   const sidebarExpanded = !sidebar.collapsed;
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
   const needsShellChrome = useMemo(
     () => buyerShellNeedsChrome(pathname, chrome),
     [pathname, chrome],
@@ -68,7 +69,6 @@ export function BuyerDashboardShell({
   if (previousPathname !== pathname) {
     setPreviousPathname(pathname);
     setMobileOpen(false);
-    setProfileOpen(false);
   }
 
   useEffect(() => {
@@ -112,11 +112,11 @@ export function BuyerDashboardShell({
         <SidebarNav
           profile={profile}
           entitlement={entitlement}
+          testEnvironment={testEnvironment}
           collapsed={sidebarCollapsed}
           mobileOpen={mobileOpen}
           onMobileClose={() => setMobileOpen(false)}
           onToggleSidebar={toggleSidebar}
-          onOpenProfile={() => setProfileOpen(true)}
           sidebarExpanded={sidebarExpanded}
         />
 
@@ -180,12 +180,6 @@ export function BuyerDashboardShell({
           </main>
         </div>
       </div>
-
-      <BuyerProfileModal
-        open={profileOpen}
-        onClose={() => setProfileOpen(false)}
-        profile={profile}
-      />
     </>
   );
 }

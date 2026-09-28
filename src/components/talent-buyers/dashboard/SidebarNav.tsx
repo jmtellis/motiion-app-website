@@ -11,20 +11,18 @@ import {
   CalendarCheck,
   ChevronsUpDown,
   Folder,
-  Mail,
-  PanelLeftClose,
-  PanelLeftOpen,
+  Inbox,
   Search,
-  Settings,
   BadgeCheck,
-  X,
 } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 
-import { MotiionWordmark } from "@/components/brand/MotiionWordmark";
-import { getProfileInitials } from "@/lib/auth/avatar";
+import { WorkspaceAccountMenu } from "@/components/workspace/WorkspaceAccountMenu";
+import { WorkspaceFooterNotices } from "@/components/workspace/WorkspaceFooterNotices";
+import { WorkspaceSidebarHeader } from "@/components/workspace/WorkspaceSidebarHeader";
+import { getAccountSettingsHref, getProfileInitials } from "@/lib/auth/avatar";
+import { getShellMenuAction } from "@/lib/auth/profile";
 import {
-  openBillingPortal,
   startIndustryCheckout,
 } from "@/lib/billing/actions";
 import type { UserEntitlement } from "@/lib/billing/entitlement";
@@ -33,7 +31,6 @@ import {
   buyerInboxNavItem,
   buyerMenuNavItems,
   buyerNotificationsNavItem,
-  buyerSettingsNavItem,
 } from "@/lib/talent-buyers/dashboard-data";
 import { useBuyerInboxUnread } from "@/hooks/use-buyer-inbox-unread";
 import { openBuyerCommandPalette } from "@/lib/talent-buyers/command-palette";
@@ -46,11 +43,10 @@ const navIcons = {
   projects: Folder,
   bookings: CalendarCheck,
   talent: Search,
-  messages: Mail,
+  messages: Inbox,
   calendar: CalendarDays,
   events: CalendarDays,
   library: BookOpen,
-  settings: Settings,
   notifications: Bell,
 } as const;
 
@@ -210,16 +206,15 @@ function SidebarNotificationsLink({
 function SidebarPlanCta({
   entitlement,
   collapsed,
+  testEnvironment,
 }: {
   entitlement: UserEntitlement;
   collapsed: boolean;
+  testEnvironment: boolean;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const isPro = entitlement.active && entitlement.tier === "pro";
-  const isTrial = entitlement.status === "trialing";
-
-  if (isPro && !isTrial) return null;
 
   function go(action: () => Promise<{ url: string | null; error?: string }>) {
     setError(null);
@@ -234,16 +229,15 @@ function SidebarPlanCta({
   }
 
   if (collapsed) {
+    if (isPro) return null;
     return (
       <div className="buyer-sidebar__cta buyer-sidebar__cta--collapsed">
         <button
           type="button"
           className="buyer-sidebar__cta-icon"
           disabled={isPending}
-          aria-label={isTrial ? "Manage billing" : "Upgrade to Industry Pro"}
-          onClick={() =>
-            go(isTrial ? openBillingPortal : startIndustryCheckout)
-          }
+          aria-label="Upgrade to Pro"
+          onClick={() => go(startIndustryCheckout)}
         >
           <BadgeCheck className="size-4" aria-hidden />
         </button>
@@ -252,29 +246,26 @@ function SidebarPlanCta({
     );
   }
 
+  if (isPro && !testEnvironment) return null;
+
   return (
-    <div className="buyer-sidebar__cta">
-      <div className="buyer-sidebar__cta-copy-block">
-        <p className="buyer-sidebar__cta-title">
-          {isTrial ? "Current plan: Pro trial" : "Upgrade to Industry Pro"}
-        </p>
-        <p className="buyer-sidebar__cta-copy">
-          {isTrial
-            ? "Manage billing anytime from Settings."
-            : "Get full access to casting, talent search, and outreach."}
-        </p>
-      </div>
-      <button
-        type="button"
-        className="buyer-sidebar__cta-btn"
-        disabled={isPending}
-        onClick={() => go(isTrial ? openBillingPortal : startIndustryCheckout)}
-      >
-        <BadgeCheck className="size-3.5" aria-hidden />
-        {isPending ? "Working…" : isTrial ? "Manage billing" : "Upgrade to Pro"}
-      </button>
-      {error ? <p className="text-xs text-amber-300">{error}</p> : null}
-    </div>
+    <>
+      <WorkspaceFooterNotices
+        testEnvironment={testEnvironment}
+        upgrade={
+          isPro
+            ? null
+            : {
+                title: "Upgrade to Pro",
+                detail: "Get full access to casting, talent search, and outreach.",
+                actionLabel: "Upgrade",
+                pending: isPending,
+                onAction: () => go(startIndustryCheckout),
+              }
+        }
+      />
+      {error ? <p className="px-3 text-xs text-amber-700">{error}</p> : null}
+    </>
   );
 }
 
@@ -283,11 +274,11 @@ function SidebarContent({
   entitlement,
   pathname,
   collapsed,
+  testEnvironment,
   contentFadeIn = false,
   onContentFadeInEnd,
   onNavigate,
   onToggleSidebar,
-  onOpenProfile,
   sidebarExpanded,
   mobileOpen,
 }: {
@@ -295,11 +286,11 @@ function SidebarContent({
   entitlement: UserEntitlement;
   pathname: string;
   collapsed: boolean;
+  testEnvironment: boolean;
   contentFadeIn?: boolean;
   onContentFadeInEnd?: () => void;
   onNavigate?: () => void;
   onToggleSidebar?: () => void;
-  onOpenProfile?: () => void;
   sidebarExpanded?: boolean;
   mobileOpen?: boolean;
 }) {
@@ -326,42 +317,7 @@ function SidebarContent({
         if (event.target !== event.currentTarget) onContentFadeInEnd?.();
       }}
     >
-      <div
-        className={`buyer-sidebar__header ${collapsed ? "buyer-sidebar__header--collapsed" : ""}`}
-      >
-        {collapsed ? null : (
-          <Link
-            href={BUYER_HOME_PATH}
-            className="buyer-sidebar__brand"
-            aria-label="Motiion home"
-          >
-            <MotiionWordmark height={10} />
-          </Link>
-        )}
-        {onToggleSidebar ? (
-          <button
-            type="button"
-            onClick={onToggleSidebar}
-            className="buyer-sidebar__collapse"
-            aria-label={
-              isMobileDrawer
-                ? "Close navigation menu"
-                : showExpanded
-                  ? "Collapse sidebar"
-                  : "Expand sidebar"
-            }
-            aria-expanded={showExpanded}
-          >
-            {isMobileDrawer ? (
-              <X className="size-4" aria-hidden />
-            ) : showExpanded ? (
-              <PanelLeftClose className="size-4" aria-hidden />
-            ) : (
-              <PanelLeftOpen className="size-4" aria-hidden />
-            )}
-          </button>
-        ) : null}
-      </div>
+      <WorkspaceSidebarHeader href={BUYER_HOME_PATH} collapsed={collapsed} expanded={Boolean(showExpanded)} mobile={isMobileDrawer} onToggle={onToggleSidebar} />
 
       <button
         type="button"
@@ -411,25 +367,22 @@ function SidebarContent({
             collapsed={collapsed}
             onNavigate={onNavigate}
           />
-          <NavLink
-            href={buyerSettingsNavItem.href}
-            label={buyerSettingsNavItem.label}
-            icon={navIcons.settings}
-            active={isNavActive(pathname, buyerSettingsNavItem.href)}
-            collapsed={collapsed}
-            onNavigate={onNavigate}
-          />
         </NavSection>
       </div>
 
       <div className="buyer-sidebar__footer">
-        <SidebarPlanCta entitlement={entitlement} collapsed={collapsed} />
+        <SidebarPlanCta
+          entitlement={entitlement}
+          collapsed={collapsed}
+          testEnvironment={testEnvironment}
+        />
 
-        <button
-          type="button"
-          className={`buyer-sidebar__profile ${collapsed ? "buyer-sidebar__profile--collapsed" : ""}`}
-          onClick={onOpenProfile}
-          aria-label="Your profile"
+        <WorkspaceAccountMenu
+          className="workspace-account-menu"
+          buttonClassName={`buyer-sidebar__profile ${collapsed ? "buyer-sidebar__profile--collapsed" : ""}`}
+          label={`Account menu for ${profile.fullName || "your profile"}`}
+          settingsHref={getAccountSettingsHref(profile)}
+          shellAction={getShellMenuAction(profile)}
         >
           <span className="buyer-sidebar__avatar">
             {profile.avatarUrl ? (
@@ -463,7 +416,7 @@ function SidebarContent({
               />
             </>
           )}
-        </button>
+        </WorkspaceAccountMenu>
       </div>
     </div>
   );
@@ -472,20 +425,20 @@ function SidebarContent({
 export function SidebarNav({
   profile,
   entitlement,
+  testEnvironment = false,
   collapsed = false,
   mobileOpen = false,
   onMobileClose,
   onToggleSidebar,
-  onOpenProfile,
   sidebarExpanded = true,
 }: {
   profile: DashboardProfile;
   entitlement: UserEntitlement;
+  testEnvironment?: boolean;
   collapsed?: boolean;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
   onToggleSidebar?: () => void;
-  onOpenProfile?: () => void;
   sidebarExpanded?: boolean;
 }) {
   const pathname = usePathname();
@@ -540,13 +493,13 @@ export function SidebarNav({
         <SidebarContent
           profile={profile}
           entitlement={entitlement}
+          testEnvironment={testEnvironment}
           pathname={pathname}
           collapsed={railCollapsed}
           contentFadeIn={contentFadeIn}
           onContentFadeInEnd={() => setContentFadeIn(false)}
           onNavigate={onMobileClose}
           onToggleSidebar={onToggleSidebar}
-          onOpenProfile={onOpenProfile}
           sidebarExpanded={sidebarExpanded}
           mobileOpen={showMobileDrawer}
         />

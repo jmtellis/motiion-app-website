@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { MapPin, Plus, X } from "lucide-react";
 
 const MAX_OTHER_LOCATIONS = 4;
@@ -23,6 +23,8 @@ function LocationSelector({
   placeholder: string;
   onChange: (value: string) => void;
 }) {
+  const inputId = useId();
+  const [provider, setProvider] = useState("nominatim");
   const [query, setQuery] = useState(value);
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
   const [open, setOpen] = useState(false);
@@ -48,6 +50,7 @@ function LocationSelector({
   useEffect(() => {
     if (!open || query.trim().length < MIN_SEARCH_LENGTH) {
       setPredictions([]);
+      setLoading(false);
       return;
     }
 
@@ -63,6 +66,7 @@ function LocationSelector({
         const payload = (await response.json()) as {
           predictions?: PlacePrediction[];
           error?: string;
+          provider?: string;
         };
 
         if (!response.ok) {
@@ -71,6 +75,7 @@ function LocationSelector({
           return;
         }
 
+        setProvider(payload.provider ?? "nominatim");
         setPredictions(payload.predictions ?? []);
       } catch (fetchError) {
         if (controller.signal.aborted) return;
@@ -92,27 +97,30 @@ function LocationSelector({
   return (
     <div ref={containerRef} className="space-y-2">
       {label ? (
-        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)]">{label}</p>
+        <label htmlFor={inputId} className="text-sm font-medium text-[var(--ink-soft)]">{label}</label>
       ) : null}
       <div className="relative">
-        <div className="flex items-center gap-3 rounded-[var(--radius-field)] border border-[var(--line)] bg-[var(--surface-card)] px-4 py-3">
+        <div className="workspace-input-shell flex items-center gap-3 rounded-full border border-[var(--line)] bg-[var(--surface-card)] px-4 py-3">
           <MapPin className="size-4 shrink-0 text-[var(--ink-soft)]" aria-hidden />
           <input
+            id={inputId}
+            aria-label={label ?? "Working location"}
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
               setOpen(true);
+              onChange(event.target.value);
             }}
             onFocus={() => setOpen(true)}
             placeholder={placeholder}
-            className="min-w-0 flex-1 bg-transparent text-sm text-[var(--ink)] outline-none placeholder:text-[var(--ink-soft)]"
+            className="workspace-bare-input min-w-0 flex-1 bg-transparent text-sm text-[var(--ink)] outline-none placeholder:text-[var(--ink-soft)]"
           />
         </div>
 
-        {open && (loading || predictions.length > 0 || error) ? (
-          <div className="absolute z-20 mt-2 w-full overflow-hidden ui-card shadow-[var(--shadow-raised)]">
+        {open && query.trim().length >= MIN_SEARCH_LENGTH ? (
+          <div data-lenis-prevent className="mt-2 max-h-64 w-full overflow-y-auto overscroll-contain rounded-2xl border border-[var(--line)] bg-[var(--surface-card)] shadow-sm">
             {loading ? <p className="px-4 py-3 text-sm text-[var(--ink-soft)]">Searching…</p> : null}
-            {error ? <p className="px-4 py-3 text-sm text-rose-700">{error}</p> : null}
+            {error ? <p className="px-4 py-3 text-sm text-[var(--ink-soft)]">Search is unavailable. Enter your city and region manually below.</p> : null}
             {predictions.map((prediction) => (
               <button
                 key={prediction.placeId || prediction.description}
@@ -127,7 +135,9 @@ function LocationSelector({
                 {prediction.description}
               </button>
             ))}
-            {predictions.length > 0 ? (
+            <button type="button" onClick={() => { onChange(query.trim()); setOpen(false); }} className="block w-full border-t border-[var(--line)] px-4 py-3 text-left text-sm font-medium hover:bg-[var(--tone)]">Use “{query.trim()}” as my location</button>
+            {predictions.length > 0 && provider === "google" ? <p className="px-4 py-2 text-xs text-[var(--ink-soft)]">Powered by Google</p> : null}
+            {predictions.length > 0 && provider === "nominatim" ? (
               <p className="border-t border-[var(--line)] px-4 py-2 text-[10px] text-[var(--ink-soft)]">
                 Location data ©{" "}
                 <a
@@ -159,9 +169,9 @@ export function WorkingLocationsEditor({
   const others = locations.slice(1);
 
   function setPrimary(value: string) {
-    const trimmed = value.trim();
+    const trimmed = value;
     const nextOthers = others.map((item) => item.trim()).filter(Boolean);
-    onChange(trimmed ? [trimmed, ...nextOthers] : nextOthers);
+    onChange([trimmed, ...nextOthers]);
   }
 
   function setOther(index: number, value: string) {
@@ -171,8 +181,7 @@ export function WorkingLocationsEditor({
     } else {
       next.push(value);
     }
-    const cleaned = next.map((item) => item.trim()).filter(Boolean);
-    onChange(primary.trim() ? [primary.trim(), ...cleaned] : cleaned);
+    onChange([primary, ...next]);
   }
 
   function removeOther(index: number) {
@@ -187,20 +196,21 @@ export function WorkingLocationsEditor({
       </p>
 
       <LocationSelector
-        label="Primary location"
+        label="Primary location (required)"
         value={primary}
-        placeholder="Search for a city"
+        placeholder="Search or enter city, state / region"
         onChange={setPrimary}
       />
 
-      <div className="space-y-3 border-t border-[var(--line)] pt-5">
+      <p className="text-xs text-[var(--ink-soft)]">Choose a search result, or type your city and state / region to enter it manually.</p>
+      <div className="editor-extra-list space-y-3 border-t border-[var(--line)] pt-5">
         {others.map((location, index) => (
-          <div key={`${index}-${location}`} className="flex items-start gap-2">
+          <div key={index} className="flex items-start gap-2">
             <div className="min-w-0 flex-1">
               <LocationSelector
                 label={`Additional location ${index + 1}`}
                 value={location}
-                placeholder="Search for a city"
+                placeholder="Search or enter city, state / region"
                 onChange={(value) => setOther(index, value)}
               />
             </div>
@@ -222,7 +232,7 @@ export function WorkingLocationsEditor({
               const next = [...others, ""];
               onChange(primary.trim() ? [primary.trim(), ...next] : next);
             }}
-            className="inline-flex items-center gap-2 ui-chip border-dashed px-4 py-2 text-sm font-medium text-[var(--ink-soft)] hover:border-[var(--ink-soft)] hover:text-[var(--ink)]"
+            className="editor-add-button inline-flex items-center gap-2 ui-chip px-4 py-2 text-sm font-medium text-[var(--ink-soft)] hover:border-[var(--ink-soft)] hover:text-[var(--ink)]"
           >
             <Plus className="size-4" aria-hidden />
             Add location

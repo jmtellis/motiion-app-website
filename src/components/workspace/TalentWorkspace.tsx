@@ -1,40 +1,119 @@
 "use client";
 
-import Link from "next/link";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { PanelLeftClose, PanelLeftOpen, Settings } from "lucide-react";
-import { useEffect, useRef, type ReactNode } from "react";
-import { MotiionBrandMark } from "@/components/brand/MotiionBrandMark";
-import { useWorkspaceSidebar, WorkspaceSidebarResize } from "./WorkspaceSidebar";
+import { WorkspaceSidebarHeader } from "./WorkspaceSidebarHeader";
+import { NotificationsPanel, WorkspaceNotificationsProvider } from "./WorkspaceNotifications";
+import { WorkspaceSidePanelHost } from "./WorkspaceSidePanel";
+import { MotiionWordmark } from "@/components/brand/MotiionWordmark";
+import {
+  useWorkspaceSidebar,
+  WorkspaceSidebarResize,
+} from "./WorkspaceSidebar";
 import "./workspace.css";
+import "@/components/talent-buyers/dashboard/industry-light.css";
+import "@/components/talent-buyers/dashboard/industry-experience.css";
+import "@/components/talent-buyers/dashboard/industry-studio.css";
+import "./talent-studio.css";
+import "@/components/workspace/workspace-controls.css";
 
-export function TalentWorkspace({ children, navigation, mobileNavigation, account, progress, settingsHref, community }: {
-  children: ReactNode; navigation: ReactNode; mobileNavigation: ReactNode; account: ReactNode;
-  progress: ReactNode; settingsHref: string; community: boolean;
+export function TalentWorkspace({
+  children,
+  navigation,
+  mobileNavigation,
+  account,
+  progress,
+  community,
+  userId,
+}: {
+  userId: string;
+  children: ReactNode;
+  navigation: ReactNode;
+  mobileNavigation: ReactNode;
+  account: ReactNode;
+  progress: ReactNode;
+  community: boolean;
 }) {
   const sidebar = useWorkspaceSidebar("motiion-talent-sidebar-width");
   const pathname = usePathname();
   const mainRef = useRef<HTMLElement>(null);
-  useEffect(() => { mainRef.current?.scrollTo({ top: 0 }); }, [pathname]);
-  const titles: Record<string, string> = { home: "Home", inbox: "Chat", discover: community ? "Browse" : "Navigator", schedule: "Schedule", portfolio: "Portfolio" };
+  const [shell, setShell] = useState<HTMLDivElement | null>(null);
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0 });
+  }, [pathname]);
+  const titles: Record<string, string> = {
+    home: "Home",
+    opportunities: "Opportunities",
+    inbox: "Inbox",
+    discover: community ? "Browse" : "Discover",
+    schedule: "Schedule",
+    portfolio: "Portfolio",
+    settings: "Settings",
+    updates: "Notifications",
+  };
   const title = titles[pathname.split("/")[1]] ?? "Workspace";
-  return <div className="theme-dark theme-product workspace-shell workspace-shell--talent"
-    style={sidebar.style} data-collapsed={sidebar.collapsed} data-resizing={sidebar.dragging}>
-    <aside className="workspace-talent-sidebar" id="talent-workspace-sidebar" aria-label="Workspace navigation">
-      <div className="workspace-sidebar-header">
-        <Link href="/home" aria-label="Motiion home" className="workspace-brand"><MotiionBrandMark inverted height={15} /><span>Motiion</span></Link>
-        <button className="workspace-icon-button" onClick={sidebar.toggle} aria-label={sidebar.collapsed ? "Expand sidebar" : "Collapse sidebar"} aria-expanded={!sidebar.collapsed}>
-          {sidebar.collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
-        </button>
+  const mainVariant =
+    pathname === "/discover"
+      ? "workspace-talent-main--navigator"
+      : pathname === "/portfolio" || pathname === "/schedule"
+        ? "industry-studio-canvas workspace-talent-main--pane"
+        : "industry-studio-canvas";
+  return (
+    <WorkspaceNotificationsProvider userId={userId}>
+    <WorkspaceSidePanelHost value={shell}>
+    <div
+      ref={setShell}
+      className="theme-dark theme-product workspace-shell workspace-shell--talent"
+      style={sidebar.style}
+      data-collapsed={sidebar.collapsed}
+      data-resizing={sidebar.dragging}
+    >
+      <aside
+        className="workspace-talent-sidebar"
+        id="talent-workspace-sidebar"
+        aria-label="Workspace navigation"
+      >
+        <WorkspaceSidebarHeader href="/home" collapsed={sidebar.collapsed} onToggle={sidebar.toggle} />
+        <div className="workspace-sidebar-navigation">
+          <p className="workspace-section-label">
+            {community ? "Community" : "Workflow"}
+          </p>
+          {navigation}
+        </div>
+        <div className="workspace-sidebar-account">{account}</div>
+      </aside>
+      <WorkspaceSidebarResize
+        sidebar={sidebar}
+        controls="talent-workspace-sidebar"
+      />
+      <div className="workspace-frame">
+        {progress}
+        <header className="workspace-toolbar workspace-talent-mobile-toolbar">
+          <div className="workspace-toolbar-title">
+            <span className="workspace-mobile-brand">
+              <MotiionWordmark height={14} className="brightness-0" />
+            </span>
+            <span>{title}</span>
+          </div>
+          <div className="workspace-account">
+            <div className="workspace-mobile-account">{account}</div>
+          </div>
+        </header>
+        <main
+          ref={mainRef}
+          id="main-content"
+          tabIndex={-1}
+          className={`workspace-talent-main ${mainVariant}`}
+        >
+          {children}
+        </main>
       </div>
-      <div className="workspace-sidebar-navigation"><p className="workspace-section-label">{community ? "Community" : "Your workspace"}</p>{navigation}</div>
-      {!community && <Link href={settingsHref} className="workspace-nav-link workspace-settings" title="Settings"><Settings aria-hidden="true" /><span className="workspace-nav-label">Settings</span></Link>}
-    </aside>
-    <WorkspaceSidebarResize sidebar={sidebar} controls="talent-workspace-sidebar" />
-    <div className="workspace-frame">
-      <header className="workspace-toolbar">{progress}<div className="workspace-toolbar-title"><span className="workspace-mobile-brand"><MotiionBrandMark inverted height={14} /></span><span>{title}</span></div><div className="workspace-account">{account}</div></header>
-      <main ref={mainRef} id="main-content" tabIndex={-1} className="workspace-talent-main">{children}</main>
+      <NotificationsPanel />
+      <nav aria-label="App" className="workspace-mobile-nav">
+        {mobileNavigation}
+      </nav>
     </div>
-    <nav aria-label="App" className="workspace-mobile-nav">{mobileNavigation}</nav>
-  </div>;
+    </WorkspaceSidePanelHost>
+    </WorkspaceNotificationsProvider>
+  );
 }

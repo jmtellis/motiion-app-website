@@ -18,10 +18,54 @@
   flex-direction: column;
 }
 
+/* Side-panel create: one column, light surface, steps along the top. */
+.activity-create-wizard--panel {
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: #fff;
+  --ink: #242424;
+  --ink-soft: #616161;
+  --line: #e5e5e5;
+  --surface-card: #fff;
+  --buyer-bg: #fff;
+  --industry-text: #242424;
+  --industry-muted: #616161;
+  --industry-line: #e5e5e5;
+  --industry-surface: #f7f7f7;
+  --industry-fill: #f4f4f4;
+}
+
+.activity-create-wizard--panel .casting-create-wizard__form-top {
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.activity-create-wizard__steps--inline {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin: 0;
+  gap: 0.35rem;
+}
+
+.activity-create-wizard__steps--inline .activity-create-wizard__step {
+  width: auto;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.75rem;
+}
+
 @media (min-width: 900px) {
   .activity-create-wizard {
     flex-direction: row;
     align-items: stretch;
+  }
+
+  .activity-create-wizard--panel {
+    flex-direction: column;
   }
 }
 
@@ -220,10 +264,15 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--industry-muted, rgb(255 255 255 / 0.55));
   text-decoration: none;
+  cursor: pointer;
   transition: color 0.15s ease;
 }
 

@@ -53,6 +53,8 @@ export type TalentSetupProfile = {
   representation?: string | null;
   agent?: string | null;
   unionStatus?: string | null;
+  unionMemberId?: string | null;
+  additionalRepresentations?: string[] | null;
   styles?: string[] | null;
   skills?: string[] | null;
   experiences?: unknown[] | null;
@@ -65,7 +67,6 @@ export const deferredStepsOrdered: DeferredSetupStep[] = [
   "profileIdentity",
   "headshots",
   "attributesMenu",
-  "talentSubtypes",
   "sizing",
   "workingLocations",
   "representation",
@@ -208,6 +209,7 @@ export function unfilledSteps(profile: TalentSetupProfile): DeferredSetupStep[] 
         !(profile.resumeUrl ?? "").trim()
       );
     }
+    if (step === "addCredits" && (!profile.resumeUrl || !profile.experiences?.length)) return false;
     if (step === "submitForReview") return false;
     if (reviewUntilCompleteSteps.has(step)) {
       return !profile.profileSetupCompletedAt;
@@ -220,6 +222,7 @@ export function isFullyFilled(profile: TalentSetupProfile): boolean {
   const skipPhysical = shouldSkipPhysicalTalentDetails(profile.talentTypes);
   return deferredStepsOrdered
     .filter((step) => step !== "resumeImport" && step !== "submitForReview")
+    .filter((step) => step !== "addCredits" || Boolean(profile.resumeUrl && profile.experiences?.length))
     .filter((step) => !(skipPhysical && physicalTalentDetailSteps.has(step)))
     .every((step) => isStepFilled(step, profile));
 }
@@ -227,6 +230,19 @@ export function isFullyFilled(profile: TalentSetupProfile): boolean {
 export function isSetupFinished(profile: TalentSetupProfile): boolean {
   if (profile.profileSetupCompletedAt) return true;
   return isFullyFilled(profile);
+}
+
+/** Share of setup fields that already have a value. Finished profiles read as complete. */
+export function setupCompletionPercent(profile: TalentSetupProfile): number {
+  if (profile.profileSetupCompletedAt) return 100;
+  const skipPhysical = shouldSkipPhysicalTalentDetails(profile.talentTypes);
+  const steps = deferredStepsOrdered
+    .filter((step) => step !== "resumeImport" && step !== "submitForReview")
+    .filter((step) => step !== "addCredits" || Boolean(profile.resumeUrl && profile.experiences?.length))
+    .filter((step) => !(skipPhysical && physicalTalentDetailSteps.has(step)));
+  if (!steps.length) return 0;
+  const filled = steps.filter((step) => isStepFilled(step, profile)).length;
+  return Math.round((filled / steps.length) * 100);
 }
 
 export function skipTitleForStep(step: DeferredSetupStep): string {

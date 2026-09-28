@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import FeaturedTalentPageClient from "@/app/event/[id]/featured/[talentId]/featured-talent-page-client";
+import { fetchPublicActivity } from "@/lib/catalog/fetch-public-activity";
 import {
   featuredTalentPath,
-  fetchPublicActivity,
   findFeaturedTalent,
 } from "@/lib/publicActivity";
 import { getIosAppStoreId } from "@/lib/referrals/app-store";

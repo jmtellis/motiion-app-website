@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { AuthSplitLink, AuthSplitTransitionProvider } from "@/components/auth/AuthSplitTransition";
+import { AuthLogo } from "./AuthLogo";
 import { MotiionWordmark } from "@/components/brand/MotiionWordmark";
 import { ScrollMarquee } from "@/components/landing/ScrollMarquee";
 import { MarketingBodySurface } from "@/components/landing/MarketingBodySurface";
@@ -306,6 +307,7 @@ export function SignupSplitShell({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: delay(0.1), ease: ENTER_EASE }}
           >
+            {fullBleed && (showWordmark || coverAction) ? <div className="setup-centered-header"><AuthLogo />{coverAction}</div> : null}
             {mediaCover ? (
               <div className="signup-split-form">
                 <SignupSplitFormHeader title={headline} />

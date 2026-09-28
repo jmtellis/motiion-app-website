@@ -33,6 +33,8 @@ type MonthViewProps = {
   events: CalendarEvent[];
   onSelectDay: (date: Date) => void;
   onVisibleMonthChange: (date: Date) => void;
+  eventHref?: (event: CalendarEvent) => string;
+  actionLabel?: string;
 };
 
 type PopoverState = {
@@ -135,6 +137,8 @@ export function MonthView({
   events,
   onSelectDay,
   onVisibleMonthChange,
+  eventHref,
+  actionLabel,
 }: MonthViewProps) {
   const [popover, setPopover] = useState<PopoverState | null>(null);
   const [ready, setReady] = useState(false);
@@ -346,6 +350,8 @@ export function MonthView({
           event={popover.event}
           anchorRect={popover.rect}
           onClose={() => setPopover(null)}
+          href={eventHref?.(popover.event)}
+          actionLabel={actionLabel}
         />
       ) : null}
     </div>

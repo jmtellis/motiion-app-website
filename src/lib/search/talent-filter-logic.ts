@@ -340,8 +340,8 @@ type OpportunityAttributes = {
 };
 
 type TalentMatchInput = {
-  styles: string[];
-  skills: string[];
+  styles?: string[] | null;
+  skills?: string[] | null;
   location_city: string | null;
   union_status: string | null;
   availability: string | null;
@@ -352,8 +352,8 @@ export function scoreOpportunityMatch(talent: TalentMatchInput, opportunity: Opp
   if (talent.availability === "unavailable") return 0;
 
   let score = 0;
-  const talentStyles = new Set(talent.styles.map((s) => s.toLowerCase()));
-  const talentSkills = new Set(talent.skills.map((s) => s.toLowerCase()));
+  const talentStyles = new Set((talent.styles ?? []).map((s) => s.toLowerCase()));
+  const talentSkills = new Set((talent.skills ?? []).map((s) => s.toLowerCase()));
 
   for (const style of opportunity.styles ?? []) {
     if (talentStyles.has(style.toLowerCase())) score += 3;

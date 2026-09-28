@@ -35,6 +35,8 @@ export type ProfileRecord = {
   talent_types: string[] | null;
   headshot_urls: string[] | null;
   onboarding_completed_at: string | null;
+  enabled_shells?: string[] | null;
+  active_shell?: string | null;
 };
 
 export type NonTalentProfileRecord = {
@@ -95,4 +97,6 @@ export type DashboardProfile = {
   notificationPreferences?: TalentBuyerNotificationPreferences | null;
   buyerOnboardingCompleted?: boolean | null;
   onboardingStep?: string | null;
+  enabledShells?: string[] | null;
+  activeShell?: string | null;
 };

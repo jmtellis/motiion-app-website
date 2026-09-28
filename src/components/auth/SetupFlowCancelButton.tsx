@@ -1,5 +1,7 @@
 "use client";
+import { ButtonProgress } from "./ButtonProgress";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -10,6 +12,7 @@ import "@/app/signup/signup-split.css";
 type SetupFlowCancelButtonProps = {
   userId: string;
   disabled?: boolean;
+  exitHref?: string;
   onCanceled: () => void;
   onError?: (message: string) => void;
 };
@@ -17,6 +20,7 @@ type SetupFlowCancelButtonProps = {
 export function SetupFlowCancelButton({
   userId,
   disabled = false,
+  exitHref,
   onCanceled,
   onError,
 }: SetupFlowCancelButtonProps) {
@@ -24,6 +28,18 @@ export function SetupFlowCancelButton({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [dialogError, setDialogError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  if (exitHref) {
+    return (
+      <Link
+        href={exitHref}
+        className="signup-split-nav-btn signup-split-nav-btn--ghost"
+        onClick={() => onCanceled()}
+      >
+        Cancel
+      </Link>
+    );
+  }
 
   function handleConfirm() {
     setDialogError(null);
@@ -55,7 +71,7 @@ export function SetupFlowCancelButton({
         }}
         disabled={disabled || isPending}
       >
-        {isPending ? "Canceling…" : "Cancel"}
+        <ButtonProgress loading={isPending}>Cancel</ButtonProgress>
       </button>
 
       {confirmOpen ? (
@@ -97,7 +113,7 @@ export function SetupFlowCancelButton({
                 onClick={handleConfirm}
                 disabled={isPending}
               >
-                {isPending ? "Deleting…" : "Delete account"}
+                <ButtonProgress loading={isPending}>Delete account</ButtonProgress>
               </button>
             </div>
           </div>

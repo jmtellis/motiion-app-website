@@ -5,14 +5,16 @@ import {
   IndustryJourney,
   IndustryPageHeader,
 } from "@/components/talent-buyers/dashboard/IndustryUI";
-export function InboxEmptyState() {
+export function InboxEmptyState({ hideHeader = false }: { hideHeader?: boolean }) {
   return (
     <div className="industry-inbox-intro">
-      <IndustryPageHeader
-        eyebrow="Stay connected"
-        title="Inbox"
-        description="The conversation behind every great collaboration."
-      />
+      {hideHeader ? null : (
+        <IndustryPageHeader
+          eyebrow="Stay connected"
+          title="Inbox"
+          description="The conversation behind every great collaboration."
+        />
+      )}
       <IndustryEmptyState
         icon={<MessageCircle size={25} />}
         title="Start a conversation. Build a connection."

@@ -2,6 +2,7 @@ import { cache } from "react";
 
 import { getProfileAvatarUrl } from "@/lib/auth/avatar";
 import { mockTalentProfiles, portraitWallImages } from "@/lib/mock-data";
+import { readLiveSearchProfiles } from "@/lib/catalog/live-catalog";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getSupabaseConfig, supabaseRestGet } from "@/lib/supabaseRest";
 import {
@@ -637,3 +638,23 @@ export const getPillarHeadshotImages = cache(async () => {
   const images = await getHeroHeadshotImages();
   return images.slice(0, PILLAR_STACK_HEADSHOT_LIMIT);
 });
+
+/** Curated rosters resolve explicit user IDs, independently of navigator pagination. */
+export async function searchCuratedTalent(userIds: string[]): Promise<SearchResult> {
+  const empty: SearchResult = { items: [], total: 0, page: 1, pageSize: 0, source: "talent", usingFallbackData: false };
+  const ids = [...new Set(userIds)].slice(0, 200);
+  if (!ids.length) return empty;
+  const admin = createAdminSupabaseClient();
+  if (admin) {
+    const { data, error } = await admin.from("talent_professional_profiles").select(PROFESSIONAL_PROFILE_SELECT)
+      .in("user_id", ids).eq("is_verified", true).in("subtype", [...TALENT_SUBTYPES]);
+    if (!error && data?.length) {
+      const profiles = await enrichProfessionalProfileRows(admin, data);
+      profiles.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
+      return { ...empty, items: profiles, total: profiles.length, pageSize: profiles.length };
+    }
+  }
+  const live = await readLiveSearchProfiles(ids);
+  if (!live.length) return { ...empty, source: admin ? "unavailable" : "talent" };
+  return { ...empty, items: live, total: live.length, pageSize: live.length };
+}

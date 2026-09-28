@@ -17,6 +17,8 @@ Vercel Production uses production credentials and is recognized automatically by
 
 The existing local `.env.local` has been switched to staging. The previous production configuration is preserved at `.env.local.production-backup-20260926`; it is not loaded by Next.js. Both Git and `.vercelignore` exclude these private files. Prefer Git-based preview deployments. Never promote a staging deployment to Production.
 
+Talent home can optionally read the live public catalog without switching the app onto production. Set `CATALOG_SUPABASE_URL`, `CATALOG_SUPABASE_ANON_KEY`, and `CATALOG_SUPABASE_SECRET_KEY` in `.env.local` only. Those reads are filtered GETs for featured collections, public events, accepted cast, and public profiles, and they are disabled when `NEXT_PUBLIC_APP_ENV` is production. Sign-in, projects, and writes stay on staging. Do not add the catalog secret to the hosted staging project unless that preview should show the same public cards.
+
 Next startup/build checks reject production Supabase URLs in local/preview environments, staging Supabase in production, live Stripe keys in test environments, and test configuration pointing callback/share URLs at the live website. Supabase client creation also checks isolation at runtime. Staging displays a test banner and requests that search engines not index it; this is not access control.
 
 ## External services

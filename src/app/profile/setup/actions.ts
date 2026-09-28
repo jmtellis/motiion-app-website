@@ -38,9 +38,30 @@ const persistSchema = z.object({
   representation: z.string().trim().nullable().optional(),
   agent: z.string().trim().nullable().optional(),
   unionStatus: z.string().trim().nullable().optional(),
+  unionMemberId: z.string().trim().nullable().optional(),
+  additionalRepresentations: stringArray.optional(),
   styles: stringArray.optional(),
   skills: stringArray.optional(),
   experiences: z.array(experienceSchema).optional(),
+  training: z
+    .array(
+      z.object({
+        id: z.string().trim().optional(),
+        name: z.string().trim().min(1),
+        program: z.string().trim().nullable().optional(),
+        startDate: z.string().trim().nullable().optional(),
+        endDate: z.string().trim().nullable().optional(),
+        trainingType: z.string().trim().nullable().optional(),
+        sourceId: z.string().trim().nullable().optional(),
+        linkedTalentId: z.string().trim().nullable().optional(),
+      }).loose(),
+    )
+    .optional(),
+  instagramUrl: z.string().trim().nullable().optional(),
+  xUrl: z.string().trim().nullable().optional(),
+  tiktokUrl: z.string().trim().nullable().optional(),
+  whatsappUrl: z.string().trim().nullable().optional(),
+  youtubeUrl: z.string().trim().nullable().optional(),
   deferredSetupSkipped: z
     .object({
       sizing: z.boolean().optional(),
@@ -96,9 +117,17 @@ export async function persistDeferredProfileProgress(
         representation: data.representation,
         agent: data.agent,
         union_status: data.unionStatus,
+        union_member_id: data.unionStatus === "Non-union" ? null : data.unionMemberId,
+        additional_representations: data.additionalRepresentations,
         styles: data.styles,
         skills: data.skills,
         experiences: data.experiences,
+        training: data.training,
+        instagram_url: data.instagramUrl,
+        x_url: data.xUrl,
+        tiktok_url: data.tiktokUrl,
+        whatsapp_url: data.whatsappUrl,
+        youtube_url: data.youtubeUrl,
         deferred_setup_skipped: data.deferredSetupSkipped as DeferredSetupSkipped | undefined,
         updated_at: new Date().toISOString(),
       }),
@@ -119,6 +148,9 @@ export async function finishDeferredProfileSetup(): Promise<PersistDeferredProfi
   const profile = await requireTalentAccount();
   const supabase = await createServerSupabaseClient();
   if (!supabase) return { ok: false, error: "Supabase is not configured." };
+
+  const { data: stored, error: readError } = await supabase.from("profiles").select("working_locations").eq("user_id", profile.id).single();
+  if (readError || !stored?.working_locations?.some((value: string) => value.trim())) return { ok: false, error: "Add at least one working location before completing your profile." };
 
   const completedAt = new Date().toISOString();
   const { error } = await supabase
@@ -145,6 +177,9 @@ export async function submitProfileForReviewAction(): Promise<
   const profile = await requireTalentAccount();
   const supabase = await createServerSupabaseClient();
   if (!supabase) return { ok: false, error: "Supabase is not configured." };
+
+  const finish = await finishDeferredProfileSetup();
+  if (!finish.ok) return finish;
 
   // Ensure setup stamp exists before submit (iOS writes it before submit explainer).
   await supabase

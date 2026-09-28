@@ -64,7 +64,12 @@ async function invokeSupabaseFunction<T>(
     const record = typeof data === "object" && data ? (data as Record<string, unknown>) : null;
     const message =
       record && typeof record.error === "string" ? record.error : "Request failed.";
-    const errorCode = record && typeof record.errorCode === "string" ? record.errorCode : null;
+    const errorCode =
+      record && typeof record.errorCode === "string"
+        ? record.errorCode
+        : record && typeof record.code === "string"
+          ? record.code
+          : null;
     const err = new Error(message) as Error & { errorCode?: string };
     if (errorCode) err.errorCode = errorCode;
     throw err;

@@ -26,7 +26,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.motiion.app").replace(/\/$/, "");
   const pageUrl = `${siteUrl}/profile/${encodeURIComponent(slug)}`;
 
-  const displayName = await fetchPublicTalentName(slug);
+  const displayName =
+    (await fetchPublicTalentName(slug)) ??
+    (await fetchPublicTalentProfile(slug))?.full_name ??
+    null;
   const title = displayName ? `${displayName} on Motiion` : "Profile on Motiion";
   const description = displayName
     ? `View ${displayName}'s highlights, resume, and visuals on Motiion.`

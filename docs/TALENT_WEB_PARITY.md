@@ -57,7 +57,7 @@ Finish writes `profile_setup_completed_at`. Submit calls RPC `submit_profile_for
 | 0 Home | Home | `/home` | Deep-links to Chat Requests + Schedule |
 | 1 Inbox | **Chat** | `/inbox` (label Chat) | Primary / General / Requests partitions |
 | 2 Navigator | **Navigator** | `/discover` (label Navigator, header Discover) | Discover header + navigator search mode |
-| 3 Events | **Schedule** | `/schedule` | Hub: Classes / Sessions / Events / Submissions |
+| 3 Events | **Schedule** | `/schedule` | Calendar: All / Classes / Sessions / Events. Create session opens in a side panel. |
 | 4 Profile | **Portfolio** | `/portfolio` | Edit profile modal + Complete profile link |
 
 Profile/settings overlay from Home avatar — not a tab.
@@ -82,7 +82,7 @@ Profile/settings overlay from Home avatar — not a tab.
 | Home completion card | Start/Resume/Submit | `ProfileCompletionCard` | — | Done |
 | Credits store | `profiles.experiences` | Experiences canonical + project to index | — | Done |
 | Nav IA | 5 tabs | Chat / Navigator / Schedule labels | — | Done |
-| Schedule | Events hub | Category hub + upcoming lists | Calendar overlay | Phase 4 core done |
+| Schedule | Events hub | Calendar with All / Classes / Sessions / Events, plus a Create session side panel. Submissions are not on this page. | — | Done |
 | Chat | Primary/General/Requests | Partitions + pending requests | Actionable respond RPC | Phase 4 core done |
 | Navigator | Discover / Find Talent | Discover header + navigator search | Full NL deck / talent favorites | Phase 4 partial |
 | Portfolio edit | Edit Profile menu | Edit modal + setup link | Inline media/highlights editors | Phase 5 partial |
@@ -98,8 +98,8 @@ Profile/settings overlay from Home avatar — not a tab.
 ## Remaining Phase 6 checklist
 
 - [ ] Full Talent NL Navigator deck (talent-shell wrapper around `TalentNavigatorPage`, no buyer Pro/invite)
-- [ ] Chat `respond_to_request` actions in Requests partition
+- [x] Chat `respond_to_request` actions in Requests partition
 - [ ] Portfolio inline headshots / visuals / highlights editors
-- [ ] Schedule calendar overlay
+- [x] Schedule calendar overlay
 - [ ] Responsive + a11y pass across five tabs
 - [ ] Cross-platform scenarios A–E against shared DB

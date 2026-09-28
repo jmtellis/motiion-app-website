@@ -661,6 +661,12 @@
 html:has(.workspace-shell--industry) .staging-environment-badge {
   z-index: 50;
 }
+@media (min-width: 1024px) {
+  html:has(.workspace-shell--talent:not([data-collapsed="true"])) .staging-environment-badge,
+  html:has(.workspace-shell--industry:not([data-collapsed="true"])) .staging-environment-badge {
+    display: none;
+  }
+}
 
 .industry-save-bar {
   border-top: 1px solid #e0e4e2;

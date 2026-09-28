@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { isPendingCastingInviteNotification } from "@/lib/app/talent-casting-state";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 
 export type BuyerNotificationRow = {
@@ -9,6 +10,7 @@ export type BuyerNotificationRow = {
   type: string;
   title: string | null;
   body: string | null;
+  data: Record<string, unknown> | null;
   read_at: string | null;
   created_at: string;
 };
@@ -37,13 +39,17 @@ export function useBuyerNotifications(
     setError(null);
     const { data, error: loadError } = await supabase
       .from("notifications")
-      .select("id, type, title, body, read_at, created_at")
+      .select("id, type, title, body, data, read_at, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(limit);
 
     if (loadError) setError("Could not load notifications.");
-    if (data) setNotifications(data);
+    if (data) {
+      setNotifications(
+        data.filter((row) => !isPendingCastingInviteNotification(row)),
+      );
+    }
     setIsLoading(false);
   }, [limit, userId]);
 
@@ -106,6 +112,21 @@ export function useBuyerNotifications(
     );
   }, [notifications, userId]);
 
+  const markRead = useCallback(async (id: string) => {
+    const supabase = createClientSupabaseClient();
+    if (!supabase) return;
+    const now = new Date().toISOString();
+    const { error: updateError } = await supabase
+      .from("notifications")
+      .update({ read_at: now })
+      .eq("user_id", userId)
+      .eq("id", id);
+    if (updateError) return;
+    setNotifications((current) =>
+      current.map((row) => (row.id === id ? { ...row, read_at: now } : row)),
+    );
+  }, [userId]);
+
   return {
     error,
     notifications,
@@ -113,5 +134,6 @@ export function useBuyerNotifications(
     isLoading,
     loadNotifications,
     markAllRead,
+    markRead,
   };
 }

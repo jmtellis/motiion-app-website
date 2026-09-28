@@ -1,0 +1,36 @@
+/* Workspace controls share one pill silhouette. Cards, dialogs, and media retain
+   their surface radii; they are containers rather than compact controls. */
+.workspace-shell {
+  --ds-radius-button: 9999px;
+  --ds-radius-input: 9999px;
+  --ds-radius-pill: 9999px;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent).workspace-shell :is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select, [role="switch"], [role="tab"],
+  .bd-btn-primary, .bd-btn-secondary, .bd-btn-ghost, .ui-button,
+  .buyer-chrome-bar__cta, .btn-primary, .btn-secondary, .btn-outline,
+  .industry-segments, .industry-layout-switch,
+  button[class*="rounded-"], a[class*="rounded-full"],
+  [class*="-chip"], [class*="__chip"], [class*="-badge"],
+  .workspace-nav-link, .buyer-sidebar__link, .workspace-nav-badge,
+  .library-search-wrap, .library-select,
+  .talent-navigator__nl-compose-inner, .talent-navigator__nl-compose,
+  .talent-navigator__search, .talent-navigator__search-input,
+  .talent-settings-links a, .studio-spotlight__action
+) { border-radius:9999px !important; }
+.workspace-shell button:focus-visible, .workspace-shell a:focus-visible { outline-offset:3px; }
+@media(prefers-reduced-motion:reduce) {
+  .workspace-shell *, .workspace-shell *::before, .workspace-shell *::after { scroll-behavior:auto !important; }
+}
+.workspace-shell.workspace-shell :is(.bd-btn-primary,.bd-btn-secondary,.bd-btn-accent) {
+ display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:40px; padding:10px 18px; font-size:13px; font-weight:550; line-height:1.2; border-radius:9999px !important; cursor:pointer; transition:background 150ms,box-shadow 150ms;
+}
+.workspace-shell.workspace-shell .bd-btn-primary { background:#303030; color:white; box-shadow:0 1px 2px #0002,inset 0 1px 1px #ffffff20; }
+.workspace-shell.workspace-shell .bd-btn-primary:hover { background:#171717; }
+.workspace-shell.workspace-shell .bd-btn-secondary { background:#f5f5f5; color:#303030; border:1px solid #d6d6d6; }
+.workspace-shell.workspace-shell button:not([class*="inset-0"]):not([class*="card"]):not([class*="backdrop"]):not([class*="dropzone"]):not([class*="calendar-day"]):not([role="gridcell"]):not([class*="row"]):not(.workspace-upgrade-banner):not(.workspace-account-trigger):not(.buyer-sidebar__profile) { border-radius:9999px !important; }
+.workspace-shell.workspace-shell :is(.workspace-account-menu > button, .workspace-upgrade-banner, .buyer-sidebar__profile) { border-radius:12px !important; }
+.workspace-shell.workspace-shell .workspace-account-popover :is(a, button) { border-radius:9999px !important; }
+/* Inputs nested inside a bordered field shell (icon + input) must not draw a second stroke. */
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame input.workspace-bare-input:not([type=checkbox]):not([type=radio]):not([type=range]) { min-height:0; padding:0; border:0; border-radius:0 !important; background:transparent; box-shadow:none; outline:none; }

@@ -2,17 +2,34 @@ import { redirect } from "next/navigation";
 
 import { OnboardingFlow } from "@/components/onboarding/onboarding-flow";
 import { fetchTalentAgencies } from "@/lib/agencies/fetch-talent-agencies";
-import { isHiringAccount, isOnboardingComplete } from "@/lib/auth/profile";
+import { getActiveShell, hasEnabledShell, isCommunityAccount, isOnboardingComplete } from "@/lib/auth/profile";
 import { getProfileDestination, requireAuth } from "@/lib/auth/session";
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ addShell?: string }>;
+}) {
+  const params = await searchParams;
   const profile = await requireAuth();
+  const addingTalent = params.addShell === "talent";
+
+  if (addingTalent) {
+    const canAdd =
+      isOnboardingComplete(profile) &&
+      getActiveShell(profile) === "lookingForTalent" &&
+      !hasEnabledShell(profile, "talent") &&
+      !isCommunityAccount(profile.accountType);
+    if (!canAdd) redirect(getProfileDestination(profile));
+    const agencies = await fetchTalentAgencies();
+    return <OnboardingFlow profile={profile} agencies={agencies} addingTalentShell />;
+  }
 
   if (isOnboardingComplete(profile)) {
     redirect(getProfileDestination(profile));
   }
 
-  if (isHiringAccount(profile.accountType)) {
+  if (getActiveShell(profile) === "lookingForTalent") {
     redirect("/talent-buyers/onboarding");
   }
 

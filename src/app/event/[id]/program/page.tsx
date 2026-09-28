@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 
 import EventProgramPageClient from "@/app/event/[id]/program/event-program-page-client";
 import { buildEventProgramMetadata } from "@/lib/eventProgramPage";
-import { eventProgramPath, fetchPublicActivity } from "@/lib/publicActivity";
+import { fetchPublicActivity } from "@/lib/catalog/fetch-public-activity";
+import { eventProgramPath } from "@/lib/publicActivity";
 
 type PageProps = {
   params: Promise<{ id: string }>;

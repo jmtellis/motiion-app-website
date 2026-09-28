@@ -1,71 +1,18 @@
 "use client";
+import { formatHeight, parseHeight } from "@/lib/onboarding/height";
 
-import { useEffect, useMemo, useState } from "react";
-
-import { FEET_RANGE, INCHES_RANGE, formatHeight, parseHeight } from "@/lib/onboarding/height";
-
-export function HeightPicker({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (height: string) => void;
-}) {
-  const parsed = useMemo(() => parseHeight(value), [value]);
-  const [feet, setFeet] = useState(parsed.feet);
-  const [inches, setInches] = useState(parsed.inches);
-
-  useEffect(() => {
-    setFeet(parsed.feet);
-    setInches(parsed.inches);
-  }, [parsed.feet, parsed.inches]);
-
-  function update(nextFeet: number, nextInches: number) {
-    setFeet(nextFeet);
-    setInches(nextInches);
-    onChange(formatHeight(nextFeet, nextInches));
-  }
-
-  return (
-    <div className="rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--tone)] p-5">
-      <p className="text-center text-3xl font-semibold tracking-tight text-[var(--ink)]">
-        {formatHeight(feet, inches)}
-      </p>
-      <p className="mt-1 text-center text-sm text-[var(--ink-soft)]">Drag to set your height</p>
-
-      <div className="mt-8 grid gap-8 sm:grid-cols-2">
-        <label className="space-y-3">
-          <div className="flex items-center justify-between text-sm text-[var(--ink-soft)]">
-            <span>Feet</span>
-            <span className="font-semibold text-[var(--ink)]">{feet}</span>
-          </div>
-          <input
-            type="range"
-            min={FEET_RANGE[0]}
-            max={FEET_RANGE[FEET_RANGE.length - 1]}
-            step={1}
-            value={feet}
-            onChange={(event) => update(Number(event.target.value), inches)}
-            className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[var(--line)] accent-[var(--accent,#00aacc)]"
-          />
-        </label>
-
-        <label className="space-y-3">
-          <div className="flex items-center justify-between text-sm text-[var(--ink-soft)]">
-            <span>Inches</span>
-            <span className="font-semibold text-[var(--ink)]">{inches}</span>
-          </div>
-          <input
-            type="range"
-            min={INCHES_RANGE[0]}
-            max={INCHES_RANGE[INCHES_RANGE.length - 1]}
-            step={1}
-            value={inches}
-            onChange={(event) => update(feet, Number(event.target.value))}
-            className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[var(--line)] accent-[var(--accent,#00aacc)]"
-          />
-        </label>
-      </div>
+export function HeightPicker({ value, onChange }: { value: string; onChange: (height: string) => void }) {
+  const { feet, inches } = parseHeight(value);
+  const total = feet * 12 + inches;
+  return <div className="space-y-7 rounded-3xl bg-[var(--tone)] p-6">
+    <div className="text-center">
+      <p className="text-3xl font-semibold tracking-tight">{formatHeight(feet, inches)}</p>
+      <p className="mt-2 text-sm text-[var(--ink-soft)]">{Math.round(total * 2.54)} cm · Drag to set your height</p>
     </div>
-  );
+    <input type="range" aria-label="Height" aria-valuetext={`${feet} feet ${inches} inches`} min={36} max={95} step={1} value={total}
+      onChange={event => { const next = Number(event.target.value); onChange(formatHeight(Math.floor(next / 12), next % 12)); }}
+      className="h-2 w-full cursor-pointer accent-[var(--ink)]" />
+    <div className="flex justify-between text-xs text-[var(--ink-soft)]"><span>3′ 0″</span><span>7′ 11″</span></div>
+    {!value && <button type="button" className="signup-split-text-btn w-full" onClick={() => onChange(formatHeight(feet, inches))}>Use {formatHeight(feet, inches)}</button>}
+  </div>;
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { fetchPublicActivity } from "@/lib/publicActivity";
+import { fetchPublicActivity } from "@/lib/catalog/fetch-public-activity";
 import { getIosAppStoreId } from "@/lib/referrals/app-store";
 
 /** Web-only share path — not registered in AASA appclips/universal links. */

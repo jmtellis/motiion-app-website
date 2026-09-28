@@ -3,46 +3,49 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Calendar,
-  Compass,
+  CalendarDays,
   House,
   Layers,
-  MessageSquare,
+  Inbox,
+  Megaphone,
   Settings,
   Search,
 } from "lucide-react";
 
 import { trackClientEvent } from "@/lib/analytics/track-client";
 
-/** Canonical talent IA: Home · Chat · Navigator · Schedule · Portfolio (iOS AppRootView). */
+/** Canonical talent IA: Home · Inbox · Discover · Schedule · Portfolio. */
 const talentTabs = [
   { href: "/home", label: "Home", icon: House },
-  { href: "/inbox", label: "Chat", icon: MessageSquare },
-  { href: "/discover", label: "Navigator", icon: Compass },
-  { href: "/schedule", label: "Schedule", icon: Calendar },
+  { href: "/opportunities", label: "Opportunities", icon: Megaphone },
+  { href: "/inbox", label: "Inbox", icon: Inbox },
+  { href: "/discover", label: "Discover", icon: Search },
+  { href: "/schedule", label: "Schedule", icon: CalendarDays },
   { href: "/portfolio", label: "Portfolio", icon: Layers },
 ] as const;
 
-/** Community: Home · Browse · Chat · Settings */
+/** Community: Home · Browse · Inbox · Settings */
 const communityTabs = [
   { href: "/home", label: "Home", icon: House },
   { href: "/discover", label: "Browse", icon: Search },
-  { href: "/inbox", label: "Chat", icon: MessageSquare },
+  { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
 /** Inline nav tabs for the single-row app bar (desktop) or bottom bar (mobile). */
 export function AppTabNav({
   inboxUnread = 0,
+  inviteCount = 0,
   variant = "talent",
   placement = "top",
 }: {
   inboxUnread?: number;
+  inviteCount?: number;
   variant?: "talent" | "community";
   placement?: "top" | "bottom" | "sidebar";
 }) {
   const pathname = usePathname();
-  const tabs = variant === "community" ? communityTabs : talentTabs;
+  const tabs = (variant === "community" ? communityTabs : talentTabs).filter(tab => placement !== "sidebar" || tab.href !== "/settings");
   const isBottom = placement === "bottom";
   const isSidebar = placement === "sidebar";
 
@@ -58,7 +61,8 @@ export function AppTabNav({
     >
       {tabs.map((tab) => {
         const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
-        const showBadge = tab.href === "/inbox" && inboxUnread > 0;
+        const badgeCount = tab.href === "/inbox" ? inboxUnread : tab.href === "/opportunities" ? inviteCount : 0;
+        const showBadge = badgeCount > 0;
         const Icon = tab.icon;
 
         if (isSidebar) {
@@ -66,7 +70,7 @@ export function AppTabNav({
             className="workspace-nav-link" aria-current={active ? "page" : undefined}
             onClick={() => trackClientEvent("app_tab_viewed", { tab: tab.label.toLowerCase() }, tab.href)}>
             <Icon aria-hidden="true" /><span className="workspace-nav-label">{tab.label}</span>
-            {showBadge ? <span className="workspace-nav-badge">{inboxUnread > 99 ? "99+" : inboxUnread}</span> : null}
+            {showBadge ? <span className="workspace-nav-badge">{badgeCount > 99 ? "99+" : badgeCount}</span> : null}
           </Link>;
         }
 
@@ -89,7 +93,7 @@ export function AppTabNav({
               <span className="truncate">{tab.label}</span>
               {showBadge ? (
                 <span className="absolute top-1 right-[calc(50%-18px)] inline-flex min-w-[1.125rem] items-center justify-center rounded-full bg-[var(--ds-accent)] px-1 py-0.5 font-mono text-[9px] font-bold text-[var(--ds-on-accent)]">
-                  {inboxUnread > 99 ? "99+" : inboxUnread}
+                  {badgeCount > 99 ? "99+" : badgeCount}
                 </span>
               ) : null}
             </Link>
@@ -113,7 +117,7 @@ export function AppTabNav({
             {tab.label}
             {showBadge ? (
               <span className="ml-1.5 inline-flex min-w-[1.125rem] items-center justify-center rounded-full bg-[var(--ds-accent)] px-1.5 py-0.5 font-mono text-[10px] font-bold text-[var(--ds-on-accent)]">
-                {inboxUnread > 99 ? "99+" : inboxUnread}
+                {badgeCount > 99 ? "99+" : badgeCount}
               </span>
             ) : null}
           </Link>

@@ -862,9 +862,9 @@
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  border: 1px solid var(--buyer-accent-border, color-mix(in oklab, var(--accent) 45%, transparent));
-  background: var(--buyer-accent-fill, color-mix(in oklab, var(--accent) 16%, #111111));
-  color: var(--industry-text, #fafafa);
+  border: 1px solid var(--btn-surface-default, #fff);
+  background: var(--btn-surface-default, #fff);
+  color: var(--btn-text-on-fill, #111);
   font-size: 0.875rem;
   font-weight: 500;
   padding: 0.5rem 1rem;
@@ -878,15 +878,15 @@
 .buyer-dashboard .bd-btn-primary:hover,
 .buyer-dashboard-shell .bd-btn-accent:hover,
 .buyer-dashboard-shell .bd-btn-primary:hover {
-  background: var(--buyer-accent-fill-hover, color-mix(in oklab, var(--accent) 24%, #111111));
-  border-color: var(--buyer-accent-border-hover, color-mix(in oklab, var(--accent) 62%, transparent));
+  background: color-mix(in srgb, var(--btn-surface-default, #fff) 90%, #888);
+  border-color: color-mix(in srgb, var(--btn-surface-default, #fff) 90%, #888);
 }
 
 .buyer-dashboard .bd-btn-accent:focus-visible,
 .buyer-dashboard .bd-btn-primary:focus-visible,
 .buyer-dashboard-shell .bd-btn-accent:focus-visible,
 .buyer-dashboard-shell .bd-btn-primary:focus-visible {
-  outline: 2px solid var(--buyer-focus-ring, rgb(0 170 204 / 0.65));
+  outline: 2px solid currentColor;
   outline-offset: 2px;
 }
 
@@ -1914,19 +1914,19 @@
 
 /* Buyer-scoped soft-accent CTAs + glass fields (do not touch global .theme-dark) */
 .buyer-dashboard-shell .btn-primary {
-  border: 1px solid var(--buyer-accent-border);
-  background: var(--buyer-accent-fill);
-  color: var(--industry-text, #fafafa);
+  border: 1px solid var(--btn-surface-default, #fff);
+  background: var(--btn-surface-default, #fff);
+  color: var(--btn-text-on-fill, #111);
   font-weight: 500;
 }
 
 .buyer-dashboard-shell .btn-primary:hover:not(:disabled) {
-  background: var(--buyer-accent-fill-hover);
-  border-color: var(--buyer-accent-border-hover);
+  background: color-mix(in srgb, var(--btn-surface-default, #fff) 90%, #888);
+  border-color: color-mix(in srgb, var(--btn-surface-default, #fff) 90%, #888);
 }
 
 .buyer-dashboard-shell .btn-primary:focus-visible {
-  outline: 2px solid var(--buyer-focus-ring);
+  outline: 2px solid currentColor;
   outline-offset: 2px;
 }
 

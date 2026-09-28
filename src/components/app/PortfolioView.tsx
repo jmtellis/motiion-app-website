@@ -2,138 +2,319 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Camera,
+  Check,
+  ChevronRight,
+  Clock3,
+  Eye,
+  FileText,
+  Film,
+  Ruler,
+  Share2,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
-import type {
-  ProfileExperience,
-  ProfileHighlight,
-  ProfileVisual,
-  PublicTalentProfile,
-} from "@/types/public";
-import { ExperiencesCreditsManager } from "@/components/talent/ExperiencesCreditsManager";
-import { PortfolioEditProfile } from "@/components/talent/PortfolioEditProfile";
+import { HeadshotsPanel } from "@/components/portfolio/HeadshotsPanel";
+import { HighlightsPanel } from "@/components/portfolio/HighlightsPanel";
+import { PublicProfilePanel } from "@/components/portfolio/PublicProfilePanel";
+import { ResumePanel } from "@/components/portfolio/ResumePanel";
+import { SizeSheetPanel } from "@/components/portfolio/SizeSheetPanel";
+import { VisualsPanel } from "@/components/portfolio/VisualsPanel";
+import "@/components/portfolio/portfolio-panels.css";
+import { PortfolioProfileTabs } from "@/components/talent/PortfolioProfileTabs";
+import { useNotificationsPanel } from "@/components/workspace/WorkspaceNotifications";
+import { WorkspaceSidePanel } from "@/components/workspace/WorkspaceSidePanel";
+import type { TalentAgency } from "@/lib/agencies/fetch-talent-agencies";
+import type { PortfolioEditorDraft } from "@/lib/app/portfolio-editor";
+import type { PortfolioOwnerData } from "@/lib/app/portfolio-owner";
+import { ResumePaper, SizeSheetPaper } from "@/components/portfolio/PortfolioPaper";
+import { sizeSheetRows } from "@/components/portfolio/size-sheet";
+import type { ProfileHighlight, PublicTalentProfile } from "@/types/public";
 
-type ProfileTab = "about" | "resume" | "visuals";
+type PanelKey = "public" | "headshots" | "highlights" | "visuals" | "resume" | "sizing";
 
-const TABS: { id: ProfileTab; label: string }[] = [
-  { id: "about", label: "About" },
-  { id: "resume", label: "Resume" },
-  { id: "visuals", label: "Visuals" },
-];
+const PANEL_ID = "portfolio-editor-panel";
+const PANEL_TITLES: Record<PanelKey, string> = {
+  public: "Public profile",
+  headshots: "Headshots",
+  highlights: "Highlights",
+  visuals: "Visuals",
+  resume: "Resume",
+  sizing: "Size sheet",
+};
 
-const monoLabelClass =
-  "font-mono text-xs font-medium tracking-[0.08em] text-[var(--ds-muted)] uppercase";
+function plural(count: number, noun: string) {
+  return `${count} ${noun}${count === 1 ? "" : "s"}`;
+}
 
-export function PortfolioView({ profile }: { profile: PublicTalentProfile }) {
-  const [tab, setTab] = useState<ProfileTab>("about");
-  const displayName = profile.full_name?.trim() || "Your portfolio";
-  const headshot = profile.headshot_url;
+export function PortfolioView({
+  profile,
+  owner,
+  editor,
+  agencies,
+  completion,
+  underReview,
+}: {
+  profile: PublicTalentProfile;
+  owner: PortfolioOwnerData;
+  editor: PortfolioEditorDraft;
+  agencies: TalentAgency[];
+  completion: { completed: number; total: number; cta: string } | null;
+  underReview: boolean;
+}) {
+  const router = useRouter();
+  const notifications = useNotificationsPanel();
+  const [active, setActive] = useState<PanelKey | null>(null);
+  const [actionsHost, setActionsHost] = useState<HTMLDivElement | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const dirtyRef = useRef(false);
+
+  const displayName = editor.displayName || profile.full_name?.trim() || "Your portfolio";
+  const headshot = owner.headshotUrls[0] ?? profile.headshot_url;
   const highlights = profile.profile_highlights ?? [];
-  const styleTags = useMemo(
-    () => uniqueTags([...(profile.styles ?? []), ...(profile.talent_types ?? [])]),
-    [profile.styles, profile.talent_types],
+  const location = editor.workingLocations[0] || profile.location;
+  const publicPath = `/profile/${profile.username?.trim() || profile.id}`;
+
+  const confirmDiscard = useCallback(() => !dirtyRef.current || window.confirm("Discard unsaved changes?"), []);
+
+  const openPanel = useCallback(
+    (key: PanelKey) => {
+      if (active === key) {
+        if (confirmDiscard()) setActive(null);
+        return;
+      }
+      if (!confirmDiscard()) return;
+      dirtyRef.current = false;
+      notifications.setOpen(false);
+      setActive(key);
+    },
+    [active, confirmDiscard, notifications],
   );
 
+  const closePanel = useCallback(() => {
+    if (confirmDiscard()) setActive(null);
+  }, [confirmDiscard]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(null), 2600);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
+  useEffect(() => {
+    if (!active) return;
+    function beforeUnload(event: BeforeUnloadEvent) {
+      if (dirtyRef.current) event.preventDefault();
+    }
+    window.addEventListener("beforeunload", beforeUnload);
+    return () => window.removeEventListener("beforeunload", beforeUnload);
+  }, [active]);
+
+  const onDirtyChange = useCallback((dirty: boolean) => {
+    dirtyRef.current = dirty;
+  }, []);
+
+  const onSaved = useCallback(
+    (message: string) => {
+      setToast(message);
+      router.refresh();
+    },
+    [router],
+  );
+
+  async function shareProfile() {
+    const url = `${window.location.origin}${publicPath}`;
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: displayName, url });
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
+  }
+
+  const creditCount = owner.experiences.length;
+  const visuals = owner.visuals.filter((visual) => visual.kind !== "experience" && visual.url);
+  const visualPreview = visuals.find((visual) => visual.kind === "reel") ?? visuals[0];
+  const sizeRows = sizeSheetRows(owner.height, owner.sizing);
+  const highlightCover = owner.highlights.find((item) => item.image_url)?.image_url ?? null;
+  const lastHeadshot = owner.headshotUrls.at(-1) ?? null;
+
+  const cards: { key: PanelKey; title: string; detail: string; Icon: LucideIcon; preview: ReactNode }[] = [
+    {
+      key: "public",
+      title: "View public profile",
+      detail: "See what casting teams see",
+      Icon: Eye,
+      preview: headshot ? <PreviewImage src={headshot} /> : null,
+    },
+    {
+      key: "headshots",
+      title: "Headshots",
+      detail: owner.headshotUrls.length ? plural(owner.headshotUrls.length, "headshot") : "Add your first headshot",
+      Icon: Camera,
+      preview: lastHeadshot ? <PreviewImage src={lastHeadshot} /> : null,
+    },
+    {
+      key: "highlights",
+      title: "Highlights",
+      detail: owner.highlights.length ? plural(owner.highlights.length, "highlight") : "Feature your standout credits",
+      Icon: Sparkles,
+      preview: highlightCover ? <PreviewImage src={highlightCover} /> : null,
+    },
+    {
+      key: "visuals",
+      title: "Visuals",
+      detail: visuals.length ? plural(visuals.length, "video") : "Add your reel, slate, and clips",
+      Icon: Film,
+      preview: visualPreview?.url ? (
+        <video src={`${visualPreview.url}#t=0.1`} muted playsInline preload="metadata" aria-hidden tabIndex={-1} />
+      ) : null,
+    },
+    {
+      key: "resume",
+      title: "Resume",
+      detail: creditCount ? plural(creditCount, "credit") : "Upload or add your credits",
+      Icon: FileText,
+      preview: creditCount ? (
+        <ResumePaper
+          className="is-thumbnail"
+          name={displayName}
+          stats={[owner.height ? `Height ${owner.height}` : "", location ?? ""].filter(Boolean)}
+          experiences={owner.experiences}
+        />
+      ) : null,
+    },
+    {
+      key: "sizing",
+      title: "Size sheet",
+      detail: sizeRows.length ? plural(sizeRows.length, "measurement") : "Measurements and wardrobe sizing",
+      Icon: Ruler,
+      preview: sizeRows.length ? (
+        <SizeSheetPaper
+          className="is-thumbnail"
+          name={displayName}
+          headshot={headshot}
+          location={owner.location}
+          representation={owner.representation}
+          rows={sizeRows}
+          profileUrl={publicPath}
+        />
+      ) : null,
+    },
+  ];
+
+  const panelProps = { owner, actionsHost, onDirtyChange, onSaved };
+
   return (
-    <div className="space-y-8">
-      <header className="flex flex-col gap-6 border-b border-[var(--ds-border)] pb-6 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex gap-5">
-          <Headshot url={headshot} name={displayName} />
-          <div className="min-w-0">
-            <p className="font-mono text-xs font-medium tracking-[0.08em] text-[var(--ds-subtle)] uppercase">
-              Portfolio
-            </p>
-            <h1 className="mt-1.5 text-[1.75rem] font-semibold leading-[1.15] tracking-[-0.02em] text-[var(--ds-text-default)]">
-              {displayName}
-            </h1>
-            <p className="mt-1.5 font-mono text-xs text-[var(--ds-subtle)]">
-              {[profile.username ? `@${profile.username}` : null, profile.location]
-                .filter(Boolean)
-                .join("  ·  ")}
-            </p>
+    <div className="portfolio-page">
+      <header className="portfolio-header">
+        <div className="portfolio-header__inner">
+          <div className="portfolio-header__identity">
+            <Headshot url={headshot} name={displayName} />
+            <div className="min-w-0">
+              <h1>{displayName}</h1>
+              <p>
+                {[profile.username ? `@${profile.username}` : null, location].filter(Boolean).join(" · ")}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <PortfolioEditProfile profile={profile} />
-          {profile.username ? (
-            <Link
-              href={`/profile/${profile.username}`}
-              className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-[var(--ds-border)] bg-[var(--ds-surface-raised)] px-4 text-sm font-medium text-[var(--ds-on-surface)] transition-colors hover:bg-[var(--ds-border-strong)]"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View public page
-              <ArrowUpRight className="size-3.5 text-[var(--ds-muted)]" aria-hidden />
-            </Link>
-          ) : null}
+          <div className="portfolio-header__actions">
+            <button type="button" onClick={() => void shareProfile()}>
+              {copied ? <Check size={16} aria-hidden /> : <Share2 size={16} aria-hidden />}
+              {copied ? "Link copied" : "Share profile"}
+            </button>
+          </div>
         </div>
       </header>
 
-      <nav aria-label="Portfolio sections" className="flex flex-wrap gap-1">
-        {TABS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setTab(item.id)}
-            className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-              tab === item.id
-                ? "bg-[var(--ds-surface-raised)] text-[var(--ds-text-default)]"
-                : "text-[var(--ds-muted)] hover:bg-[var(--ds-surface)] hover:text-[var(--ds-on-surface)]"
-            }`}
-            aria-pressed={tab === item.id}
-          >
-            {item.label}
-          </button>
-        ))}
-      </nav>
-
-      {highlights.length > 0 ? (
-        <section className="space-y-3">
-          <h2 className={monoLabelClass}>Highlights</h2>
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {highlights.map((item) => (
-              <HighlightCard key={item.id} item={item} />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {tab === "about" ? <AboutPanel profile={profile} styleTags={styleTags} /> : null}
-      {tab === "resume" ? (
-        <div className="space-y-8">
-          <ExperiencesCreditsManager
-            initialExperiences={(profile.experiences ?? []).map((item, index) => ({
-              id: `seed_${index}`,
-              title: item.title,
-              role: item.role ?? undefined,
-              credits: item.credits ?? undefined,
-            }))}
-          />
-          <ResumePanel
-            experiences={profile.experiences ?? []}
-            training={profile.training ?? []}
-            resumeUrl={profile.resume_url}
-            hideExperiences
-          />
-        </div>
-      ) : null}
-      {tab === "visuals" ? (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm text-[var(--ds-muted)]">
-              Manage headshots and media from Complete Profile for now.
+      <div className="portfolio-scroll" data-lenis-prevent>
+        <div className="portfolio-scroll__inner">
+          {underReview ? (
+            <p className="portfolio-review-banner" role="status">
+              <Clock3 size={16} aria-hidden />
+              <span>
+                <strong>Your profile is under review.</strong> We’ll let you know once Motiion approves it.
+              </span>
             </p>
-            <Link
-              href="/profile/setup"
-              className="text-sm font-medium text-[var(--ds-accent)] hover:opacity-90"
-            >
-              Manage media
-            </Link>
-          </div>
-          <VisualsPanel visuals={orderVisuals(profile.profile_visuals ?? [])} />
+          ) : null}
+
+          {completion ? <CompletionBanner {...completion} /> : null}
+
+          <section aria-labelledby="portfolio-edit-title">
+            <div className="talent-section-heading">
+              <div>
+                <h2 id="portfolio-edit-title">Build your portfolio</h2>
+                <p>Keep the details casting teams look for up to date.</p>
+              </div>
+            </div>
+            <div className="talent-portfolio-cards">
+              {cards.map((card) => (
+                <button
+                  type="button"
+                  className="talent-portfolio-card"
+                  key={card.key}
+                  aria-expanded={active === card.key}
+                  aria-controls={PANEL_ID}
+                  data-selected={active === card.key}
+                  onClick={() => openPanel(card.key)}
+                >
+                  <span className="talent-portfolio-card-preview" data-empty={card.preview ? undefined : true} aria-hidden>
+                    {card.preview ?? <card.Icon size={20} strokeWidth={1.6} aria-hidden />}
+                  </span>
+                  <div>
+                    <h3>{card.title}</h3>
+                    <p>{card.detail}</p>
+                  </div>
+                  <ChevronRight size={18} aria-hidden />
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {highlights.length > 0 ? (
+            <section className="portfolio-highlights" aria-label="Highlights">
+              <h2>Highlights</h2>
+              <div className="portfolio-highlights__row">
+                {highlights.map((item) => (
+                  <HighlightCard key={item.id} item={item} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <PortfolioProfileTabs editor={editor} agencies={agencies} />
         </div>
-      ) : null}
+      </div>
+
+      <WorkspaceSidePanel
+        id={PANEL_ID}
+        open={active !== null && !notifications.open}
+        title={active ? PANEL_TITLES[active] : "Portfolio"}
+        onClose={closePanel}
+        actions={<div ref={setActionsHost} className="workspace-side-panel__slot" />}
+      >
+        {active === "public" ? <PublicProfilePanel path={publicPath} actionsHost={actionsHost} /> : null}
+        {active === "headshots" ? <HeadshotsPanel {...panelProps} /> : null}
+        {active === "highlights" ? <HighlightsPanel {...panelProps} /> : null}
+        {active === "visuals" ? <VisualsPanel {...panelProps} /> : null}
+        {active === "resume" ? <ResumePanel {...panelProps} /> : null}
+        {active === "sizing" ? <SizeSheetPanel {...panelProps} /> : null}
+        {toast ? (
+          <p className="portfolio-toast" role="status">
+            <Check size={14} aria-hidden /> {toast}
+          </p>
+        ) : null}
+      </WorkspaceSidePanel>
     </div>
   );
 }
@@ -141,210 +322,46 @@ export function PortfolioView({ profile }: { profile: PublicTalentProfile }) {
 function Headshot({ url, name }: { url: string | null; name: string }) {
   if (url) {
     return (
-      <div className="relative size-20 shrink-0 overflow-hidden rounded-[14px] border border-[#262626] bg-[#1e1e1e]">
-        <Image src={url} alt="" fill className="object-cover" unoptimized />
+      <div className="portfolio-headshot" draggable={false} onDragStart={(event) => event.preventDefault()}>
+        <Image src={url} alt="" fill draggable={false} className="object-cover" unoptimized />
       </div>
     );
   }
 
   return (
-    <div className="flex size-20 shrink-0 items-center justify-center rounded-[14px] border border-[#262626] bg-[#0c2a26] font-mono text-lg font-medium text-[#2dd4bf]">
+    <div className="portfolio-headshot portfolio-headshot--empty" aria-hidden>
       {name.slice(0, 2).toUpperCase()}
     </div>
   );
 }
 
+function PreviewImage({ src }: { src: string }) {
+  return <Image src={src} alt="" fill sizes="48px" className="object-cover" draggable={false} unoptimized />;
+}
+
+function CompletionBanner({ completed, total, cta }: { completed: number; total: number; cta: string }) {
+  const percent = total ? Math.round((completed / total) * 100) : 0;
+  return (
+    <section className="portfolio-completion" aria-label="Profile completion">
+      <div className="portfolio-completion__copy">
+        <h2>Complete your profile</h2>
+        <p>
+          {completed} of {total} complete · {percent}%
+        </p>
+      </div>
+      <div className="portfolio-completion__bar" aria-hidden>
+        <span style={{ width: `${percent}%` }} />
+      </div>
+      <Link href="/profile/setup">{cta}</Link>
+    </section>
+  );
+}
+
 function HighlightCard({ item }: { item: ProfileHighlight }) {
   return (
-    <article className="min-w-[13rem] shrink-0 rounded-[14px] border border-[#262626] bg-[#151515] p-4">
-      <p className="text-sm font-medium text-[#fafafa]">{item.title}</p>
-      {item.subtitle ? <p className="mt-1 text-sm text-[#8a8a8a]">{item.subtitle}</p> : null}
+    <article className="portfolio-highlight">
+      <p>{item.title}</p>
+      {item.subtitle ? <p>{item.subtitle}</p> : null}
     </article>
   );
-}
-
-function AboutPanel({
-  profile,
-  styleTags,
-}: {
-  profile: PublicTalentProfile;
-  styleTags: string[];
-}) {
-  const facts: Array<{ label: string; value: string }> = [
-    profile.representation ? { label: "Representation", value: profile.representation } : null,
-    profile.gender ? { label: "Gender", value: profile.gender } : null,
-    profile.height ? { label: "Height", value: profile.height } : null,
-    profile.union_status ? { label: "Union", value: profile.union_status } : null,
-  ].filter((row): row is { label: string; value: string } => row !== null);
-
-  return (
-    <section className="grid gap-6 rounded-[14px] border border-[#262626] bg-[#151515] p-6 md:grid-cols-2">
-      <div>
-        <h2 className={monoLabelClass}>Details</h2>
-        {facts.length ? (
-          <dl className="mt-4 divide-y divide-[#262626]">
-            {facts.map((row) => (
-              <div key={row.label} className="flex items-baseline justify-between gap-4 py-2.5">
-                <dt className="font-mono text-xs tracking-[0.08em] text-[#5a5a5a] uppercase">{row.label}</dt>
-                <dd className="text-right text-sm font-medium text-[#eaeaea]">{row.value}</dd>
-              </div>
-            ))}
-          </dl>
-        ) : (
-          <p className="mt-4 text-sm text-[#5a5a5a]">No details added yet.</p>
-        )}
-      </div>
-      <div>
-        {styleTags.length ? (
-          <>
-            <h3 className={monoLabelClass}>Styles & types</h3>
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {styleTags.map((tag) => (
-                <li
-                  key={tag}
-                  className="rounded-full border border-[#262626] bg-[#1e1e1e] px-3 py-1 text-xs font-medium text-[#a3a3a3] capitalize"
-                >
-                  {tag}
-                </li>
-              ))}
-            </ul>
-          </>
-        ) : null}
-        {profile.skills?.length ? (
-          <>
-            <h3 className={`mt-6 ${monoLabelClass}`}>Skills</h3>
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {profile.skills.map((skill) => (
-                <li
-                  key={skill}
-                  className="rounded-full border border-[#262626] px-3 py-1 text-xs text-[#8a8a8a] capitalize"
-                >
-                  {skill}
-                </li>
-              ))}
-            </ul>
-          </>
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
-function ResumePanel({
-  experiences,
-  training,
-  resumeUrl,
-  hideExperiences = false,
-}: {
-  experiences: ProfileExperience[];
-  training: PublicTalentProfile["training"];
-  resumeUrl: string | null;
-  hideExperiences?: boolean;
-}) {
-  return (
-    <section className="space-y-6">
-      {resumeUrl ? (
-        <a
-          href={resumeUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex h-10 items-center gap-1.5 rounded-full border border-[var(--ds-border)] bg-[var(--ds-surface-raised)] px-4 text-sm font-medium text-[var(--ds-on-surface)] transition-colors hover:bg-[var(--ds-border-strong)]"
-        >
-          Open resume PDF
-          <ArrowUpRight className="size-3.5 text-[var(--ds-muted)]" aria-hidden />
-        </a>
-      ) : null}
-      {!hideExperiences ? (
-        <div className="rounded-[var(--ds-radius-card)] border border-[var(--ds-border)] bg-[var(--ds-surface)] p-6">
-          <h2 className={monoLabelClass}>Experience</h2>
-          {experiences.length ? (
-            <ul className="mt-4 divide-y divide-[var(--ds-border)]">
-              {experiences.map((item, index) => (
-                <li key={`${item.title}-${index}`} className="py-4 first:pt-0 last:pb-0">
-                  <p className="text-sm font-medium text-[var(--ds-text-default)]">{item.title}</p>
-                  {item.role ? (
-                    <p className="mt-0.5 text-sm text-[var(--ds-muted)]">{item.role}</p>
-                  ) : null}
-                  {item.credits ? (
-                    <p className="mt-1 text-sm text-[var(--ds-muted)]">{item.credits}</p>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-3 text-sm text-[var(--ds-subtle)]">No credits added yet.</p>
-          )}
-        </div>
-      ) : null}
-      <div className="rounded-[var(--ds-radius-card)] border border-[var(--ds-border)] bg-[var(--ds-surface)] p-6">
-        <h2 className={monoLabelClass}>Training</h2>
-        {training?.length ? (
-          <ul className="mt-4 divide-y divide-[var(--ds-border)]">
-            {training.map((item, index) => (
-              <li
-                key={`${item.title ?? item.organization ?? "training"}-${index}`}
-                className="py-3 first:pt-0 last:pb-0"
-              >
-                <p className="text-sm font-medium text-[var(--ds-text-default)]">
-                  {item.title ?? item.organization ?? "Training"}
-                </p>
-                {item.organization && item.title ? (
-                  <p className="mt-0.5 text-sm text-[var(--ds-muted)]">{item.organization}</p>
-                ) : null}
-                {item.year ? (
-                  <p className="mt-0.5 font-mono text-xs text-[var(--ds-subtle)]">{item.year}</p>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-3 text-sm text-[var(--ds-subtle)]">No training listed yet.</p>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function VisualsPanel({ visuals }: { visuals: ProfileVisual[] }) {
-  if (!visuals.length) {
-    return (
-      <p className="rounded-[14px] border border-dashed border-[#262626] bg-[#151515] px-8 py-12 text-center text-sm text-[#8a8a8a]">
-        No visuals uploaded yet.
-      </p>
-    );
-  }
-
-  return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {visuals.map((visual) => (
-        <article
-          key={visual.id}
-          className="overflow-hidden rounded-[14px] border border-[#262626] bg-[#151515]"
-        >
-          {visual.url ? (
-            <div className="relative aspect-[4/5] bg-[#1e1e1e]">
-              <Image src={visual.url} alt={visual.kind} fill className="object-cover" unoptimized />
-            </div>
-          ) : null}
-          <p className="px-4 py-2.5 font-mono text-xs font-medium tracking-[0.08em] text-[#8a8a8a] uppercase">
-            {visual.kind}
-          </p>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function uniqueTags(values: string[]) {
-  const seen = new Set<string>();
-  return values.filter((value) => {
-    const key = value.trim().toLowerCase();
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-function orderVisuals(visuals: ProfileVisual[]) {
-  return [...visuals].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
 }

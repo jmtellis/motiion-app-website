@@ -1,4 +1,5 @@
 "use client";
+import { ButtonProgress } from "./ButtonProgress";
 
 import { useState } from "react";
 
@@ -64,8 +65,7 @@ export function SignupSplitOAuth({
           disabled={disabled || isBusy}
           onClick={() => void handleOAuth("google")}
         >
-          <GoogleLogo className="h-4 w-4 shrink-0" />
-          {loadingProvider === "google" ? "…" : "Google"}
+          <ButtonProgress loading={loadingProvider === "google"}><GoogleLogo className="h-4 w-4 shrink-0" />Google</ButtonProgress>
         </button>
         <button
           type="button"
@@ -73,8 +73,7 @@ export function SignupSplitOAuth({
           disabled={disabled || isBusy}
           onClick={() => void handleOAuth("apple")}
         >
-          <AppleLogo className="h-4 w-4 shrink-0" />
-          {loadingProvider === "apple" ? "…" : "Apple"}
+          <ButtonProgress loading={loadingProvider === "apple"}><AppleLogo className="h-4 w-4 shrink-0" />Apple</ButtonProgress>
         </button>
       </div>
       {error ? <div className="signup-split-error">{error}</div> : null}

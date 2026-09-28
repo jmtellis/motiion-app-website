@@ -126,7 +126,7 @@ export async function resolveOAuthRedirectPath(
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "user_id, email, first_name, last_name, display_name, account_type, username, talent_types, headshot_urls, onboarding_completed_at",
+      "user_id, email, first_name, last_name, display_name, account_type, username, talent_types, headshot_urls, onboarding_completed_at, enabled_shells, active_shell",
     )
     .eq("user_id", userId)
     .maybeSingle<ProfileRecord>();

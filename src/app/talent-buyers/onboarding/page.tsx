@@ -1,26 +1,42 @@
 import { redirect } from "next/navigation";
 
 import { TalentBuyerOnboardingFlow } from "@/components/talent-buyers/TalentBuyerOnboardingFlow";
-import {
-  isCommunityAccount,
-  isHiringAccount,
-  isOnboardingComplete,
-  isTalentAccount,
-} from "@/lib/auth/profile";
+import { IndustryAccessGate } from "@/components/talent-buyers/IndustryAccessGate";
+import { getActiveShell, hasEnabledShell, isCommunityAccount, isOnboardingComplete } from "@/lib/auth/profile";
 import { getProfileDestination, requireAuth } from "@/lib/auth/session";
 
-export default async function TalentBuyerOnboardingPage() {
+export default async function TalentBuyerOnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ addShell?: string }>;
+}) {
+  const params = await searchParams;
   const profile = await requireAuth();
+  const addingIndustry = params.addShell === "industry";
+
+  if (addingIndustry) {
+    const canAdd =
+      isOnboardingComplete(profile) &&
+      hasEnabledShell(profile, "talent") &&
+      !hasEnabledShell(profile, "lookingForTalent") &&
+      !isCommunityAccount(profile.accountType);
+    if (!canAdd) redirect(getProfileDestination(profile));
+    return (
+      <IndustryAccessGate>
+        <TalentBuyerOnboardingFlow profile={profile} exitHref="/home" />
+      </IndustryAccessGate>
+    );
+  }
 
   if (isOnboardingComplete(profile)) {
     redirect(getProfileDestination(profile));
   }
 
-  if (isTalentAccount(profile.accountType) || isCommunityAccount(profile.accountType)) {
+  if (getActiveShell(profile) === "talent" || getActiveShell(profile) === "community" || isCommunityAccount(profile.accountType)) {
     redirect("/onboarding");
   }
 
-  if (!isHiringAccount(profile.accountType) && profile.accountType !== null) {
+  if (getActiveShell(profile) !== "lookingForTalent" && profile.accountType !== null) {
     redirect("/onboarding");
   }
 

@@ -1,3 +1,7 @@
+/* The shell is a fixed-height app frame; only inner panes scroll, so the page itself never rubber-bands. */
+html:has(.workspace-shell),
+html:has(.workspace-shell) body { overscroll-behavior: none; }
+
 /* Shared signed-in workspace: quiet navigation around a bounded content canvas. */
 .workspace-shell.workspace-shell {
   --workspace-canvas: #0b0b0c;
@@ -139,4 +143,143 @@
     border-bottom: 1px solid var(--workspace-line);
     font-weight: 500;
   }
+}
+
+/* Shared sidebar geometry: logo and toggle never diverge by account type. */
+.workspace-shared-header { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:44px; padding:0 8px; flex-shrink:0; }
+.workspace-shared-header[data-collapsed="true"] { justify-content:center; padding-inline:0; }
+.workspace-shared-brand { display:flex; align-items:center; min-width:0; }
+.workspace-shared-collapse { display:flex; align-items:center; justify-content:center; width:28px; height:28px; color:#a1a1a1; border-radius:999px; cursor:pointer; flex-shrink:0; }
+.workspace-shared-collapse:hover { background:#292929; color:white; }
+
+.workspace-footer-notices {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  margin: 0 0 8px;
+}
+.workspace-test-banner,
+.workspace-upgrade-banner {
+  margin: 0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+}
+.workspace-test-banner {
+  padding: 8px 12px;
+  border: 1px solid #fbbf24;
+  background: #fef3c7;
+  color: #451a03;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+}
+.workspace-upgrade-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  border: 1px solid var(--accent, #00d4f0);
+  background: color-mix(in srgb, var(--accent, #00d4f0) 58%, #042830);
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.workspace-upgrade-banner:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+.workspace-upgrade-banner > span:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.workspace-upgrade-banner strong {
+  font-size: 13px;
+  font-weight: 650;
+}
+.workspace-upgrade-banner small {
+  color: #fff;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.workspace-upgrade-banner__action {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+}
+.workspace-shell[data-collapsed="true"] .workspace-footer-notices,
+.buyer-dashboard-shell--sidebar-collapsed .workspace-footer-notices {
+  display: none;
+}
+.workspace-account-menu { position: relative; z-index: 2; width: 100%; }
+.workspace-sidebar-account,
+.buyer-sidebar__footer { position: relative; z-index: 3; }
+.workspace-account-popover {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 10000;
+  display: grid;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid #262626;
+  border-radius: 12px;
+  background: #171717;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.35);
+}
+.workspace-account-popover[data-placement="up"] { bottom: calc(100% + 8px); }
+.workspace-account-popover[data-placement="down"] { top: calc(100% + 8px); }
+.workspace-account-popover__passcode {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+}
+.workspace-account-popover__passcode p {
+  margin: 0;
+  color: #bdbdc4;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.workspace-account-popover__passcode input {
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 8px;
+  background: #111113;
+  color: #ededef;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+.workspace-account-popover :is(a, button) {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  padding: 7px 12px;
+  text-align: left;
+  color: #ededef;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.workspace-account-popover :is(a, button):hover,
+.workspace-account-popover :is(a, button):focus-visible {
+  background: #2a2a2e;
+}
+.workspace-account-popover :is(a, button):focus-visible {
+  outline: 2px solid var(--accent, #2dd4bf);
+  outline-offset: 1px;
+}
+.workspace-account-popover__error {
+  margin: 4px 8px 6px;
+  color: #f0b429;
+  font-size: 12px;
+  line-height: 1.4;
 }

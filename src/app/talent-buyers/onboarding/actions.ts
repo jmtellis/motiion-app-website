@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { trackServerEvent } from "@/lib/analytics/track-server";
-import { buildAuthDisplayNameMetadata } from "@/lib/auth/profile";
+import { buildAuthDisplayNameMetadata, isMissingShellRpc } from "@/lib/auth/profile";
 import {
   defaultBuyerNotificationPreferences,
   deriveLegacyPrimaryGoal,
@@ -68,6 +68,18 @@ async function ensureBuyerOrganization(
     user_id: userId,
     role: "owner",
   });
+}
+
+async function talentProfileAlreadyComplete(
+  supabase: NonNullable<Awaited<ReturnType<typeof createServerSupabaseClient>>>,
+  userId: string,
+) {
+  const { data } = await supabase
+    .from("profiles")
+    .select("account_type, onboarding_completed_at")
+    .eq("user_id", userId)
+    .maybeSingle<{ account_type: string | null; onboarding_completed_at: string | null }>();
+  return data?.account_type === "talent" && Boolean(data.onboarding_completed_at);
 }
 
 const marketPlaceSchema = z.object({
@@ -198,6 +210,7 @@ export async function saveTalentBuyerOnboardingProgress(
   const contactEmail = data.contactEmail?.trim().toLowerCase();
   const fullName = data.fullName?.trim();
   const { firstName, lastName } = splitPersonName(fullName ?? "");
+  const preserveTalentIdentity = await talentProfileAlreadyComplete(supabase, user.id);
 
   if (fullName || contactEmail) {
     const { error: profileError } = await supabase.from("profiles").upsert(
@@ -211,7 +224,7 @@ export async function saveTalentBuyerOnboardingProgress(
               display_name: fullName,
             }
           : {}),
-        account_type: "lookingForTalent",
+        ...(preserveTalentIdentity ? {} : { account_type: "lookingForTalent" as const }),
       },
       { onConflict: "user_id" },
     );
@@ -341,6 +354,7 @@ export async function completeTalentBuyerOnboarding(
   const legacyPrimaryGoal = deriveLegacyPrimaryGoal(data.platformGoals);
   const primaryAction = resolveIndustryPrimaryAction(data.platformGoals);
   const legacyNonTalentType = mapBuyerRoleToLegacyNonTalentType(data.role);
+  const preserveTalentIdentity = await talentProfileAlreadyComplete(supabase, user.id);
 
   const { error: profileError } = await supabase.from("profiles").upsert(
     {
@@ -349,7 +363,7 @@ export async function completeTalentBuyerOnboarding(
       first_name: firstName,
       last_name: lastName,
       display_name: fullName,
-      account_type: "lookingForTalent",
+      ...(preserveTalentIdentity ? {} : { account_type: "lookingForTalent" as const }),
       onboarding_completed_at: completedAt,
     },
     { onConflict: "user_id" },
@@ -390,6 +404,13 @@ export async function completeTalentBuyerOnboarding(
 
   if (buyerError) {
     return { ok: false, error: buyerError.message };
+  }
+
+  const { error: shellError } = await supabase.rpc("enable_profile_shell", {
+    p_shell: "lookingForTalent",
+  });
+  if (shellError && (preserveTalentIdentity || !isMissingShellRpc(shellError.message))) {
+    return { ok: false, error: shellError.message };
   }
 
   if (data.organizationRelationship !== "independent" || organizationName) {

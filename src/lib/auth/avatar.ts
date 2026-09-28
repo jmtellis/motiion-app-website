@@ -1,6 +1,6 @@
 import type { DashboardProfile } from "@/types/database";
 
-import { isHiringAccount, isOnboardingComplete } from "@/lib/auth/profile";
+import { getActiveShell, getOnboardingPath, isOnboardingComplete } from "@/lib/auth/profile";
 import { BUYER_DASHBOARD_PATH, BUYER_HOME_PATH } from "@/lib/talent-buyers/dashboard-data";
 
 export function getProfileInitials(fullName: string) {
@@ -19,17 +19,13 @@ export function getProfileAvatarUrl(headshotUrls: string[] | null | undefined) {
 }
 
 export function getAccountProfileHref(profile: DashboardProfile) {
-  if (!isOnboardingComplete(profile)) {
-    return isHiringAccount(profile.accountType) ? "/talent-buyers/onboarding" : "/onboarding";
-  }
-  if (isHiringAccount(profile.accountType)) {
-    return BUYER_HOME_PATH;
-  }
+  if (!isOnboardingComplete(profile)) return getOnboardingPath(profile);
+  if (getActiveShell(profile) === "lookingForTalent") return BUYER_HOME_PATH;
   return "/portfolio";
 }
 
 export function getAccountSettingsHref(profile: DashboardProfile) {
-  if (isHiringAccount(profile.accountType) && isOnboardingComplete(profile)) {
+  if (getActiveShell(profile) === "lookingForTalent" && isOnboardingComplete(profile)) {
     return `${BUYER_DASHBOARD_PATH}/settings`;
   }
   return "/settings";

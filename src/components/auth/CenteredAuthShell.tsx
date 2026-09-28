@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import { AuthLogo } from "./AuthLogo";
 import type { ReactNode } from "react";
 import { AuthSplitTransitionProvider, AuthSplitLink } from "./AuthSplitTransition";
 import { MarketingBodySurface } from "@/components/landing/MarketingBodySurface";
@@ -17,7 +17,7 @@ export function CenteredAuthShell({ mode, children }: { mode: "login" | "signup"
     <div className="centered-auth">
       <main className="signup-split-panel centered-auth__main">
         <div className="signup-split-form">
-          <div className="centered-auth__logo"><Image src="/marketing/footer-logo.svg" alt="Motiion" width={33} height={24} priority /></div>
+          <AuthLogo className="mb-6" />
           <div className="signup-split-form__header">
             <h1 className="signup-split-form__title">{signup ? "Sign up for Motiion" : "Welcome back"}</h1>
             <p className="signup-split-form__subtitle centered-auth__subtitle">

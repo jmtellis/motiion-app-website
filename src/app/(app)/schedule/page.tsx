@@ -1,13 +1,11 @@
-import { ScheduleHub } from "@/components/talent/ScheduleHub";
-import { fetchTalentScheduleHub, type ScheduleCategoryId } from "@/lib/app/schedule";
+import { TalentScheduleCalendar } from "@/components/talent/TalentScheduleCalendar";
+import {
+  fetchTalentCalendarEvents,
+  type TalentScheduleFilter,
+} from "@/lib/app/schedule";
 import { requireTalentAccount } from "@/lib/auth/session";
 
-const CATEGORIES = new Set<ScheduleCategoryId>([
-  "classes",
-  "sessions",
-  "events",
-  "submissions",
-]);
+const FILTERS = new Set<TalentScheduleFilter>(["all", "classes", "sessions", "events"]);
 
 export default async function SchedulePage({
   searchParams,
@@ -16,13 +14,11 @@ export default async function SchedulePage({
 }) {
   const profile = await requireTalentAccount();
   const params = await searchParams;
-  const rawCategory = typeof params.category === "string" ? params.category : null;
-  const activeCategory =
-    rawCategory && CATEGORIES.has(rawCategory as ScheduleCategoryId)
-      ? (rawCategory as ScheduleCategoryId)
-      : null;
+  const rawFilter = typeof params.filter === "string" ? params.filter : "all";
+  const filter = FILTERS.has(rawFilter as TalentScheduleFilter)
+    ? (rawFilter as TalentScheduleFilter)
+    : "all";
+  const events = await fetchTalentCalendarEvents(profile.id);
 
-  const data = await fetchTalentScheduleHub(profile.id);
-
-  return <ScheduleHub data={data} activeCategory={activeCategory} />;
+  return <TalentScheduleCalendar events={events} filter={filter} />;
 }

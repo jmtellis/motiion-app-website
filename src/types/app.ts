@@ -26,7 +26,30 @@ export type InboxConversation = {
   participant_avatar_url: string | null;
   last_message_body: string | null;
   last_message_at: string | null;
+  last_message_sender_id: string | null;
   unread_count: number;
+  muted: boolean;
+};
+
+export type MessageRequest = {
+  id: string;
+  sender_id: string;
+  sender_name: string;
+  sender_avatar_url: string | null;
+  context_type: string | null;
+  context_id: string | null;
+  context_title: string | null;
+  initial_message: string;
+  status: string;
+  created_at: string;
+};
+
+export type ConversationParticipant = {
+  user_id: string;
+  display_name: string;
+  role: string | null;
+  avatar_url: string | null;
+  joined_at: string;
 };
 
 export type UpcomingActivity = {
@@ -37,12 +60,6 @@ export type UpcomingActivity = {
   start_time: string | null;
   cover_image_url: string | null;
   role: "attending" | "hosting";
-};
-
-export type HomeFeedData = {
-  pendingRequests: HomePendingRequest[];
-  upcomingActivities: UpcomingActivity[];
-  matchedOpportunities: MatchedOpportunity[];
 };
 
 export type MatchedOpportunity = {

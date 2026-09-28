@@ -667,12 +667,12 @@
   margin-top: 0.75rem;
   min-height: 2.75rem;
   border-radius: 9999px;
-  border: 1px solid color-mix(in oklab, var(--accent) 45%, transparent);
-  background: color-mix(in oklab, var(--accent) 16%, #111111);
+  border: 1px solid #fff;
+  background: #fff;
   padding: 0.625rem 1.35rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #fafafa;
+  color: #111;
   cursor: pointer;
   transition:
     background-color 180ms ease,
@@ -681,12 +681,12 @@
 }
 
 .signup-split-submit:hover:not(:disabled) {
-  background: color-mix(in oklab, var(--accent) 24%, #111111);
-  border-color: color-mix(in oklab, var(--accent) 62%, transparent);
+  background: #e8e8e8;
+  border-color: #e8e8e8;
 }
 
 .signup-split-submit:focus-visible {
-  outline: 2px solid rgb(0 170 204 / 0.65);
+  outline: 2px solid #fff;
   outline-offset: 2px;
 }
 
@@ -1428,14 +1428,14 @@
 
 .signup-split-panel .btn-primary {
   border-radius: 9999px;
-  border: 1px solid color-mix(in oklab, var(--accent) 45%, transparent);
-  background: color-mix(in oklab, var(--accent) 16%, #111111);
-  color: #fafafa;
+  border: 1px solid #fff;
+  background: #fff;
+  color: #111;
 }
 
 .signup-split-panel .btn-primary:hover:not(:disabled) {
-  background: color-mix(in oklab, var(--accent) 24%, #111111);
-  border-color: color-mix(in oklab, var(--accent) 62%, transparent);
+  background: #e8e8e8;
+  border-color: #e8e8e8;
 }
 
 .signup-split-panel .btn-outline {
@@ -1801,3 +1801,103 @@
     bottom: 2.5rem;
   }
 }
+
+/* Shared onboarding controls and a focused, single-panel setup flow. */
+.signup-split-panel--full-bleed:has(.signup-split-form--onboarding) { align-items: center; padding: clamp(16px, 4vw, 48px); }
+.signup-split-panel--full-bleed .signup-split-form--onboarding { width: min(100%, 620px); margin-inline: auto; }
+.setup-field-error, .setup-field-success, .setup-field-help { display: block; margin-top: 8px; font-size: 13px; line-height: 1.5; font-weight: 400; }
+.setup-field-error { color: #fda4af !important; }
+.setup-field-success { color: #86efac !important; }
+.setup-field-help { color: #aaa !important; }
+.signup-split-choice--selected, .signup-split-choice--selected:hover { border-color: #fff; background: #242424; }
+.signup-split-choice--selected .signup-split-choice__check { background: #fff; color: #111; }
+.signup-split-pill--selected, .signup-split-pill--selected:hover { background: #fff; border-color: #fff; color: #111; }
+
+.setup-centered-header { display: flex; align-items: center; justify-content: space-between; width: min(100%, 620px); margin-inline: auto; padding: 0 24px 12px; flex-shrink: 0; }
+.signup-split-panel--full-bleed:has(.signup-split-form--onboarding) { flex-direction: column; }
+@media (max-width: 640px) { .signup-split-panel--full-bleed:has(.signup-split-form--onboarding) { padding: 16px 0 0; } }
+
+.setup-birth-date-input { width: 100%; border: 1px solid #303030; border-radius: 999px; background: #111; color: #f5f5f3; min-height: 48px; padding: 12px 16px; outline: none; }
+.setup-birth-date-input:focus-visible { border-color: #aaa; box-shadow: 0 0 0 2px rgb(255 255 255 / .12); }
+.setup-birth-date-input[aria-invalid="true"] { border-color: #fb7185; }
+
+.signup-split-form--onboarding:has(.onboarding-success-avatar) .signup-split-form__heading { text-align: center; }
+.signup-split-form--onboarding:has(.onboarding-success-avatar) .signup-split-form__footer { display: flex; justify-content: flex-end; }
+.signup-split-form--onboarding:has(.onboarding-success-avatar) .signup-split-form__footer-start,
+.signup-split-form--onboarding:has(.onboarding-success-avatar) .signup-split-form__footer-center { display: none; }
+.signup-split-form--onboarding:has(.onboarding-success-avatar) .signup-split-form__footer-end { width: 100%; justify-content: flex-end; gap: 16px; }
+
+/* Onboarding keeps its chrome in consistent positions across account types. */
+.setup-centered-header { justify-content: center; }
+.signup-split-form--centered-onboarding .signup-split-form__heading { text-align: center; }
+.signup-split-form--centered-onboarding .signup-split-form__subtitle { margin-inline: auto; }
+.signup-split-form--centered-onboarding .signup-split-form__footer {
+  grid-template-columns: minmax(0, 1fr) minmax(64px, 160px) minmax(0, 1fr);
+  column-gap: 16px;
+}
+.signup-split-form--centered-onboarding .signup-split-form__footer-start { grid-column: 1; grid-row: 1; flex-wrap: wrap; }
+.signup-split-form--centered-onboarding .signup-split-form__footer-end { grid-column: 3; grid-row: 1; }
+.setup-footer-progress { grid-column: 2; grid-row: 1; align-self: center; width: 100%; height: 4px; overflow: hidden; border-radius: 999px; background: #303030; }
+.setup-footer-progress > span { display: block; height: 100%; border-radius: inherit; background: #fff; transition: width 280ms ease; }
+@media (prefers-reduced-motion: reduce) { .setup-footer-progress > span { transition: none; } }
+@media (max-width: 480px) {
+  .signup-split-form--centered-onboarding .signup-split-form__footer { grid-template-columns: minmax(0, 1fr) minmax(40px, 64px) minmax(0, 1fr); column-gap: 8px; padding-inline: 16px; }
+  .signup-split-form--centered-onboarding .signup-split-form__footer-start { gap: 4px; }
+}
+@media (max-width: 640px) {
+  .signup-split-form--centered-onboarding .signup-split-form__footer { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+  html:has(.staging-environment-badge) .signup-split-form--centered-onboarding .signup-split-form__footer { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* Keep the required talent follow-up attached to its account-type selection. */
+.onboarding-talent-types { margin: 24px 8px 28px; padding: 0 12px 4px; border: 0; min-width: 0; }
+.onboarding-talent-types legend { padding: 0; color: #f5f5f3; font-size: 14px; font-weight: 600; }
+.onboarding-talent-types > p { margin: 8px 0 16px; color: #aaa; font-size: 13px; line-height: 1.5; }
+
+.onboarding-success-name { margin-top: 12px !important; text-align: center; font-size: 18px; font-weight: 600; line-height: 1.4; color: #f5f5f3; overflow-wrap: anywhere; }
+.signup-split-form__footer .signup-split-submit { margin-top: 0; }
+
+.onboarding-profile-benefits {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.6fr);
+  overflow: hidden;
+  border: 1px solid #292929;
+  border-radius: var(--ds-radius-card);
+  background: #0c0c0c;
+}
+.onboarding-profile-benefits__portraits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  padding: 8px;
+  min-height: 184px;
+  background: #161616;
+}
+.onboarding-profile-benefits__portrait { position: relative; min-width: 0; overflow: hidden; border-radius: 7px; }
+.onboarding-profile-benefits__portrait img { object-fit: cover; object-position: center 30%; }
+.onboarding-profile-benefits__list { display: grid; grid-template-rows: repeat(3, 1fr); margin: 0; padding: 0; list-style: none; }
+.onboarding-profile-benefits__list li { display: flex; align-items: center; padding: 14px 18px; color: #f5f5f3; font-size: 14px; line-height: 1.45; }
+.onboarding-profile-benefits__list li + li { border-top: 1px solid #292929; }
+.signup-split-form__footer .onboarding-completion-actions { align-items: center; flex-wrap: wrap; }
+.onboarding-completion-actions > button { box-sizing: border-box; height: 44px; min-height: 44px; margin-block: 0; padding-block: 0; line-height: 20px; }
+@media (max-width: 480px) {
+  .onboarding-profile-benefits { grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr); }
+  .onboarding-profile-benefits__portraits { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); }
+  .onboarding-profile-benefits__list li { padding: 12px; font-size: 13px; }
+  .signup-split-form--onboarding:has(.onboarding-success-avatar) .onboarding-completion-actions { gap: 8px; }
+}
+
+/* Shared completion editors: quiet navigation, focused content, native inner scrolling. */
+.profile-section-tabs { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 28px; align-items: start; }
+.profile-section-tabs__nav { display: flex; flex-direction: column; gap: 6px; }
+.profile-section-tabs__nav button { border: 0; border-radius: 999px; padding: 12px 16px; text-align: left; color: var(--ink-soft); font-size: 14px; transition: background .18s, color .18s; }
+.profile-section-tabs__nav button:hover { background: var(--tone); color: var(--ink); }
+.profile-section-tabs__nav button[aria-selected="true"] { background: var(--ink); color: var(--surface-card); font-weight: 600; }
+.profile-selection-list { max-height: min(380px, 48dvh); overflow-y: auto; overscroll-behavior: contain; padding: 4px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; scrollbar-width: thin; }
+.profile-selection-list button { justify-content: space-between; text-align: left; min-height: 46px; }
+.resume-dropzone { display: flex; width: 100%; min-height: 230px; flex-direction: column; align-items: center; justify-content: center; gap: 16px; border: 1px solid var(--line); border-radius: 24px; padding: 32px; background: var(--tone); text-align: center; transition: background .2s, box-shadow .2s, transform .2s; }
+.resume-dropzone:hover, .resume-dropzone[data-dragging="true"] { background: var(--surface-card); box-shadow: 0 8px 28px #00000012; }
+.resume-dropzone[data-dragging="true"] { outline: 2px solid var(--ink); outline-offset: 3px; transform: scale(1.01); }
+@media (max-width: 600px) { .profile-section-tabs { grid-template-columns: 1fr; gap: 20px; } .profile-section-tabs__nav { flex-direction: row; overflow-x: auto; padding-bottom: 4px; } .profile-section-tabs__nav button { white-space: nowrap; } .profile-selection-list { grid-template-columns: 1fr; } }
+.profile-sizing-dialog { --ink: #f5f5f5; --ink-soft: #b2b2b2; --surface-card: #151515; --tone: #222; --line: #383838; color: var(--ink); }

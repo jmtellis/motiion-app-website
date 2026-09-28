@@ -1,4 +1,5 @@
 "use client";
+import { ButtonProgress } from "@/components/auth/ButtonProgress";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { ComponentType, ReactNode } from "react";
@@ -158,7 +159,13 @@ function ChoiceGrid({ children }: { children: ReactNode }) {
   return <div className="signup-split-choice-grid">{children}</div>;
 }
 
-export function TalentBuyerOnboardingFlow({ profile }: { profile: DashboardProfile }) {
+export function TalentBuyerOnboardingFlow({
+  profile,
+  exitHref,
+}: {
+  profile: DashboardProfile;
+  exitHref?: string;
+}) {
   const router = useRouter();
   const startedRef = useRef(false);
   const [draft, setDraft] = useState<TalentBuyerOnboardingDraft>(() => {
@@ -520,23 +527,18 @@ export function TalentBuyerOnboardingFlow({ profile }: { profile: DashboardProfi
 
   return (
     <SignupSplitShell
+      fullBleed
       {...shellProps}
+      showWordmark
       progressLabel={progress.sectionTitle}
       progressCurrent={progress.currentStep}
       progressTotal={progress.totalSteps}
-      coverAction={
-        <SetupFlowCancelButton
-          userId={profile.id}
-          disabled={isPending}
-          onCanceled={() => {
-            trackClientEvent("industry_onboarding_abandoned", { step: draft.currentStep });
-            clearTalentBuyerDraft(profile.id);
-          }}
-          onError={setError}
-        />
-      }
     >
       <SetupFlowFormPanel
+        footerProgress
+        progressLabel={progress.sectionTitle}
+        progressCurrent={progress.currentStep}
+        progressTotal={progress.totalSteps}
         title={currentCopy.title}
         subtitle={currentCopy.subtitle}
         error={error}
@@ -545,11 +547,17 @@ export function TalentBuyerOnboardingFlow({ profile }: { profile: DashboardProfi
         footer={
           <>
             <div className="signup-split-form__footer-start">
-              {draft.currentStep === firstStep && draft.fullName.trim() && !showNameField ? (
-                <p className="signup-split-form__footer-identity">
-                  {draft.fullName.trim()}
-                  {draft.contactEmail.trim() ? ` · ${draft.contactEmail.trim()}` : ""}
-                </p>
+              {draft.currentStep === firstStep ? (
+                <SetupFlowCancelButton
+                  userId={profile.id}
+                  disabled={isPending}
+                  exitHref={exitHref}
+                  onCanceled={() => {
+                    trackClientEvent("industry_onboarding_abandoned", { step: draft.currentStep });
+                    clearTalentBuyerDraft(profile.id);
+                  }}
+                  onError={setError}
+                />
               ) : null}
               {draft.currentStep !== firstStep ? (
                 <button
@@ -564,7 +572,6 @@ export function TalentBuyerOnboardingFlow({ profile }: { profile: DashboardProfi
               ) : null}
             </div>
 
-            <span className="signup-split-form__footer-center" aria-hidden />
 
             <div className="signup-split-form__footer-end">
               <button
@@ -573,8 +580,7 @@ export function TalentBuyerOnboardingFlow({ profile }: { profile: DashboardProfi
                 onClick={handleContinue}
                 disabled={isPending || !canContinue}
               >
-                Continue
-                <ChevronRight className="size-4" strokeWidth={2.25} />
+                <ButtonProgress loading={isPending}>Continue <ChevronRight className="size-4" strokeWidth={2.25} /></ButtonProgress>
               </button>
             </div>
           </>

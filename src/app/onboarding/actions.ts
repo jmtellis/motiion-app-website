@@ -1,9 +1,11 @@
 "use server";
 
+import { getBirthDateAge } from "@/lib/onboarding/birth-date";
+
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { buildAuthDisplayNameMetadata } from "@/lib/auth/profile";
+import { buildAuthDisplayNameMetadata, isHiringAccount, isMissingShellRpc } from "@/lib/auth/profile";
 import { getProfileDestination } from "@/lib/auth/session";
 import { trackServerEvent } from "@/lib/analytics/track-server";
 import { upsertProfessionalProfileDraft, type ProfessionalProfileDraftInput } from "@/lib/professional-profile/actions";
@@ -108,46 +110,18 @@ async function resolveAvailableUsername(
   const base = desired.trim().toLowerCase();
   if (!usernameRegex.test(base)) return base;
 
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    const suffix = attempt === 0 ? "" : `_${attempt}`;
-    const candidate = `${base.slice(0, Math.max(3, 30 - suffix.length))}${suffix}`;
-
-    const { data, error } = await supabase.rpc("is_username_available", {
-      candidate,
-    });
-
-    if (!error && data) {
-      return candidate;
-    }
-  }
+  const { data, error } = await supabase.rpc("is_username_available", { candidate: base });
+  if (!error && data) return base;
 
   return null;
 }
 
 function formatProfileWriteError(message: string) {
   if (message.includes("profiles_username_lower_unique")) {
-    return "That username is already taken. Go back and choose a different username.";
+    return "That username is already taken. Choose a different username.";
   }
 
   return message;
-}
-
-function getBirthDateAge(dateOfBirth: string) {
-  const birthDate = new Date(dateOfBirth);
-
-  if (Number.isNaN(birthDate.getTime())) {
-    return 0;
-  }
-
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age -= 1;
-  }
-
-  return age;
 }
 
 export async function checkUsernameAvailability(
@@ -280,7 +254,7 @@ export async function completeOnboarding(
   }
 
   if (data.role === "talent" && data.headshotUrls.length < 1) {
-    return { ok: false, error: "Add at least one headshot URL before completing setup." };
+    return { ok: false, error: "Add at least one headshot before completing setup." };
   }
 
   if (data.role === "talent" && data.talentTypes.length < 1) {
@@ -308,6 +282,14 @@ export async function completeOnboarding(
     return { ok: false, error: "You must be signed in to finish onboarding." };
   }
 
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("account_type, onboarding_completed_at")
+    .eq("user_id", user.id)
+    .maybeSingle<{ account_type: string | null; onboarding_completed_at: string | null }>();
+  const addingTalentShell =
+    isHiringAccount(existingProfile?.account_type) && Boolean(existingProfile?.onboarding_completed_at);
+
   const accountType = data.role === "community" ? "community" : "talent";
   const talentTypes = data.role === "talent" ? data.talentTypes : [];
   const completedAt = new Date().toISOString();
@@ -316,7 +298,7 @@ export async function completeOnboarding(
   if (!resolvedUsername) {
     return {
       ok: false,
-      error: "That username is already taken. Go back and choose a different username.",
+      error: "That username is already taken. Choose a different username.",
     };
   }
 
@@ -387,6 +369,10 @@ export async function completeOnboarding(
   });
 
   if (accountType === "talent") {
+    const { error: shellError } = await supabase.rpc("enable_profile_shell", { p_shell: "talent" });
+    if (shellError && (addingTalentShell || !isMissingShellRpc(shellError.message))) {
+      return { ok: false, error: shellError.message };
+    }
     await syncProfessionalProfile(user.id);
     await trackServerEvent("magic_moment_talent_ready", { user_id: user.id });
   }

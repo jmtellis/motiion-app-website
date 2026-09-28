@@ -18,9 +18,17 @@ type EventPopoverProps = {
   event: CalendarEvent;
   anchorRect: DOMRect;
   onClose: () => void;
+  href?: string;
+  actionLabel?: string;
 };
 
-export function EventPopover({ event, anchorRect, onClose }: EventPopoverProps) {
+export function EventPopover({
+  event,
+  anchorRect,
+  onClose,
+  href = `/calendar/${event.id}`,
+  actionLabel = "Manage",
+}: EventPopoverProps) {
   const ref = useRef<HTMLDivElement>(null);
   const colors = eventTypeColor(event.eventType);
 
@@ -94,8 +102,8 @@ export function EventPopover({ event, anchorRect, onClose }: EventPopoverProps) 
         {event.attendeeCount}{" "}
         {event.attendeeCount === 1 ? "attendee" : "attendees"}
       </p>
-      <Link href={`/calendar/${event.id}`} className="bd-btn-accent mt-3 w-full justify-center">
-        Manage
+      <Link href={href} className="bd-btn-accent mt-3 w-full justify-center">
+        {actionLabel}
       </Link>
     </div>
   );

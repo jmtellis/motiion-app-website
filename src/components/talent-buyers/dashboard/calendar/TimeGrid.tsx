@@ -24,6 +24,8 @@ type TimeGridProps = {
   anchorDate: Date;
   events: CalendarEvent[];
   mode: "day" | "week";
+  eventHref?: (event: CalendarEvent) => string;
+  actionLabel?: string;
 };
 
 type PopoverState = {
@@ -31,7 +33,7 @@ type PopoverState = {
   rect: DOMRect;
 };
 
-export function TimeGrid({ anchorDate, events, mode }: TimeGridProps) {
+export function TimeGrid({ anchorDate, events, mode, eventHref, actionLabel }: TimeGridProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [now, setNow] = useState(() => new Date());
   const [popover, setPopover] = useState<PopoverState | null>(null);
@@ -138,6 +140,8 @@ export function TimeGrid({ anchorDate, events, mode }: TimeGridProps) {
           event={popover.event}
           anchorRect={popover.rect}
           onClose={() => setPopover(null)}
+          href={eventHref?.(popover.event)}
+          actionLabel={actionLabel}
         />
       )}
     </div>

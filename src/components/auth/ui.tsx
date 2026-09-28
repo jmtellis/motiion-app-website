@@ -1,3 +1,4 @@
+import { ButtonProgress } from "./ButtonProgress";
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
 
 export function AuthCard({
@@ -73,10 +74,11 @@ type AuthButtonVariant = "primary" | "secondary" | "ghost";
 
 export function AuthButton({
   variant = "primary",
+  loading = false,
   className = "",
   children,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: AuthButtonVariant }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: AuthButtonVariant; loading?: boolean }) {
   const base =
     variant === "primary"
       ? "btn-primary"
@@ -85,8 +87,8 @@ export function AuthButton({
         : "inline-flex items-center justify-center rounded-[var(--radius-button)] px-4 py-2 text-sm font-semibold text-[var(--ink-soft)] transition hover:text-[var(--ink)] disabled:opacity-50";
 
   return (
-    <button type="button" className={`${base} ${className}`} {...props}>
-      {children}
+    <button type="button" className={`${base} ${className}`} {...props} disabled={loading || props.disabled} aria-busy={loading}>
+      <ButtonProgress loading={loading}>{children}</ButtonProgress>
     </button>
   );
 }

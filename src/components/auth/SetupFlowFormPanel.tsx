@@ -7,6 +7,8 @@ import { useSmoothScroll } from "@/components/landing/SmoothScroll";
 
 type SetupFlowFormPanelProps = {
   title: string;
+  /** Centered onboarding chrome with continuous progress in the footer. */
+  footerProgress?: boolean;
   subtitle?: string;
   /** Optional right-panel progress (used by some wizards; onboarding shows this on the left cover). */
   progressLabel?: string;
@@ -21,6 +23,7 @@ type SetupFlowFormPanelProps = {
   stepDirection?: "forward" | "back";
   children: ReactNode;
   footer: ReactNode;
+  aboveFooter?: ReactNode;
   error?: string | null;
 };
 
@@ -29,6 +32,7 @@ const STEP_OFFSET = 36;
 
 export function SetupFlowFormPanel({
   title,
+  footerProgress = false,
   subtitle,
   progressLabel,
   progressPercent: _progressPercent,
@@ -40,6 +44,7 @@ export function SetupFlowFormPanel({
   stepDirection = "forward",
   children,
   footer,
+  aboveFooter,
   error,
 }: SetupFlowFormPanelProps) {
   void _progressPercent;
@@ -139,10 +144,10 @@ export function SetupFlowFormPanel({
   );
 
   return (
-    <div className="signup-split-form signup-split-form--onboarding">
+    <div className={`signup-split-form signup-split-form--onboarding${footerProgress ? " signup-split-form--centered-onboarding" : ""}`}>
       <div ref={setScrollWrapper} className="signup-split-form__main">
         <div ref={setScrollContent} className="signup-split-form__scroll-content">
-          {progressFirst ? progressBlock : null}
+          {!footerProgress && progressFirst ? progressBlock : null}
 
           {stepKey ? (
             <div className="signup-split-form__stage">
@@ -157,21 +162,36 @@ export function SetupFlowFormPanel({
                   exit="exit"
                   transition={{ duration: reduceMotion ? 0.12 : 0.32, ease: STEP_EASE }}
                 >
-                  {!progressFirst ? progressBlock : null}
+                  {!footerProgress && !progressFirst ? progressBlock : null}
                   {stepContent}
                 </motion.div>
               </AnimatePresence>
             </div>
           ) : (
             <>
-              {!progressFirst ? progressBlock : null}
+              {!footerProgress && !progressFirst ? progressBlock : null}
               {stepContent}
             </>
           )}
         </div>
       </div>
 
-      <div className="signup-split-form__footer">{footer}</div>
+      {aboveFooter ? <div className="flex shrink-0 justify-center py-4">{aboveFooter}</div> : null}
+      <div className="signup-split-form__footer">
+        {footer}
+        {footerProgress && showProgress ? (
+          <div
+            className="setup-footer-progress"
+            role="progressbar"
+            aria-label="Onboarding progress"
+            aria-valuemin={0}
+            aria-valuemax={progressTotal}
+            aria-valuenow={Math.min(progressTotal!, Math.max(0, progressCurrent!))}
+          >
+            <span style={{ width: `${Math.min(100, Math.max(0, progressCurrent! / progressTotal! * 100))}%` }} />
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -6,8 +6,8 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { MatchedOpportunity } from "@/types/app";
 
 type TalentAttributes = {
-  styles: string[];
-  skills: string[];
+  styles: string[] | null;
+  skills: string[] | null;
   location_city: string | null;
   union_status: string | null;
   availability: string | null;

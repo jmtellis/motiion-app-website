@@ -1,4 +1,5 @@
 "use client";
+import { ButtonProgress } from "./ButtonProgress";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
@@ -124,7 +125,7 @@ export function LoginForm() {
         {callbackError ? <div className="signup-split-error">{callbackError}</div> : null}
 
         <button type="submit" className="signup-split-submit" disabled={loading || !canSubmit}>
-          {loading ? "Signing in…" : "Log in"}
+          <ButtonProgress loading={loading}>{"Log in"}</ButtonProgress>
         </button>
       </form>
 

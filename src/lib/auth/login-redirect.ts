@@ -22,7 +22,7 @@ export async function resolveClientLoginDestination(supabase: SupabaseClient): P
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("account_type, onboarding_completed_at")
+    .select("account_type, onboarding_completed_at, enabled_shells, active_shell")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -38,7 +38,7 @@ export async function resolveClientLoginDestination(supabase: SupabaseClient): P
 
       const { data: created } = await supabase
         .from("profiles")
-        .select("account_type, onboarding_completed_at")
+        .select("account_type, onboarding_completed_at, enabled_shells, active_shell")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -46,6 +46,8 @@ export async function resolveClientLoginDestination(supabase: SupabaseClient): P
         return getProfileDestination({
           accountType: normalizeAccountType(created.account_type),
           onboardingCompletedAt: created.onboarding_completed_at ?? null,
+          enabledShells: created.enabled_shells ?? null,
+          activeShell: created.active_shell ?? null,
         } as DashboardProfile);
       }
 
@@ -61,6 +63,8 @@ export async function resolveClientLoginDestination(supabase: SupabaseClient): P
   const destinationProfile = {
     accountType: normalizeAccountType(profile.account_type),
     onboardingCompletedAt: profile.onboarding_completed_at ?? null,
+    enabledShells: profile.enabled_shells ?? null,
+    activeShell: profile.active_shell ?? null,
   } as DashboardProfile;
 
   return getProfileDestination(destinationProfile);

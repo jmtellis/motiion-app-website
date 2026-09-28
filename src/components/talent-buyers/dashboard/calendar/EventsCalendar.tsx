@@ -5,6 +5,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import type { CalendarEvent } from "@/app/(buyer-app)/(paid)/events/actions";
 import { SegmentedControl } from "@/components/talent-buyers/dashboard/SegmentedControl";
+import "@/components/talent-buyers/dashboard/buyer-dashboard.css";
+import "@/components/talent-buyers/dashboard/events-hub.css";
 
 import {
   formatMonthYear,
@@ -24,9 +26,17 @@ type EventsCalendarProps = {
   events: CalendarEvent[];
   /** When true, calendar sits under the Calendar page chrome. */
   embedded?: boolean;
+  /** Overrides the popover link. Defaults to the industry calendar detail route. */
+  eventHref?: (event: CalendarEvent) => string;
+  actionLabel?: string;
 };
 
-export function EventsCalendar({ events, embedded = false }: EventsCalendarProps) {
+export function EventsCalendar({
+  events,
+  embedded = false,
+  eventHref,
+  actionLabel,
+}: EventsCalendarProps) {
   const [view, setView] = useState<CalendarView>("week");
   const [anchorDate, setAnchorDate] = useState(() => new Date());
 
@@ -94,9 +104,17 @@ export function EventsCalendar({ events, embedded = false }: EventsCalendarProps
               events={events}
               onSelectDay={selectDay}
               onVisibleMonthChange={setAnchorDate}
+              eventHref={eventHref}
+              actionLabel={actionLabel}
             />
           ) : (
-            <TimeGrid anchorDate={anchorDate} events={events} mode={view} />
+            <TimeGrid
+              anchorDate={anchorDate}
+              events={events}
+              mode={view}
+              eventHref={eventHref}
+              actionLabel={actionLabel}
+            />
           )}
         </div>
       </div>

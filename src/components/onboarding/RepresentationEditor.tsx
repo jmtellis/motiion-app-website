@@ -48,12 +48,13 @@ function AgencySelector({
   return (
     <div ref={containerRef} className="space-y-2">
       {label ? (
-        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)]">{label}</p>
+        <p className="text-sm font-medium text-[var(--ink-soft)]">{label}</p>
       ) : null}
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="flex w-full items-center gap-3 rounded-[var(--radius-field)] border border-[var(--line)] bg-[var(--surface-card)] px-4 py-3 text-left"
+        aria-expanded={open}
+        className="workspace-input-shell flex w-full items-center gap-3 rounded-full border border-[var(--line)] bg-[var(--surface-card)] px-4 py-3 text-left"
       >
         <Building2 className="size-4 shrink-0 text-[var(--ink-soft)]" aria-hidden />
         <span className={`min-w-0 flex-1 truncate text-sm ${value ? "text-[var(--ink)]" : "text-[var(--ink-soft)]"}`}>
@@ -72,7 +73,7 @@ function AgencySelector({
               className="w-full rounded-full border border-[var(--line)] bg-[var(--tone)] px-4 py-2 text-sm text-[var(--ink)] outline-none focus:border-[rgb(17_17_17_/_0.35)]"
             />
           </div>
-          <div className="max-h-64 overflow-y-auto">
+          <div data-lenis-prevent className="max-h-64 overflow-y-auto overscroll-contain">
             {filtered.map((agency) => (
               <button
                 key={agency.id}
@@ -101,7 +102,7 @@ function AgencySelector({
               </button>
             ))}
             {!filtered.length ? (
-              <p className="px-4 py-3 text-sm text-[var(--ink-soft)]">No agencies match that search.</p>
+              <p className="px-4 py-3 text-sm text-[var(--ink-soft)]">{agencies.length ? "No agencies match that search." : "The agency directory is unavailable. You can add representation later."}</p>
             ) : null}
           </div>
         </div>
@@ -174,9 +175,9 @@ export function RepresentationEditor({
         onChange={setPrimary}
       />
 
-      <div className="space-y-3 border-t border-[var(--line)] pt-5">
+      <div className="editor-extra-list space-y-3 border-t border-[var(--line)] pt-5">
         {additional.map((agencyName, index) => (
-          <div key={`${index}-${agencyName}`} className="flex items-start gap-2">
+          <div key={index} className="flex items-start gap-2">
             <div className="min-w-0 flex-1">
               <AgencySelector
                 label={`Additional agency ${index + 1}`}
@@ -197,7 +198,7 @@ export function RepresentationEditor({
           </div>
         ))}
 
-        {additional.filter((item) => item.trim()).length < MAX_ADDITIONAL ? (
+        {additional.length < MAX_ADDITIONAL ? (
           <button
             type="button"
             onClick={() => {
@@ -207,7 +208,7 @@ export function RepresentationEditor({
                 additionalRepresentations: [...additional, ""],
               });
             }}
-            className="inline-flex items-center gap-2 rounded-full border border-dashed border-[var(--line)] px-4 py-2 text-sm font-medium text-[var(--ink-soft)] hover:border-[var(--ink-soft)] hover:text-[var(--ink)]"
+            className="editor-add-button inline-flex items-center gap-2 rounded-full border border-[var(--line)] px-4 py-2 text-sm font-medium text-[var(--ink-soft)] hover:border-[var(--ink-soft)] hover:text-[var(--ink)]"
           >
             <Plus className="size-4" aria-hidden />
             Add agency

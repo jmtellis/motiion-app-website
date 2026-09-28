@@ -35,6 +35,7 @@ function revalidateActivityPaths(activityId?: string, projectId?: string | null)
   revalidatePath("/calendar");
   revalidatePath("/events");
   revalidatePath("/projects");
+  revalidatePath("/schedule");
   if (activityId) {
     revalidatePath(`/calendar/${activityId}`);
     revalidatePath(`/calendar/${activityId}/edit`);

@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
 import { IndustryPageHeader, IndustryEmptyState } from "./IndustryUI";
 
 import { BuyerEmptyIntro } from "@/components/talent-buyers/dashboard/BuyerEmptyIntro";
 import { useBuyerNotifications } from "@/hooks/use-buyer-notifications";
+import { castingNotificationHref } from "@/lib/app/talent-casting-state";
 import { formatBuyerRelativeDate } from "@/lib/talent-buyers/dashboard-data";
 
 import "./notifications-page.css";
@@ -23,12 +26,20 @@ function GhostNotificationRow() {
   );
 }
 
-export function NotificationsPageView({ userId }: { userId: string }) {
+export function NotificationsPageView({
+  userId,
+  linkCastings = false,
+}: {
+  userId: string;
+  linkCastings?: boolean;
+}) {
+  const router = useRouter();
   const {
     notifications,
     unreadCount,
     isLoading,
     markAllRead,
+    markRead,
     error,
     loadNotifications,
   } = useBuyerNotifications(userId, {
@@ -57,7 +68,7 @@ export function NotificationsPageView({ userId }: { userId: string }) {
       <IndustryPageHeader
         eyebrow="Keep up with your work"
         title="Notifications"
-        description="Updates across your projects, gathered in one place."
+        description="Your invitations, activity, and account updates in one place."
         actions={
           unreadCount > 0 && (
             <button
@@ -111,13 +122,14 @@ export function NotificationsPageView({ userId }: { userId: string }) {
           description={
             unreadOnly
               ? "There are no unread updates in this view. Switch to all updates to revisit recent activity."
-              : "Your project updates will appear here as the work moves forward."
+              : "New invitations and activity updates will appear here."
           }
         />
       )}
       <ul className="buyer-notifications__list">
         {visible.map((row) => {
           const unread = !row.read_at;
+          const href = linkCastings ? castingNotificationHref(row) : null;
           return (
             <li
               key={row.id}
@@ -129,7 +141,19 @@ export function NotificationsPageView({ userId }: { userId: string }) {
               />
               <div className="buyer-notifications__copy">
                 <p className="buyer-notifications__title">
-                  {row.title ?? row.type.replace(/_/g, " ")}
+                  {href ? (
+                    <Link
+                      href={href}
+                      onClick={() => {
+                        if (unread) void markRead(row.id);
+                        router.refresh();
+                      }}
+                    >
+                      {row.title ?? row.type.replace(/_/g, " ")}
+                    </Link>
+                  ) : (
+                    row.title ?? row.type.replace(/_/g, " ")
+                  )}
                 </p>
                 {row.body ? (
                   <p className="buyer-notifications__body">{row.body}</p>

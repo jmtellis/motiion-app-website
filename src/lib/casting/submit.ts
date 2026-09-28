@@ -2,7 +2,7 @@ import { createClientSupabaseClient } from "@/lib/supabase/client";
 
 export type CastingSubmissionResult =
   | { ok: true; submissionId?: string }
-  | { ok: false; message: string };
+  | { ok: false; message: string; code?: string; upgrade?: boolean };
 
 type CreateCastingSubmissionRpcResult = {
   ok?: boolean;
@@ -10,6 +10,12 @@ type CreateCastingSubmissionRpcResult = {
   message?: string;
   submission_id?: string;
 };
+
+const UPGRADE_CODES = new Set([
+  "free_casting_quota_exhausted",
+  "subscription_required_for_castings",
+  "starter_casting_quota",
+]);
 
 const ERROR_MESSAGES: Record<string, string> = {
   invite_only: "This casting is invite-only. You need an invitation to submit.",
@@ -34,6 +40,7 @@ function mapSubmissionError(result: CreateCastingSubmissionRpcResult): string {
 export async function submitToCastingRole(input: {
   roleId: string;
   note?: string;
+  supplementalAnswers?: Record<string, string>;
 }): Promise<CastingSubmissionResult> {
   const supabase = createClientSupabaseClient();
   if (!supabase) {
@@ -48,7 +55,7 @@ export async function submitToCastingRole(input: {
     return { ok: false, message: ERROR_MESSAGES.not_authenticated };
   }
 
-  const params: Record<string, string> = {
+  const params: Record<string, string | Record<string, string>> = {
     p_role_id: input.roleId,
     p_application_source: "native",
     p_talent_id: user.id,
@@ -59,6 +66,15 @@ export async function submitToCastingRole(input: {
     params.p_note = trimmedNote;
   }
 
+  const answers = Object.fromEntries(
+    Object.entries(input.supplementalAnswers ?? {})
+      .map(([key, value]) => [key, value.trim()] as const)
+      .filter(([, value]) => value),
+  );
+  if (Object.keys(answers).length) {
+    params.p_supplemental_answers = answers;
+  }
+
   const { data, error } = await supabase.rpc("create_casting_submission", params);
 
   if (error) {
@@ -67,7 +83,12 @@ export async function submitToCastingRole(input: {
 
   const result = (data ?? {}) as CreateCastingSubmissionRpcResult;
   if (!result.ok) {
-    return { ok: false, message: mapSubmissionError(result) };
+    return {
+      ok: false,
+      message: mapSubmissionError(result),
+      code: result.code,
+      upgrade: Boolean(result.code && UPGRADE_CODES.has(result.code)),
+    };
   }
 
   return { ok: true, submissionId: result.submission_id };

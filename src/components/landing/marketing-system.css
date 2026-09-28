@@ -252,16 +252,16 @@
   color: #fafafa;
 }
 
-/* Restrained cyan emphasis — reserved, not the default primary. */
+/* Legacy accent variant shares the neutral filled action style. */
 .mkt-btn--accent {
-  background: color-mix(in oklab, var(--accent) 20%, #0f0f0f);
-  border-color: color-mix(in oklab, var(--accent) 55%, transparent);
-  color: #fafafa;
+  background: #fff;
+  border-color: #fff;
+  color: #111;
 }
 
 .mkt-btn--accent:hover:not(:disabled) {
-  background: color-mix(in oklab, var(--accent) 30%, #0f0f0f);
-  border-color: color-mix(in oklab, var(--accent) 72%, transparent);
+  background: #e8e8e8;
+  border-color: #e8e8e8;
 }
 
 .mkt-btn--accent:focus-visible {

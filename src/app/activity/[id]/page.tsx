@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 
 import ActivityPageClient from "@/app/activity/[id]/activity-page-client";
 import { resolveExternalTicketProvider } from "@/lib/external-ticket-provider";
-import { activityKindLabel, fetchPublicActivity } from "@/lib/publicActivity";
+import { fetchPublicActivity } from "@/lib/catalog/fetch-public-activity";
+import { activityKindLabel } from "@/lib/publicActivity";
 
 type PageProps = {
   params: Promise<{ id: string }>;

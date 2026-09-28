@@ -3,18 +3,20 @@ import { ArrowUpRight } from "lucide-react";
 
 import type { SearchProfileRecord } from "@/types/search";
 
-export function TalentCard({ profile }: { profile: SearchProfileRecord }) {
+export function TalentCard({
+  profile,
+  onOpen,
+}: {
+  profile: SearchProfileRecord;
+  onOpen?: (profile: SearchProfileRecord) => void;
+}) {
   const name = profile.display_name || profile.full_name || "Talent profile";
   const image = profile.headshot_url || profile.headshot_urls?.[0];
   const slug = profile.username || profile.id;
-  const tags = [...(profile.talent_types ?? []), ...(profile.styles ?? [])].slice(0, 3);
+  const tags = [...new Set([...(profile.talent_types ?? []), ...(profile.styles ?? [])])].slice(0, 3);
 
-  return (
-    <Link
-      href={`/profile/${slug}`}
-      className="group relative block overflow-hidden rounded-[14px] border border-[#262626] bg-[#151515] transition-colors hover:border-[#3a3a3a]"
-      aria-label={`Open ${name} profile`}
-    >
+  const card = (
+    <>
       <div className="relative aspect-[3/4] overflow-hidden bg-[#1e1e1e]">
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -62,6 +64,22 @@ export function TalentCard({ profile }: { profile: SearchProfileRecord }) {
           ) : null}
         </div>
       </div>
+    </>
+  );
+
+  const className = "group relative block w-full overflow-hidden rounded-[14px] border border-[#262626] bg-[#151515] text-left transition-colors hover:border-[#3a3a3a]";
+
+  if (onOpen) {
+    return (
+      <button type="button" className={className} aria-label={`Open ${name} profile`} onClick={() => onOpen(profile)}>
+        {card}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={`/profile/${slug}`} className={className} aria-label={`Open ${name} profile`}>
+      {card}
     </Link>
   );
 }

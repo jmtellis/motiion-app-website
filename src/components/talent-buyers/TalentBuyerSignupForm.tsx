@@ -1,4 +1,5 @@
 "use client";
+import { ButtonProgress } from "@/components/auth/ButtonProgress";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
@@ -188,7 +189,7 @@ export function TalentBuyerSignupForm() {
         </p>
 
         <button type="submit" className="signup-split-submit" disabled={loading || !canSubmit}>
-          {loading ? "Creating account…" : "Sign Up"}
+          <ButtonProgress loading={loading}>Sign Up</ButtonProgress>
         </button>
       </form>
 

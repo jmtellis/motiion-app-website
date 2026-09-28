@@ -31,28 +31,30 @@ export function InvitationList({ invitations }: { invitations: InvitationRow[] }
 
   return (
     <section className="space-y-4">
-      <h2 className="font-mono text-xs font-medium tracking-[0.08em] text-[#8a8a8a] uppercase">
-        Casting invitations
-        <span className="ml-2 text-[#5a5a5a]">{rows.length}</span>
-      </h2>
+      <div className="talent-section-heading">
+        <h2>
+          Casting invitations
+          <span className="talent-section-heading__count">{rows.length}</span>
+        </h2>
+      </div>
 
       {error ? (
-        <p className="rounded-[8px] border border-[rgb(240_68_56_/_0.4)] bg-[rgb(240_68_56_/_0.1)] px-4 py-3 text-sm text-[#f97066]">
+        <p className="rounded-[8px] border border-[#f1c9c4] bg-[#fdf1ef] px-4 py-3 text-sm text-[#9b2c2c]">
           {error}
         </p>
       ) : null}
 
-      <div className="overflow-hidden rounded-[14px] border border-[#262626] bg-[#151515]">
-        <ul className="divide-y divide-[#262626]">
+      <div className="overflow-hidden rounded-[14px] border border-[var(--ds-border)] bg-[var(--ds-surface)]">
+        <ul className="divide-y divide-[var(--ds-border)]">
           {rows.map((row) => (
             <li key={row.id} className="flex flex-wrap items-center gap-4 px-5 py-4">
               <div className="min-w-0 flex-1">
-                <p className="font-mono text-[11px] font-medium tracking-[0.08em] text-[#8a8a8a] uppercase">
+                <p className="text-xs font-medium text-[var(--ds-muted)] capitalize">
                   {row.kind} invite · {formatWhen(row.createdAt)}
                 </p>
-                <h3 className="mt-1 text-base font-medium text-[#fafafa]">{row.title}</h3>
+                <h3 className="mt-1 text-base font-medium text-[var(--ds-text-default)]">{row.title}</h3>
                 {row.message ? (
-                  <p className="mt-1 line-clamp-2 text-sm text-[#a3a3a3]">{row.message}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-[var(--ds-muted)]">{row.message}</p>
                 ) : null}
               </div>
               {row.status === "sent" || row.status === "pending" ? (
@@ -61,7 +63,7 @@ export function InvitationList({ invitations }: { invitations: InvitationRow[] }
                     type="button"
                     disabled={isPending}
                     onClick={() => respond(row.id, "accepted")}
-                    className="rounded-full bg-[#fafafa] px-4 py-2 text-sm font-medium text-[#0a0a0a] transition-colors hover:bg-[#e6e6e6] disabled:bg-[#151515] disabled:text-[#5a5a5a]"
+                    className="rounded-full bg-[#303030] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#171717] disabled:opacity-50"
                   >
                     Accept
                   </button>
@@ -69,17 +71,17 @@ export function InvitationList({ invitations }: { invitations: InvitationRow[] }
                     type="button"
                     disabled={isPending}
                     onClick={() => respond(row.id, "declined")}
-                    className="rounded-full border border-[#262626] bg-[#1e1e1e] px-4 py-2 text-sm font-medium text-[#eaeaea] transition-colors hover:bg-[#2a2a2a] disabled:opacity-50"
+                    className="rounded-full border border-[#d6d6d6] bg-white px-4 py-2 text-sm font-medium text-[#242424] transition-colors hover:bg-[#f5f5f5] disabled:opacity-50"
                   >
                     Decline
                   </button>
                 </div>
               ) : (
                 <span
-                  className={`shrink-0 rounded-full px-3 py-1 font-mono text-[11px] font-medium tracking-[0.08em] uppercase ${
+                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium capitalize ${
                     row.status === "accepted"
-                      ? "bg-[#0c2a26] text-[#2dd4bf]"
-                      : "border border-[#262626] bg-[#1e1e1e] text-[#8a8a8a]"
+                      ? "bg-[#e7f4f1] text-[#1f6f62]"
+                      : "border border-[#d6d6d6] bg-[#f5f5f5] text-[#616161]"
                   }`}
                 >
                   {row.status}

@@ -35,6 +35,18 @@ export async function getUserEntitlement(userId: string): Promise<UserEntitlemen
   };
 }
 
+/** Talent and community Pro, including App Store SKUs. */
+export async function hasTalentProAccess(userId: string): Promise<boolean> {
+  const supabase = createAdminSupabaseClient();
+  if (!supabase) return false;
+
+  const { data, error } = await supabase.rpc("effective_talent_plan_tier", { p_user_id: userId });
+  if (!error && typeof data === "string") return data === "pro";
+
+  const entitlement = await getUserEntitlement(userId);
+  return entitlement.active && entitlement.tier === "pro";
+}
+
 export async function requireProEntitlement(userId: string): Promise<{ ok: true } | { ok: false; reason: "paywall" }> {
   const entitlement = await getUserEntitlement(userId);
   if (entitlement.active && entitlement.tier === "pro") return { ok: true };

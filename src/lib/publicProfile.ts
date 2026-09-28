@@ -6,6 +6,7 @@ import {
 } from "@/lib/profile/profile-normalize";
 import { resolveHighlightImageUrl } from "@/lib/profile/resume-experience";
 import { PROFILE_SLUG_UUID_RE, normalizeUsernameSlug } from "@/lib/profileOg";
+import { readLiveTalentRow } from "@/lib/catalog/live-catalog";
 import { supabaseRestGet } from "@/lib/supabaseRest";
 import type { PublicTalentProfile } from "@/types/public";
 
@@ -90,6 +91,7 @@ export async function fetchPublicTalentProfile(slug: string): Promise<PublicTale
     { revalidate: 300 },
   );
 
-  if (!rows?.length) return null;
-  return normalizeTalentRow(rows[0]);
+  if (rows?.length) return normalizeTalentRow(rows[0]);
+  const live = await readLiveTalentRow<TalentRow>(filter, TALENT_SELECT);
+  return live ? normalizeTalentRow(live) : null;
 }

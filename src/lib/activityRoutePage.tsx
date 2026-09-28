@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import ActivityPageClient from "@/app/activity/[id]/activity-page-client";
 import EventShowcasePageClient from "@/app/event/[id]/event-showcase-page-client";
 import { resolveExternalTicketProvider } from "@/lib/external-ticket-provider";
-import { activityKindLabel, fetchPublicActivity } from "@/lib/publicActivity";
+import { fetchPublicActivity } from "@/lib/catalog/fetch-public-activity";
+import { activityKindLabel } from "@/lib/publicActivity";
 import { getIosAppStoreId } from "@/lib/referrals/app-store";
 
 type PageProps = {

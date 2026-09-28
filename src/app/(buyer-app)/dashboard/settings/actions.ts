@@ -333,15 +333,24 @@ export async function deleteBuyerAccount(): Promise<DeleteBuyerAccountResult> {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("account_type")
+    .select("account_type, active_shell, enabled_shells")
     .eq("user_id", user.id)
-    .maybeSingle<{ account_type: string | null }>();
+    .maybeSingle<{
+      account_type: string | null;
+      active_shell: string | null;
+      enabled_shells: string[] | null;
+    }>();
 
   if (profileError) {
     return { ok: false, error: profileError.message };
   }
 
-  if (!profile || !isHiringAccount(profile.account_type)) {
+  const enabledShells = profile?.enabled_shells ?? [];
+  const industryShell =
+    isHiringAccount(profile?.account_type) ||
+    profile?.active_shell === "lookingForTalent" ||
+    enabledShells.includes("lookingForTalent");
+  if (!profile || !industryShell) {
     return { ok: false, error: "Only talent buyer accounts can be deleted from this page." };
   }
 

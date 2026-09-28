@@ -18,7 +18,7 @@ export const submitForReviewValueItems = [
 export const accountCreatedCopy = {
   body: "Complete your profile and submit it for Motiion review.",
   primary: "Complete your profile",
-  secondary: "Not now",
+  secondary: "Complete later",
   chromeTitle: "Account created",
 } as const;
 

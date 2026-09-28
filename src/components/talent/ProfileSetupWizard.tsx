@@ -1,4 +1,5 @@
 "use client";
+import { ButtonProgress } from "@/components/auth/ButtonProgress";
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -18,7 +19,8 @@ import { ResumeUploadField } from "@/components/onboarding/ResumeUploadField";
 import { SizingEditor } from "@/components/onboarding/SizingEditor";
 import { WorkingLocationsEditor } from "@/components/onboarding/WorkingLocationsEditor";
 import type { TalentAgency } from "@/lib/agencies/fetch-talent-agencies";
-import { styleOptions } from "@/lib/mock-data";
+import { styleOptions, skillOptions, genderOptions, ethnicityOptions, hairColorOptions, eyeColorOptions } from "@/lib/onboarding/profile-options";
+import { ProfileSectionTabs } from "@/components/onboarding/ProfileSectionTabs";
 import { setupPill } from "@/lib/setup-flow/form-styles";
 import { submitForReviewValueItems } from "@/lib/talent/copy";
 import {
@@ -32,34 +34,7 @@ import {
 } from "@/lib/talent/profile-setup";
 import type { TalentSubtype } from "@/types/database";
 
-/** Match the iOS attributes chip screen the product ships with on web. */
-const genderOptions = ["Woman", "Man", "Non-binary", "Prefer not to say", "Other"];
-const ethnicityOptions = [
-  "Asian",
-  "Black / African descent",
-  "Hispanic / Latine",
-  "Middle Eastern / North African",
-  "Native / Indigenous",
-  "Pacific Islander",
-  "White",
-  "Multiracial",
-  "Prefer not to say",
-];
-const hairColorOptions = ["Black", "Brown", "Blonde", "Red", "Gray", "White", "Other"];
-const eyeColorOptions = ["Brown", "Blue", "Green", "Hazel", "Gray", "Other"];
-const unionOptions = ["Non-union", "SAG-AFTRA", "AEA", "AGMA", "Other"];
-const skillOptions = [
-  "Ballet",
-  "Contemporary",
-  "Hip-Hop",
-  "Jazz",
-  "Tap",
-  "Commercial",
-  "Heels",
-  "Breaking",
-  "Afrobeats",
-  "House",
-];
+const unionOptions = ["SAG-AFTRA", "Non-union"];
 
 const stepTitles: Record<DeferredSetupStep, { title: string; subtitle: string }> = {
   resumeImport: {
@@ -99,7 +74,7 @@ const stepTitles: Record<DeferredSetupStep, { title: string; subtitle: string }>
     subtitle: "Add your union affiliation if you have one.",
   },
   addStyles: {
-    title: "Styles & genres",
+    title: "Styles",
     subtitle: "What kinds of work should Motiion match you with?",
   },
   addSkills: {
@@ -170,27 +145,36 @@ function serializeEthnicityList(values: string[]) {
 
 export function ProfileSetupWizard({
   initialProfile,
+  initialStep,
   agencies,
 }: {
   initialProfile: TalentSetupProfile;
+  initialStep?: DeferredSetupStep;
   agencies: TalentAgency[];
 }) {
   const router = useRouter();
   const [draft, setDraft] = useState<DraftState>(() => toDraft(initialProfile));
+  const [attribute, setAttribute] = useState("gender");
+  const [mediaBusy, setMediaBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [stepDirection, setStepDirection] = useState<"forward" | "back">("forward");
 
-  const [stepIndex, setStepIndex] = useState(0);
+  const [stepIndex, setStepIndex] = useState(() => {
+    const skipPhysical = shouldSkipPhysicalTalentDetails(initialProfile.talentTypes);
+    const steps = deferredStepsOrdered.filter(step => step !== "submitForReview" && (step !== "addCredits" || Boolean(initialProfile.resumeUrl && initialProfile.experiences?.length)) && !(skipPhysical && (step === "sizing" || step === "addSkills")));
+    return Math.max(0, steps.indexOf(initialStep ?? "resumeImport"));
+  });
   const contentSteps = useMemo(() => {
     const skipPhysical = shouldSkipPhysicalTalentDetails(draft.talentTypes);
     const base = deferredStepsOrdered.filter((step) => {
       if (step === "submitForReview") return false;
+      if (step === "addCredits" && (!draft.resumeUrl || !draft.experiences?.length)) return false;
       if (skipPhysical && (step === "sizing" || step === "addSkills")) return false;
       return true;
     });
     return base.length ? base : (["profileIdentity"] as DeferredSetupStep[]);
-  }, [draft.talentTypes]);
+  }, [draft.talentTypes, draft.resumeUrl, draft.experiences?.length]);
 
   const [phase, setPhase] = useState<"content" | "submit">("content");
   const step: DeferredSetupStep =
@@ -232,6 +216,8 @@ export function ProfileSetupWizard({
         representation: draft.representation ?? null,
         agent: draft.agent ?? null,
         unionStatus: draft.unionStatus ?? null,
+        unionMemberId: draft.unionMemberId ?? null,
+        additionalRepresentations: draft.additionalRepresentations ?? [],
         styles: draft.styles ?? [],
         skills: draft.skills ?? [],
         experiences: draft.experiences,
@@ -247,6 +233,9 @@ export function ProfileSetupWizard({
   }
 
   function goNext(skipped = false) {
+    if (mediaBusy || isPending) return;
+    if (step === "workingLocations" && !draft.workingLocations?.[0]?.trim()) { setError("Select a working location or enter your city manually."); return; }
+    if (step === "headshots" && !draft.headshotUrls?.length) { setError("Add at least one headshot."); return; }
     setStepDirection("forward");
     persistAnd(() => {
       if (stepIndex >= contentSteps.length - 1) {
@@ -274,11 +263,7 @@ export function ProfileSetupWizard({
   }
 
   function finishLater() {
-    startTransition(async () => {
-      await finishDeferredProfileSetup();
-      router.push("/home");
-      router.refresh();
-    });
+    persistAnd(() => { router.push("/home"); router.refresh(); });
   }
 
   function submitReview() {
@@ -303,12 +288,13 @@ export function ProfileSetupWizard({
 
   return (
     <SignupSplitShell
+      fullBleed
       headline="Complete your profile"
       subtext="Add the details that help casting teams find you."
       steps={[]}
       showSteps={false}
       showNav={false}
-      showWordmark={false}
+      showWordmark
       portraitCover={{
         imageUrl: draft.headshotUrls?.[0] ?? null,
         name: displayName,
@@ -316,18 +302,9 @@ export function ProfileSetupWizard({
       progressLabel="Complete Profile"
       progressCurrent={progressCurrent}
       progressTotal={progressTotal}
-      coverAction={
-        <button
-          type="button"
-          className="signup-split-nav-btn signup-split-nav-btn--ghost"
-          onClick={finishLater}
-          disabled={isPending}
-        >
-          Finish later
-        </button>
-      }
     >
       <SetupFlowFormPanel
+        footerProgress
         title={copy.title}
         subtitle={copy.subtitle}
         error={error}
@@ -336,15 +313,31 @@ export function ProfileSetupWizard({
         progressLabel="Complete Profile"
         progressCurrent={progressCurrent}
         progressTotal={progressTotal}
+        aboveFooter={step !== "resumeImport" && isSkippableStep(step) ? (
+          <button type="button" className="signup-split-nav-btn signup-split-nav-btn--ghost"
+            disabled={isPending || mediaBusy} onClick={() => phase === "submit" ? finishLater() : goNext(true)}>
+            {skipTitleForStep(step)}
+          </button>
+        ) : undefined}
         footer={
           <>
             <div className="signup-split-form__footer-start">
+              {isFirstStep ? (
+                <button
+                  type="button"
+                  className="signup-split-nav-btn signup-split-nav-btn--ghost"
+                  onClick={finishLater}
+                  disabled={isPending || mediaBusy}
+                >
+                  Finish later
+                </button>
+              ) : null}
               {!isFirstStep ? (
                 <button
                   type="button"
                   className="signup-split-nav-btn signup-split-nav-btn--ghost"
                   onClick={goBack}
-                  disabled={isPending}
+                  disabled={isPending || mediaBusy}
                   aria-label="Previous step"
                 >
                   <ChevronLeft className="size-4" />
@@ -352,47 +345,28 @@ export function ProfileSetupWizard({
                 </button>
               ) : null}
             </div>
-            <span className="signup-split-form__footer-center" aria-hidden />
+
             <div className="signup-split-form__footer-end flex flex-wrap items-center justify-end gap-2">
               {phase === "submit" ? (
                 <>
                   <button
                     type="button"
-                    className="signup-split-nav-btn signup-split-nav-btn--ghost"
-                    onClick={finishLater}
-                    disabled={isPending}
-                  >
-                    {skipTitleForStep("submitForReview")}
-                  </button>
-                  <button
-                    type="button"
                     className="signup-split-submit !w-auto px-5"
                     onClick={submitReview}
-                    disabled={isPending}
+                    disabled={isPending || mediaBusy}
                   >
-                    {isPending ? "Submitting…" : "Submit"}
+                    <ButtonProgress loading={isPending}>Submit</ButtonProgress>
                   </button>
                 </>
               ) : (
                 <>
-                  {isSkippableStep(step) ? (
-                    <button
-                      type="button"
-                      className="signup-split-nav-btn signup-split-nav-btn--ghost"
-                      onClick={() => goNext(true)}
-                      disabled={isPending}
-                    >
-                      {skipTitleForStep(step)}
-                    </button>
-                  ) : null}
                   <button
                     type="button"
                     className="signup-split-continue"
                     onClick={() => goNext(false)}
-                    disabled={isPending}
+                    disabled={isPending || mediaBusy}
                   >
-                    Continue
-                    <ChevronRight className="size-4" strokeWidth={2.25} />
+                    <ButtonProgress loading={isPending}>Continue <ChevronRight className="size-4" strokeWidth={2.25} /></ButtonProgress>
                   </button>
                 </>
               )}
@@ -405,18 +379,13 @@ export function ProfileSetupWizard({
     </SignupSplitShell>
   );
 
-  function toggleValue(list: string[] | null | undefined, value: string) {
-    const current = list ?? [];
-    return current.includes(value)
-      ? current.filter((item) => item !== value)
-      : [...current, value];
-  }
-
   function renderStep() {
     switch (step) {
       case "resumeImport":
         return (
+          <div className="space-y-4 text-center">
           <ResumeUploadField
+            onBusyChange={setMediaBusy}
             resumeUrl={draft.resumeUrl ?? ""}
             onProcessed={(patch) =>
               updateDraft({
@@ -434,6 +403,8 @@ export function ProfileSetupWizard({
             }
             onError={setError}
           />
+          <button type="button" className="signup-split-nav-btn signup-split-nav-btn--ghost" disabled={isPending || mediaBusy} onClick={() => goNext(true)}>Add resume later</button>
+          </div>
         );
       case "profileIdentity":
         return (
@@ -467,6 +438,7 @@ export function ProfileSetupWizard({
       case "headshots":
         return (
           <HeadshotUploadGrid
+            onBusyChange={setMediaBusy}
             headshotUrls={draft.headshotUrls ?? []}
             headshotOriginalUrls={draft.headshotOriginalUrls ?? []}
             onUploaded={({ headshotUrls, headshotOriginalUrls }) =>
@@ -477,67 +449,16 @@ export function ProfileSetupWizard({
         );
       case "attributesMenu":
         return (
-          <div className="space-y-6">
-            <ChipGroup
-              label="Gender"
-              options={genderOptions}
-              value={draft.gender ?? ""}
-              onChange={(gender) => updateDraft({ gender })}
-            />
-            <MultiChipGroup
-              label="Ethnicity"
-              hint="Select all that apply."
-              options={ethnicityOptions}
-              values={ethnicitySelected}
-              onChange={(values) => updateDraft({ ethnicity: serializeEthnicityList(values) })}
-            />
-            {!shouldSkipPhysicalTalentDetails(draft.talentTypes) ? (
-              <>
-                <HeightPicker
-                  value={draft.height ?? ""}
-                  onChange={(height) => updateDraft({ height })}
-                />
-                <ChipGroup
-                  label="Hair color"
-                  options={hairColorOptions}
-                  value={draft.hairColor ?? ""}
-                  onChange={(hairColor) => updateDraft({ hairColor })}
-                />
-                <ChipGroup
-                  label="Eye color"
-                  options={eyeColorOptions}
-                  value={draft.eyeColor ?? ""}
-                  onChange={(eyeColor) => updateDraft({ eyeColor })}
-                />
-              </>
-            ) : null}
-          </div>
-        );
-      case "talentSubtypes":
-        return (
-          <div className="space-y-3">
-            <p className="text-sm text-[var(--ink-soft)]">Select all that apply.</p>
-            <div className="flex flex-wrap gap-2.5">
-              {(["dancer", "choreographer", "instructor"] as TalentSubtype[]).map((type) => {
-                const selected = (draft.talentTypes ?? []).includes(type);
-                return (
-                  <button
-                    key={type}
-                    type="button"
-                    className={setupPill(selected)}
-                    aria-pressed={selected}
-                    onClick={() =>
-                      updateDraft({
-                        talentTypes: toggleValue(draft.talentTypes, type),
-                      })
-                    }
-                  >
-                    {type}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <ProfileSectionTabs value={attribute} onChange={setAttribute} items={[
+            { id: "gender", label: "Gender" }, { id: "ethnicity", label: "Ethnicity" },
+            ...(!shouldSkipPhysicalTalentDetails(draft.talentTypes) ? [{ id: "height", label: "Height" }, { id: "hairColor", label: "Hair color" }, { id: "eyeColor", label: "Eye color" }] : []),
+          ]}>
+            {attribute === "gender" && <ChipGroup label="Gender" options={genderOptions} value={draft.gender ?? ""} onChange={gender => updateDraft({ gender })} />}
+            {attribute === "ethnicity" && <MultiChipGroup label="Ethnicity" hint="Select all that apply." options={ethnicityOptions} values={ethnicitySelected} onChange={values => updateDraft({ ethnicity: serializeEthnicityList(values) })} />}
+            {attribute === "height" && <HeightPicker value={draft.height ?? ""} onChange={height => updateDraft({ height })} />}
+            {attribute === "hairColor" && <ChipGroup label="Hair color" options={hairColorOptions} value={draft.hairColor ?? ""} onChange={hairColor => updateDraft({ hairColor })} />}
+            {attribute === "eyeColor" && <ChipGroup label="Eye color" options={eyeColorOptions} value={draft.eyeColor ?? ""} onChange={eyeColor => updateDraft({ eyeColor })} />}
+          </ProfileSectionTabs>
         );
       case "sizing":
         return (
@@ -556,23 +477,27 @@ export function ProfileSetupWizard({
             agencies={agencies}
             representation={draft.representation ?? ""}
             agent={draft.agent ?? ""}
-            additionalRepresentations={[]}
-            onChange={({ representation, agent }) => updateDraft({ representation, agent })}
+            additionalRepresentations={draft.additionalRepresentations ?? []}
+            onChange={({ representation, agent, additionalRepresentations }) => updateDraft({ representation, agent, additionalRepresentations })}
           />
         );
       case "unionStatus":
         return (
+          <div className="space-y-6">
           <ChipGroup
-            label="Union status"
+            label="Are you a member of SAG-AFTRA?"
             options={unionOptions}
             value={draft.unionStatus ?? ""}
-            onChange={(unionStatus) => updateDraft({ unionStatus })}
+            onChange={(unionStatus) => updateDraft({ unionStatus, unionMemberId: unionStatus === "Non-union" ? null : draft.unionMemberId })}
           />
+          {draft.unionStatus === "SAG-AFTRA" && <label className="signup-split-field"><span>Member ID <span className="font-normal text-[var(--ink-soft)]">(optional)</span></span><input value={draft.unionMemberId ?? ""} onChange={event => updateDraft({ unionMemberId: event.target.value })} placeholder="Enter your member ID" /></label>}
+          </div>
         );
       case "addStyles":
         return (
           <MultiChipGroup
             label="Styles"
+            scrollable
             options={styleOptions}
             values={draft.styles ?? []}
             onChange={(styles) => updateDraft({ styles })}
@@ -582,6 +507,7 @@ export function ProfileSetupWizard({
         return (
           <MultiChipGroup
             label="Skills"
+            scrollable
             options={skillOptions}
             values={draft.skills ?? []}
             onChange={(skills) => updateDraft({ skills })}
@@ -680,6 +606,7 @@ function ChipGroup({
 }
 
 function MultiChipGroup({
+  scrollable = false,
   label,
   hint,
   options,
@@ -688,6 +615,7 @@ function MultiChipGroup({
 }: {
   label: string;
   hint?: string;
+  scrollable?: boolean;
   options: string[];
   values: string[];
   onChange: (values: string[]) => void;
@@ -698,8 +626,8 @@ function MultiChipGroup({
         <p className="text-sm font-medium text-[var(--ink)]">{label}</p>
         {hint ? <p className="mt-1 text-sm text-[var(--ink-soft)]">{hint}</p> : null}
       </div>
-      <div className="flex flex-wrap gap-2.5">
-        {options.map((option) => {
+      <div data-lenis-prevent={scrollable || undefined} className={scrollable ? "profile-selection-list" : "flex flex-wrap gap-2.5"}>
+        {Array.from(new Set([...options, ...values])).map((option) => {
           const selected = values.includes(option);
           return (
             <button

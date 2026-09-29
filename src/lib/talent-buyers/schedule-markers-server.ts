@@ -11,6 +11,7 @@ import {
   buildJobScheduleMarkers,
   buildProjectScheduleMarkers,
   sortScheduleMarkers,
+  upcomingBeatsByWork,
   type ScheduleMarker,
 } from "@/lib/talent-buyers/schedule-markers";
 import type { CastingConfiguration } from "@/types/casting";
@@ -202,4 +203,15 @@ export async function fetchScheduleMarkers(ownerId: string): Promise<ScheduleMar
   }
 
   return sortScheduleMarkers(markers);
+}
+
+/**
+ * Next few dated beats per Home row, keyed by work id. Starts a day early
+ * because the server's UTC date can run ahead of the viewer's; the client
+ * picks the real next beat in its own zone.
+ */
+export async function fetchHomeNextBeats(ownerId: string): Promise<Record<string, ScheduleMarker[]>> {
+  const markers = await fetchScheduleMarkers(ownerId);
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  return Object.fromEntries(upcomingBeatsByWork(markers, yesterday));
 }

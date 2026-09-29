@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 import { EventsCalendar } from "@/components/talent-buyers/dashboard/calendar/EventsCalendar";
 import { toDateKey } from "@/components/talent-buyers/dashboard/calendar/calendar-utils";
@@ -14,13 +14,20 @@ import {
 import { IndustryPageHeader } from "./IndustryUI";
 import "./events-hub.css";
 
+const subscribeNever = () => () => {};
+
 /**
  * Industry Schedule: calendar chrome only. Markers come from project /
  * ability dates and open their project; Schedule never hosts boards, feeds,
  * or create.
  */
 export function EventsHubPage({ markers }: { markers: ScheduleMarker[] }) {
-  const events = useMemo(() => localizeScheduleMarkers(markers), [markers]);
+  // Timestamp markers move to the viewer's zone once hydrated, so SSR and first paint agree.
+  const hydrated = useSyncExternalStore(subscribeNever, () => true, () => false);
+  const events = useMemo(
+    () => (hydrated ? localizeScheduleMarkers(markers) : markers),
+    [hydrated, markers],
+  );
   const today = toDateKey(new Date());
   const hasUpcoming = events.some((event) => event.date >= today);
 

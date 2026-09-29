@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Search, ArrowUpRight, Plus } from "lucide-react";
@@ -61,6 +61,8 @@ const PROJECT_SCOPE_OPTIONS: { value: ProjectScopeFilter; label: string }[] = [
   { value: "draft", label: "Drafts" },
   { value: "archived", label: "Archived" },
 ];
+
+const subscribeNever = () => () => {};
 
 function formatBeatDate(date: string) {
   return parseDateKey(date).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -158,7 +160,10 @@ export function ProjectsHubView({
     [allProjects, scopeFilter, query, workType],
   );
   const isEmpty = allProjects.length === 0;
+  // "Next" labels depend on the viewer's zone and locale, so they render after hydration only.
+  const hydrated = useSyncExternalStore(subscribeNever, () => true, () => false);
   const nextBeatLabels = useMemo(() => {
+    if (!hydrated) return {};
     const today = toDateKey(new Date());
     const labels: Record<string, string> = {};
     for (const [workId, beats] of Object.entries(nextBeats)) {
@@ -166,7 +171,7 @@ export function ProjectsHubView({
       if (next) labels[workId] = formatNextBeat(next, formatBeatDate, formatTimeShort);
     }
     return labels;
-  }, [nextBeats]);
+  }, [hydrated, nextBeats]);
   const hasVisibleProjects =
     viewMode === "browse"
       ? browseProjects.length > 0

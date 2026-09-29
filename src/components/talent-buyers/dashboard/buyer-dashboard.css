@@ -158,7 +158,8 @@
 .buyer-dashboard-shell__main:has(.project-workspace),
 .buyer-dashboard-shell__main:has(.buyer-home-dashboard),
 .buyer-dashboard-shell__main:has(.talent-navigator),
-.buyer-dashboard-shell__main:has(.talent-navigator-route) {
+.buyer-dashboard-shell__main:has(.talent-navigator-route),
+.buyer-dashboard-shell__main:has(.talent-discovery) {
   padding: 0;
 }
 
@@ -169,7 +170,8 @@
 .buyer-dashboard-shell__main:has(.library-page),
 .buyer-dashboard-shell__main:has(.events-hub),
 .buyer-dashboard-shell__main:has(.talent-navigator),
-.buyer-dashboard-shell__main:has(.talent-navigator-route) {
+.buyer-dashboard-shell__main:has(.talent-navigator-route),
+.buyer-dashboard-shell__main:has(.talent-discovery) {
   overflow: hidden;
 }
 

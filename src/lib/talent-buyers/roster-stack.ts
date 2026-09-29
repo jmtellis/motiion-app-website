@@ -17,6 +17,28 @@ export function rosterStackTileAccessibleLabel(label: string, sublabel?: string 
 }
 
 /** Preview avatars carry no names, so faceless members peek as the roster's initial. */
+/** Spotify-style cover: the first four people on the roster, photos or not. */
+export const MOSAIC_COUNT = 4;
+
+export function collectionMosaicPeople(
+  collection: Pick<LibraryCollectionSummary, "id" | "name" | "previewAvatars"> & {
+    previewPeople?: LibraryCollectionSummary["previewPeople"];
+  },
+): RosterStackPerson[] {
+  if (collection.previewPeople?.length) {
+    return collection.previewPeople.slice(0, MOSAIC_COUNT).map((person, index) => ({
+      id: `${collection.id}-${index}`,
+      name: person.name || collection.name,
+      avatarUrl: person.avatarUrl,
+    }));
+  }
+  return collection.previewAvatars.slice(0, MOSAIC_COUNT).map((avatarUrl, index) => ({
+    id: `${collection.id}-${index}`,
+    name: collection.name,
+    avatarUrl,
+  }));
+}
+
 export function collectionStackPeople(
   collection: Pick<LibraryCollectionSummary, "id" | "name" | "talentCount" | "previewAvatars">,
 ): RosterStackPerson[] {

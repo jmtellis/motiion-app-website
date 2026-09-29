@@ -30,7 +30,9 @@ import { AnimatedGridBackground } from "./AnimatedGridBackground";
 import {
   mapOpenRoleToNavigatorFilters,
 } from "@/lib/talent-navigator/open-roles";
+import { SavedTalentView } from "@/components/talent-buyers/library/SavedTalentView";
 import { SegmentedControl } from "@/components/talent-buyers/dashboard/SegmentedControl";
+import type { LibraryCollectionSummary, LibraryTalent } from "@/lib/talent-buyers/library";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
 import { useIndustryProOptional } from "@/components/talent-buyers/billing/IndustryProContext";
 import { ProChip } from "@/components/talent-buyers/billing/ProChip";
@@ -39,7 +41,7 @@ import { TalentNavigatorGrid, NAVIGATOR_STEP_X, NAVIGATOR_STEP_Y } from "./Talen
 import "./talent-navigator.css";
 import "@/components/talent-buyers/billing/upgrade-pro.css";
 
-type NavigatorViewMode = "chat" | "browse";
+type NavigatorViewMode = "browse" | "discover" | "saved";
 
 type TalentNavigatorPageProps = {
   initialData: TalentNavigatorInitialData;
@@ -48,6 +50,9 @@ type TalentNavigatorPageProps = {
   initialFilters?: Partial<TalentNavigatorFilters>;
   initialSavedSearches?: SavedSearchRow[];
   initialOpenRoleId?: string;
+  initialView?: NavigatorViewMode;
+  savedTalent?: LibraryTalent[];
+  rosters?: LibraryCollectionSummary[];
 };
 
 export function TalentNavigatorPage({
@@ -56,6 +61,9 @@ export function TalentNavigatorPage({
   initialFilters,
   initialSavedSearches,
   initialOpenRoleId = "",
+  initialView = "discover",
+  savedTalent = [],
+  rosters = [],
 }: TalentNavigatorPageProps) {
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -72,7 +80,7 @@ export function TalentNavigatorPage({
   const [savedSearches, setSavedSearches] = useState<SavedSearchRow[]>(initialSavedSearches ?? []);
   const [savedSearchId, setSavedSearchId] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<NavigatorViewMode>("chat");
+  const [viewMode, setViewMode] = useState<NavigatorViewMode>(initialView);
   const [chatSessionActive, setChatSessionActive] = useState(false);
   /** Chat overlay dismissed → show Discover navigator without Pro Browse gate. */
   const [chatOverlayDismissed, setChatOverlayDismissed] = useState(false);
@@ -84,7 +92,6 @@ export function TalentNavigatorPage({
 
   const navigatorViewOptions = useMemo(
     () => [
-      { value: "chat" as const, label: "Discover" },
       {
         value: "browse" as const,
         label: "Browse",
@@ -92,6 +99,8 @@ export function TalentNavigatorPage({
           <ProChip tone={viewMode === "browse" ? "on-active" : "accent"} />
         ) : undefined,
       },
+      { value: "discover" as const, label: "Discover" },
+      { value: "saved" as const, label: "Saved" },
     ],
     [hasIndustryPro, viewMode],
   );
@@ -103,9 +112,10 @@ export function TalentNavigatorPage({
         showToast({ message: result.error ?? "Could not save talent.", variant: "error" });
         return;
       }
-      showToast({ message: `${talent.name} saved to Library`, variant: "success" });
+      showToast({ message: `${talent.name} saved`, variant: "success" });
+      router.refresh();
     },
-    [showToast],
+    [router, showToast],
   );
 
   const rows = useMemo(
@@ -195,7 +205,8 @@ export function TalentNavigatorPage({
   const setNavigatorViewMode = useCallback(
     (mode: NavigatorViewMode) => {
       if (mode === "browse" && !requirePro("view_talent_profile")) return;
-      if (mode === "chat") setChatOverlayDismissed(false);
+      if (mode === "discover") setChatOverlayDismissed(false);
+      if (mode !== "browse") setFiltersOpen(false);
       setViewMode(mode);
     },
     [requirePro],
@@ -207,7 +218,7 @@ export function TalentNavigatorPage({
 
   const reopenChatOverlay = useCallback(() => {
     setChatOverlayDismissed(false);
-    setViewMode("chat");
+    setViewMode("discover");
   }, []);
 
   const handleChatSessionChange = useCallback((active: boolean) => {
@@ -218,7 +229,7 @@ export function TalentNavigatorPage({
   useEffect(() => {
     if (hasIndustryPro || viewMode !== "browse") return;
     openUpgrade("view_talent_profile");
-    setViewMode("chat");
+    setViewMode("discover");
   }, [hasIndustryPro, openUpgrade, viewMode]);
 
   const openProfile = useCallback(
@@ -237,7 +248,7 @@ export function TalentNavigatorPage({
 
   const handleOpenFromGrid = useCallback(
     (talent: Talent) => {
-      if (viewMode === "chat") {
+      if (viewMode === "discover") {
         openCover();
         return;
       }
@@ -428,14 +439,14 @@ export function TalentNavigatorPage({
           event.preventDefault();
           return;
         }
-        if (viewMode === "chat" && chatSessionActive && !chatOverlayDismissed && !isTyping) {
+        if (viewMode === "discover" && chatSessionActive && !chatOverlayDismissed && !isTyping) {
           dismissChatOverlay();
           event.preventDefault();
         }
         return;
       }
 
-      if (isTyping || rows.length === 0) return;
+      if (viewMode === "saved" || isTyping || rows.length === 0) return;
 
       switch (event.key) {
         case "ArrowRight":
@@ -457,7 +468,7 @@ export function TalentNavigatorPage({
         case "Enter":
           if (activeTalent) {
             event.preventDefault();
-            if (viewMode === "chat") {
+            if (viewMode === "discover") {
               openCover();
             } else {
               openProfile(activeTalent);
@@ -572,7 +583,7 @@ export function TalentNavigatorPage({
       className={`talent-navigator talent-navigator--${viewMode}${
         viewMode === "browse" ? " talent-navigator--focus-lifted" : ""
       }${
-        viewMode === "chat" && chatSessionActive && !chatOverlayDismissed
+        viewMode === "discover" && chatSessionActive && !chatOverlayDismissed
           ? " talent-navigator--chat-focused"
           : ""
       }`}
@@ -594,7 +605,7 @@ export function TalentNavigatorPage({
                 options={navigatorViewOptions}
                 value={viewMode}
                 onChange={setNavigatorViewMode}
-                ariaLabel="Find talent view"
+                ariaLabel="Discover view"
                 equalWidth
                 activeTone="white"
               />
@@ -604,7 +615,7 @@ export function TalentNavigatorPage({
           <div className="talent-navigator__stage-toolbar-side talent-navigator__stage-toolbar-side--end">
             {chatSessionActive &&
             !filtersOpen &&
-            (viewMode === "browse" || (viewMode === "chat" && chatOverlayDismissed)) ? (
+            (viewMode === "browse" || (viewMode === "discover" && chatOverlayDismissed)) ? (
               <button
                 type="button"
                 className="talent-navigator__search-reopen"
@@ -617,7 +628,17 @@ export function TalentNavigatorPage({
           </div>
         </div>
 
-        {rows.length > 0 ? (
+        {viewMode === "saved" ? (
+          <div className="talent-navigator__saved">
+            <SavedTalentView
+              talent={savedTalent}
+              collections={rosters}
+              onDiscover={() => setNavigatorViewMode("discover")}
+            />
+          </div>
+        ) : null}
+
+        {viewMode !== "saved" && rows.length > 0 ? (
           <div className="talent-navigator__grid-canvas" aria-hidden={false}>
             <AnimatedGridBackground />
             <TalentNavigatorGrid
@@ -636,6 +657,8 @@ export function TalentNavigatorPage({
           </div>
         ) : null}
 
+        {viewMode !== "saved" ? (
+        <>
         <div className="talent-navigator__overlay-layout">
           {rows.length === 0 && !filtersOpen ? (
             <section className="talent-navigator__hud" aria-label="Talent navigator">
@@ -717,14 +740,16 @@ export function TalentNavigatorPage({
             onOpenProfile={(talent) => openProfile(talent as Talent)}
             onChatSessionChange={handleChatSessionChange}
             sessionOverlayVisible={
-              viewMode === "chat" && chatSessionActive && !chatOverlayDismissed
+              viewMode === "discover" && chatSessionActive && !chatOverlayDismissed
             }
             composeVisible={
-              viewMode === "chat" && (!chatSessionActive || chatOverlayDismissed)
+              viewMode === "discover" && (!chatSessionActive || chatOverlayDismissed)
             }
             categoryLabel={currentRow?.label ?? (rows.length ? "Browse" : undefined)}
             open
           />
+        ) : null}
+        </>
         ) : null}
       </div>
 

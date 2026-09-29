@@ -69,10 +69,12 @@ export function HomeDiscoveryView({
   cards,
   sponsored,
   cast,
+  navigatorHref = "/discover",
 }: {
   cards: HomeCommunityCard[];
   sponsored: HomeEvent[];
   cast: HomeEvent[];
+  navigatorHref?: string;
 }) {
   const notifications = useNotificationsPanel();
   const [panel, setPanel] = useState<OpenPanel | null>(null);
@@ -198,7 +200,7 @@ export function HomeDiscoveryView({
               <h2 id="home-community-title">Your community</h2>
               <p>People, inspiration, and what’s happening next.</p>
             </div>
-            <Link href="/discover">
+            <Link href={navigatorHref}>
               Open Navigator <ArrowUpRight size={16} />
             </Link>
           </div>

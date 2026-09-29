@@ -201,7 +201,7 @@ export const PROJECT_WORKSPACE_CONFIG: Record<ProjectType, ProjectWorkspaceConfi
       },
       review: {
         title: "No candidates to review",
-        description: "Invite talent, publish the casting link, or add candidates from Find Talent.",
+        description: "Invite talent, publish the casting link, or add candidates from Discover.",
         actionLabel: "Find talent",
         actionId: "add-talent",
       },

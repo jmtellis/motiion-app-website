@@ -1,61 +1,42 @@
-import { TalentNavigatorPage } from "@/components/talent-buyers/talent-navigator/TalentNavigatorPage";
+import { DiscoverSaved } from "@/components/app/DiscoverSaved";
+import { DiscoverView } from "@/components/app/DiscoverView";
+import { TalentDiscovery } from "@/components/app/TalentDiscovery";
 import { requireHiringAccount } from "@/lib/auth/session";
-import { listSavedSearches } from "@/lib/talent-buyers/saved-searches";
-import { buildNavigatorInitialData } from "@/lib/talent-navigator/profile-adapter";
-import { fetchNavigatorFilterOptions } from "@/lib/talent-navigator/fetch-filter-options";
-import { searchFiltersToNavigatorParams } from "@/lib/talent-navigator/search-filters";
-import { EMPTY_NAVIGATOR_FILTERS } from "@/lib/talent-navigator/types";
-import { searchTalentProfiles } from "@/lib/search/search-profiles";
-import type { SearchFilters } from "@/types/search";
-
-function readParam(params: Record<string, string | string[] | undefined>, key: string) {
-  return typeof params[key] === "string" ? params[key] : "";
-}
+import { loadDiscoverCanvas } from "@/lib/app/discover-canvas";
+import { redirect } from "next/navigation";
 
 export default async function BuyerTalentPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const profile = await requireHiringAccount();
+  await requireHiringAccount();
   const params = await searchParams;
+  const canvas = await loadDiscoverCanvas(params, "/talent");
+  if ("redirectTo" in canvas) redirect(canvas.redirectTo);
 
-  const filters: SearchFilters = {
-    keyword: readParam(params, "keyword"),
-    location: readParam(params, "location"),
-    subtype: readParam(params, "subtype") as SearchFilters["subtype"],
-    style: readParam(params, "style"),
-    gender: readParam(params, "gender"),
-    ethnicity: readParam(params, "ethnicity"),
-    height: readParam(params, "height"),
-    representation: readParam(params, "representation"),
-    agency: readParam(params, "agency"),
-    unionStatus: readParam(params, "unionStatus"),
-    navigator: true,
-  };
-
-  const initialFilters = {
-    ...EMPTY_NAVIGATOR_FILTERS,
-    ...searchFiltersToNavigatorParams(filters),
-  };
-
-  const [result, filterOptions, savedSearchResult] = await Promise.all([
-    searchTalentProfiles(filters),
-    fetchNavigatorFilterOptions(),
-    listSavedSearches(),
-  ]);
-  const initialData = buildNavigatorInitialData(result, initialFilters);
+  const view = typeof params.view === "string" ? params.view : "";
+  const initialMode = view === "saved" ? "saved" : view === "discover" || view === "explore" ? "discover" : "browse";
 
   return (
     <div className="talent-navigator-route">
-      <TalentNavigatorPage
-        profile={profile}
-        initialData={initialData}
-        filterOptions={filterOptions}
-        initialFilters={initialFilters}
-        initialSavedSearches={savedSearchResult.searches}
-        initialOpenRoleId={readParam(params, "roleId")}
-      />
+      <TalentDiscovery
+        basePath="/talent"
+        initialMode={initialMode}
+        collectionTitle={canvas.collectionTitle}
+        initialData={canvas.initialData}
+        keyword={canvas.filters.keyword ?? ""}
+        credit={canvas.credit}
+        recentlyViewed={canvas.recentlyViewed}
+        saved={<DiscoverSaved variant="rosters" />}
+      >
+        <DiscoverView
+          basePath="/talent"
+          filters={canvas.filters}
+          result={canvas.result}
+          credit={canvas.credit}
+        />
+      </TalentDiscovery>
     </div>
   );
 }

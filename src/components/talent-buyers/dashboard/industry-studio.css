@@ -1240,7 +1240,18 @@
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-page-header {
   align-items: flex-start;
   gap: 24px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   padding: 0 0 20px;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-page-header > :first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(.industry-page-actions, .inbox-page__edit, .talent-schedule__create) {
+  flex-shrink: 0;
+  margin-top: 0;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-page-header .industry-page-description {
   margin-top: 6px;
@@ -1248,8 +1259,20 @@
   font-size: 14px;
   line-height: 1.5;
 }
-:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(.industry-page-actions, .inbox-page__edit) {
-  margin-top: -3px;
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .industry-page-header, .inbox-page__header, .talent-schedule__header, .talent-home__header
+) {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.workspace-shell--industry .buyer-dashboard-shell__main {
+  --home-inline-pad: 32px;
+}
+.workspace-shell--industry .buyer-dashboard-shell__main > * {
+  min-width: 0;
+  max-width: 100%;
 }
 @media (max-width: 760px) {
   :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(

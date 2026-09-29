@@ -5,7 +5,7 @@ import { previewHeadshot } from "@/lib/marketing/preview-media";
 import "./talent-navigator-preview.css";
 
 const navigation = [
-  { label: "Find Talent", icon: Search },
+  { label: "Discover", icon: Search },
   { label: "Projects", icon: Folder },
   { label: "Calendar", icon: CalendarDays },
   { label: "Roster", icon: Library },

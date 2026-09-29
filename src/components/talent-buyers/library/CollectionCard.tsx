@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { RosterStackTile } from "@/components/talent-buyers/project/composable/RosterStackTile";
 import { collectionStackTransitionName } from "@/components/talent-buyers/project/composable/view-transition";
 import type { LibraryCollectionSummary } from "@/lib/talent-buyers/library";
-import { collectionStackPeople, collectionTileSublabel } from "@/lib/talent-buyers/roster-stack";
+import { collectionMosaicPeople, collectionTileSublabel } from "@/lib/talent-buyers/roster-stack";
 
 import { OverflowMenu } from "./OverflowMenu";
 
@@ -22,10 +22,11 @@ export function CollectionCard({
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
-  const people = useMemo(() => collectionStackPeople(collection), [collection]);
+  const people = useMemo(() => collectionMosaicPeople(collection), [collection]);
 
   return (
     <RosterStackTile
+      layout="mosaic"
       size="fluid"
       people={people}
       label={collection.name}

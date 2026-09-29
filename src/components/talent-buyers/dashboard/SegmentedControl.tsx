@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
-import { useId } from "react";
+import { useEffect, useId, useState } from "react";
 
 type SegmentedOption<T extends string> = {
   value: T;
@@ -33,6 +33,9 @@ export function SegmentedControl<T extends string>({
 }) {
   const groupId = useId();
   const reducedMotion = useReducedMotion();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const animate = mounted && !reducedMotion;
   const indicatorClass =
     activeTone === "white"
       ? "absolute inset-0 rounded-full bg-white shadow-none"
@@ -64,15 +67,15 @@ export function SegmentedControl<T extends string>({
             aria-pressed={active}
           >
             {active ? (
-              reducedMotion ? (
-                <span className={indicatorClass} aria-hidden />
-              ) : (
+              animate ? (
                 <motion.span
                   layoutId={`${groupId}-segment-indicator`}
                   className={indicatorClass}
                   transition={{ type: "spring", stiffness: 420, damping: 34 }}
                   aria-hidden
                 />
+              ) : (
+                <span className={indicatorClass} aria-hidden />
               )
             ) : null}
             <span className="relative z-[1] inline-flex items-center justify-center leading-none">

@@ -7,6 +7,7 @@ import type { MouseEvent, ReactNode } from "react";
 
 import {
   MAX_PEEKING,
+  MOSAIC_COUNT,
   rosterStackTileAccessibleLabel,
   type RosterStackPerson,
 } from "@/lib/talent-buyers/roster-stack";
@@ -72,8 +73,41 @@ export function RosterStack({
 }
 
 /**
- * Overstacked roster tile. Labels sit below the tile in a fixed slot so rows
- * of tiles align; activating it pushes to the full roster page.
+ * Four square portraits, the first people on the roster, in a 2×2 cover.
+ */
+export function RosterMosaic({
+  people,
+  transitionName,
+  size = "fluid",
+}: {
+  people: RosterStackPerson[];
+  transitionName?: string;
+  size?: "lg" | "fluid";
+}) {
+  const slots = Array.from({ length: MOSAIC_COUNT }, (_, index) => people[index] ?? null);
+  const imageSizes = size === "lg" ? "64px" : "(min-width: 640px) 160px, 45vw";
+  return (
+    <span
+      className={`roster-mosaic roster-mosaic--${size}`}
+      style={transitionName ? { viewTransitionName: transitionName } : undefined}
+      aria-hidden
+    >
+      {slots.map((person, index) => (
+        <span key={person?.id ?? `empty-${index}`} className="roster-mosaic__cell">
+          {person?.avatarUrl ? (
+            <Image src={person.avatarUrl} alt="" fill sizes={imageSizes} />
+          ) : person ? (
+            <span className="roster-mosaic__initials">{initials(person.name)}</span>
+          ) : null}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/**
+ * Roster tile. Labels sit below the cover in a fixed slot so rows align;
+ * activating it pushes to the full roster page.
  */
 export function RosterStackTile({
   people,
@@ -82,6 +116,7 @@ export function RosterStackTile({
   href,
   transitionName,
   size = "md",
+  layout = "stack",
   menu,
 }: {
   people: RosterStackPerson[];
@@ -90,6 +125,8 @@ export function RosterStackTile({
   href: string;
   transitionName?: string;
   size?: "md" | "fluid";
+  /** Stacked peek, or a four-square cover of the first people. */
+  layout?: "stack" | "mosaic";
   /** Rendered beside the label, outside the link, so it stays a separate control. */
   menu?: ReactNode;
 }) {
@@ -110,7 +147,11 @@ export function RosterStackTile({
         onClick={handleClick}
         aria-label={rosterStackTileAccessibleLabel(label, sublabel)}
       >
-        <RosterStack people={people} transitionName={transitionName} size={size} />
+        {layout === "mosaic" ? (
+          <RosterMosaic people={people} transitionName={transitionName} size="fluid" />
+        ) : (
+          <RosterStack people={people} transitionName={transitionName} size={size} />
+        )}
         <span className="roster-stack-tile__label">
           <strong>{label}</strong>
           <span>{sublabel ?? "\u00a0"}</span>

@@ -18,12 +18,13 @@ export function defaultBuyerChromeTitle(pathname: string): string {
     if (pathname.match(/^\/projects\/[^/]+\/edit$/)) return "Edit project";
     return "Projects";
   }
-  if (pathname === "/events") return "Schedule";
+  if (pathname === "/dashboard") return "Home";
+  if (pathname === "/events") return "Calendar";
   if (pathname.startsWith("/library")) return "Roster";
   if (pathname === "/messages") return "Inbox";
   if (pathname === "/notifications") return "Notifications";
   if (pathname.startsWith("/dashboard/settings")) return "Settings";
-  if (pathname.startsWith("/talent")) return "Find Talent";
+  if (pathname.startsWith("/talent")) return "Discover";
   return "Motiion";
 }
 
@@ -78,7 +79,7 @@ export function defaultBuyerChromeBreadcrumbs(pathname: string): BuyerBreadcrumb
     return [{ label: "Roster", href: "/library" }];
   }
   if (pathname === "/events") {
-    return [{ label: "Schedule" }];
+    return [{ label: "Calendar" }];
   }
   if (pathname === "/messages") {
     return [{ label: "Inbox" }];
@@ -93,7 +94,7 @@ export function defaultBuyerChromeBreadcrumbs(pathname: string): BuyerBreadcrumb
     return [{ label: "Settings" }];
   }
   if (pathname.startsWith("/talent")) {
-    return [{ label: "Find Talent" }];
+    return [{ label: "Discover" }];
   }
   return undefined;
 }

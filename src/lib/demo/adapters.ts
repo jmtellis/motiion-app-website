@@ -113,6 +113,7 @@ export function buildDemoLibraryCollections(): LibraryCollectionSummary[] {
     const members = collection.dancerIds
       .map((id) => demoDancers.find((dancer) => dancer.id === id))
       .filter((dancer): dancer is DemoDancer => Boolean(dancer));
+    const preview = members.slice(0, 4);
     return {
       id: collection.id,
       name: collection.name,
@@ -120,7 +121,11 @@ export function buildDemoLibraryCollections(): LibraryCollectionSummary[] {
       talentCount: members.length,
       createdAt: "2026-02-12T00:00:00.000Z",
       updatedAt: "2026-03-04T00:00:00.000Z",
-      previewAvatars: members.map((member) => member.imageUrl),
+      previewPeople: preview.map((member) => ({
+        name: member.name,
+        avatarUrl: member.imageUrl,
+      })),
+      previewAvatars: preview.map((member) => member.imageUrl),
     };
   });
 }

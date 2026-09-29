@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
-import { RosterStack } from "@/components/talent-buyers/project/composable/RosterStackTile";
+import { RosterMosaic } from "@/components/talent-buyers/project/composable/RosterStackTile";
 import { collectionStackTransitionName } from "@/components/talent-buyers/project/composable/view-transition";
 import { useRegisterBuyerChrome } from "@/components/talent-buyers/dashboard/BuyerPageChromeContext";
 import { useIndustryProOptional } from "@/components/talent-buyers/billing/IndustryProContext";
-import { MAX_PEEKING } from "@/lib/talent-buyers/roster-stack";
+import { MOSAIC_COUNT } from "@/lib/talent-buyers/roster-stack";
 import type { CollectionShareSummary } from "@/lib/talent-buyers/collection-share-types";
 import {
   addTalentToCollections,
@@ -18,6 +18,7 @@ import {
   removeTalentFromCollection,
   updateCollection,
   type LibraryCollectionDetail,
+  type LibraryCollectionSummary,
   type LibraryTalent,
 } from "@/lib/talent-buyers/library";
 
@@ -41,15 +42,7 @@ export function CollectionDetail({
 }: {
   collection: LibraryCollectionDetail;
   savedTalent: LibraryTalent[];
-  allCollections: {
-    id: string;
-    name: string;
-    description: string | null;
-    talentCount: number;
-    createdAt: string;
-    updatedAt: string;
-    previewAvatars: string[];
-  }[];
+  allCollections: LibraryCollectionSummary[];
   shares: CollectionShareSummary[];
 }) {
   const router = useRouter();
@@ -173,8 +166,8 @@ export function CollectionDetail({
       <div className="library-page__shell">
         <div className="library-page__main">
           <div className="library-collection-detail__header">
-            <RosterStack
-              people={members.slice(0, MAX_PEEKING).map((member) => ({
+            <RosterMosaic
+              people={members.slice(0, MOSAIC_COUNT).map((member) => ({
                 id: member.profileId,
                 name: member.name,
                 avatarUrl: member.avatarUrl,
@@ -333,7 +326,7 @@ export function CollectionDetail({
         open={deleteOpen}
         onClose={() => setDeleteOpen(false)}
         title={`Delete “${collection.name}”?`}
-        description="This will delete the collection, but the people inside it will remain saved in your Library."
+        description="This will delete the roster. People you saved stay on Discover."
         size="sm"
         footer={
           <div className="flex justify-end gap-2">

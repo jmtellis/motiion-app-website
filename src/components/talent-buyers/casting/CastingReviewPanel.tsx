@@ -292,7 +292,7 @@ export function CastingReviewPanel() {
                 description={
                   shortlisted.length || roleScopedCandidates.length
                     ? "Remove someone from the shortlist rail to keep reviewing, or continue to Cast."
-                    : "Invite talent and wait for submissions, or add candidates from Find Talent."
+                    : "Invite talent and wait for submissions, or add candidates from Discover."
                 }
                 actionLabel={
                   shortlisted.length || roleScopedCandidates.length

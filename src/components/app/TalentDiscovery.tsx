@@ -32,6 +32,9 @@ export function TalentDiscovery({
   recentlyViewed,
   children,
   collectionTitle,
+  basePath = "/discover",
+  initialMode = "browse",
+  saved,
 }: {
   initialData: TalentNavigatorInitialData;
   keyword: string;
@@ -39,9 +42,13 @@ export function TalentDiscovery({
   recentlyViewed: Talent[];
   children: ReactNode;
   collectionTitle?: string;
+  basePath?: string;
+  initialMode?: DiscoverMode;
+  /** Replaces the talent Saved tab. Industry passes rosters here. */
+  saved?: ReactNode;
 }) {
   const router = useRouter();
-  const [mode, setMode] = useState<DiscoverMode>("browse");
+  const [mode, setMode] = useState<DiscoverMode>(initialMode);
   const [selected, setSelected] = useState<Talent | null>(null);
   const [viewed, setViewed] = useState(recentlyViewed);
   const rows = useMemo(
@@ -96,7 +103,7 @@ export function TalentDiscovery({
               type="button"
               className="talent-discovery-chip"
               aria-label={`Clear ${filterLabel}`}
-              onClick={() => router.push("/discover")}
+              onClick={() => router.push(basePath)}
             >
               <span>{filterLabel}</span>
               <span>{resultCount === 1 ? "1 dancer" : `${resultCount} dancers`}</span>
@@ -106,7 +113,7 @@ export function TalentDiscovery({
         </div>
         {mode === "saved" ? (
           <div key="saved" className="talent-discovery-results ui-swap">
-            <DiscoverSaved />
+            {saved ?? <DiscoverSaved />}
           </div>
         ) : mode === "browse" ? (
           <div key="browse" className="talent-discovery-results ui-swap">{children}</div>
@@ -151,7 +158,7 @@ export function TalentDiscovery({
                 <div className="talent-discovery-empty">
                   <h1>No talent found</h1>
                   <p>{emptyCopy}</p>
-                  <button type="button" onClick={() => router.push("/discover")}>
+                  <button type="button" onClick={() => router.push(basePath)}>
                     Clear search
                   </button>
                 </div>

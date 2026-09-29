@@ -121,6 +121,15 @@
   backdrop-filter: blur(14px);
 }
 
+.talent-navigator__saved {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: auto;
+  padding: calc(var(--tn-header-inset-top) + 3.5rem) 1.25rem 2.5rem;
+  background: var(--industry-surface, var(--tn-bg));
+}
+
 .talent-navigator__header-icon-btn {
   display: inline-flex;
   align-items: center;

@@ -5,12 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Bell,
   BookOpen,
   CalendarDays,
   CalendarCheck,
   ChevronsUpDown,
   Folder,
+  House,
   Inbox,
   Search,
   BadgeCheck,
@@ -28,18 +28,16 @@ import {
 import type { UserEntitlement } from "@/lib/billing/entitlement";
 import {
   BUYER_HOME_PATH,
-  buyerInboxNavItem,
   buyerMenuNavItems,
-  buyerNotificationsNavItem,
 } from "@/lib/talent-buyers/dashboard-data";
 import { useBuyerInboxUnread } from "@/hooks/use-buyer-inbox-unread";
 import { openBuyerCommandPalette } from "@/lib/talent-buyers/command-palette";
-import { useBuyerNotifications } from "@/hooks/use-buyer-notifications";
 import type { DashboardProfile } from "@/types/database";
 
 import "./buyer-chrome.css";
 
 const navIcons = {
+  home: House,
   projects: Folder,
   bookings: CalendarCheck,
   talent: Search,
@@ -47,7 +45,6 @@ const navIcons = {
   calendar: CalendarDays,
   events: CalendarDays,
   library: BookOpen,
-  notifications: Bell,
 } as const;
 
 function formatBadge(count: number) {
@@ -58,6 +55,7 @@ function formatBadge(count: number) {
 }
 
 function isNavActive(pathname: string, href: string) {
+  if (href === "/dashboard") return pathname === "/dashboard";
   if (href === "/projects") {
     return (
       pathname === "/projects" ||
@@ -174,32 +172,6 @@ function NavLink({
     >
       {content}
     </Link>
-  );
-}
-
-function SidebarNotificationsLink({
-  userId,
-  collapsed,
-  onNavigate,
-}: {
-  userId: string;
-  collapsed: boolean;
-  onNavigate?: () => void;
-}) {
-  const pathname = usePathname();
-  const { unreadCount } = useBuyerNotifications(userId);
-  const badge = formatBadge(unreadCount);
-
-  return (
-    <NavLink
-      href={buyerNotificationsNavItem.href}
-      label={buyerNotificationsNavItem.label}
-      icon={navIcons.notifications}
-      active={isNavActive(pathname, buyerNotificationsNavItem.href)}
-      collapsed={collapsed}
-      badge={badge}
-      onNavigate={onNavigate}
-    />
   );
 }
 
@@ -346,27 +318,11 @@ function SidebarContent({
                 icon={Icon}
                 active={isNavActive(pathname, item.href)}
                 collapsed={collapsed}
+                badge={item.segment === "messages" ? inboxBadge : null}
                 onNavigate={onNavigate}
               />
             );
           })}
-        </NavSection>
-
-        <NavSection label="Account" collapsed={collapsed}>
-          <NavLink
-            href={buyerInboxNavItem.href}
-            label={buyerInboxNavItem.label}
-            icon={navIcons.messages}
-            active={isNavActive(pathname, buyerInboxNavItem.href)}
-            collapsed={collapsed}
-            badge={inboxBadge}
-            onNavigate={onNavigate}
-          />
-          <SidebarNotificationsLink
-            userId={profile.id}
-            collapsed={collapsed}
-            onNavigate={onNavigate}
-          />
         </NavSection>
       </div>
 

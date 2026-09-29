@@ -1,6 +1,8 @@
 "use server";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { isComposableProject } from "@/lib/talent-buyers/project-abilities";
+import { activityScheduleHref } from "@/lib/talent-buyers/schedule-markers";
 import type { BuyerActivityItem } from "@/types/talent-buyer-dashboard";
 import type { DashboardProfile } from "@/types/database";
 
@@ -137,13 +139,34 @@ export async function fetchRecentlyViewedItems(
       ? supabase.from("projects").select("id, title, project_type").in("id", projectIds)
       : Promise.resolve({ data: [] }),
     eventIds.length
-      ? supabase.from("activities").select("id, title, type, activity_date").in("id", eventIds)
+      ? supabase.from("activities").select("id, title, type, activity_date, project_id").in("id", eventIds)
       : Promise.resolve({ data: [] }),
   ]);
 
   const profiles = new Map((profileResult.data ?? []).map((row) => [row.user_id as string, row]));
   const projects = new Map((projectResult.data ?? []).map((row) => [row.id as string, row]));
   const events = new Map((eventResult.data ?? []).map((row) => [row.id as string, row]));
+
+  const eventProjectIds = [
+    ...new Set(
+      (eventResult.data ?? [])
+        .map((row) => (row as { project_id?: string | null }).project_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  const { data: eventProjectRows } = eventProjectIds.length
+    ? await supabase.from("projects").select("id, title, project_configuration").in("id", eventProjectIds)
+    : { data: [] };
+  const eventProjects = new Map(
+    (eventProjectRows ?? []).map((row) => [
+      row.id as string,
+      {
+        id: row.id as string,
+        title: (row.title as string | null) ?? "",
+        composable: isComposableProject(row as { project_configuration?: unknown }),
+      },
+    ]),
+  );
 
   const items = views.flatMap((view): BuyerRecentlyViewedItem[] => {
     const id = view.content_id as string;
@@ -199,7 +222,11 @@ export async function fetchRecentlyViewedItems(
       type: "event",
       title: (row.title as string | null)?.trim() || "Untitled event",
       meta: `Event · ${date}`,
-      href: "/calendar",
+      href: activityScheduleHref({
+        id,
+        type: (row.type as string | null) ?? "event",
+        project: eventProjects.get((row as { project_id?: string | null }).project_id ?? "") ?? null,
+      }),
       viewedAt,
     }];
   });

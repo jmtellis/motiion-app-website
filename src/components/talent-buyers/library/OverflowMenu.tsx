@@ -42,7 +42,7 @@ export function OverflowMenu({
     <div className="library-menu" ref={rootRef}>
       <button
         type="button"
-        className="inline-flex size-8 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white/75 transition hover:bg-black/55 hover:text-white"
+        className="library-menu__trigger"
         aria-label={label}
         aria-expanded={open}
         aria-haspopup="menu"

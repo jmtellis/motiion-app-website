@@ -52,7 +52,7 @@ function countAttributes(attributes: Attributes) {
   );
 }
 
-function buildHref(query: BrowseQuery, credit?: string) {
+function buildHref(basePath: string, query: BrowseQuery, credit?: string) {
   const params = new URLSearchParams();
   if (credit) params.set("credit", credit);
   if (query.keyword) params.set("keyword", query.keyword);
@@ -67,7 +67,7 @@ function buildHref(query: BrowseQuery, credit?: string) {
   }
   if (query.page > 1) params.set("page", String(query.page));
   const search = params.toString();
-  return search ? `/discover?${search}` : "/discover";
+  return search ? `${basePath}?${search}` : basePath;
 }
 
 /** 1 … 4 5 6 … 42 */
@@ -284,10 +284,12 @@ export function DiscoverView({
   filters,
   result,
   credit = "",
+  basePath = "/discover",
 }: {
   filters: SearchFilters;
   result: SearchResult;
   credit?: string;
+  basePath?: string;
 }) {
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -312,14 +314,14 @@ export function DiscoverView({
     styles: filters.styles ?? (filters.style ? [filters.style] : []),
     page: result.page,
   };
-  const queryKey = buildHref(current, credit);
+  const queryKey = buildHref(basePath, current, credit);
 
   useEffect(() => {
     rootRef.current?.closest(".talent-discovery-results")?.scrollTo({ top: 0, behavior: "smooth" });
   }, [result.page]);
 
   function go(next: Partial<BrowseQuery>, keepCredit = false) {
-    const href = buildHref({ ...current, page: 1, ...next }, keepCredit ? credit : "");
+    const href = buildHref(basePath, { ...current, page: 1, ...next }, keepCredit ? credit : "");
     startTransition(() => router.push(href, { scroll: false }));
   }
 
@@ -332,7 +334,7 @@ export function DiscoverView({
     const names = !explicit && keyword.length >= 2 ? await suggestCreditCollaborators(keyword) : [];
     const creditName = explicit ?? pickCreditRewrite(keyword, names);
     if (creditName && !location && !current.subtype && !current.styles.length && !countAttributes(attributes)) {
-      startTransition(() => router.push(`/discover?credit=${encodeURIComponent(creditName)}`, { scroll: false }));
+      startTransition(() => router.push(`${basePath}?credit=${encodeURIComponent(creditName)}`, { scroll: false }));
       return;
     }
     go({ keyword, location });
@@ -407,7 +409,7 @@ export function DiscoverView({
             : "No matches"}
         </p>
         {hasFilters ? (
-          <button type="button" className="discover-browse__reset" onClick={() => startTransition(() => router.push("/discover", { scroll: false }))}>
+          <button type="button" className="discover-browse__reset" onClick={() => startTransition(() => router.push(basePath, { scroll: false }))}>
             <X size={13} aria-hidden />
             Clear filters
           </button>
@@ -433,7 +435,7 @@ export function DiscoverView({
           <div key={queryKey} className="discover-browse__empty ui-swap">
             <h2>No matches for this search</h2>
             <p>{credit ? `No talent found who worked with ${credit}.` : "Try broadening location or removing a filter."}</p>
-            <Link href="/discover">Clear filters</Link>
+            <Link href={basePath}>Clear filters</Link>
           </div>
         )}
       </div>

@@ -32,6 +32,9 @@ type EventsCalendarProps = {
   /** "page": date navigation leads, range + `filter` trail; no centered switcher. */
   layout?: "centered" | "page";
   filter?: ReactNode;
+  /** Events carry their own `href` and open it directly (Industry Schedule). */
+  markerMode?: boolean;
+  defaultView?: CalendarView;
 };
 
 export function EventsCalendar({
@@ -41,8 +44,10 @@ export function EventsCalendar({
   actionLabel,
   layout = "centered",
   filter,
+  markerMode = false,
+  defaultView = "week",
 }: EventsCalendarProps) {
-  const [view, setView] = useState<CalendarView>("week");
+  const [view, setView] = useState<CalendarView>(defaultView);
   const [anchorDate, setAnchorDate] = useState(() => new Date());
   const [transition, setTransition] = useState<{ step: number; motion: "swap" | "swap-forward" | "swap-back" }>({
     step: 0,
@@ -113,6 +118,7 @@ export function EventsCalendar({
             onVisibleMonthChange={setAnchorDate}
             eventHref={eventHref}
             actionLabel={actionLabel}
+            markerMode={markerMode}
           />
         ) : (
           <TimeGrid
@@ -121,6 +127,7 @@ export function EventsCalendar({
             mode={view}
             eventHref={eventHref}
             actionLabel={actionLabel}
+            markerMode={markerMode}
           />
         )}
       </div>

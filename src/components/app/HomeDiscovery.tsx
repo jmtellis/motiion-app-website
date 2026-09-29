@@ -2,7 +2,11 @@ import { fetchHomeCollections, fetchHomeEvents } from "@/lib/app/home-discovery"
 
 import { HomeDiscoveryView, type HomeCommunityCard } from "@/components/app/HomeDiscoveryView";
 
-export async function HomeDiscovery() {
+export async function HomeDiscovery({
+  navigatorHref = "/discover",
+}: {
+  navigatorHref?: string;
+} = {}) {
   const [collections, events] = await Promise.all([fetchHomeCollections(), fetchHomeEvents()]);
   const cards: HomeCommunityCard[] = collections.length
     ? collections.slice(0, 3).map((row) => ({
@@ -19,5 +23,12 @@ export async function HomeDiscovery() {
         { id: "instructor", title: "Find instructors", eyebrow: "Keep growing", image: null, talentIds: [], subtype: "instructor" },
       ];
 
-  return <HomeDiscoveryView cards={cards} sponsored={events.sponsored} cast={events.cast} />;
+  return (
+    <HomeDiscoveryView
+      cards={cards}
+      sponsored={events.sponsored}
+      cast={events.cast}
+      navigatorHref={navigatorHref}
+    />
+  );
 }

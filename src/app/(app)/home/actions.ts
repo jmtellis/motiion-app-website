@@ -2,7 +2,7 @@
 
 import { homeEventDateLabel } from "@/lib/app/home-event-copy";
 import { getProfileAvatarUrl } from "@/lib/auth/avatar";
-import { requireTalentAccount } from "@/lib/auth/session";
+import { requireCompleteProfile } from "@/lib/auth/session";
 import { fetchPublicActivity } from "@/lib/catalog/fetch-public-activity";
 import { readLiveSearchProfiles } from "@/lib/catalog/live-catalog";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -141,7 +141,7 @@ export async function loadHomeProfile(
   slug: string,
   userId?: string,
 ): Promise<{ profile: PublicTalentProfile | null }> {
-  await requireTalentAccount();
+  await requireCompleteProfile();
   const profile =
     (await fetchPublicTalentProfile(slug)) ??
     (userId && userId !== slug ? await fetchPublicTalentProfile(userId) : null);
@@ -152,7 +152,7 @@ export async function loadCommunityRoster(input: {
   talentIds: string[];
   subtype: CommunitySubtype | null;
 }): Promise<{ people: HomeRosterPerson[]; error: string | null }> {
-  await requireTalentAccount();
+  await requireCompleteProfile();
   const talentIds = input.talentIds.map((id) => id.trim()).filter(Boolean);
   const subtype = input.subtype && SUBTYPES.includes(input.subtype) ? input.subtype : null;
 
@@ -171,7 +171,7 @@ export async function loadCommunityRoster(input: {
 export async function loadHomeEventDetail(
   eventId: string,
 ): Promise<{ event: HomeEventDetail | null; error: string | null }> {
-  await requireTalentAccount();
+  await requireCompleteProfile();
   const id = eventId.trim();
   if (!id) return { event: null, error: "Event not found." };
 

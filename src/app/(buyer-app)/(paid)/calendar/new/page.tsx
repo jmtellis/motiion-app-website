@@ -3,6 +3,7 @@ import { ActivityCreateWizard } from "@/components/talent-buyers/activities/Acti
 import { BuyerAppPage } from "@/components/talent-buyers/dashboard/BuyerAppPage";
 import { requireHiringAccount } from "@/lib/auth/session";
 import { createDefaultActivityDraft } from "@/lib/talent-buyers/activities/defaults";
+import { BUYER_HOME_PATH } from "@/lib/talent-buyers/dashboard-data";
 import type { ActivityType } from "@/lib/talent-buyers/activities/types";
 
 function parseType(value: string | string[] | undefined): ActivityType {
@@ -25,7 +26,7 @@ export default async function CalendarNewActivityPage({
   const projectId = typeof params.projectId === "string" ? params.projectId : null;
   const draft = createDefaultActivityDraft(type, projectId);
   const connect = await fetchConnectAccountStatus();
-  const closeHref = projectId ? `/projects/${projectId}` : "/events";
+  const closeHref = projectId ? `/projects/${projectId}` : BUYER_HOME_PATH;
 
   return (
     <BuyerAppPage fullWidth className="!space-y-0 flex min-h-0 flex-1 flex-col">

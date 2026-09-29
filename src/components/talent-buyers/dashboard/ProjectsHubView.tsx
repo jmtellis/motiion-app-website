@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { WorkSpotlight } from "./WorkSpotlight";
 import { Search, ArrowUpRight, Plus } from "lucide-react";
 import {
   IndustryPageHeader,
@@ -20,13 +19,22 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { BuyerInboxFile } from "@/types/buyer-file-inbox";
 import type { ProjectHubSummary } from "@/lib/talent-buyers/projects-hub";
 
-import { ProjectTypePickerOverlay } from "@/components/talent-buyers/project/ProjectTypePickerOverlay";
 import { AbilityIconRow } from "@/components/talent-buyers/project/composable/AbilityIconRow";
 import { NewProjectSheet } from "@/components/talent-buyers/project/composable/NewProjectSheet";
 import {
   projectShellStatus,
   projectShellSubtitle,
 } from "@/lib/talent-buyers/project-abilities";
+import {
+  formatNextBeat,
+  pickNextBeat,
+  type ScheduleMarker,
+} from "@/lib/talent-buyers/schedule-markers";
+import {
+  formatTimeShort,
+  parseDateKey,
+  toDateKey,
+} from "./calendar/calendar-utils";
 import {
   PROJECTS_CREATE_ACTIVITY_VALUE,
   PROJECTS_CREATE_INTENT_QUERY,
@@ -54,6 +62,12 @@ const PROJECT_SCOPE_OPTIONS: { value: ProjectScopeFilter; label: string }[] = [
   { value: "archived", label: "Archived" },
 ];
 
+const subscribeNever = () => () => {};
+
+function formatBeatDate(date: string) {
+  return parseDateKey(date).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 function sortByLastUpdated(projects: ProjectHubSummary[]) {
   return [...projects].sort(
     (a, b) =>
@@ -80,10 +94,13 @@ export function ProjectsHubView({
   published,
   drafts,
   inboxFiles,
+  nextBeats = {},
 }: {
   published: ProjectHubSummary[];
   drafts: ProjectHubSummary[];
   inboxFiles: BuyerInboxFile[];
+  /** Upcoming schedule beats per Home row id; the row shows the first one still ahead. */
+  nextBeats?: Record<string, ScheduleMarker[]>;
 }) {
   const [workType, setWorkType] = useState("all");
   const [query, setQuery] = useState("");
@@ -93,8 +110,9 @@ export function ProjectsHubView({
   const searchParams = useSearchParams();
   const { viewMode } = useProjectsViewMode();
   const createQuery = searchParams.get(PROJECTS_CREATE_QUERY);
-  const createSheetOpen = createQuery === "1";
-  const activityPickerOpen = createQuery === PROJECTS_CREATE_ACTIVITY_VALUE;
+  // `?create=activity` used to open a standalone picker; creation now always starts with a project.
+  const createSheetOpen =
+    createQuery === "1" || createQuery === PROJECTS_CREATE_ACTIVITY_VALUE;
   const createIntent =
     searchParams.get(PROJECTS_CREATE_INTENT_QUERY) === "casting" ? "casting" : null;
   const [focusIndex, setFocusIndex] = useState(0);
@@ -142,6 +160,18 @@ export function ProjectsHubView({
     [allProjects, scopeFilter, query, workType],
   );
   const isEmpty = allProjects.length === 0;
+  // "Next" labels depend on the viewer's zone and locale, so they render after hydration only.
+  const hydrated = useSyncExternalStore(subscribeNever, () => true, () => false);
+  const nextBeatLabels = useMemo(() => {
+    if (!hydrated) return {};
+    const today = toDateKey(new Date());
+    const labels: Record<string, string> = {};
+    for (const [workId, beats] of Object.entries(nextBeats)) {
+      const next = pickNextBeat(beats, today);
+      if (next) labels[workId] = formatNextBeat(next, formatBeatDate, formatTimeShort);
+    }
+    return labels;
+  }, [hydrated, nextBeats]);
   const hasVisibleProjects =
     viewMode === "browse"
       ? browseProjects.length > 0
@@ -171,39 +201,52 @@ export function ProjectsHubView({
     });
   }, [router, searchParams]);
 
-  return (
-    <div className={`projects-hub${isEmpty ? " projects-hub--empty" : ""}`}>
-      <IndustryPageHeader
-        eyebrow="Your workspace"
-        title="Projects"
-        description="Cast your team, bring people together, and keep every detail in one place."
-        actions={
+  const header = (
+    <IndustryPageHeader
+      eyebrow="Your workspace"
+      title="Projects"
+      description="Cast your team, bring people together, and keep every detail in one place."
+      actions={
+        isEmpty ? null : (
           <button className="buyer-chrome-bar__cta" onClick={openCreatePicker}>
             <Plus size={16} /> New project
           </button>
-        }
-      />
-      {!query && scopeFilter === "all" && viewMode === "browse" && (
-        <WorkSpotlight projects={allProjects} />
-      )}
-      <div className="studio-work-counts" aria-label="Workspace summary">
-        <span>
-          <strong>
-            {allProjects.filter((p) => p.status === "active").length}
-          </strong>{" "}
-          active
-        </span>
-        <span>
-          <strong>
-            {allProjects.filter((p) => p.status === "draft").length}
-          </strong>{" "}
-          drafts
-        </span>
-        <span>
-          <strong>{allProjects.reduce((n, p) => n + p.talentCount, 0)}</strong>{" "}
-          applications & guests
-        </span>
+        )
+      }
+    />
+  );
+  const createSheet = (
+    <NewProjectSheet
+      open={createSheetOpen}
+      onClose={closeCreatePicker}
+      intent={createIntent}
+    />
+  );
+
+  if (isEmpty) {
+    return (
+      <div className="projects-hub projects-hub--empty">
+        {header}
+        <IndustryEmptyState
+          title="Every great production starts here"
+          description="Projects hold your castings, rosters, and classes in one place."
+          actions={
+            <button
+              className="buyer-chrome-bar__cta"
+              onClick={openCreatePicker}
+            >
+              Create a project
+            </button>
+          }
+        />
+        {createSheet}
       </div>
+    );
+  }
+
+  return (
+    <div className="projects-hub">
+      {header}
       <div className="industry-section-heading">
         <h2>Your work</h2>
         <ProjectsHubViewToggle />
@@ -265,20 +308,7 @@ export function ProjectsHubView({
         </div>
       </div>
 
-      {isEmpty ? (
-        <IndustryEmptyState
-          title="Every great production starts here"
-          description="Projects hold your castings, rosters, and classes in one place."
-          actions={
-            <button
-              className="buyer-chrome-bar__cta"
-              onClick={openCreatePicker}
-            >
-              Create a project
-            </button>
-          }
-        />
-      ) : !hasVisibleProjects ? (
+      {!hasVisibleProjects ? (
         <IndustryEmptyState
           title="No work matches this view"
           description="Try another search or show all of your work."
@@ -298,7 +328,7 @@ export function ProjectsHubView({
       ) : viewMode === "browse" ? (
         <FadeInSection>
           {layout === "grid" ? (
-            <ProjectGridView projects={browseProjects} />
+            <ProjectGridView projects={browseProjects} nextBeatLabels={nextBeatLabels} />
           ) : (
             <div className="industry-work-list">
               <div className="industry-work-list__labels" aria-hidden>
@@ -333,6 +363,11 @@ export function ProjectsHubView({
                           : (project.workTypeLabel ??
                             labelFromSnake(project.projectType))}
                       </small>
+                      {nextBeatLabels[project.id] ? (
+                        <small className="industry-work-row__beat">
+                          Next: {nextBeatLabels[project.id]}
+                        </small>
+                      ) : null}
                     </span>
                     <AbilityIconRow
                       abilities={project.abilities}
@@ -459,18 +494,9 @@ export function ProjectsHubView({
         inboxFiles={inboxFiles}
         projects={allProjects}
         focusProjectId={viewMode === "focus" ? focusProjectId : null}
-        skeletonOnly={isEmpty && viewMode === "focus"}
       />
 
-      <NewProjectSheet
-        open={createSheetOpen}
-        onClose={closeCreatePicker}
-        intent={createIntent}
-      />
-      <ProjectTypePickerOverlay
-        open={activityPickerOpen}
-        onClose={closeCreatePicker}
-      />
+      {createSheet}
     </div>
   );
 }

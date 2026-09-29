@@ -22,6 +22,11 @@ export type LibraryTalent = {
   collectionIds: string[];
 };
 
+export type LibraryPreviewPerson = {
+  name: string;
+  avatarUrl: string | null;
+};
+
 export type LibraryCollectionSummary = {
   id: string;
   name: string;
@@ -30,6 +35,8 @@ export type LibraryCollectionSummary = {
   createdAt: string;
   updatedAt: string;
   previewAvatars: string[];
+  /** First four members, in roster order, including people without a photo. */
+  previewPeople: LibraryPreviewPerson[];
 };
 
 export type LibraryCollectionDetail = LibraryCollectionSummary & {
@@ -261,6 +268,7 @@ export async function listCollections(): Promise<{
 
   const collections: LibraryCollectionSummary[] = (data ?? []).map((row) => {
     const members = membersByList.get(row.id as string) ?? [];
+    const preview = members.slice(0, 4);
     return {
       id: row.id as string,
       name: row.name as string,
@@ -268,10 +276,13 @@ export async function listCollections(): Promise<{
       talentCount: members.length,
       createdAt: row.created_at as string,
       updatedAt: (row.updated_at as string) ?? (row.created_at as string),
-      previewAvatars: members
+      previewPeople: preview.map((member) => ({
+        name: member.name,
+        avatarUrl: member.avatarUrl,
+      })),
+      previewAvatars: preview
         .map((member) => member.avatarUrl)
-        .filter((url): url is string => Boolean(url))
-        .slice(0, 4),
+        .filter((url): url is string => Boolean(url)),
     };
   });
 
@@ -314,6 +325,7 @@ export async function getCollection(
     })),
     new Map((members ?? []).map((row) => [row.profile_id as string, [collectionId]])),
   );
+  const preview = mapped.slice(0, 4);
 
   return {
     collection: {
@@ -323,7 +335,13 @@ export async function getCollection(
       talentCount: mapped.length,
       createdAt: list.created_at as string,
       updatedAt: (list.updated_at as string) ?? (list.created_at as string),
-      previewAvatars: mapped.map((m) => m.avatarUrl).filter((url): url is string => Boolean(url)).slice(0, 4),
+      previewPeople: preview.map((member) => ({
+        name: member.name,
+        avatarUrl: member.avatarUrl,
+      })),
+      previewAvatars: preview
+        .map((member) => member.avatarUrl)
+        .filter((url): url is string => Boolean(url)),
       members: mapped,
     },
     error: null,

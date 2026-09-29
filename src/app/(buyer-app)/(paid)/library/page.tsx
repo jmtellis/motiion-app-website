@@ -1,32 +1,16 @@
 import { BuyerAppPage } from "@/components/talent-buyers/dashboard/BuyerAppPage";
 import { LibraryPage } from "@/components/talent-buyers/library/LibraryPage";
-import { listCollections, listSavedTalent } from "@/lib/talent-buyers/library";
+import { listCollections } from "@/lib/talent-buyers/library";
 import { requireHiringAccount } from "@/lib/auth/session";
 
-export default async function BuyerLibraryRoute({
-  searchParams,
-}: {
-  searchParams: Promise<{ view?: string }>;
-}) {
+export default async function BuyerLibraryRoute() {
   await requireHiringAccount();
-  const params = await searchParams;
 
-  const [{ collections, error: collectionsError }, { talent, error: savedError }] = await Promise.all([
-    listCollections(),
-    listSavedTalent(),
-  ]);
-
-  const error = collectionsError || savedError;
-  const initialView = params.view === "collections" ? "collections" : "saved";
+  const { collections, error } = await listCollections();
 
   return (
     <BuyerAppPage fullWidth className="!space-y-0 flex min-h-0 flex-1 flex-col">
-      <LibraryPage
-        collections={collections}
-        savedTalent={talent}
-        initialView={initialView}
-        error={error}
-      />
+      <LibraryPage collections={collections} error={error} />
     </BuyerAppPage>
   );
 }

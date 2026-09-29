@@ -56,6 +56,7 @@ import type {
   TicketAccessMode,
 } from "@/lib/talent-buyers/activities/types";
 import { validateActivityDraft } from "@/lib/talent-buyers/activities/validate-draft";
+import { BUYER_HOME_PATH } from "@/lib/talent-buyers/dashboard-data";
 
 import "@/components/talent-buyers/project/casting-create-wizard.css";
 import "@/components/talent-buyers/project/project-create.css";
@@ -81,7 +82,7 @@ export function ActivityCreateWizard({
   activityId,
   typeLocked = false,
   initialConnectStatus = null,
-  closeHref = "/events",
+  closeHref = BUYER_HOME_PATH,
   layout = "page",
   onClose,
   onPublished,

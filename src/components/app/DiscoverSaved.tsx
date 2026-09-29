@@ -4,8 +4,19 @@ import { Bell, ChevronLeft, ChevronRight, Heart, Pencil, Plus, Trash2, Users, X 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { TalentProfileSheet, type TalentProfileChrome } from "@/components/app/talent-profile/TalentProfileSheet";
+import { useIndustryProOptional } from "@/components/talent-buyers/billing/IndustryProContext";
 import { useNotificationsPanel } from "@/components/workspace/WorkspaceNotifications";
 import { WorkspaceSidePanel } from "@/components/workspace/WorkspaceSidePanel";
+import {
+  createCollection,
+  deleteCollection,
+  getCollection,
+  listCollections,
+  listSavedTalent,
+  removeTalentFromCollection,
+  updateCollection,
+  type LibraryTalent,
+} from "@/lib/talent-buyers/library";
 import type { Talent } from "@/lib/talent-navigator/types";
 import {
   createDiscoverList,
@@ -38,7 +49,27 @@ function peopleCount(count: number) {
   return count === 1 ? "1 person" : `${count} people`;
 }
 
-export function DiscoverSaved() {
+function libraryPerson(person: LibraryTalent): Talent {
+  return {
+    id: person.profileId,
+    professionalProfileId: person.profileId,
+    slug: person.slug || person.profileId,
+    name: person.name,
+    location: person.location ?? undefined,
+    styles: person.styles,
+    imageUrl: person.avatarUrl ?? "",
+  };
+}
+
+export function DiscoverSaved({
+  variant = "lists",
+}: {
+  /** Industry Discover uses rosters in place of talent lists. */
+  variant?: "lists" | "rosters";
+} = {}) {
+  const rosters = variant === "rosters";
+  const noun = rosters ? "roster" : "list";
+  const { requirePro } = useIndustryProOptional();
   const [tab, setTab] = useState<SavedTab>("mine");
   const [favorites, setFavorites] = useState<Talent[]>([]);
   const [notifying, setNotifying] = useState<Talent[]>([]);
@@ -51,6 +82,30 @@ export function DiscoverSaved() {
   const [open, setOpen] = useState<SavedCollection | null>(null);
 
   const loadHome = useCallback(async () => {
+    if (rosters) {
+      const [savedResult, rosterResult, notifyResult] = await Promise.all([
+        listSavedTalent(),
+        listCollections(),
+        fetchReferrerFollowing(),
+      ]);
+      return {
+        favoriteResult: {
+          talent: savedResult.talent.map(libraryPerson),
+          error: savedResult.error,
+        },
+        notifyResult,
+        listResult: {
+          lists: rosterResult.collections.map((collection) => ({
+            id: collection.id,
+            name: collection.name,
+            memberCount: collection.talentCount,
+            previewImageUrls: collection.previewAvatars,
+          })),
+          error: rosterResult.error,
+        },
+        sharedResult: { lists: [] as ReferrerListSummary[], error: null },
+      };
+    }
     const [favoriteResult, notifyResult, listResult, sharedResult] = await Promise.all([
       fetchReferrerFavorites(),
       fetchReferrerFollowing(),
@@ -58,7 +113,7 @@ export function DiscoverSaved() {
       fetchSharedWithMeLists(),
     ]);
     return { favoriteResult, notifyResult, listResult, sharedResult };
-  }, []);
+  }, [rosters]);
 
   const refresh = useCallback(async () => {
     const { favoriteResult, notifyResult, listResult, sharedResult } = await loadHome();
@@ -89,8 +144,11 @@ export function DiscoverSaved() {
   async function createList() {
     const trimmed = draftName.trim();
     if (!trimmed) return;
-    const result = await createDiscoverList(trimmed);
-    setError(result.error);
+    if (rosters && !requirePro("roster_write")) return;
+    const result = rosters
+      ? await createCollection({ name: trimmed })
+      : await createDiscoverList(trimmed);
+    setError(result.error ?? null);
     if (!result.id) return;
     setDraftName("");
     setCreating(false);
@@ -106,12 +164,12 @@ export function DiscoverSaved() {
       <header className="discover-saved__header">
         <h1>Saved</h1>
         <button type="button" className="discover-saved__new" onClick={() => { setTab("mine"); setCreating(true); }}>
-          <Plus size={16} aria-hidden /> New list
+          <Plus size={16} aria-hidden /> New {noun}
         </button>
       </header>
 
-      <div className="portfolio-tabs" role="tablist" aria-label="Saved lists">
-        {([["mine", "My lists"], ["shared", "Shared with me"]] as const).map(([value, label]) => (
+      <div className="portfolio-tabs" role="tablist" aria-label={rosters ? "Saved rosters" : "Saved lists"}>
+        {([["mine", rosters ? "My rosters" : "My lists"], ["shared", "Shared with me"]] as const).map(([value, label]) => (
           <button
             key={value}
             type="button"
@@ -130,8 +188,8 @@ export function DiscoverSaved() {
             value={draftName}
             onChange={(event) => setDraftName(event.target.value)}
             onKeyDown={(event) => { if (event.key === "Escape") setCreating(false); }}
-            placeholder="Name your list"
-            aria-label="List name"
+            placeholder={`Name your ${noun}`}
+            aria-label={`${noun[0].toUpperCase()}${noun.slice(1)} name`}
             className="workspace-bare-input"
             autoFocus
           />
@@ -183,7 +241,7 @@ export function DiscoverSaved() {
           {tab === "shared" && shared.length === 0 ? (
             <div className="discover-saved__empty">
               <Users size={20} aria-hidden />
-              <p>Lists shared with you will show up here.</p>
+              <p>{rosters ? "Rosters shared with you will show up here." : "Lists shared with you will show up here."}</p>
             </div>
           ) : null}
         </div>
@@ -196,6 +254,7 @@ export function DiscoverSaved() {
           setOpen(null);
           void refresh();
         }}
+        variant={variant}
         onChanged={refresh}
         onRenamed={(name) => setOpen((current) => (current?.kind === "list" ? { ...current, name } : current))}
       />
@@ -242,15 +301,19 @@ function CollectionCard({
 
 function SavedCollectionPanel({
   collection,
+  variant = "lists",
   onClose,
   onChanged,
   onRenamed,
 }: {
   collection: SavedCollection | null;
+  variant?: "lists" | "rosters";
   onClose: () => void;
   onChanged: () => Promise<void>;
   onRenamed: (name: string) => void;
 }) {
+  const rosters = variant === "rosters";
+  const noun = rosters ? "roster" : "list";
   const notifications = useNotificationsPanel();
   const [members, setMembers] = useState<Talent[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -265,10 +328,17 @@ function SavedCollectionPanel({
     if (!collection) return;
     let cancelled = false;
     const request = collection.kind === "favorites"
-      ? fetchReferrerFavorites()
+      ? rosters
+        ? listSavedTalent().then((result) => ({ talent: result.talent.map(libraryPerson), error: result.error }))
+        : fetchReferrerFavorites()
       : collection.kind === "notify"
         ? fetchReferrerFollowing()
-        : fetchReferrerDiscoverListMembers(collection.id);
+        : rosters
+          ? getCollection(collection.id).then((result) => ({
+              talent: result.collection?.members.map(libraryPerson) ?? [],
+              error: result.error === "favorites" ? null : result.error,
+            }))
+          : fetchReferrerDiscoverListMembers(collection.id);
     void request.then((result) => {
       if (cancelled) return;
       setMembers(result.talent);
@@ -277,7 +347,7 @@ function SavedCollectionPanel({
     return () => {
       cancelled = true;
     };
-  }, [collection]);
+  }, [collection, rosters]);
 
   const handleChrome = useCallback((next: TalentProfileChrome) => {
     setChrome((current) => (current?.title === next.title && current?.pop === next.pop ? current : next));
@@ -306,8 +376,10 @@ function SavedCollectionPanel({
     const next = renaming.trim();
     setRenaming(null);
     if (!next || next === collection.name) return;
-    const result = await renameDiscoverList(collection.id, next);
-    setError(result.error);
+    const result = rosters
+      ? await updateCollection({ collectionId: collection.id, name: next })
+      : await renameDiscoverList(collection.id, next);
+    setError(result.error ?? null);
     if (result.error) return;
     onRenamed(next);
     await onChanged();
@@ -315,8 +387,8 @@ function SavedCollectionPanel({
 
   async function removeList() {
     if (collection?.kind !== "list") return;
-    const result = await deleteDiscoverList(collection.id);
-    setError(result.error);
+    const result = rosters ? await deleteCollection(collection.id) : await deleteDiscoverList(collection.id);
+    setError(result.error ?? null);
     if (result.error) return;
     onClose();
     await onChanged();
@@ -324,8 +396,10 @@ function SavedCollectionPanel({
 
   async function removeMember(talentId: string) {
     if (collection?.kind !== "list") return;
-    const result = await removeFromDiscoverList(collection.id, talentId);
-    setError(result.error);
+    const result = rosters
+      ? await removeTalentFromCollection({ collectionId: collection.id, profileIds: [talentId] })
+      : await removeFromDiscoverList(collection.id, talentId);
+    setError(result.error ?? null);
     if (result.error) return;
     setMembers((current) => current?.filter((person) => person.id !== talentId) ?? null);
     await onChanged();
@@ -346,7 +420,7 @@ function SavedCollectionPanel({
         <button
           type="button"
           className="workspace-notifications__close"
-          aria-label="Rename list"
+          aria-label={`Rename ${noun}`}
           onClick={() => setRenaming(collection.name)}
         >
           <Pencil size={16} aria-hidden />
@@ -364,7 +438,7 @@ function SavedCollectionPanel({
                 value={renaming}
                 onChange={(event) => setRenaming(event.target.value)}
                 onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); setRenaming(null); } }}
-                aria-label="List name"
+                aria-label={`${noun[0].toUpperCase()}${noun.slice(1)} name`}
                 className="workspace-bare-input"
                 autoFocus
               />
@@ -379,7 +453,7 @@ function SavedCollectionPanel({
           {members !== null && members.length === 0 ? (
             <div className="discover-saved__empty">
               <Users size={20} aria-hidden />
-              <p>{collection.kind === "list" ? "Add people to this list from their profile." : "No one here yet."}</p>
+              <p>{collection.kind === "list" ? `Add people to this ${noun} from their profile.` : "No one here yet."}</p>
             </div>
           ) : null}
           {members?.length ? (
@@ -403,7 +477,7 @@ function SavedCollectionPanel({
                     <button
                       type="button"
                       className="discover-saved__icon"
-                      aria-label={`Remove ${person.name} from list`}
+                      aria-label={`Remove ${person.name} from ${noun}`}
                       onClick={() => void removeMember(person.id)}
                     >
                       <X size={15} aria-hidden />
@@ -416,15 +490,15 @@ function SavedCollectionPanel({
           {owned ? (
             confirmDelete ? (
               <div className="discover-saved-panel__confirm">
-                <p>Delete this list? People on it stay in Favorites.</p>
+                <p>Delete this {noun}? People on it stay in Favorites.</p>
                 <div>
-                  <button type="button" className="discover-saved__danger" onClick={() => void removeList()}>Delete list</button>
+                  <button type="button" className="discover-saved__danger" onClick={() => void removeList()}>Delete {noun}</button>
                   <button type="button" className="discover-saved__quiet" onClick={() => setConfirmDelete(false)}>Cancel</button>
                 </div>
               </div>
             ) : (
               <button type="button" className="discover-saved__delete" onClick={() => setConfirmDelete(true)}>
-                <Trash2 size={15} aria-hidden /> Delete list
+                <Trash2 size={15} aria-hidden /> Delete {noun}
               </button>
             )
           ) : null}

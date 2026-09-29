@@ -1,10 +1,12 @@
 "use client";
 
-import Link from "next/link";
+import { useMemo } from "react";
 
+import { RosterStackTile } from "@/components/talent-buyers/project/composable/RosterStackTile";
+import { collectionStackTransitionName } from "@/components/talent-buyers/project/composable/view-transition";
 import type { LibraryCollectionSummary } from "@/lib/talent-buyers/library";
+import { collectionMosaicPeople, collectionTileSublabel } from "@/lib/talent-buyers/roster-stack";
 
-import { CollectionPreviewCollage } from "./CollectionPreviewCollage";
 import { OverflowMenu } from "./OverflowMenu";
 
 export function CollectionCard({
@@ -20,16 +22,18 @@ export function CollectionCard({
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
-  const countLabel =
-    collection.talentCount === 1 ? "1 person" : `${collection.talentCount} people`;
+  const people = useMemo(() => collectionMosaicPeople(collection), [collection]);
 
   return (
-    <Link
+    <RosterStackTile
+      layout="mosaic"
+      size="fluid"
+      people={people}
+      label={collection.name}
+      sublabel={collectionTileSublabel(collection)}
       href={`/library/${collection.id}`}
-      className="library-collection-card"
-      aria-label={`${collection.name}, ${countLabel}`}
-    >
-      <div className="library-collection-card__menu">
+      transitionName={collectionStackTransitionName(collection.id)}
+      menu={
         <OverflowMenu
           label={`Actions for ${collection.name}`}
           items={[
@@ -39,24 +43,7 @@ export function CollectionCard({
             { label: "Delete", onSelect: onDelete, danger: true },
           ]}
         />
-      </div>
-      <div className="library-collection-card__body">
-        <CollectionPreviewCollage
-          avatars={collection.previewAvatars}
-          totalCount={collection.talentCount}
-          name={collection.name}
-        />
-        <div className="library-collection-card__meta">
-          <h3 className="library-collection-card__name">{collection.name}</h3>
-          <p className="library-collection-card__count">{countLabel}</p>
-          {collection.description ? (
-            <p className="library-collection-card__description">{collection.description}</p>
-          ) : null}
-        </div>
-        {collection.talentCount === 0 ? (
-          <span className="text-xs font-medium text-[var(--accent)]">Add talent</span>
-        ) : null}
-      </div>
-    </Link>
+      }
+    />
   );
 }

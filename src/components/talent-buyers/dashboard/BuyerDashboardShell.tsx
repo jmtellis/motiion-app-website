@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { NavigationProgress } from "@/components/navigation/NavigationProgress";
+import { resolvePendingViewTransition } from "@/components/talent-buyers/project/composable/view-transition";
 import type { UserEntitlement } from "@/lib/billing/entitlement";
 import { defaultBuyerChromeBreadcrumbs } from "@/lib/talent-buyers/buyer-chrome-defaults";
 import type { DashboardProfile } from "@/types/database";
@@ -23,9 +24,15 @@ import {
   useWorkspaceSidebar,
   WorkspaceSidebarResize,
 } from "@/components/workspace/WorkspaceSidebar";
+import { WorkspaceSidePanelHost } from "@/components/workspace/WorkspaceSidePanel";
+import {
+  NotificationsPanel,
+  WorkspaceNotificationsProvider,
+} from "@/components/workspace/WorkspaceNotifications";
 import "@/components/workspace/workspace.css";
 import "./industry-light.css";
 import "./industry-experience.css";
+import "@/components/workspace/talent-studio.css";
 import "./industry-studio.css";
 import "@/components/workspace/workspace-controls.css";
 import "@/components/ui/chips.css";
@@ -55,6 +62,7 @@ export function BuyerDashboardShell({
 }) {
   const pathname = usePathname();
   const mainRef = useRef<HTMLElement>(null);
+  const [shell, setShell] = useState<HTMLDivElement | null>(null);
   const { chrome } = useBuyerPageChromeContext();
   const sidebar = useWorkspaceSidebar("motiion-industry-sidebar-width");
   const sidebarExpanded = !sidebar.collapsed;
@@ -73,9 +81,41 @@ export function BuyerDashboardShell({
     setMobileOpen(false);
   }
 
+  const scrollByPathRef = useRef(new Map<string, number>());
+  const historyTargetPathRef = useRef<string | null>(null);
+
   useEffect(() => {
+    function markHistoryNavigation() {
+      historyTargetPathRef.current = window.location.pathname;
+    }
+    window.addEventListener("popstate", markHistoryNavigation);
+    return () => window.removeEventListener("popstate", markHistoryNavigation);
+  }, []);
+
+  useEffect(() => {
+    const main = mainRef.current;
+    if (!main) return;
+    const saved = scrollByPathRef.current;
+    function remember() {
+      if (main) saved.set(pathname, main.scrollTop);
+    }
+    main.addEventListener("scroll", remember, { passive: true });
+    return () => main.removeEventListener("scroll", remember);
+  }, [pathname]);
+
+  useEffect(() => {
+    resolvePendingViewTransition();
+    const restore = historyTargetPathRef.current === pathname;
+    historyTargetPathRef.current = null;
     if (hideShellChrome && isTalentRoute) return;
-    mainRef.current?.scrollTo({ top: 0 });
+    const main = mainRef.current;
+    if (!main) return;
+    const top = restore ? (scrollByPathRef.current.get(pathname) ?? 0) : 0;
+    main.scrollTo({ top });
+    if (top > 0) {
+      const frame = window.requestAnimationFrame(() => main.scrollTo({ top }));
+      return () => window.cancelAnimationFrame(frame);
+    }
   }, [hideShellChrome, isTalentRoute, pathname]);
 
   useEffect(() => {
@@ -101,9 +141,12 @@ export function BuyerDashboardShell({
   const showChrome = needsShellChrome && !mobileOpen;
 
   return (
+    <WorkspaceNotificationsProvider userId={profile.id}>
+    <WorkspaceSidePanelHost value={shell}>
     <>
       <DashboardScrollLock />
       <div
+        ref={setShell}
         style={sidebar.style}
         data-resizing={sidebar.dragging}
         data-collapsed={sidebar.collapsed}
@@ -172,16 +215,19 @@ export function BuyerDashboardShell({
 
           <main
             ref={mainRef}
-            className={`buyer-dashboard-shell__main ${isTalentRoute ? "" : "industry-studio-canvas"} relative flex min-h-0 flex-col text-white ${
+            className={`buyer-dashboard-shell__main ${isTalentRoute || pathname === "/dashboard" ? "" : "industry-studio-canvas"} relative flex min-h-0 flex-col text-white ${
               isTalentRoute
                 ? "overflow-hidden overscroll-none p-0"
-                : "overflow-y-auto overscroll-none px-5 pt-5 pb-0 lg:px-8 lg:pt-7 lg:pb-0"
+                : "overflow-x-clip overflow-y-auto overscroll-none px-8 pt-7 pb-0"
             }`}
           >
             {children}
           </main>
         </div>
+        <NotificationsPanel />
       </div>
     </>
+    </WorkspaceSidePanelHost>
+    </WorkspaceNotificationsProvider>
   );
 }

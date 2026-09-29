@@ -47,6 +47,25 @@
   overflow: hidden;
 }
 
+.events-hub__empty-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.08));
+  border-radius: 12px;
+}
+
+.events-hub__empty-note p {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--industry-text, rgb(255 255 255 / 0.9));
+}
+
 .events-hub__schedule {
   display: flex;
   flex: 1 1 auto;

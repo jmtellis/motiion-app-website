@@ -22,7 +22,7 @@ export default async function BuyerCollectionDetailPage({
   ]);
 
   if (error === "favorites") {
-    redirect("/library?view=saved");
+    redirect("/talent?view=saved");
   }
 
   if (error === "Collection not found" || !collection) {

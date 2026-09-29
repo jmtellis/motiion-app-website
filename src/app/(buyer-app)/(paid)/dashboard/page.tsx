@@ -1,7 +1,22 @@
-import { redirect } from "next/navigation";
+import { HomeDiscovery } from "@/components/app/HomeDiscovery";
+import { HomeFeed } from "@/components/app/HomeFeed";
+import { requireHiringAccount } from "@/lib/auth/session";
 
-import { BUYER_HOME_PATH } from "@/lib/talent-buyers/dashboard-data";
+export default async function BuyerHomePage() {
+  const profile = await requireHiringAccount();
+  const firstName = profile.fullName.split(" ")[0] || "there";
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12
+      ? `Good morning, ${firstName}`
+      : hour < 18
+        ? `Good afternoon, ${firstName}`
+        : `Good evening, ${firstName}`;
 
-export default function BuyerDashboardPage() {
-  redirect(BUYER_HOME_PATH);
+  return (
+    <HomeFeed
+      greeting={greeting}
+      discoverySlot={<HomeDiscovery navigatorHref="/talent" />}
+    />
+  );
 }

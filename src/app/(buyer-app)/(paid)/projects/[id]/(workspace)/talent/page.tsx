@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { requireHiringAccount } from "@/lib/auth/session";
 import { fetchProjectRecord } from "@/lib/talent-buyers/projects";
+import { resolveWorkspaceProjectType } from "@/lib/talent-buyers/project-abilities";
 import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
 import {
   projectOverviewTalentPath,
@@ -13,7 +14,7 @@ export default async function ProjectTalentPage({ params }: { params: Promise<{ 
   const { id } = await params;
   const project = await fetchProjectRecord(id, profile.id);
 
-  if (project && getNormalizedProjectType(project.project_type) === "casting") {
+  if (project && getNormalizedProjectType(resolveWorkspaceProjectType(project)) === "casting") {
     redirect(projectWorkspacePath(id, "talent-search"));
   }
 

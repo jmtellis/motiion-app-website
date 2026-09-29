@@ -99,6 +99,53 @@ export function buildContainerProjectUpdateRow(
   return row;
 }
 
+/**
+ * Legacy project editors don't know about composable shells. Keep the stored
+ * abilities, composable marker, draft state, and visibility on composable rows.
+ */
+export function preserveComposableColumns(
+  row: Record<string, unknown>,
+  existing: { enabled_modules?: unknown; project_configuration?: unknown },
+) {
+  const existingConfig =
+    existing.project_configuration && typeof existing.project_configuration === "object"
+      ? (existing.project_configuration as Record<string, unknown>)
+      : null;
+  if (!existingConfig?.composable) return row;
+
+  const existingModules =
+    existing.enabled_modules && typeof existing.enabled_modules === "object"
+      ? (existing.enabled_modules as Record<string, unknown>)
+      : {};
+  const nextModules =
+    row.enabled_modules && typeof row.enabled_modules === "object"
+      ? (row.enabled_modules as Record<string, unknown>)
+      : {};
+  const nextConfig =
+    row.project_configuration && typeof row.project_configuration === "object"
+      ? (row.project_configuration as Record<string, unknown>)
+      : {};
+
+  const preserved: Record<string, unknown> = {
+    ...row,
+    enabled_modules: {
+      ...nextModules,
+      casting: existingModules.casting === true,
+      roster: existingModules.roster === true,
+      classes: existingModules.classes === true,
+    },
+    project_configuration: {
+      ...existingConfig,
+      ...nextConfig,
+      composable: existingConfig.composable,
+      composer_draft: false,
+    },
+    is_active: true,
+  };
+  delete preserved.visibility;
+  return preserved;
+}
+
 export function projectRecordToComposerForm(record: ProjectRecord): ProjectComposerForm {
   const isDraft = isProjectDraft(record);
 

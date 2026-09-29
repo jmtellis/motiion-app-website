@@ -154,6 +154,22 @@ export function resolveProjectAbilities(record: {
   }));
 }
 
+/**
+ * Project type the web workspace should behave as. A composable shell with the
+ * Casting ability enabled reuses the casting workflow without rewriting the
+ * stored `project_type` that iOS decodes.
+ */
+export function resolveWorkspaceProjectType(record: {
+  project_type?: string | null;
+  enabled_modules?: unknown;
+  project_configuration?: unknown;
+}): string | null {
+  if (isComposableProject(record) && parseAbilityModules(record.enabled_modules).casting) {
+    return "casting";
+  }
+  return record.project_type ?? null;
+}
+
 export function hasActiveAbility(abilities: ProjectAbilityState[], id: ProjectAbilityId) {
   return abilities.some((ability) => ability.id === id && ability.status === "active");
 }

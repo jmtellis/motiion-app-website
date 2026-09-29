@@ -24,6 +24,7 @@ import type {
 import {
   buildContainerProjectInsertRow,
   buildContainerProjectUpdateRow,
+  preserveComposableColumns,
 } from "@/lib/talent-buyers/project-payload";
 import {
   parseProjectComposerForm,
@@ -358,10 +359,15 @@ export async function saveProjectDraft(payload: unknown): Promise<CreateProjectR
 
   const { data: existing, error: existingError } = await supabase
     .from("projects")
-    .select("id, project_type")
+    .select("id, project_type, enabled_modules, project_configuration")
     .eq("id", form.projectId)
     .eq("poster_id", userId)
-    .maybeSingle<{ id: string; project_type: string | null }>();
+    .maybeSingle<{
+      id: string;
+      project_type: string | null;
+      enabled_modules: unknown;
+      project_configuration: unknown;
+    }>();
 
   if (existingError || !existing) {
     return { ok: false, error: "Project not found." };
@@ -369,7 +375,12 @@ export async function saveProjectDraft(payload: unknown): Promise<CreateProjectR
 
   const { error } = await supabase
     .from("projects")
-    .update(buildContainerProjectUpdateRow(userId, form, true, existing.project_type))
+    .update(
+      preserveComposableColumns(
+        buildContainerProjectUpdateRow(userId, form, true, existing.project_type),
+        existing,
+      ),
+    )
     .eq("id", form.projectId);
 
   if (error) {
@@ -408,10 +419,15 @@ export async function updateProject(payload: unknown): Promise<UpdateProjectResu
 
   const { data: existing, error: existingError } = await supabase
     .from("projects")
-    .select("id, project_type")
+    .select("id, project_type, enabled_modules, project_configuration")
     .eq("id", projectId)
     .eq("poster_id", userId)
-    .maybeSingle<{ id: string; project_type: string | null }>();
+    .maybeSingle<{
+      id: string;
+      project_type: string | null;
+      enabled_modules: unknown;
+      project_configuration: unknown;
+    }>();
 
   if (existingError || !existing) {
     return { ok: false, error: "Project not found." };
@@ -419,7 +435,12 @@ export async function updateProject(payload: unknown): Promise<UpdateProjectResu
 
   const { error } = await supabase
     .from("projects")
-    .update(buildContainerProjectUpdateRow(userId, parsed.data, false, existing.project_type))
+    .update(
+      preserveComposableColumns(
+        buildContainerProjectUpdateRow(userId, parsed.data, false, existing.project_type),
+        existing,
+      ),
+    )
     .eq("id", projectId);
 
   if (error) {

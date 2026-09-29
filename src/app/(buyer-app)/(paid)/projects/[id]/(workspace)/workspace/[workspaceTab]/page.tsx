@@ -2,10 +2,15 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { resolveLegacyCastingWorkspaceTab } from "@/lib/talent-buyers/casting/casting-routes";
+import {
+  isComposableProject,
+  resolveWorkspaceProjectType,
+} from "@/lib/talent-buyers/project-abilities";
 import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
 import { fetchProjectRecord } from "@/lib/talent-buyers/projects";
 import {
   isValidWorkspaceRoute,
+  projectHomePath,
   projectLandingPath,
   projectPath,
 } from "@/lib/talent-buyers/project-routes";
@@ -37,7 +42,8 @@ export default async function ProjectWorkspaceTabPage({
     redirect(projectLandingPath(id, null));
   }
 
-  const projectType = getNormalizedProjectType(projectRecord.project_type);
+  const effectiveProjectType = resolveWorkspaceProjectType(projectRecord);
+  const projectType = getNormalizedProjectType(effectiveProjectType);
   let workspaceTab = rawWorkspaceTab;
 
   if (projectType === "casting") {
@@ -61,8 +67,16 @@ export default async function ProjectWorkspaceTabPage({
     workspaceTab = resolved.tab;
   }
 
-  if (!isValidWorkspaceRoute(projectRecord.project_type, workspaceTab)) {
-    redirect(projectLandingPath(id, projectRecord.project_type));
+  if (isComposableProject(projectRecord) && projectType !== "casting") {
+    redirect(projectHomePath(id));
+  }
+
+  if (!isValidWorkspaceRoute(effectiveProjectType, workspaceTab)) {
+    redirect(
+      isComposableProject(projectRecord)
+        ? projectHomePath(id)
+        : projectLandingPath(id, effectiveProjectType),
+    );
   }
 
   return (

@@ -7,6 +7,7 @@ import {
   extractStorageObjectFromPublicUrl,
   sanitizeAttachmentFileName,
 } from "@/lib/talent-buyers/project-attachments";
+import { resolveWorkspaceProjectType } from "@/lib/talent-buyers/project-abilities";
 import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
 import type { CastingAttachmentCodable } from "@/types/casting";
 import type { ProjectAttachment } from "@/types/project";
@@ -272,17 +273,18 @@ export async function migrateLegacyCastingAttachmentsIfNeeded(
     const { supabase, userId } = await requireUserId();
     const { data: project } = await supabase
       .from("projects")
-      .select("id, project_type, project_configuration, casting_configuration")
+      .select("id, project_type, enabled_modules, project_configuration, casting_configuration")
       .eq("id", projectId)
       .eq("poster_id", userId)
       .maybeSingle<{
         id: string;
         project_type: string | null;
+        enabled_modules: unknown;
         project_configuration: Record<string, unknown> | null;
         casting_configuration: Record<string, unknown> | null;
       }>();
 
-    if (!project || getNormalizedProjectType(project.project_type) !== "casting") {
+    if (!project || getNormalizedProjectType(resolveWorkspaceProjectType(project)) !== "casting") {
       return { attachments: [] };
     }
 
@@ -329,12 +331,13 @@ export async function updateProjectAttachments(
 
     const { data: project, error: fetchError } = await supabase
       .from("projects")
-      .select("id, project_type, project_configuration, casting_configuration")
+      .select("id, project_type, enabled_modules, project_configuration, casting_configuration")
       .eq("id", projectId)
       .eq("poster_id", userId)
       .maybeSingle<{
         id: string;
         project_type: string | null;
+        enabled_modules: unknown;
         project_configuration: Record<string, unknown> | null;
         casting_configuration: Record<string, unknown> | null;
       }>();
@@ -343,7 +346,7 @@ export async function updateProjectAttachments(
       return { ok: false, error: "Project not found." };
     }
 
-    const isCasting = getNormalizedProjectType(project.project_type) === "casting";
+    const isCasting = getNormalizedProjectType(resolveWorkspaceProjectType(project)) === "casting";
     const normalizedAttachments = normalizeAttachmentList(attachments);
 
     if (isCasting) {

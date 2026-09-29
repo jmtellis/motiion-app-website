@@ -9,6 +9,7 @@ import {
   extractStorageObjectFromPublicUrl,
   sanitizeAttachmentFileName,
 } from "@/lib/talent-buyers/project-attachments";
+import { resolveWorkspaceProjectType } from "@/lib/talent-buyers/project-abilities";
 import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
 import type { BuyerInboxFile } from "@/types/buyer-file-inbox";
 import type { ProjectAttachment } from "@/types/project";
@@ -135,12 +136,13 @@ export async function fetchProjectAttachmentsForHub(
     const { supabase, userId } = await requireUserId();
     const { data: project, error } = await supabase
       .from("projects")
-      .select("id, project_type, project_configuration, casting_configuration")
+      .select("id, project_type, enabled_modules, project_configuration, casting_configuration")
       .eq("id", projectId)
       .eq("poster_id", userId)
       .maybeSingle<{
         id: string;
         project_type: string | null;
+        enabled_modules: unknown;
         project_configuration: Record<string, unknown> | null;
         casting_configuration: Record<string, unknown> | null;
       }>();
@@ -149,7 +151,7 @@ export async function fetchProjectAttachmentsForHub(
       return { ok: false, error: "Project not found." };
     }
 
-    const isCasting = getNormalizedProjectType(project.project_type) === "casting";
+    const isCasting = getNormalizedProjectType(resolveWorkspaceProjectType(project)) === "casting";
     const config = isCasting
       ? ((project.casting_configuration ?? project.project_configuration ?? {}) as Record<
           string,
@@ -161,7 +163,7 @@ export async function fetchProjectAttachmentsForHub(
     return {
       ok: true,
       attachments: normalizeAttachmentList(raw),
-      projectType: project.project_type,
+      projectType: resolveWorkspaceProjectType(project),
     };
   } catch (error) {
     return {
@@ -306,12 +308,13 @@ export async function assignInboxFileToProject(
 
     const { data: project, error: projectError } = await supabase
       .from("projects")
-      .select("id, project_type, project_configuration, casting_configuration")
+      .select("id, project_type, enabled_modules, project_configuration, casting_configuration")
       .eq("id", projectId)
       .eq("poster_id", userId)
       .maybeSingle<{
         id: string;
         project_type: string | null;
+        enabled_modules: unknown;
         project_configuration: Record<string, unknown> | null;
         casting_configuration: Record<string, unknown> | null;
       }>();
@@ -320,7 +323,7 @@ export async function assignInboxFileToProject(
       return { ok: false, error: "Project not found." };
     }
 
-    const isCasting = getNormalizedProjectType(project.project_type) === "casting";
+    const isCasting = getNormalizedProjectType(resolveWorkspaceProjectType(project)) === "casting";
     let attachmentUrl = inboxFile.file_url as string;
     let attachmentFileName = inboxFile.file_name as string;
     let attachmentContentType = (inboxFile.content_type as string | null) ?? "application/octet-stream";

@@ -271,6 +271,14 @@ export async function importCollectionToProjectRoster(input: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "You must be signed in." };
 
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("id", input.projectId)
+    .eq("poster_id", user.id)
+    .maybeSingle<{ id: string }>();
+  if (!project) return { ok: false, error: "Project not found." };
+
   const { data: collection } = await supabase
     .from("talent_lists")
     .select("id")

@@ -117,7 +117,7 @@ export async function syncProjectCastingConfigurationFromCastingId(
   const [{ data }, { data: project }] = await Promise.all([
     supabase
       .from("castings")
-      .select("configuration, title, description, visibility, submission_deadline")
+      .select("configuration, title, description, visibility, submission_deadline, status")
       .eq("id", castingId)
       .maybeSingle<{
         configuration: CastingConfiguration | null;
@@ -125,17 +125,23 @@ export async function syncProjectCastingConfigurationFromCastingId(
         description: string | null;
         visibility: string | null;
         submission_deadline: string | null;
+        status: string | null;
       }>(),
     supabase
       .from("projects")
       .select(
-        "title, description, production_company, production_company_logo_url, cover_image_url, location, start_date, end_date, rate_type, rate_details, casting_configuration",
+        "title, description, production_company, production_company_logo_url, cover_image_url, location, start_date, end_date, rate_type, rate_details, casting_configuration, project_configuration",
       )
       .eq("id", projectId)
       .maybeSingle(),
   ]);
 
   if (!data?.configuration && !data?.title) return;
+
+  // A composable shell is never a draft itself; publish state comes from its casting.
+  if (project && isComposableProject(project)) {
+    isDraft = !data.status || data.status === "draft";
+  }
 
   const existingAttachments = Array.isArray(
     (project?.casting_configuration as CastingConfiguration | null)?.attachments,

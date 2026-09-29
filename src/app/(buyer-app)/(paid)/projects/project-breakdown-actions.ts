@@ -2,6 +2,7 @@
 
 import { extractBreakdownWithVision } from "@/lib/talent-buyers/breakdown-extract";
 import type { ExtractedBreakdownData } from "@/lib/talent-buyers/breakdown-types";
+import { resolveWorkspaceProjectType } from "@/lib/talent-buyers/project-abilities";
 import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { ProjectAttachment } from "@/types/project";
@@ -34,16 +35,16 @@ async function assertCastingProject(formData: FormData) {
 
     const { data: project, error } = await supabase
       .from("projects")
-      .select("project_type")
+      .select("project_type, enabled_modules, project_configuration")
       .eq("id", projectId)
       .eq("poster_id", user.id)
-      .maybeSingle<{ project_type: string | null }>();
+      .maybeSingle<{ project_type: string | null; enabled_modules: unknown; project_configuration: unknown }>();
 
     if (error || !project) {
       return { ok: false as const, error: "Project not found." };
     }
 
-    if (getNormalizedProjectType(project.project_type) !== "casting") {
+    if (getNormalizedProjectType(resolveWorkspaceProjectType(project)) !== "casting") {
       return { ok: false as const, error: "Breakdown upload is only available for casting projects." };
     }
 

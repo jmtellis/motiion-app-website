@@ -3,7 +3,19 @@ import { z } from "zod";
 const projectModulesSchema = z.object({
   casting: z.boolean(),
   activities: z.boolean(),
+  roster: z.boolean().optional(),
+  classes: z.boolean().optional(),
 });
+
+const composableConfigSchema = z
+  .object({
+    version: z.number(),
+    paused: z.array(z.enum(["casting", "roster", "classes"])).default([]),
+    prompt_dismissed_at: z.string().nullable().optional(),
+    archived_at: z.string().nullable().optional(),
+    created_via: z.string().nullable().optional(),
+  })
+  .passthrough();
 
 const projectAttachmentSchema = z.object({
   id: z.string().uuid(),
@@ -18,6 +30,7 @@ const projectConfigurationSchema = z.object({
   attachments: z.array(projectAttachmentSchema).default([]),
   composer_draft: z.boolean().optional(),
   create_metadata: z.record(z.string(), z.string()).optional(),
+  composable: composableConfigSchema.optional(),
 });
 
 export const projectComposerFormSchema = z.object({

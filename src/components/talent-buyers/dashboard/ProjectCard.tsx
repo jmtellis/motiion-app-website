@@ -12,12 +12,14 @@ import type { ProjectHubSummary } from "@/lib/talent-buyers/projects-hub";
 import { resolveBuyerCoverSrc } from "@/lib/talent-buyers/stock-images";
 import type { BuyerProjectSummary } from "@/types/talent-buyer-dashboard";
 
+import { AbilityIconRow } from "@/components/talent-buyers/project/composable/AbilityIconRow";
+
 import { IndustryBadge } from "./IndustryUI";
 
 import { BuyerCoverImage } from "./BuyerCoverImage";
 
 type ProjectCardModel = BuyerProjectSummary &
-  Pick<Partial<ProjectHubSummary>, "href" | "workTypeLabel" | "workKind">;
+  Pick<Partial<ProjectHubSummary>, "href" | "workTypeLabel" | "workKind" | "abilities">;
 
 export function ProjectCard({
   project,
@@ -35,7 +37,9 @@ export function ProjectCard({
     id: project.id,
     category: stockCategory,
   });
-  const typeLabel = project.workTypeLabel ?? getProjectTypeLabel(project.projectType);
+  const typeLabel = project.composable
+    ? "Project"
+    : (project.workTypeLabel ?? getProjectTypeLabel(project.projectType));
   const TypeIcon = getProjectTypeIcon(project.projectType);
   const typeAccent = getProjectTypeAccent(project.projectType);
   const href = project.href ?? `/projects/${project.id}`;
@@ -127,6 +131,9 @@ export function ProjectCard({
               Edited {formatBuyerRelativeDate(project.lastUpdated)}
             </p>
           </div>
+          {project.abilities?.length ? (
+            <AbilityIconRow abilities={project.abilities} className="bd-project-card__abilities" />
+          ) : null}
         </div>
       </Link>
     );

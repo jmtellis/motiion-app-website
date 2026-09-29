@@ -16,6 +16,11 @@ import { isProjectDraft } from "@/lib/talent-buyers/project-payload";
 import { resolvePrimaryCastingId } from "@/lib/talent-buyers/casting/casting-workflow-data";
 import { syncProjectCastingConfigurationFromCastingId } from "@/lib/talent-buyers/casting/sync-project-casting-config";
 import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
+import {
+  parseComposableConfig,
+  resolveProjectAbilities,
+  resolveWorkspaceProjectType,
+} from "@/lib/talent-buyers/project-abilities";
 import { requireHiringAccount } from "@/lib/auth/session";
 import { recordBuyerContentView } from "@/lib/talent-buyers/dashboard-live";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -81,7 +86,9 @@ export default async function ProjectWorkspaceLayout({
   await recordBuyerContentView("project", id);
 
   let resolvedProject = projectRecord;
-  const isCastingProject = getNormalizedProjectType(projectRecord.project_type) === "casting";
+  const workspaceProjectType = resolveWorkspaceProjectType(projectRecord);
+  const isCastingProject = getNormalizedProjectType(workspaceProjectType) === "casting";
+  const composableConfig = parseComposableConfig(projectRecord.project_configuration);
 
   if (isCastingProject && castingMirrorNeedsRepair(projectRecord)) {
     const supabase = await createServerSupabaseClient();
@@ -99,7 +106,7 @@ export default async function ProjectWorkspaceLayout({
   }
 
   const attachments = resolveWorkspaceAttachments({
-    project_type: resolvedProject.project_type,
+    project_type: workspaceProjectType,
     project_configuration: resolvedProject.project_configuration as Record<string, unknown> | null,
     casting_configuration: resolvedProject.casting_configuration as Record<string, unknown> | null,
   });
@@ -115,11 +122,21 @@ export default async function ProjectWorkspaceLayout({
     title: resolvedProject.title,
     coverImageUrl: resolvedProject.cover_image_url,
     productionCompanyLogoUrl: resolvedProject.production_company_logo_url,
-    projectType: resolvedProject.project_type,
+    projectType: workspaceProjectType,
     location: resolvedProject.location,
     productionCompany: resolvedProject.production_company,
     isDraft: isProjectDraft(resolvedProject),
     updatedAt: resolvedProject.updated_at,
+    composable: composableConfig
+      ? {
+          abilities: resolveProjectAbilities(resolvedProject),
+          startDate: resolvedProject.start_date ?? null,
+          endDate: resolvedProject.end_date ?? null,
+          createdAt: resolvedProject.created_at ?? null,
+          promptDismissedAt: composableConfig.prompt_dismissed_at ?? null,
+          archivedAt: composableConfig.archived_at ?? null,
+        }
+      : null,
   };
 
   return (

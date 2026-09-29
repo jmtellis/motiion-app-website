@@ -12,6 +12,7 @@ import {
   ProjectCoverAvatar,
   ProjectWorkspaceChromeEnd,
 } from "./ProjectWorkspaceChrome";
+import { ComposableProjectShell } from "./composable/ComposableProjectShell";
 import { useProjectWorkspace } from "./ProjectWorkspaceContext";
 import { ProjectWorkspaceTabs } from "./ProjectWorkspaceTabs";
 
@@ -19,6 +20,14 @@ import "@/components/talent-buyers/casting/casting-overview.css";
 import "./project-workspace.css";
 
 export function ProjectWorkspaceShell({ children }: { children: ReactNode }) {
+  const { project } = useProjectWorkspace();
+  if (project.composable) {
+    return <ComposableProjectShell composable={project.composable}>{children}</ComposableProjectShell>;
+  }
+  return <TypedProjectWorkspaceShell>{children}</TypedProjectWorkspaceShell>;
+}
+
+function TypedProjectWorkspaceShell({ children }: { children: ReactNode }) {
   const { projectId, project, castingWorkflow } = useProjectWorkspace();
   const [editProjectOpen, setEditProjectOpen] = useState(false);
   const castingVisibility = castingWorkflow?.primaryCasting?.visibility;

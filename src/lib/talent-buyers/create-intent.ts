@@ -4,6 +4,8 @@
  * Event/Class/Session use the activity wizard.
  */
 
+import { projectsCreateHref } from "./projects-hub-constants";
+
 export type BuyerCreateIntent = "casting" | "event" | "class" | "session" | "job";
 
 export type BuyerCreateIntentOption = {
@@ -48,13 +50,17 @@ export const BUYER_CREATE_INTENT_OPTIONS: readonly BuyerCreateIntentOption[] = [
   },
 ];
 
+/** Standalone creates that live outside a project shell; Casting is a project ability. */
+export const BUYER_ACTIVITY_INTENT_OPTIONS: readonly BuyerCreateIntentOption[] =
+  BUYER_CREATE_INTENT_OPTIONS.filter((option) => option.value !== "casting");
+
 export function isBuyerCreateIntent(value: string): value is BuyerCreateIntent {
   return (BUYER_CREATE_INTENTS as readonly string[]).includes(value);
 }
 
 export function createIntentPath(intent: BuyerCreateIntent, projectId?: string | null): string {
   if (intent === "casting") {
-    return "/projects/new/casting";
+    return projectsCreateHref("casting");
   }
   if (intent === "job") {
     return "/jobs/new";

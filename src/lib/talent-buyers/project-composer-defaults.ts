@@ -62,5 +62,7 @@ export function parseProjectModules(value: unknown): ProjectComposerForm["enable
   return {
     casting: Boolean(modules.casting),
     activities: Boolean(modules.activities),
+    roster: Boolean(modules.roster),
+    classes: Boolean(modules.classes),
   };
 }

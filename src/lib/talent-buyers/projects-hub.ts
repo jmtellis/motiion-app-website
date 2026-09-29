@@ -7,6 +7,11 @@ import {
   splitCastingSummaries,
 } from "@/lib/talent-buyers/casting-projects";
 import type { ProjectActivitySummary } from "@/lib/talent-buyers/project-activities";
+import {
+  deriveLegacyAbilities,
+  type ProjectAbilityState,
+} from "@/lib/talent-buyers/project-abilities";
+import { projectHomePath } from "@/lib/talent-buyers/project-routes";
 import type { BuyerProjectSummary } from "@/types/talent-buyer-dashboard";
 
 const PROJECT_ROSTER_KIND = "project_roster";
@@ -44,6 +49,8 @@ export type ProjectHubSummary = BuyerProjectSummary & {
   href?: string;
   /** Display label for activity cards (Event / Class / Session). */
   workTypeLabel?: string;
+  /** Ability icons for the list row; empty for standalone activities and jobs. */
+  abilities: ProjectAbilityState[];
 };
 
 function mapActivityRow(
@@ -350,13 +357,27 @@ function enrichSummaries(
 ): ProjectHubSummary[] {
   return summaries.map((project) => {
     const roster = rosterByProject.get(project.id) ?? { count: 0, preview: [] };
+    const roles = rolesByProject.get(project.id) ?? [];
+    const castings = castingsByProject.get(project.id) ?? [];
+    const activities = activitiesByProject.get(project.id) ?? [];
+    const abilities = project.composable
+      ? (project.abilities ?? [])
+      : deriveLegacyAbilities({
+          projectType: project.projectType,
+          castingCount: castings.length,
+          roleCount: roles.length,
+          rosterCount: roster.count,
+          classSessionCount: activities.filter((activity) => activity.eventType === "class").length,
+        });
     return {
       ...project,
-      roles: rolesByProject.get(project.id) ?? [],
-      castings: castingsByProject.get(project.id) ?? [],
-      activities: activitiesByProject.get(project.id) ?? [],
+      roles,
+      castings,
+      activities,
       rosterCount: roster.count,
       rosterPreview: roster.preview,
+      abilities,
+      ...(project.composable ? { href: projectHomePath(project.id) } : {}),
     };
   });
 }
@@ -400,6 +421,7 @@ function activityToHubSummary(
     activities: [activity],
     rosterCount: 0,
     rosterPreview: [],
+    abilities: [],
     workKind: "activity",
     href: `/calendar/${activity.id}`,
     workTypeLabel: activityWorkTypeLabel(activity.eventType),
@@ -409,6 +431,7 @@ function activityToHubSummary(
 /** Hosted activities that appear as first-class work in the Projects hub. */
 async function fetchHostedActivityHubItems(
   posterId: string,
+  composableProjectIds: ReadonlySet<string> = new Set(),
 ): Promise<ProjectHubSummary[]> {
   const supabase = await createServerSupabaseClient();
   if (!supabase) return [];
@@ -416,14 +439,17 @@ async function fetchHostedActivityHubItems(
   const { data } = await supabase
     .from("activities")
     .select(
-      "id, title, type, status, location, activity_date, start_time, cover_image_url, updated_at",
+      "id, project_id, title, type, status, location, activity_date, start_time, cover_image_url, updated_at",
     )
     .eq("creator_id", posterId)
     .neq("status", "cancelled")
     .order("activity_date", { ascending: false, nullsFirst: false })
     .limit(200);
 
-  const rows = (data ?? []) as Record<string, unknown>[];
+  // Class sessions inside a composable project are listed under that project's Classes ability.
+  const rows = ((data ?? []) as Record<string, unknown>[]).filter(
+    (row) => !composableProjectIds.has(row.project_id as string),
+  );
   if (!rows.length) return [];
 
   const counts = new Map<string, number>();
@@ -491,6 +517,7 @@ function productionJobToHubSummary(row: {
     activities: [],
     rosterCount: row.member_count ?? 0,
     rosterPreview: [],
+    abilities: [],
     workKind: "job",
     href: `/jobs/${row.id}`,
     workTypeLabel: "Job",
@@ -558,6 +585,9 @@ export async function fetchProjectsHubData(posterId: string) {
   const summaries = await fetchPosterCastingSummaries(posterId);
   const { drafts, published } = splitCastingSummaries(summaries);
   const allIds = summaries.map((project) => project.id);
+  const composableIds = new Set(
+    summaries.filter((project) => project.composable).map((project) => project.id),
+  );
 
   const [
     rolesByProject,
@@ -571,7 +601,7 @@ export async function fetchProjectsHubData(posterId: string) {
     fetchActivitiesByProject(allIds),
     fetchRosterPreviewsByProject(posterId, allIds),
     fetchCastingsByProject(allIds, summaries),
-    fetchHostedActivityHubItems(posterId),
+    fetchHostedActivityHubItems(posterId, composableIds),
     fetchProductionJobHubItems(posterId),
   ]);
 

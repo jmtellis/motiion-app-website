@@ -7,7 +7,7 @@ import {
   createIntentPath,
   type BuyerCreateIntent,
 } from "@/lib/talent-buyers/create-intent";
-import { projectsCreateHref } from "@/lib/talent-buyers/projects-hub-constants";
+import { projectsCreateActivityHref } from "@/lib/talent-buyers/projects-hub-constants";
 
 export function CreateActivityButton({
   projectId,
@@ -38,7 +38,7 @@ export function CreateActivityButton({
 
   const href = type
     ? createIntentPath(type, projectId)
-    : projectsCreateHref();
+    : projectsCreateActivityHref();
 
   return (
     <Link href={href} className={className}>

@@ -91,11 +91,59 @@ export function buildContainerProjectUpdateRow(
   };
 
   // Casting visibility/config are owned by casting publish sync — don't clobber them here.
-  if (projectType !== "casting") {
+  // Composable shells publish through abilities, so the row's visibility follows the casting.
+  if (projectType !== "casting" && !form.configuration.composable) {
     row.visibility = "private";
   }
 
   return row;
+}
+
+/**
+ * Legacy project editors don't know about composable shells. Keep the stored
+ * abilities, composable marker, draft state, and visibility on composable rows.
+ */
+export function preserveComposableColumns(
+  row: Record<string, unknown>,
+  existing: { enabled_modules?: unknown; project_configuration?: unknown },
+) {
+  const existingConfig =
+    existing.project_configuration && typeof existing.project_configuration === "object"
+      ? (existing.project_configuration as Record<string, unknown>)
+      : null;
+  if (!existingConfig?.composable) return row;
+
+  const existingModules =
+    existing.enabled_modules && typeof existing.enabled_modules === "object"
+      ? (existing.enabled_modules as Record<string, unknown>)
+      : {};
+  const nextModules =
+    row.enabled_modules && typeof row.enabled_modules === "object"
+      ? (row.enabled_modules as Record<string, unknown>)
+      : {};
+  const nextConfig =
+    row.project_configuration && typeof row.project_configuration === "object"
+      ? (row.project_configuration as Record<string, unknown>)
+      : {};
+
+  const preserved: Record<string, unknown> = {
+    ...row,
+    enabled_modules: {
+      ...nextModules,
+      casting: existingModules.casting === true,
+      roster: existingModules.roster === true,
+      classes: existingModules.classes === true,
+    },
+    project_configuration: {
+      ...existingConfig,
+      ...nextConfig,
+      composable: existingConfig.composable,
+      composer_draft: false,
+    },
+    is_active: true,
+  };
+  delete preserved.visibility;
+  return preserved;
 }
 
 export function projectRecordToComposerForm(record: ProjectRecord): ProjectComposerForm {
@@ -116,6 +164,9 @@ export function projectRecordToComposerForm(record: ProjectRecord): ProjectCompo
       attachments: record.project_configuration?.attachments ?? [],
       composer_draft: isDraft,
       create_metadata: record.project_configuration?.create_metadata ?? {},
+      ...(record.project_configuration?.composable
+        ? { composable: record.project_configuration.composable }
+        : {}),
     },
   };
 }

@@ -3,9 +3,14 @@ import { redirect } from "next/navigation";
 import { requireHiringAccount } from "@/lib/auth/session";
 import { createIntentPath } from "@/lib/talent-buyers/create-intent";
 import { listProjectActivities } from "@/lib/talent-buyers/project-activities";
+import {
+  isComposableProject,
+  resolveWorkspaceProjectType,
+} from "@/lib/talent-buyers/project-abilities";
 import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
 import { fetchProjectRecord } from "@/lib/talent-buyers/projects";
 import {
+  projectHomePath,
   projectLandingPath,
   projectOverviewPath,
   resolveLegacyProjectHref,
@@ -27,10 +32,14 @@ export default async function BuyerProjectDetailPage({
   const query = await searchParams;
   const rawTab = typeof query.tab === "string" ? query.tab : null;
   const project = await fetchProjectRecord(id, profile.id);
-  const projectType = project?.project_type ?? null;
+  const projectType = project ? resolveWorkspaceProjectType(project) : null;
 
   if (rawTab) {
     redirect(resolveLegacyProjectHref(id, rawTab, projectType));
+  }
+
+  if (project && isComposableProject(project)) {
+    redirect(projectHomePath(id));
   }
 
   if (project && getNormalizedProjectType(projectType) === "event") {

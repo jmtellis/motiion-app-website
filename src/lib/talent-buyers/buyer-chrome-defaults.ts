@@ -18,7 +18,7 @@ export function defaultBuyerChromeTitle(pathname: string): string {
     if (pathname.match(/^\/projects\/[^/]+\/edit$/)) return "Edit project";
     return "Projects";
   }
-  if (pathname === "/events") return "Calendar";
+  if (pathname === "/events") return "Schedule";
   if (pathname.startsWith("/library")) return "Roster";
   if (pathname === "/messages") return "Inbox";
   if (pathname === "/notifications") return "Notifications";
@@ -78,7 +78,7 @@ export function defaultBuyerChromeBreadcrumbs(pathname: string): BuyerBreadcrumb
     return [{ label: "Roster", href: "/library" }];
   }
   if (pathname === "/events") {
-    return [{ label: "Calendar" }];
+    return [{ label: "Schedule" }];
   }
   if (pathname === "/messages") {
     return [{ label: "Inbox" }];

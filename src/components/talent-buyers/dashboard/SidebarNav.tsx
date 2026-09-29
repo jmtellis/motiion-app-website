@@ -59,7 +59,12 @@ function formatBadge(count: number) {
 
 function isNavActive(pathname: string, href: string) {
   if (href === "/projects") {
-    return pathname === "/projects" || pathname.startsWith("/projects/");
+    return (
+      pathname === "/projects" ||
+      pathname.startsWith("/projects/") ||
+      pathname.startsWith("/calendar/") ||
+      pathname.startsWith("/jobs/")
+    );
   }
   if (href === "/talent") {
     return pathname.startsWith("/talent");
@@ -73,12 +78,7 @@ function isNavActive(pathname: string, href: string) {
     );
   }
   if (href === "/events") {
-    return (
-      pathname === "/events" ||
-      pathname.startsWith("/events/") ||
-      pathname === "/calendar" ||
-      pathname.startsWith("/calendar/")
-    );
+    return pathname === "/events" || pathname === "/calendar";
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }

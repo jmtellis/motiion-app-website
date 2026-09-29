@@ -9,7 +9,7 @@ export const buyerMenuNavItems = [
   { href: "/projects", label: "Projects", segment: "projects" },
   { href: "/talent", label: "Find Talent", segment: "talent" },
   { href: "/bookings", label: "Bookings", segment: "bookings" },
-  { href: "/events", label: "Calendar", segment: "events" },
+  { href: "/events", label: "Schedule", segment: "events" },
   { href: "/library", label: "Roster", segment: "library" },
 ] as const;
 
@@ -18,7 +18,7 @@ export const buyerWorkspaceNavItems = [
   { href: "/talent", label: "Find Talent", segment: "talent" },
   { href: "/bookings", label: "Bookings", segment: "bookings" },
   { href: "/messages", label: "Inbox", segment: "messages" },
-  { href: "/events", label: "Calendar", segment: "events" },
+  { href: "/events", label: "Schedule", segment: "events" },
   { href: "/library", label: "Roster", segment: "library" },
 ] as const;
 

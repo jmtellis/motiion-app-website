@@ -192,6 +192,10 @@ export type CalendarEvent = {
   endTime: string | null;
   location: string;
   attendeeCount: number;
+  /** No time slot — rendered in the all-day row (Industry Schedule markers). */
+  allDay?: boolean;
+  /** Direct destination for marker-mode calendars; skips the detail popover. */
+  href?: string;
 };
 
 export type HostedActivitiesResult = {

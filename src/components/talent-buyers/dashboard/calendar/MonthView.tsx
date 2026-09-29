@@ -22,7 +22,9 @@ import {
   toDateKey,
   WEEKDAY_LABELS,
 } from "./calendar-utils";
+import { DayMarkersPopover } from "./DayMarkersPopover";
 import { EventPopover } from "./EventPopover";
+import { markerChipCopy, ScheduleMarkerLink } from "./ScheduleMarkerLink";
 
 const MAX_VISIBLE = 3;
 /** Months before/after the range center kept mounted for snap scrolling. */
@@ -35,10 +37,18 @@ type MonthViewProps = {
   onVisibleMonthChange: (date: Date) => void;
   eventHref?: (event: CalendarEvent) => string;
   actionLabel?: string;
+  /** Markers link straight to their project; overflow opens the day's project list. */
+  markerMode?: boolean;
 };
 
 type PopoverState = {
   event: CalendarEvent;
+  rect: DOMRect;
+};
+
+type DayListState = {
+  dateKey: string;
+  events: CalendarEvent[];
   rect: DOMRect;
 };
 
@@ -60,12 +70,16 @@ function MonthGrid({
   today,
   onSelectDay,
   onOpenEvent,
+  onOpenDayList,
+  markerMode,
 }: {
   monthDate: Date;
   events: CalendarEvent[];
   today: Date;
   onSelectDay: (date: Date) => void;
   onOpenEvent: (event: CalendarEvent, rect: DOMRect) => void;
+  onOpenDayList: (dateKey: string, events: CalendarEvent[], rect: DOMRect) => void;
+  markerMode: boolean;
 }) {
   const gridDays = useMemo(() => monthGridDays(monthDate), [monthDate]);
 
@@ -94,22 +108,47 @@ function MonthGrid({
             <div className="bd-cal-month__events">
               {visible.map((event) => {
                 const colors = eventTypeColor(event.eventType);
+                const style = {
+                  background: colors.bg,
+                  borderLeftColor: colors.accent,
+                };
+                const time = event.allDay ? null : (
+                  <span className="bd-cal-month__chip-time">
+                    {formatTimeShort(event.startTime)}
+                  </span>
+                );
+
+                if (markerMode && event.href) {
+                  const copy = markerChipCopy(event);
+                  return (
+                    <ScheduleMarkerLink
+                      key={event.id}
+                      event={{ ...event, href: event.href }}
+                      className="bd-cal-month__chip"
+                      style={style}
+                    >
+                      {time}
+                      <span className="bd-cal-month__chip-title">
+                        {copy.primary}
+                        {copy.secondary ? (
+                          <span className="bd-cal-month__chip-context"> · {copy.secondary}</span>
+                        ) : null}
+                      </span>
+                    </ScheduleMarkerLink>
+                  );
+                }
+
                 return (
                   <button
                     key={event.id}
                     type="button"
                     className="bd-cal-month__chip"
-                    style={{
-                      background: colors.bg,
-                      borderLeftColor: colors.accent,
-                    }}
+                    style={style}
                     onClick={(e) =>
                       onOpenEvent(event, e.currentTarget.getBoundingClientRect())
                     }
                   >
-                    <span className="bd-cal-month__chip-time">
-                      {formatTimeShort(event.startTime)}
-                    </span>
+                    {time}
                     <span className="bd-cal-month__chip-title">{event.title}</span>
                   </button>
                 );
@@ -119,7 +158,15 @@ function MonthGrid({
                 <button
                   type="button"
                   className="bd-cal-month__more"
-                  onClick={() => onSelectDay(day)}
+                  onClick={(e) =>
+                    markerMode
+                      ? onOpenDayList(
+                          toDateKey(day),
+                          dayEvents,
+                          e.currentTarget.getBoundingClientRect(),
+                        )
+                      : onSelectDay(day)
+                  }
                 >
                   +{overflow} more
                 </button>
@@ -139,8 +186,11 @@ export function MonthView({
   onVisibleMonthChange,
   eventHref,
   actionLabel,
+  markerMode = false,
 }: MonthViewProps) {
   const [popover, setPopover] = useState<PopoverState | null>(null);
+  const [dayList, setDayList] = useState<DayListState | null>(null);
+  const closeDayList = useCallback(() => setDayList(null), []);
   const [ready, setReady] = useState(false);
   const today = useMemo(() => new Date(), []);
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -339,11 +389,24 @@ export function MonthView({
                 today={today}
                 onSelectDay={onSelectDay}
                 onOpenEvent={(event, rect) => setPopover({ event, rect })}
+                onOpenDayList={(dateKey, dayEvents, rect) =>
+                  setDayList({ dateKey, events: dayEvents, rect })
+                }
+                markerMode={markerMode}
               />
             </section>
           );
         })}
       </div>
+
+      {dayList ? (
+        <DayMarkersPopover
+          dateKey={dayList.dateKey}
+          events={dayList.events}
+          anchorRect={dayList.rect}
+          onClose={closeDayList}
+        />
+      ) : null}
 
       {popover ? (
         <EventPopover

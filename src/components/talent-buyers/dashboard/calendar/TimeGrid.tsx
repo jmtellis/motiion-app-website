@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { CalendarEvent } from "@/app/(buyer-app)/(paid)/events/actions";
 
@@ -16,9 +16,14 @@ import {
   layoutDayEvents,
   minutesToTimeLabel,
   startOfWeek,
+  toDateKey,
   type PlacedEvent,
 } from "./calendar-utils";
+import { DayMarkersPopover } from "./DayMarkersPopover";
 import { EventPopover } from "./EventPopover";
+import { markerChipCopy, ScheduleMarkerLink } from "./ScheduleMarkerLink";
+
+const MAX_ALL_DAY_VISIBLE = 2;
 
 type TimeGridProps = {
   anchorDate: Date;
@@ -26,6 +31,8 @@ type TimeGridProps = {
   mode: "day" | "week";
   eventHref?: (event: CalendarEvent) => string;
   actionLabel?: string;
+  /** Markers link straight to their project; all-day overflow opens the day's project list. */
+  markerMode?: boolean;
 };
 
 type PopoverState = {
@@ -33,16 +40,37 @@ type PopoverState = {
   rect: DOMRect;
 };
 
-export function TimeGrid({ anchorDate, events, mode, eventHref, actionLabel }: TimeGridProps) {
+type DayListState = {
+  dateKey: string;
+  events: CalendarEvent[];
+  rect: DOMRect;
+};
+
+export function TimeGrid({
+  anchorDate,
+  events,
+  mode,
+  eventHref,
+  actionLabel,
+  markerMode = false,
+}: TimeGridProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [now, setNow] = useState(() => new Date());
   const [popover, setPopover] = useState<PopoverState | null>(null);
+  const [dayList, setDayList] = useState<DayListState | null>(null);
+  const closeDayList = useCallback(() => setDayList(null), []);
 
   const days = useMemo(() => {
     if (mode === "day") return [anchorDate];
     const weekStart = startOfWeek(anchorDate);
     return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   }, [anchorDate, mode]);
+
+  const allDayByDay = useMemo(
+    () => days.map((day) => eventsForDate(events, day).filter((event) => event.allDay)),
+    [days, events],
+  );
+  const hasAllDay = allDayByDay.some((list) => list.length > 0);
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000);
@@ -86,6 +114,44 @@ export function TimeGrid({ anchorDate, events, mode, eventHref, actionLabel }: T
         })}
       </div>
 
+      {hasAllDay ? (
+        <div className="bd-cal-timegrid__allday" style={gridStyle}>
+          <div className="bd-cal-timegrid__allday-label">All day</div>
+          {days.map((day, index) => {
+            const dayEvents = allDayByDay[index];
+            const visible = dayEvents.slice(0, MAX_ALL_DAY_VISIBLE);
+            const overflow = dayEvents.length - visible.length;
+            return (
+              <div key={day.toISOString()} className="bd-cal-timegrid__allday-cell">
+                {visible.map((event) => (
+                  <AllDayChip
+                    key={event.id}
+                    event={event}
+                    markerMode={markerMode}
+                    onOpen={(rect) => setPopover({ event, rect })}
+                  />
+                ))}
+                {overflow > 0 ? (
+                  <button
+                    type="button"
+                    className="bd-cal-month__more"
+                    onClick={(e) =>
+                      setDayList({
+                        dateKey: toDateKey(day),
+                        events: eventsForDate(events, day),
+                        rect: e.currentTarget.getBoundingClientRect(),
+                      })
+                    }
+                  >
+                    +{overflow} more
+                  </button>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+
       <div className="bd-cal-timegrid__body" ref={scrollRef} data-lenis-prevent>
         <div className="bd-cal-timegrid__grid" style={{ ...gridStyle, height: 24 * HOUR_HEIGHT }}>
           <div className="bd-cal-timegrid__gutter">
@@ -101,7 +167,9 @@ export function TimeGrid({ anchorDate, events, mode, eventHref, actionLabel }: T
           </div>
 
           {days.map((day) => {
-            const dayEvents = layoutDayEvents(eventsForDate(events, day));
+            const dayEvents = layoutDayEvents(
+              eventsForDate(events, day).filter((event) => !event.allDay),
+            );
             const isToday = isSameDay(day, now);
 
             return (
@@ -126,6 +194,7 @@ export function TimeGrid({ anchorDate, events, mode, eventHref, actionLabel }: T
                   <EventBlock
                     key={placed.id}
                     placed={placed}
+                    markerMode={markerMode}
                     onClick={(e) => handleEventClick(placed, e)}
                   />
                 ))}
@@ -144,41 +213,99 @@ export function TimeGrid({ anchorDate, events, mode, eventHref, actionLabel }: T
           actionLabel={actionLabel}
         />
       )}
+
+      {dayList ? (
+        <DayMarkersPopover
+          dateKey={dayList.dateKey}
+          events={dayList.events}
+          anchorRect={dayList.rect}
+          onClose={closeDayList}
+        />
+      ) : null}
     </div>
+  );
+}
+
+function AllDayChip({
+  event,
+  markerMode,
+  onOpen,
+}: {
+  event: CalendarEvent;
+  markerMode: boolean;
+  onOpen: (rect: DOMRect) => void;
+}) {
+  const colors = eventTypeColor(event.eventType);
+  const style = { background: colors.bg, borderLeftColor: colors.accent };
+
+  if (markerMode && event.href) {
+    const copy = markerChipCopy(event);
+    return (
+      <ScheduleMarkerLink event={{ ...event, href: event.href }} className="bd-cal-month__chip" style={style}>
+        <span className="bd-cal-month__chip-title">
+          {copy.primary}
+          {copy.secondary ? <span className="bd-cal-month__chip-context"> · {copy.secondary}</span> : null}
+        </span>
+      </ScheduleMarkerLink>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className="bd-cal-month__chip"
+      style={style}
+      onClick={(e) => onOpen(e.currentTarget.getBoundingClientRect())}
+    >
+      <span className="bd-cal-month__chip-title">{event.title}</span>
+    </button>
   );
 }
 
 function EventBlock({
   placed,
+  markerMode,
   onClick,
 }: {
   placed: PlacedEvent;
+  markerMode: boolean;
   onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }) {
   const colors = eventTypeColor(placed.eventType);
   const widthPct = 100 / placed.columnCount;
   const leftPct = placed.column * widthPct;
+  const style = {
+    top: placed.top,
+    height: Math.max(placed.height, 22),
+    left: `calc(${leftPct}% + 2px)`,
+    width: `calc(${widthPct}% - 4px)`,
+    background: colors.bg,
+    borderLeftColor: colors.accent,
+  };
+  const time =
+    placed.height >= 36 ? (
+      <span className="bd-cal-event-block__time">
+        {formatTimeRange(placed.startTime, placed.endTime)}
+      </span>
+    ) : null;
+
+  if (markerMode && placed.href) {
+    const copy = markerChipCopy(placed);
+    return (
+      <ScheduleMarkerLink event={{ ...placed, href: placed.href }} className="bd-cal-event-block" style={style}>
+        <span className="bd-cal-event-block__title">{copy.primary}</span>
+        {copy.secondary && placed.height >= 36 ? (
+          <span className="bd-cal-event-block__time">{copy.secondary}</span>
+        ) : null}
+        {placed.height >= 52 ? time : null}
+      </ScheduleMarkerLink>
+    );
+  }
 
   return (
-    <button
-      type="button"
-      className="bd-cal-event-block"
-      style={{
-        top: placed.top,
-        height: Math.max(placed.height, 22),
-        left: `calc(${leftPct}% + 2px)`,
-        width: `calc(${widthPct}% - 4px)`,
-        background: colors.bg,
-        borderLeftColor: colors.accent,
-      }}
-      onClick={onClick}
-    >
+    <button type="button" className="bd-cal-event-block" style={style} onClick={onClick}>
       <span className="bd-cal-event-block__title">{placed.title}</span>
-      {placed.height >= 36 && (
-        <span className="bd-cal-event-block__time">
-          {formatTimeRange(placed.startTime, placed.endTime)}
-        </span>
-      )}
+      {time}
     </button>
   );
 }

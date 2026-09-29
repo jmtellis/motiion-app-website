@@ -22,7 +22,7 @@ create table public.profiles (
 create table public.projects (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid references auth.users(id) on delete cascade,
-  enabled_modules text[] not null default '{casting}'
+  enabled_modules jsonb not null default '{"casting": true}'
 );
 create table public.availability_check_requests (
   id uuid primary key default gen_random_uuid(),

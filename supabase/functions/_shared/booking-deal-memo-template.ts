@@ -1107,7 +1107,7 @@ export function applyTalentFlags(
       errors.push({ moduleCode: spec.code, message: `Notes are limited to ${BOOKING_NOTE_MAX} characters.` });
     }
     const base = { ...accepted, state: "change_requested" as const, talent_flag: flag.flag, talent_note: cleanNote(flag.note) };
-    if (spec.placeholder && flag.flag !== "accept") {
+    if (spec.placeholder) {
       errors.push({ moduleCode: spec.code, message: "Legal placeholders can't be changed." });
       return provision;
     }

@@ -11,10 +11,12 @@ function todayLabel() {
 
 export function HomeFeed({
   greeting,
+  bookingSlot,
   discoverySlot,
   listingsSlot,
 }: {
   greeting: string;
+  bookingSlot?: ReactNode;
   discoverySlot?: ReactNode;
   listingsSlot?: ReactNode;
 }) {
@@ -37,6 +39,8 @@ export function HomeFeed({
           RSVP
         </a>
       </p>
+
+      {bookingSlot}
 
       {discoverySlot}
 

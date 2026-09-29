@@ -6,10 +6,14 @@ import Link from "next/link";
 import { requireHiringAccount } from "@/lib/auth/session";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { BuyerAppPage } from "@/components/talent-buyers/dashboard/BuyerAppPage";
+import { IndustryDealMemoDesk } from "@/components/booking/DealMemoDesk";
+import { loadIndustryDealMemoDesk } from "@/lib/booking/deal-memo-data";
 import "@/components/talent-buyers/project/project-bookings.css";
+import "@/components/booking/deal-memo.css";
 
 export default async function BookingsPage() {
   const profile = await requireHiringAccount();
+  const dealMemos = await loadIndustryDealMemoDesk(profile.id);
   const db = await createServerSupabaseClient();
   const { data: projects, error } = db
     ? await db
@@ -78,6 +82,13 @@ export default async function BookingsPage() {
                 Keep each agreement connected to the production it belongs to.
               </p>
             </div>
+            {dealMemos.unavailable ? null : (
+              <IndustryDealMemoDesk
+                confirmed={dealMemos.confirmed}
+                memos={dealMemos.memos}
+                error={dealMemos.error}
+              />
+            )}
             {rows.length ? (
               <div className="project-bookings__panel">
                 <h2>Your booking desk</h2>

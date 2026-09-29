@@ -21,6 +21,7 @@ import {
   resolveBookingTemplate,
   validateForSend,
 } from "../src/lib/booking/deal-memo";
+import { dealMemoNotificationHref } from "../src/lib/booking/deal-memo-routes";
 
 function readyToSend(): ProvisionRecord[] {
   const { provisions, errors } = composeProvisions([
@@ -271,5 +272,25 @@ describe("status chips", () => {
 
   it("Ready for payment expires 7 days after accept", () => {
     assert.equal(readyExpiry(new Date("2026-09-29T00:00:00Z")), "2026-10-06T00:00:00.000Z");
+  });
+});
+
+describe("notification routing", () => {
+  const memoId = "6f1c2f5e-2b8e-4a55-9d0c-0d6c3c1b9a11";
+  it("routes each recipient to their own shell", () => {
+    assert.equal(
+      dealMemoNotificationHref({ type: "booking_deal_memo", data: { memo_id: memoId, recipient_role: "talent" } }),
+      `/deal-memos/${memoId}`,
+    );
+    assert.equal(
+      dealMemoNotificationHref({ type: "booking_deal_memo", data: { memo_id: memoId, recipient_role: "industry" } }),
+      `/bookings/deal-memos/${memoId}`,
+    );
+  });
+
+  it("ignores other types and malformed payloads", () => {
+    assert.equal(dealMemoNotificationHref({ type: "casting_invite", data: { memo_id: memoId, recipient_role: "talent" } }), null);
+    assert.equal(dealMemoNotificationHref({ type: "booking_deal_memo", data: { memo_id: "../x", recipient_role: "talent" } }), null);
+    assert.equal(dealMemoNotificationHref({ type: "booking_deal_memo", data: { memo_id: memoId } }), null);
   });
 });

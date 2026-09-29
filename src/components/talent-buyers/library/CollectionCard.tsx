@@ -2,32 +2,12 @@
 
 import { useMemo } from "react";
 
-import {
-  MAX_PEEKING,
-  RosterStackTile,
-  type RosterStackPerson,
-} from "@/components/talent-buyers/project/composable/RosterStackTile";
+import { RosterStackTile } from "@/components/talent-buyers/project/composable/RosterStackTile";
 import { collectionStackTransitionName } from "@/components/talent-buyers/project/composable/view-transition";
 import type { LibraryCollectionSummary } from "@/lib/talent-buyers/library";
-import { formatRelativeUpdated } from "@/lib/talent-buyers/relative-time";
+import { collectionStackPeople, collectionTileSublabel } from "@/lib/talent-buyers/roster-stack";
 
 import { OverflowMenu } from "./OverflowMenu";
-
-/** Preview avatars carry no names, so faceless members peek as the roster's initial. */
-export function collectionStackPeople(collection: LibraryCollectionSummary): RosterStackPerson[] {
-  const peeking = Math.min(MAX_PEEKING, collection.talentCount);
-  return Array.from({ length: peeking }, (_, index) => ({
-    id: `${collection.id}-${index}`,
-    name: collection.name,
-    avatarUrl: collection.previewAvatars[index] ?? null,
-  }));
-}
-
-export function collectionTileSublabel(collection: LibraryCollectionSummary, now?: number) {
-  const count = collection.talentCount === 1 ? "1 person" : `${collection.talentCount} people`;
-  const updated = formatRelativeUpdated(collection.updatedAt, now);
-  return updated ? `${count} · ${updated}` : count;
-}
 
 export function CollectionCard({
   collection,

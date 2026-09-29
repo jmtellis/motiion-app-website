@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
-import { MAX_PEEKING, RosterStack } from "@/components/talent-buyers/project/composable/RosterStackTile";
+import { RosterStack } from "@/components/talent-buyers/project/composable/RosterStackTile";
 import { collectionStackTransitionName } from "@/components/talent-buyers/project/composable/view-transition";
 import { useRegisterBuyerChrome } from "@/components/talent-buyers/dashboard/BuyerPageChromeContext";
 import { useIndustryProOptional } from "@/components/talent-buyers/billing/IndustryProContext";
+import { MAX_PEEKING } from "@/lib/talent-buyers/roster-stack";
 import type { CollectionShareSummary } from "@/lib/talent-buyers/collection-share-types";
 import {
   addTalentToCollections,

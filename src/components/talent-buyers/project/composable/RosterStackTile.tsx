@@ -5,17 +5,17 @@ import { useRouter } from "next/navigation";
 import { useReducedMotion } from "motion/react";
 import type { MouseEvent, ReactNode } from "react";
 
+import {
+  MAX_PEEKING,
+  rosterStackTileAccessibleLabel,
+  type RosterStackPerson,
+} from "@/lib/talent-buyers/roster-stack";
+
 import { navigateWithViewTransition } from "./view-transition";
 
 import "./composable-project.css";
 
-export type RosterStackPerson = {
-  id: string;
-  name: string;
-  avatarUrl: string | null;
-};
-
-export const MAX_PEEKING = 3;
+export type { RosterStackPerson };
 
 function initials(name: string) {
   return (
@@ -26,12 +26,6 @@ function initials(name: string) {
       .map((part) => part[0]?.toUpperCase() ?? "")
       .join("") || "?"
   );
-}
-
-/** Screen-reader copy: "{Group}, {N} people, {time}. Opens full roster." */
-export function rosterStackTileAccessibleLabel(label: string, sublabel?: string | null) {
-  const detail = sublabel?.split(" · ").map((part) => part.trim()).filter(Boolean) ?? [];
-  return `${[label, ...detail].join(", ")}. Opens full roster.`;
 }
 
 /**

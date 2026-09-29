@@ -8,6 +8,7 @@ import { Plus } from "lucide-react";
 import { CastingStatusActionButton } from "@/components/talent-buyers/casting/CastingStatusActionButton";
 import { EditCastingProjectModal } from "@/components/talent-buyers/casting/EditCastingProjectModal";
 import { useRegisterBuyerChrome } from "@/components/talent-buyers/dashboard/BuyerPageChromeContext";
+import type { CastingProjectStatus } from "@/lib/talent-buyers/casting/casting-types";
 import {
   PROJECT_ABILITIES,
   hasAbility,
@@ -136,16 +137,21 @@ function ComposableProjectTabs({ composable }: { composable: ComposableWorkspace
 function ComposableChromeEnd({
   composable,
   castingRoute,
+  projectId,
+  castingStatus,
+  counts,
   onOpenAbilities,
   onEditCasting,
 }: {
   composable: ComposableWorkspaceMeta;
   castingRoute: boolean;
+  projectId: string;
+  castingStatus: CastingProjectStatus | null | undefined;
+  counts: ProjectAbilityCounts;
   onOpenAbilities: () => void;
   onEditCasting: () => void;
 }) {
-  const { projectId, castingWorkflow } = useProjectWorkspace();
-  const counts = useComposableAbilityCounts();
+  // Rendered in the dashboard chrome, outside ProjectWorkspaceProvider.
   const status = composable.archivedAt ? "archived" : projectShellStatus(composable.endDate);
   const smart = resolveSmartPrimaryAction(composable.abilities, counts);
 
@@ -165,10 +171,7 @@ function ComposableChromeEnd({
           <button type="button" className="buyer-chrome-bar__edit-link" onClick={onEditCasting}>
             Casting details
           </button>
-          <CastingStatusActionButton
-            projectId={projectId}
-            status={castingWorkflow?.primaryCasting?.status}
-          />
+          <CastingStatusActionButton projectId={projectId} status={castingStatus} />
         </>
       ) : smart.kind === "ability-step" ? (
         <>
@@ -204,6 +207,8 @@ export function ComposableProjectShell({
   const [shellEditorOpen, setShellEditorOpen] = useState(false);
   const [castingEditorOpen, setCastingEditorOpen] = useState(false);
   const castingRoute = isCastingRoute(pathname, projectId);
+  const counts = useComposableAbilityCounts();
+  const castingStatus = castingWorkflow?.primaryCasting?.status;
   const projectTitle = project.title || "Untitled project";
   const subtitle = projectShellSubtitle({
     location: project.location,
@@ -235,13 +240,18 @@ export function ComposableProjectShell({
       <ComposableChromeEnd
         composable={composable}
         castingRoute={castingRoute}
+        projectId={projectId}
+        castingStatus={castingStatus}
+        counts={counts}
         onOpenAbilities={() => openAbilityManager()}
         onEditCasting={() => setCastingEditorOpen(true)}
       />
     ),
     revision: `${projectId}:${projectTitle}:${subtitle}:${abilitySignature}:${castingRoute}:${
-      castingWorkflow?.primaryCasting?.status ?? ""
-    }:${castingWorkflow?.roles.length ?? 0}:${composable.archivedAt ?? ""}`,
+      castingStatus ?? ""
+    }:${castingWorkflow?.roles.length ?? 0}:${composable.archivedAt ?? ""}:${counts.castingCount}:${
+      counts.castingRoleCount
+    }:${counts.rosterCount}:${counts.classSessionCount}`,
   });
 
   return (

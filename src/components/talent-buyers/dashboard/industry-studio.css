@@ -438,22 +438,12 @@
 /* Repeated content shares one elevation system across the workspace. */
 :is(.workspace-shell--industry, .workspace-shell--talent)
   .workspace-frame
-  :is(.library-collection-card, .library-talent-card, .bd-project-card) {
+  :is(.library-talent-card, .bd-project-card) {
   border: 0 !important;
   box-shadow: var(--studio-shadow);
   border-radius: 16px;
   background: white;
   overflow: hidden;
-}
-:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-collection-card__body {
-  padding: 18px;
-}
-:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-collection-card__name {
-  font-weight: 600;
-  font-size: 18px;
-}
-:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-collection-card__count {
-  color: #6e6e6e;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-page__mode-row {
   margin: 0;
@@ -762,23 +752,6 @@
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-talent-card--selected {
   box-shadow: 0 0 0 2px #303030;
-}
-:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-collection-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px #0000000d;
-}
-:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-collection-card {
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
-}
-@media (prefers-reduced-motion: reduce) {
-  :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-collection-card {
-    transition: none;
-  }
-  :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .library-collection-card:hover {
-    transform: none;
-  }
 }
 
 .industry-studio-canvas .studio-booking-desk {

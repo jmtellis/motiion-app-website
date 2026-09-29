@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useReducedMotion } from "motion/react";
-import type { MouseEvent } from "react";
+import type { MouseEvent, ReactNode } from "react";
 
 import { navigateWithViewTransition } from "./view-transition";
 
@@ -15,7 +15,7 @@ export type RosterStackPerson = {
   avatarUrl: string | null;
 };
 
-const MAX_PEEKING = 3;
+export const MAX_PEEKING = 3;
 
 function initials(name: string) {
   return (
@@ -28,7 +28,17 @@ function initials(name: string) {
   );
 }
 
-/** The stacked visual alone — reused as the shared element on the full roster page. */
+/** Screen-reader copy: "{Group}, {N} people, {time}. Opens full roster." */
+export function rosterStackTileAccessibleLabel(label: string, sublabel?: string | null) {
+  const detail = sublabel?.split(" · ").map((part) => part.trim()).filter(Boolean) ?? [];
+  return `${[label, ...detail].join(", ")}. Opens full roster.`;
+}
+
+/**
+ * The stacked visual alone — reused as the shared element on the full roster page.
+ * Room for the back cards is always reserved, so a 1-person and a 3-person
+ * stack occupy the same box and never spill into the label below.
+ */
 export function RosterStack({
   people,
   transitionName,
@@ -36,9 +46,10 @@ export function RosterStack({
 }: {
   people: RosterStackPerson[];
   transitionName?: string;
-  size?: "md" | "lg";
+  size?: "md" | "lg" | "fluid";
 }) {
   const visible = people.slice(0, MAX_PEEKING);
+  const imageSizes = size === "lg" ? "160px" : size === "fluid" ? "(min-width: 640px) 320px, 90vw" : "120px";
   return (
     <span
       className={`roster-stack roster-stack--${size}${visible.length ? "" : " roster-stack--empty"}`}
@@ -53,7 +64,7 @@ export function RosterStack({
             style={{ zIndex: MAX_PEEKING - index, ["--stack-index" as string]: index }}
           >
             {person.avatarUrl ? (
-              <Image src={person.avatarUrl} alt="" fill sizes={size === "lg" ? "160px" : "120px"} />
+              <Image src={person.avatarUrl} alt="" fill sizes={imageSizes} />
             ) : (
               <span className="roster-stack__initials">{initials(person.name)}</span>
             )}
@@ -76,29 +87,42 @@ export function RosterStackTile({
   sublabel,
   href,
   transitionName,
+  size = "md",
+  menu,
 }: {
   people: RosterStackPerson[];
   label: string;
   sublabel?: string;
   href: string;
   transitionName?: string;
+  size?: "md" | "fluid";
+  /** Rendered beside the label, outside the link, so it stays a separate control. */
+  menu?: ReactNode;
 }) {
   const router = useRouter();
   const reducedMotion = useReducedMotion();
 
   function handleClick(event: MouseEvent<HTMLAnchorElement>) {
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
     event.preventDefault();
     navigateWithViewTransition((next) => router.push(next), href, { reducedMotion });
   }
 
   return (
-    <a href={href} className="roster-stack-tile" onClick={handleClick}>
-      <RosterStack people={people} transitionName={transitionName} />
-      <span className="roster-stack-tile__label">
-        <strong>{label}</strong>
-        <span>{sublabel ?? "\u00a0"}</span>
-      </span>
-    </a>
+    <div className={`roster-stack-tile roster-stack-tile--${size}${menu ? " roster-stack-tile--menu" : ""}`}>
+      <a
+        href={href}
+        className="roster-stack-tile__link"
+        onClick={handleClick}
+        aria-label={rosterStackTileAccessibleLabel(label, sublabel)}
+      >
+        <RosterStack people={people} transitionName={transitionName} size={size} />
+        <span className="roster-stack-tile__label">
+          <strong>{label}</strong>
+          <span>{sublabel ?? "\u00a0"}</span>
+        </span>
+      </a>
+      {menu ? <div className="roster-stack-tile__menu">{menu}</div> : null}
+    </div>
   );
 }

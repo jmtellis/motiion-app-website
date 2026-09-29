@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { NavigationProgress } from "@/components/navigation/NavigationProgress";
+import { resolvePendingViewTransition } from "@/components/talent-buyers/project/composable/view-transition";
 import type { UserEntitlement } from "@/lib/billing/entitlement";
 import { defaultBuyerChromeBreadcrumbs } from "@/lib/talent-buyers/buyer-chrome-defaults";
 import type { DashboardProfile } from "@/types/database";
@@ -73,9 +74,41 @@ export function BuyerDashboardShell({
     setMobileOpen(false);
   }
 
+  const scrollByPathRef = useRef(new Map<string, number>());
+  const historyTargetPathRef = useRef<string | null>(null);
+
   useEffect(() => {
+    function markHistoryNavigation() {
+      historyTargetPathRef.current = window.location.pathname;
+    }
+    window.addEventListener("popstate", markHistoryNavigation);
+    return () => window.removeEventListener("popstate", markHistoryNavigation);
+  }, []);
+
+  useEffect(() => {
+    const main = mainRef.current;
+    if (!main) return;
+    const saved = scrollByPathRef.current;
+    function remember() {
+      if (main) saved.set(pathname, main.scrollTop);
+    }
+    main.addEventListener("scroll", remember, { passive: true });
+    return () => main.removeEventListener("scroll", remember);
+  }, [pathname]);
+
+  useEffect(() => {
+    resolvePendingViewTransition();
+    const restore = historyTargetPathRef.current === pathname;
+    historyTargetPathRef.current = null;
     if (hideShellChrome && isTalentRoute) return;
-    mainRef.current?.scrollTo({ top: 0 });
+    const main = mainRef.current;
+    if (!main) return;
+    const top = restore ? (scrollByPathRef.current.get(pathname) ?? 0) : 0;
+    main.scrollTo({ top });
+    if (top > 0) {
+      const frame = window.requestAnimationFrame(() => main.scrollTo({ top }));
+      return () => window.cancelAnimationFrame(frame);
+    }
   }, [hideShellChrome, isTalentRoute, pathname]);
 
   useEffect(() => {

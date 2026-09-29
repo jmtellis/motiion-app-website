@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
+import { MAX_PEEKING, RosterStack } from "@/components/talent-buyers/project/composable/RosterStackTile";
+import { collectionStackTransitionName } from "@/components/talent-buyers/project/composable/view-transition";
 import { useRegisterBuyerChrome } from "@/components/talent-buyers/dashboard/BuyerPageChromeContext";
 import { useIndustryProOptional } from "@/components/talent-buyers/billing/IndustryProContext";
 import type { CollectionShareSummary } from "@/lib/talent-buyers/collection-share-types";
@@ -170,6 +172,15 @@ export function CollectionDetail({
       <div className="library-page__shell">
         <div className="library-page__main">
           <div className="library-collection-detail__header">
+            <RosterStack
+              people={members.slice(0, MAX_PEEKING).map((member) => ({
+                id: member.profileId,
+                name: member.name,
+                avatarUrl: member.avatarUrl,
+              }))}
+              transitionName={collectionStackTransitionName(collection.id)}
+              size="lg"
+            />
             <div className="library-collection-detail__heading">
               <div className="library-collection-detail__title-row">
                 <h1 className="library-page__title">{collection.name}</h1>

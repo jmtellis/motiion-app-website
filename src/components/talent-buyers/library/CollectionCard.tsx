@@ -1,11 +1,33 @@
 "use client";
 
-import Link from "next/link";
+import { useMemo } from "react";
 
+import {
+  MAX_PEEKING,
+  RosterStackTile,
+  type RosterStackPerson,
+} from "@/components/talent-buyers/project/composable/RosterStackTile";
+import { collectionStackTransitionName } from "@/components/talent-buyers/project/composable/view-transition";
 import type { LibraryCollectionSummary } from "@/lib/talent-buyers/library";
+import { formatRelativeUpdated } from "@/lib/talent-buyers/relative-time";
 
-import { CollectionPreviewCollage } from "./CollectionPreviewCollage";
 import { OverflowMenu } from "./OverflowMenu";
+
+/** Preview avatars carry no names, so faceless members peek as the roster's initial. */
+export function collectionStackPeople(collection: LibraryCollectionSummary): RosterStackPerson[] {
+  const peeking = Math.min(MAX_PEEKING, collection.talentCount);
+  return Array.from({ length: peeking }, (_, index) => ({
+    id: `${collection.id}-${index}`,
+    name: collection.name,
+    avatarUrl: collection.previewAvatars[index] ?? null,
+  }));
+}
+
+export function collectionTileSublabel(collection: LibraryCollectionSummary, now?: number) {
+  const count = collection.talentCount === 1 ? "1 person" : `${collection.talentCount} people`;
+  const updated = formatRelativeUpdated(collection.updatedAt, now);
+  return updated ? `${count} · ${updated}` : count;
+}
 
 export function CollectionCard({
   collection,
@@ -20,16 +42,17 @@ export function CollectionCard({
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
-  const countLabel =
-    collection.talentCount === 1 ? "1 person" : `${collection.talentCount} people`;
+  const people = useMemo(() => collectionStackPeople(collection), [collection]);
 
   return (
-    <Link
+    <RosterStackTile
+      size="fluid"
+      people={people}
+      label={collection.name}
+      sublabel={collectionTileSublabel(collection)}
       href={`/library/${collection.id}`}
-      className="library-collection-card"
-      aria-label={`${collection.name}, ${countLabel}`}
-    >
-      <div className="library-collection-card__menu">
+      transitionName={collectionStackTransitionName(collection.id)}
+      menu={
         <OverflowMenu
           label={`Actions for ${collection.name}`}
           items={[
@@ -39,24 +62,7 @@ export function CollectionCard({
             { label: "Delete", onSelect: onDelete, danger: true },
           ]}
         />
-      </div>
-      <div className="library-collection-card__body">
-        <CollectionPreviewCollage
-          avatars={collection.previewAvatars}
-          totalCount={collection.talentCount}
-          name={collection.name}
-        />
-        <div className="library-collection-card__meta">
-          <h3 className="library-collection-card__name">{collection.name}</h3>
-          <p className="library-collection-card__count">{countLabel}</p>
-          {collection.description ? (
-            <p className="library-collection-card__description">{collection.description}</p>
-          ) : null}
-        </div>
-        {collection.talentCount === 0 ? (
-          <span className="text-xs font-medium text-[var(--accent)]">Add talent</span>
-        ) : null}
-      </div>
-    </Link>
+      }
+    />
   );
 }

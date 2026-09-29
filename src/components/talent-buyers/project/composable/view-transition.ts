@@ -44,3 +44,7 @@ export function navigateWithViewTransition(
 export function rosterStackTransitionName(projectId: string) {
   return `roster-stack-${projectId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 }
+
+export function collectionStackTransitionName(collectionId: string) {
+  return `roster-stack-collection-${collectionId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
+}

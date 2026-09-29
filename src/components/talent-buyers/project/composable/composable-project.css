@@ -242,37 +242,54 @@
 
 /* ---------- Roster overstack ---------- */
 
+/*
+ * Every card shares one grid cell; the front card is in flow and sets the
+ * height. Back cards translate up/right into padding that is always reserved
+ * (2 × peek = MAX_PEEKING - 1), so the box never grows past its label slot.
+ */
 .roster-stack {
   --stack-card-w: 5.5rem;
-  --stack-peek: 0.625rem;
+  --stack-peek: 0.5rem;
+  --stack-ratio: 4 / 5;
   position: relative;
-  display: block;
-  width: calc(var(--stack-card-w) + var(--stack-peek) * 2);
-  aspect-ratio: 5 / 5.2;
+  display: grid;
+  box-sizing: content-box;
+  width: var(--stack-card-w);
+  padding: calc(var(--stack-peek) * 2) calc(var(--stack-peek) * 2) 0 0;
   flex-shrink: 0;
 }
 
 .roster-stack--lg {
   --stack-card-w: 7rem;
-  --stack-peek: 0.75rem;
+  --stack-peek: 0.625rem;
+}
+
+.roster-stack--fluid {
+  --stack-peek: 0.625rem;
+  --stack-ratio: 4 / 3;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .roster-stack__card {
-  position: absolute;
-  top: calc(var(--stack-index, 0) * var(--stack-peek) * 0.5);
-  left: calc(var(--stack-index, 0) * var(--stack-peek));
-  width: var(--stack-card-w);
-  aspect-ratio: 4 / 5;
+  grid-area: 1 / 1;
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: var(--stack-ratio);
   overflow: hidden;
   border-radius: 10px;
   background: var(--industry-fill, #f1f2f3);
   border: 2px solid var(--industry-surface, #fff);
   box-shadow: 0 1px 2px #2022231a, 0 6px 16px #2022230f;
-  transform: rotate(calc((var(--stack-index, 0) - 1) * 2deg));
+  transform: translate(
+    calc(var(--stack-index, 0) * var(--stack-peek)),
+    calc(var(--stack-index, 0) * var(--stack-peek) * -1)
+  );
 }
 
-.roster-stack__card:first-child {
-  transform: none;
+.roster-stack__card:not(:first-child) {
+  filter: saturate(0.85) brightness(0.94);
 }
 
 .roster-stack__card img {
@@ -280,7 +297,6 @@
 }
 
 .roster-stack__card--placeholder {
-  display: block;
   border-style: dashed;
   border-color: var(--industry-line, #d5d8da);
   box-shadow: none;
@@ -296,39 +312,79 @@
 }
 
 .roster-stack-tile {
+  position: relative;
   display: inline-flex;
   flex-direction: column;
+  min-width: 0;
+}
+
+.roster-stack-tile--fluid {
+  display: flex;
+  width: 100%;
+}
+
+.roster-stack-tile__link {
+  display: flex;
+  flex-direction: column;
   gap: 0.625rem;
+  min-width: 0;
   color: inherit;
   text-decoration: none;
   border-radius: 12px;
 }
 
-.roster-stack-tile:focus-visible {
+.roster-stack-tile__link:focus-visible {
   outline: 2px solid var(--industry-focus, #006b80);
   outline-offset: 4px;
 }
 
-.roster-stack-tile:hover .roster-stack__card:first-child {
-  transform: translateY(-2px);
+.roster-stack__card:first-child {
   transition: transform 0.18s ease;
 }
 
+.roster-stack-tile__link:hover .roster-stack__card:first-child {
+  transform: translateY(-2px);
+}
+
+/* Fixed label slot below the stack; width 0 + min-width 100% keeps long names from widening the tile. */
 .roster-stack-tile__label {
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
-  min-height: 2.5rem;
+  width: 0;
+  min-width: 100%;
+  height: 2.5rem;
+  overflow: hidden;
+}
+
+.roster-stack-tile--menu .roster-stack-tile__label {
+  padding-right: 2.5rem;
+}
+
+.roster-stack-tile__label strong,
+.roster-stack-tile__label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .roster-stack-tile__label strong {
   font-size: 0.875rem;
+  line-height: 1.25rem;
   color: var(--industry-text, #202223);
 }
 
 .roster-stack-tile__label span {
   font-size: 0.8125rem;
+  line-height: 1.125rem;
   color: var(--industry-muted, #595f62);
+}
+
+.roster-stack-tile__menu {
+  position: absolute;
+  right: 0;
+  bottom: 0.25rem;
+  z-index: 4;
 }
 
 ::view-transition-group(*) {
@@ -342,7 +398,10 @@
   ::view-transition-new(*) {
     animation: none !important;
   }
-  .roster-stack-tile:hover .roster-stack__card:first-child {
+  .roster-stack__card:first-child {
+    transition: none;
+  }
+  .roster-stack-tile__link:hover .roster-stack__card:first-child {
     transform: none;
   }
 }

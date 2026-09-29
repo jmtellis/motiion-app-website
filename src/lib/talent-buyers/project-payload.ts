@@ -91,7 +91,8 @@ export function buildContainerProjectUpdateRow(
   };
 
   // Casting visibility/config are owned by casting publish sync — don't clobber them here.
-  if (projectType !== "casting") {
+  // Composable shells publish through abilities, so the row's visibility follows the casting.
+  if (projectType !== "casting" && !form.configuration.composable) {
     row.visibility = "private";
   }
 
@@ -116,6 +117,9 @@ export function projectRecordToComposerForm(record: ProjectRecord): ProjectCompo
       attachments: record.project_configuration?.attachments ?? [],
       composer_draft: isDraft,
       create_metadata: record.project_configuration?.create_metadata ?? {},
+      ...(record.project_configuration?.composable
+        ? { composable: record.project_configuration.composable }
+        : {}),
     },
   };
 }

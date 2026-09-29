@@ -4,20 +4,52 @@ import {
   normalizeCastingConfigurationForMobile,
 } from "@/lib/talent-buyers/casting/casting-configuration-mobile";
 import type { ParsedCastingComposerForm } from "@/lib/talent-buyers/casting-schema";
+import { isComposableProject } from "@/lib/talent-buyers/project-abilities";
 import type { CastingAttachmentCodable, CastingConfiguration } from "@/types/casting";
 
 type SupabaseClient = NonNullable<Awaited<ReturnType<typeof createServerSupabaseClient>>>;
 
-async function fetchExistingCastingConfiguration(
+type ExistingProjectShell = {
+  casting_configuration: Record<string, unknown> | null;
+  project_configuration: Record<string, unknown> | null;
+  location: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  cover_image_url: string | null;
+};
+
+async function fetchExistingProjectShell(
   supabase: SupabaseClient,
   projectId: string,
-): Promise<Record<string, unknown> | null> {
+): Promise<ExistingProjectShell | null> {
   const { data } = await supabase
     .from("projects")
-    .select("casting_configuration")
+    .select("casting_configuration, project_configuration, location, start_date, end_date, cover_image_url")
     .eq("id", projectId)
-    .maybeSingle<{ casting_configuration: Record<string, unknown> | null }>();
-  return data?.casting_configuration ?? null;
+    .maybeSingle<ExistingProjectShell>();
+  return data ?? null;
+}
+
+/**
+ * A composable shell owns its name, cover, city, dates, and active state; the
+ * Casting ability may only fill shell fields that are still empty, and the row
+ * stays private until the casting itself is published.
+ */
+function protectComposableShellColumns(
+  updates: Record<string, unknown>,
+  shell: ExistingProjectShell,
+  isDraft: boolean,
+) {
+  delete updates.title;
+  delete updates.is_active;
+  delete updates.cover_thumbnail_alignment;
+  if (shell.cover_image_url) delete updates.cover_image_url;
+  if (shell.location) delete updates.location;
+  if (shell.start_date || shell.end_date) {
+    delete updates.start_date;
+    delete updates.end_date;
+  }
+  if (isDraft) delete updates.visibility;
 }
 
 /** Keep projects.casting_configuration in sync with child castings for mobile detail/submit. */
@@ -30,7 +62,8 @@ export async function syncProjectCastingConfiguration(
 ): Promise<void> {
   if (!configuration && !form) return;
 
-  const existing = await fetchExistingCastingConfiguration(supabase, projectId);
+  const shell = await fetchExistingProjectShell(supabase, projectId);
+  const existing = shell?.casting_configuration ?? null;
   const existingAttachments = Array.isArray(existing?.attachments)
     ? (existing.attachments as CastingAttachmentCodable[])
     : [];
@@ -59,6 +92,10 @@ export async function syncProjectCastingConfiguration(
         configuration: casting_configuration,
       }),
     );
+  }
+
+  if (shell && isComposableProject(shell)) {
+    protectComposableShellColumns(updates, shell, isDraft);
   }
 
   await supabase.from("projects").update(updates).eq("id", projectId);

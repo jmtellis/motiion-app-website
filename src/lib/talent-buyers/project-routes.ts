@@ -1,3 +1,4 @@
+import type { ProjectAbilityId } from "./project-abilities";
 import { getNormalizedProjectType, type ProjectType } from "./project-types";
 import { getProjectWorkspaceConfig } from "./project-workspace-config";
 
@@ -51,6 +52,28 @@ export function isProjectTabId(value: string): value is ProjectTabId {
   return (PROJECT_TAB_IDS as string[]).includes(value);
 }
 
+export function projectHomePath(projectId: string) {
+  return projectOverviewPath(projectId);
+}
+
+/** Destination for an enabled ability inside a composable project. */
+export function projectAbilityPath(projectId: string, ability: ProjectAbilityId) {
+  if (ability === "casting") return projectWorkspacePath(projectId, "breakdown");
+  return projectPath(projectId, ability);
+}
+
+/** First step right after an ability is enabled (or from the smart primary CTA). */
+export function projectAbilityFirstStepPath(projectId: string, ability: ProjectAbilityId) {
+  if (ability === "casting") return projectWorkspacePath(projectId, "breakdown");
+  if (ability === "roster") return `${projectPath(projectId, "roster")}?invite=1`;
+  return classSessionCreatePath(projectId);
+}
+
+export function classSessionCreatePath(projectId: string) {
+  const params = new URLSearchParams({ type: "class", projectId });
+  return `/calendar/new?${params.toString()}`;
+}
+
 /** Routes under `(workspace)` for project workspace views. */
 const PROJECT_WORKSPACE_PATH_SEGMENTS = new Set([
   "bookings",
@@ -60,6 +83,8 @@ const PROJECT_WORKSPACE_PATH_SEGMENTS = new Set([
   "messages",
   "timeline",
   "talent",
+  "roster",
+  "classes",
 ]);
 
 /** True for routes that render inside the project workspace shell. */

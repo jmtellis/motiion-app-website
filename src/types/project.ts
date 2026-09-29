@@ -1,8 +1,11 @@
+import type { ComposableProjectConfig } from "@/lib/talent-buyers/project-abilities";
 import type { ProjectType } from "@/lib/talent-buyers/project-types";
 
 export type ProjectModules = {
   casting: boolean;
   activities: boolean;
+  roster?: boolean;
+  classes?: boolean;
 };
 
 export type ProjectAttachment = {
@@ -18,6 +21,7 @@ export type ProjectConfiguration = {
   attachments: ProjectAttachment[];
   composer_draft?: boolean;
   create_metadata?: Record<string, string>;
+  composable?: ComposableProjectConfig;
 };
 
 export type ProjectComposerForm = {

@@ -16,7 +16,8 @@
     "test:talent-intent": "npx tsx --test scripts/talent-navigator-intent.test.ts",
     "test:industry-billing": "npx tsx --test scripts/industry-billing.test.ts",
     "test:inbox-partition": "npx tsx --test scripts/inbox-partition.test.ts",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "test:composable-projects": "npx tsx --test scripts/composable-projects.test.ts"
   },
   "dependencies": {
     "@notionhq/client": "^5.12.0",

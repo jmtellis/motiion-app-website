@@ -3,6 +3,11 @@ import {
   isGenericApplicantName,
 } from "@/lib/talent-buyers/casting/submission-talent";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import {
+  isComposableProject,
+  parseComposableConfig,
+  resolveProjectAbilities,
+} from "@/lib/talent-buyers/project-abilities";
 import { isProjectDraft } from "@/lib/talent-buyers/project-payload";
 import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
 import { normalizeSubmissionStatus, type SubmissionStatus } from "@/lib/talent-buyers/submission-status";
@@ -18,6 +23,8 @@ function isDraftProject(project: CastingProjectRecord) {
 }
 
 function projectStatus(project: CastingProjectRecord): BuyerProjectSummary["status"] {
+  const composable = parseComposableConfig(project.project_configuration);
+  if (composable) return composable.archived_at ? "archived" : "active";
   if (isDraftProject(project)) return "draft";
   if (project.is_active) return "active";
   return "archived";
@@ -30,7 +37,7 @@ export async function fetchPosterCastingSummaries(posterId: string): Promise<Buy
   const { data: projects, error } = await supabase
     .from("projects")
     .select(
-      "id, title, is_active, updated_at, created_at, casting_configuration, project_configuration, poster_id, cover_image_url, production_company_logo_url, project_type, enabled_modules",
+      "id, title, is_active, updated_at, created_at, casting_configuration, project_configuration, poster_id, cover_image_url, production_company_logo_url, project_type, enabled_modules, location, start_date, end_date",
     )
     .eq("poster_id", posterId)
     .order("updated_at", { ascending: false });
@@ -65,6 +72,15 @@ export async function fetchPosterCastingSummaries(posterId: string): Promise<Buy
       talentCount,
       coverImageUrl: (project.cover_image_url as string | null) ?? null,
       productionCompanyLogoUrl: (project.production_company_logo_url as string | null) ?? null,
+      ...(isComposableProject(project)
+        ? {
+            composable: true,
+            abilities: resolveProjectAbilities(project),
+            location: (project.location as string | null) ?? null,
+            startDate: (project.start_date as string | null) ?? null,
+            endDate: (project.end_date as string | null) ?? null,
+          }
+        : {}),
     };
   });
 }

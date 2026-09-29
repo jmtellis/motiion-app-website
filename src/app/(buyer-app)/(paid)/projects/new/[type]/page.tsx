@@ -1,11 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 
-import { CastingProjectCreatePage } from "@/components/talent-buyers/project/CastingProjectCreatePage";
 import {
   createIntentPath,
   isBuyerCreateIntent,
 } from "@/lib/talent-buyers/create-intent";
 import { isProjectType } from "@/lib/talent-buyers/project-types";
+import { projectsCreateHref } from "@/lib/talent-buyers/projects-hub-constants";
 import { requireHiringAccount } from "@/lib/auth/session";
 
 export default async function NewTypedProjectPage({
@@ -16,18 +16,18 @@ export default async function NewTypedProjectPage({
   await requireHiringAccount();
   const { type } = await params;
 
+  // Casting is a project ability: create the shell first, then turn Casting on from its home.
   if (type === "casting") {
-    return <CastingProjectCreatePage />;
+    redirect(projectsCreateHref("casting"));
   }
 
   // Event / class / session (and any matching activity intent) use the activity wizard.
-  if (isBuyerCreateIntent(type) && type !== "casting") {
+  if (isBuyerCreateIntent(type)) {
     redirect(createIntentPath(type));
   }
 
-  // Legacy typed project creates are not part of MVP create — send buyers to the picker.
   if (isProjectType(type)) {
-    redirect("/projects?create=1");
+    redirect(projectsCreateHref());
   }
 
   notFound();

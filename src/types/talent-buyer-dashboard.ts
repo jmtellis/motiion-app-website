@@ -1,5 +1,6 @@
 export type { BuyerProjectType, ProjectType } from "@/lib/talent-buyers/project-types";
 import type { BuyerProjectType } from "@/lib/talent-buyers/project-types";
+import type { ProjectAbilityState } from "@/lib/talent-buyers/project-abilities";
 
 export type BuyerProjectStatus = "active" | "draft" | "shared" | "archived";
 
@@ -38,6 +39,12 @@ export type BuyerProjectSummary = {
   coverImageUrl?: string | null;
   /** Client / production company image used when no cover is set. */
   productionCompanyLogoUrl?: string | null;
+  /** Composable shell (MOT-93): abilities come from the row, not the project type. */
+  composable?: boolean;
+  abilities?: ProjectAbilityState[];
+  location?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
 };
 
 export type BuyerEventSummary = {

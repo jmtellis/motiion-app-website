@@ -23,8 +23,8 @@ const QUICK_ACTIONS = [
   { href: "/talent", title: "Search Talent", description: "Explore verified profiles", icon: Search },
   {
     href: "/projects?create=1",
-    title: "Create",
-    description: "Casting, event, class, or session",
+    title: "New project",
+    description: "Casting, roster, and classes in one place",
     icon: FolderPlus,
   },
   { href: "/events", title: "Calendar", description: "See your classes, sessions, and events", icon: CalendarPlus },

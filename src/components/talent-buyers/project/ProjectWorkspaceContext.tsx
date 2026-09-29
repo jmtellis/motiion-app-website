@@ -10,7 +10,18 @@ import {
 import type { ProjectCastingSummary } from "@/lib/talent-buyers/castings";
 import type { ProjectActivitySummary } from "@/lib/talent-buyers/project-activities";
 import type { CastingWorkflowData } from "@/lib/talent-buyers/casting/casting-types";
+import type { ProjectAbilityState } from "@/lib/talent-buyers/project-abilities";
 import type { ProjectAttachment } from "@/types/project";
+
+/** Composable shell state (MOT-93). Null for type-first projects. */
+export type ComposableWorkspaceMeta = {
+  abilities: ProjectAbilityState[];
+  startDate: string | null;
+  endDate: string | null;
+  createdAt: string | null;
+  promptDismissedAt: string | null;
+  archivedAt: string | null;
+};
 
 export type ProjectWorkspaceMeta = {
   id: string;
@@ -22,6 +33,7 @@ export type ProjectWorkspaceMeta = {
   productionCompany: string | null;
   isDraft: boolean;
   updatedAt: string | null;
+  composable?: ComposableWorkspaceMeta | null;
 };
 
 export type ProjectWorkspaceData = {

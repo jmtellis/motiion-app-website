@@ -21,9 +21,9 @@ import "./buyer-ui.css";
 const QUICK_ACTIONS = [
   {
     href: "/projects?create=1",
-    label: "Create",
+    label: "New project",
     icon: FolderKanban,
-    keywords: "new project casting event class session job",
+    keywords: "new project create casting roster classes",
   },
   {
     href: "/jobs/new",
@@ -32,7 +32,7 @@ const QUICK_ACTIONS = [
     keywords: "new job production roster credits",
   },
   {
-    href: "/projects/new/casting",
+    href: "/projects?create=1&intent=casting",
     label: "Create casting",
     icon: FolderKanban,
     keywords: "new casting breakdown roles",

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 import {
-  BUYER_CREATE_INTENT_OPTIONS,
+  BUYER_ACTIVITY_INTENT_OPTIONS,
   createIntentPath,
   type BuyerCreateIntent,
 } from "@/lib/talent-buyers/create-intent";
@@ -34,14 +34,14 @@ export function ProjectTypePickerOverlay({
       open={open}
       onClose={onClose}
       title="What are you creating?"
-      description="Choose a casting, event, class, or session."
+      description="Standalone events, classes, sessions, and jobs. Castings live inside a project."
       size="xl"
     >
       <div className="project-create-picker__modal-body">
         <div className="project-create-picker__page">
-          <h3 className="project-create-picker__section-title">Castings & activities</h3>
+          <h3 className="project-create-picker__section-title">Activities & jobs</h3>
           <div className="project-create__choice-grid project-create__choice-grid--2 project-create-picker__choices">
-            {BUYER_CREATE_INTENT_OPTIONS.map((option) => (
+            {BUYER_ACTIVITY_INTENT_OPTIONS.map((option) => (
               <button
                 key={option.value}
                 type="button"

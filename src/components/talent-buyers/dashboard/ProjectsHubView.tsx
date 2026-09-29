@@ -21,7 +21,17 @@ import type { BuyerInboxFile } from "@/types/buyer-file-inbox";
 import type { ProjectHubSummary } from "@/lib/talent-buyers/projects-hub";
 
 import { ProjectTypePickerOverlay } from "@/components/talent-buyers/project/ProjectTypePickerOverlay";
-import { PROJECTS_CREATE_QUERY } from "@/lib/talent-buyers/projects-hub-constants";
+import { AbilityIconRow } from "@/components/talent-buyers/project/composable/AbilityIconRow";
+import { NewProjectSheet } from "@/components/talent-buyers/project/composable/NewProjectSheet";
+import {
+  projectShellStatus,
+  projectShellSubtitle,
+} from "@/lib/talent-buyers/project-abilities";
+import {
+  PROJECTS_CREATE_ACTIVITY_VALUE,
+  PROJECTS_CREATE_INTENT_QUERY,
+  PROJECTS_CREATE_QUERY,
+} from "@/lib/talent-buyers/projects-hub-constants";
 
 import { FadeInSection } from "./FadeInSection";
 import { ProjectCarousel } from "./ProjectCarousel";
@@ -82,7 +92,11 @@ export function ProjectsHubView({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { viewMode } = useProjectsViewMode();
-  const createPickerOpen = searchParams.get(PROJECTS_CREATE_QUERY) === "1";
+  const createQuery = searchParams.get(PROJECTS_CREATE_QUERY);
+  const createSheetOpen = createQuery === "1";
+  const activityPickerOpen = createQuery === PROJECTS_CREATE_ACTIVITY_VALUE;
+  const createIntent =
+    searchParams.get(PROJECTS_CREATE_INTENT_QUERY) === "casting" ? "casting" : null;
   const [focusIndex, setFocusIndex] = useState(0);
   const [scopeFilter, setScopeFilter] = useState<ProjectScopeFilter>("all");
 
@@ -150,6 +164,7 @@ export function ProjectsHubView({
   const closeCreatePicker = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete(PROJECTS_CREATE_QUERY);
+    params.delete(PROJECTS_CREATE_INTENT_QUERY);
     const query = params.toString();
     router.replace(query ? `/projects?${query}` : "/projects", {
       scroll: false,
@@ -164,7 +179,7 @@ export function ProjectsHubView({
         description="Cast your team, bring people together, and keep every detail in one place."
         actions={
           <button className="buyer-chrome-bar__cta" onClick={openCreatePicker}>
-            <Plus size={16} /> Create new
+            <Plus size={16} /> New project
           </button>
         }
       />
@@ -253,13 +268,13 @@ export function ProjectsHubView({
       {isEmpty ? (
         <IndustryEmptyState
           title="Every great production starts here"
-          description="Create a casting, job, or event. Your team, applications, and project files will stay connected."
+          description="Projects hold your castings, rosters, and classes in one place."
           actions={
             <button
               className="buyer-chrome-bar__cta"
               onClick={openCreatePicker}
             >
-              Create your first project
+              Create a project
             </button>
           }
         />
@@ -310,18 +325,28 @@ export function ProjectsHubView({
                         <span>{project.title.slice(0, 1)}</span>
                       )}
                     </span>
-                    <span>
+                    <span className="industry-work-row__copy">
                       <strong>{project.title}</strong>
                       <small>
-                        {project.workTypeLabel ??
-                          labelFromSnake(project.projectType)}
+                        {project.composable
+                          ? projectShellSubtitle(project) || "Project"
+                          : (project.workTypeLabel ??
+                            labelFromSnake(project.projectType))}
                       </small>
                     </span>
+                    <AbilityIconRow
+                      abilities={project.abilities}
+                      className="industry-work-row__abilities"
+                    />
                   </Link>
                   <IndustryBadge
                     tone={project.status === "active" ? "success" : "neutral"}
                   >
-                    {labelFromSnake(project.status)}
+                    {project.composable &&
+                    project.status === "active" &&
+                    projectShellStatus(project.endDate) === "ended"
+                      ? "Ended"
+                      : labelFromSnake(project.status)}
                   </IndustryBadge>
                   <span className="industry-work-row__date studio-work-people">
                     <span className="studio-avatars">
@@ -437,8 +462,13 @@ export function ProjectsHubView({
         skeletonOnly={isEmpty && viewMode === "focus"}
       />
 
+      <NewProjectSheet
+        open={createSheetOpen}
+        onClose={closeCreatePicker}
+        intent={createIntent}
+      />
       <ProjectTypePickerOverlay
-        open={createPickerOpen}
+        open={activityPickerOpen}
         onClose={closeCreatePicker}
       />
     </div>

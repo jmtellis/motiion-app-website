@@ -10,6 +10,7 @@ import { BuyerEmptyIntro } from "@/components/talent-buyers/dashboard/BuyerEmpty
 import { NotificationAvatar, useNotificationActors } from "@/components/workspace/NotificationAvatar";
 import { useBuyerNotifications } from "@/hooks/use-buyer-notifications";
 import { castingNotificationHref } from "@/lib/app/talent-casting-state";
+import { dealMemoNotificationHref } from "@/lib/booking/deal-memo-routes";
 import { formatBuyerRelativeDate } from "@/lib/talent-buyers/dashboard-data";
 
 import "./notifications-page.css";
@@ -131,7 +132,7 @@ export function NotificationsPageView({
       <ul className="buyer-notifications__list">
         {visible.map((row) => {
           const unread = !row.read_at;
-          const href = linkCastings ? castingNotificationHref(row) : null;
+          const href = dealMemoNotificationHref(row) ?? (linkCastings ? castingNotificationHref(row) : null);
           const title = row.title ?? row.type.replace(/_/g, " ");
           return (
             <li

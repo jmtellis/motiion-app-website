@@ -15,6 +15,7 @@ import {
 import { NotificationAvatar, useNotificationActors } from "@/components/workspace/NotificationAvatar";
 import { useBuyerNotifications } from "@/hooks/use-buyer-notifications";
 import { castingNotificationHref } from "@/lib/app/talent-casting-state";
+import { dealMemoNotificationHref } from "@/lib/booking/deal-memo-routes";
 import { formatBuyerRelativeDate } from "@/lib/talent-buyers/dashboard-data";
 
 const PANEL_ID = "workspace-notifications-panel";
@@ -153,7 +154,7 @@ export function NotificationsPanel() {
           ) : (
             <ul>
               {notifications.map((row) => {
-                const href = castingNotificationHref(row);
+                const href = dealMemoNotificationHref(row) ?? castingNotificationHref(row);
                 const title = row.title ?? row.type.replace(/_/g, " ");
                 const copy = (
                   <>

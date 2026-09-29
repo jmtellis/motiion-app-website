@@ -81,7 +81,7 @@ serve((req) => {
         payload: { talent_deal_cents: money.talent_deal_cents, charge_amount_cents: money.charge_amount_cents },
       },
     });
-    await notifyParty({ userId: memo.industry_user_id, memoId: memo.id, action: "talent_accepted", actorId: user.id });
+    await notifyParty({ memo, to: "industry", action: "talent_accepted", actorId: user.id });
     return await memoPayload(memo.id, "talent");
   });
 });

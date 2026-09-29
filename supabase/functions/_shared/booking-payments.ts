@@ -160,8 +160,8 @@ export async function applyBookingPaymentIntent(
       await writeMemo({ memoId, patch, event });
     }
     await Promise.all([
-      notifyParty({ userId: memo.industry_user_id, memoId, action: "payment_succeeded", actorId: null }),
-      notifyParty({ userId: memo.talent_user_id, memoId, action: "payment_succeeded", actorId: null }),
+      notifyParty({ memo, to: "industry", action: "payment_succeeded", actorId: null }),
+      notifyParty({ memo, to: "talent", action: "payment_succeeded", actorId: null }),
     ]);
     return { memoId, applied: true };
   }

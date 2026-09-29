@@ -10,7 +10,7 @@ import {
   loadMemoForParty,
   memoPayload,
   notifyParty,
-  otherParty,
+  otherRole,
   requireUser,
   stringField,
   uuidField,
@@ -71,7 +71,7 @@ serve((req) => {
       event: { action, actor_role: viewer, actor_user_id: user.id, payload: { reason: validReason, note } },
     });
     if (memo.status !== "draft") {
-      await notifyParty({ userId: otherParty(memo, viewer), memoId: memo.id, action, actorId: user.id });
+      await notifyParty({ memo, to: otherRole(viewer), action, actorId: user.id });
     }
     return await memoPayload(memo.id, viewer);
   });

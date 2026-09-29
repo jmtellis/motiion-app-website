@@ -61,7 +61,7 @@ serve((req) => {
         },
       },
     });
-    await notifyParty({ userId: memo.talent_user_id, memoId: memo.id, action: "industry_replied", actorId: user.id });
+    await notifyParty({ memo, to: "talent", action: "industry_replied", actorId: user.id });
     return await memoPayload(memo.id, "industry");
   });
 });

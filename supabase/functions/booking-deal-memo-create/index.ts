@@ -168,7 +168,7 @@ serve((req) => {
       });
     }
 
-    if (send) await notifyParty({ userId: memo.talent_user_id, memoId: memo.id, action: "sent", actorId: user.id });
+    if (send) await notifyParty({ memo, to: "talent", action: "sent", actorId: user.id });
     return await memoPayload(memo.id, "industry");
   });
 });

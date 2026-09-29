@@ -371,20 +371,28 @@ const NOTIFY_COPY: Record<string, { title: string; body: string }> = {
   call_requested: { title: "Call requested", body: "A call was requested about a deal memo." },
 };
 
-/** Best-effort in-app + push notification; never fails the request. */
-export async function notifyParty(input: { userId: string; memoId: string; action: string; actorId: string | null }) {
+/**
+ * Best-effort in-app + push notification; never fails the request.
+ * `data.recipient_role` lets clients route to the talent or industry view of the memo.
+ */
+export async function notifyParty(input: {
+  memo: Pick<MemoRow, "id" | "talent_user_id" | "industry_user_id">;
+  to: MemoParty;
+  action: string;
+  actorId: string | null;
+}) {
   const copy = NOTIFY_COPY[input.action];
   if (!copy) return;
   const { error } = await supabaseAdmin.from("notifications").insert({
-    user_id: input.userId,
+    user_id: input.to === "talent" ? input.memo.talent_user_id : input.memo.industry_user_id,
     type: "booking_deal_memo",
     title: copy.title,
     body: copy.body,
-    data: { memo_id: input.memoId, action: input.action, actor_id: input.actorId },
+    data: { memo_id: input.memo.id, action: input.action, actor_id: input.actorId, recipient_role: input.to },
   });
-  if (error) console.warn("booking notification insert failed", { memoId: input.memoId, error });
+  if (error) console.warn("booking notification insert failed", { memoId: input.memo.id, error });
 }
 
-export function otherParty(memo: MemoRow, viewer: MemoParty): string {
-  return viewer === "industry" ? memo.talent_user_id : memo.industry_user_id;
+export function otherRole(viewer: MemoParty): MemoParty {
+  return viewer === "industry" ? "talent" : "industry";
 }

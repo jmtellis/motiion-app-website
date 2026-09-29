@@ -16,7 +16,7 @@ import {
   loadMemoForParty,
   memoPayload,
   notifyParty,
-  otherParty,
+  otherRole,
   requireUser,
   uuidField,
   writeMemo,
@@ -46,7 +46,7 @@ serve((req) => {
         memoId: memo.id,
         event: { action: "call_requested", actor_role: viewer, actor_user_id: user.id, payload: { note: cleanNote(body.note) } },
       });
-      await notifyParty({ userId: otherParty(memo, viewer), memoId: memo.id, action: "call_requested", actorId: user.id });
+      await notifyParty({ memo, to: otherRole(viewer), action: "call_requested", actorId: user.id });
       return await memoPayload(memo.id, viewer);
     }
 
@@ -77,7 +77,7 @@ serve((req) => {
         },
       },
     });
-    await notifyParty({ userId: memo.industry_user_id, memoId: memo.id, action: "talent_flagged", actorId: user.id });
+    await notifyParty({ memo, to: "industry", action: "talent_flagged", actorId: user.id });
     return await memoPayload(memo.id, "talent");
   });
 });

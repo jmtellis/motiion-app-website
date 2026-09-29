@@ -18,7 +18,9 @@
     "test:inbox-partition": "npx tsx --test scripts/inbox-partition.test.ts",
     "postinstall": "patch-package",
     "test:composable-projects": "npx tsx --test scripts/composable-projects.test.ts",
-    "test:schedule-markers": "npx tsx --test scripts/schedule-markers.test.ts"
+    "test:schedule-markers": "npx tsx --test scripts/schedule-markers.test.ts",
+    "test:booking-deal-memo": "npx tsx --test scripts/booking-deal-memo.test.ts",
+    "test:booking-deal-memo-sql": "bash supabase/tests/booking_deal_memos/run.sh"
   },
   "dependencies": {
     "@notionhq/client": "^5.12.0",

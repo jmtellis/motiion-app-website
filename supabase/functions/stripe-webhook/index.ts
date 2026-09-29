@@ -8,6 +8,29 @@ import { markCheckoutPaidAndSync, syncRemainingSpots } from "../_shared/payment-
 import { syncIdentityVerificationFromStripeSession } from "../_shared/identity-verification-profile.ts";
 import { isIdentityVerificationFeePurpose } from "../_shared/identity-verification-fee-policy.ts";
 import { applyIdentityVerificationFeePayment } from "../_shared/identity-verification-fee-store.ts";
+import { handleBookingStripeEvent, handleThinEvent, isThinEvent } from "../_shared/booking-webhook.ts";
+
+/**
+ * One URL, up to three Stripe endpoints: platform events (STRIPE_WEBHOOK_SECRET), Connect events for
+ * booking recipients (`account.updated`), and the Accounts v2 thin-event destination.
+ */
+const webhookSecrets = [
+  env.stripeWebhookSecret,
+  Deno.env.get("STRIPE_CONNECT_WEBHOOK_SECRET")?.trim(),
+  Deno.env.get("STRIPE_THIN_WEBHOOK_SECRET")?.trim(),
+].filter((secret): secret is string => Boolean(secret));
+
+async function constructVerifiedEvent(body: string, signature: string): Promise<Stripe.Event> {
+  let lastError: unknown = null;
+  for (const secret of webhookSecrets) {
+    try {
+      return await stripe.webhooks.constructEventAsync(body, signature, secret);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError ?? new Error("No Stripe webhook secret configured");
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -25,11 +48,25 @@ serve(async (req) => {
 
   try {
     const body = await req.text();
-    const event = await stripe.webhooks.constructEventAsync(
-      body,
-      signature,
-      env.stripeWebhookSecret,
-    );
+    const event = await constructVerifiedEvent(body, signature);
+
+    const rawEvent: unknown = event;
+    if (isThinEvent(rawEvent)) {
+      try {
+        await handleThinEvent(rawEvent);
+      } catch (err) {
+        console.error("stripe-webhook thin event failed", { id: rawEvent.id, type: rawEvent.type, err });
+        return jsonResponse({ error: "Booking payout sync failed" }, 500);
+      }
+      return jsonResponse({ received: true });
+    }
+
+    try {
+      if (await handleBookingStripeEvent(event)) return jsonResponse({ received: true });
+    } catch (err) {
+      console.error("stripe-webhook booking deal memo handling failed", { id: event.id, type: event.type, err });
+      return jsonResponse({ error: "Booking deal memo handling failed" }, 500);
+    }
 
     let identityFeeGrantFailed = false;
 

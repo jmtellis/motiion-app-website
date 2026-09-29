@@ -219,7 +219,7 @@ create table if not exists public.booking_deal_memo_provisions (
   updated_at timestamptz not null default now(),
   unique (memo_id, module_code),
   constraint booking_deal_memo_provisions_flag_state
-    check (state <> 'change_requested' or talent_flag in ('remove', 'add', 'dispute'))
+    check (state <> 'change_requested' or coalesce(talent_flag in ('remove', 'add', 'dispute'), false))
 );
 
 create index if not exists idx_booking_deal_memo_provisions_memo
@@ -463,6 +463,12 @@ set search_path = public
 as $$
 begin
   if tg_op = 'UPDATE' then
+    -- auth.users delete sets actor_user_id → null; nothing else may change.
+    if old.actor_user_id is not null
+      and new.actor_user_id is null
+      and (to_jsonb(new) - 'actor_user_id') = (to_jsonb(old) - 'actor_user_id') then
+      return new;
+    end if;
     raise exception 'booking_deal_memo_events_append_only';
   end if;
   if public.booking_is_client_role() then

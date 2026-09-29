@@ -24,9 +24,12 @@ type ProjectCardModel = BuyerProjectSummary &
 export function ProjectCard({
   project,
   variant = "default",
+  nextBeatLabel,
 }: {
   project: ProjectCardModel;
   variant?: "default" | "dashboard" | "workspace";
+  /** Next dated beat from the Schedule, e.g. "Audition · Oct 3, 6 PM". */
+  nextBeatLabel?: string;
 }) {
   const isDashboard = variant === "dashboard";
   const isWorkspace = variant === "workspace";
@@ -128,7 +131,9 @@ export function ProjectCard({
           <div className="bd-project-card__footer-copy">
             <p className="bd-project-card__footer-title">{project.title}</p>
             <p className="bd-project-card__footer-meta">
-              Edited {formatBuyerRelativeDate(project.lastUpdated)}
+              {nextBeatLabel
+                ? `Next: ${nextBeatLabel}`
+                : `Edited ${formatBuyerRelativeDate(project.lastUpdated)}`}
             </p>
           </div>
           {project.abilities?.length ? (

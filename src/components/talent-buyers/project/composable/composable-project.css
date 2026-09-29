@@ -138,6 +138,17 @@
   min-width: 0;
 }
 
+.industry-work-row__beat {
+  display: block;
+  margin-top: 0.125rem;
+  overflow: hidden;
+  font-size: 0.75rem;
+  font-weight: 550;
+  color: var(--industry-accent, #006b80);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .industry-work-row__abilities {
   margin-left: auto;
   padding-left: 0.5rem;

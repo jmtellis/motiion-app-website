@@ -52,7 +52,8 @@ from attached castings/roles, roster members, and class sessions.
 
 - `/projects?create=1` — thin create sheet (name required; city/dates optional).
   `&intent=casting` pre-selects Casting on the new project's home.
-- `/projects?create=activity` — standalone event / class / session / job picker.
+- `/projects?create=activity` — legacy alias for `?create=1` (MOT-95 removed the
+  standalone picker from Home; create always goes through a project).
 - `/projects/:id/overview` — project home for composable projects.
 - `/projects/:id/workspace/breakdown` — Casting ability (existing casting stages).
 - `/projects/:id/roster` — full roster page (`?invite=1` opens invite).

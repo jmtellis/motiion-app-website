@@ -7,13 +7,24 @@ import { StaggerList } from "./FadeInSection";
 
 import "./projects-hub.css";
 
-export function ProjectGridView({ projects }: { projects: ProjectHubSummary[] }) {
+export function ProjectGridView({
+  projects,
+  nextBeatLabels = {},
+}: {
+  projects: ProjectHubSummary[];
+  nextBeatLabels?: Record<string, string>;
+}) {
   if (!projects.length) return null;
 
   return (
     <StaggerList className="projects-hub__grid" stagger={0.03}>
       {projects.map((project) => (
-        <ProjectCard key={project.id} project={project} variant="dashboard" />
+        <ProjectCard
+          key={project.id}
+          project={project}
+          variant="dashboard"
+          nextBeatLabel={nextBeatLabels[project.id]}
+        />
       ))}
     </StaggerList>
   );

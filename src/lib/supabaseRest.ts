@@ -97,8 +97,9 @@ async function invokeSupabaseFunction<T>(
         : record && typeof record.code === "string"
           ? record.code
           : null;
-    const err = new Error(message) as Error & { errorCode?: string };
+    const err = new Error(message) as Error & { errorCode?: string; details?: Record<string, unknown> };
     if (errorCode) err.errorCode = errorCode;
+    if (record) err.details = record;
     throw err;
   }
   return data as T;

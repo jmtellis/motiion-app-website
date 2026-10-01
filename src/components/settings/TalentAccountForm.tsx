@@ -10,6 +10,7 @@ import {
   updateTalentPassword,
 } from "@/app/settings/account-actions";
 import { DeleteAccountButton } from "@/components/settings/DeleteAccountButton";
+import { SignOutButton } from "@/components/talent-buyers/dashboard/SignOutButton";
 import { deleteTalentAccount } from "@/app/settings/actions";
 
 export function formatMemberNumber(value: number | string | null | undefined) {
@@ -308,6 +309,12 @@ export function TalentAccountForm({
 
       {error ? <p className="talent-settings-error">{error}</p> : null}
       {message ? <p className="talent-settings-success">{message}</p> : null}
+
+      <section className="talent-settings-card" aria-labelledby="sign-out-heading">
+        <h2 id="sign-out-heading">Sign out</h2>
+        <p>Sign out of Motiion on this device. Your profile stays on your account.</p>
+        <SignOutButton className="talent-settings-secondary talent-settings-sign-out" />
+      </section>
 
       <section className="talent-settings-card" aria-labelledby="delete-account-heading">
         <h2 id="delete-account-heading">Delete account</h2>

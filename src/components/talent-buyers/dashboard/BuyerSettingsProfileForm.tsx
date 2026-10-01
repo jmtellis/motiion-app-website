@@ -24,7 +24,6 @@ import type {
 import { IndustryCard, IndustryField, IndustryInput } from "./IndustryUI";
 
 import { useToast } from "./ToastProvider";
-import { SignOutButton } from "./SignOutButton";
 
 export function BuyerSettingsProfileForm({
   profile,
@@ -158,7 +157,6 @@ export function BuyerSettingsProfileForm({
         <AuthButton type="submit" disabled={isPending}>
           {isPending ? "Saving…" : "Save changes"}
         </AuthButton>
-        <SignOutButton />
       </div>
     </form>
   );

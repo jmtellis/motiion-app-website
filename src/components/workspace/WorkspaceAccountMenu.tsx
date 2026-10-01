@@ -6,6 +6,7 @@ import { useEffect, useId, useRef, useState, useTransition, type FormEvent, type
 
 import { switchProfileShell } from "@/app/settings/shell-actions";
 import type { ShellMenuAction } from "@/lib/auth/profile";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import {
   grantIndustryAccessUnlock,
   isValidIndustryAccessPassword,
@@ -36,6 +37,7 @@ export function WorkspaceAccountMenu({
   const [passcodeOpen, setPasscodeOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   function close() {
@@ -105,6 +107,17 @@ export function WorkspaceAccountMenu({
       const result = await switchProfileShell(shell);
       if (result && !result.ok) setError(result.error);
     });
+  }
+
+  async function signOut() {
+    setSigningOut(true);
+    const supabase = createClientSupabaseClient();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    close();
+    router.push("/");
+    router.refresh();
   }
 
   return (
@@ -181,6 +194,10 @@ export function WorkspaceAccountMenu({
                 </button>
               ) : null}
               {error ? <p className="workspace-account-popover__error">{error}</p> : null}
+              <div className="workspace-account-popover__separator" role="separator" />
+              <button type="button" role="menuitem" disabled={signingOut || isPending} onClick={signOut}>
+                {signingOut ? "Signing out…" : "Sign out"}
+              </button>
             </>
           )}
         </div>

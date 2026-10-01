@@ -6,6 +6,7 @@ import {
   BuyerSettingsWorkspaceSections,
 } from "@/components/talent-buyers/dashboard/BuyerSettingsProfileForm";
 import { DeleteBuyerAccountButton } from "@/components/talent-buyers/dashboard/DeleteBuyerAccountButton";
+import { SignOutButton } from "@/components/talent-buyers/dashboard/SignOutButton";
 import { FadeInSection } from "@/components/talent-buyers/dashboard/FadeInSection";
 import { IndustryPageHeader } from "@/components/talent-buyers/dashboard/IndustryUI";
 import { IndustrySettings } from "@/components/talent-buyers/dashboard/IndustrySettings";
@@ -53,6 +54,16 @@ export default async function BuyerSettingsPage({
                     profile={profile}
                     variant="dashboard"
                   />
+                  <div className="bd-muted-panel p-5">
+                    <p className="text-sm font-medium text-white">Sign out</p>
+                    <p className="mt-1 text-sm text-white/58">
+                      Sign out of Motiion on this device. Your profile and
+                      workspace stay on your account.
+                    </p>
+                    <div className="mt-4">
+                      <SignOutButton />
+                    </div>
+                  </div>
                 </section>
               </FadeInSection>
             ),

@@ -277,9 +277,18 @@ html:has(.workspace-shell) body { overscroll-behavior: none; }
   outline: 2px solid var(--accent, #2dd4bf);
   outline-offset: 1px;
 }
+.workspace-account-popover__separator {
+  height: 1px;
+  margin: 4px 8px;
+  background: #262626;
+}
 .workspace-account-popover__error {
   margin: 4px 8px 6px;
   color: #f0b429;
   font-size: 12px;
   line-height: 1.4;
+}
+.workspace-account-popover :is(a, button):disabled {
+  opacity: 0.55;
+  cursor: default;
 }

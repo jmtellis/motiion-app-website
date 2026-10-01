@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 
-export function SignOutButton({ className = "" }: { className?: string }) {
+export function SignOutButton({ className = "btn-outline text-sm" }: { className?: string }) {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
 
@@ -22,7 +22,7 @@ export function SignOutButton({ className = "" }: { className?: string }) {
   return (
     <button
       type="button"
-      className={`btn-outline text-sm ${className}`}
+      className={className}
       onClick={handleSignOut}
       disabled={signingOut}
     >

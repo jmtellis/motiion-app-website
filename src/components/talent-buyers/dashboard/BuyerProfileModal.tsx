@@ -155,7 +155,7 @@ export function BuyerProfileModal({
       footer={
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <SignOutButton className="bd-btn-secondary" />
+            <SignOutButton className="btn-outline text-sm bd-btn-secondary" />
             <Link
               href="/dashboard/settings"
               className="text-sm text-white/55 transition hover:text-white/85"

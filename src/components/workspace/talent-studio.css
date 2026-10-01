@@ -85,6 +85,12 @@
   justify-content: center;
   padding-inline: 4px;
 }
+.workspace-shell--talent[data-collapsed="true"]
+  .workspace-sidebar-account
+  .workspace-account-popover button {
+  justify-content: flex-start;
+  padding: 7px 12px;
+}
 .workspace-shell--talent .workspace-account-menu [role="menu"] {
   left: 0;
   right: auto;
@@ -515,6 +521,17 @@ html:has(.workspace-shell--talent) .staging-environment-badge {
 .talent-settings-secondary:disabled {
   opacity: 0.55;
   cursor: default;
+}
+.workspace-shell--talent .talent-settings-card .talent-settings-sign-out {
+  margin-top: 12px;
+  border: 0;
+  background: #f3f3f3;
+  color: #111;
+}
+.workspace-shell--talent .talent-settings-card .talent-settings-sign-out:hover:not(:disabled) {
+  background: #e8e8e8;
+  border-color: transparent;
+  color: #111;
 }
 .talent-settings-row,
 .talent-settings-member,

@@ -166,6 +166,16 @@ function mapRecentReferral(raw: Record<string, unknown>): AnalyticsRecentReferra
       : raw.referrer_username
         ? String(raw.referrer_username)
         : null,
+    referrerEmail: raw.referrerEmail
+      ? String(raw.referrerEmail)
+      : raw.referrer_email
+        ? String(raw.referrer_email)
+        : null,
+    referrerAvatarUrl: raw.referrerAvatarUrl
+      ? String(raw.referrerAvatarUrl)
+      : raw.referrer_avatar_url
+        ? String(raw.referrer_avatar_url)
+        : null,
     refereeUserId: String(raw.refereeUserId ?? raw.referee_user_id ?? ""),
     refereeDisplayName: String(raw.refereeDisplayName ?? raw.referee_display_name ?? "Motiion User"),
     refereeUsername: raw.refereeUsername
@@ -177,6 +187,11 @@ function mapRecentReferral(raw: Record<string, unknown>): AnalyticsRecentReferra
       ? String(raw.refereeEmail)
       : raw.referee_email
         ? String(raw.referee_email)
+        : null,
+    refereeAvatarUrl: raw.refereeAvatarUrl
+      ? String(raw.refereeAvatarUrl)
+      : raw.referee_avatar_url
+        ? String(raw.referee_avatar_url)
         : null,
   };
 }
@@ -342,4 +357,68 @@ export async function fetchAnalyticsDashboard(
 // Backward-compatible export for any existing imports
 export async function fetchAnalyticsSummary(params?: AnalyticsDashboardParams) {
   return fetchAnalyticsDashboard(params);
+}
+
+export type AnalyticsPeopleLists = {
+  range: AnalyticsDashboardData["range"];
+  recentEvents: AnalyticsRecentEvent[];
+  referrals: AnalyticsReferralsData;
+  searchResults: AnalyticsUserSummary[];
+  selectedUser: AnalyticsUserSummary | null;
+  userTimeline: AnalyticsUserTimelineEvent[];
+  error: string | null;
+};
+
+/** Recent activity, app referrals, and person drill-down. The first page lists these after the chart. */
+export async function fetchAnalyticsPeopleLists(
+  params: AnalyticsDashboardParams = {},
+): Promise<AnalyticsPeopleLists> {
+  const range = parseAnalyticsDateRange(params.range);
+  const since = range.sinceIso;
+
+  const [recentResult, referralsResult, searchResult, selectedUserResult, userTimelineResult] =
+    await Promise.all([
+      callRpc<Array<Record<string, unknown>>>("admin_analytics_recent_events", {
+        p_since: since,
+        p_limit: 50,
+      }),
+      callRpc<Record<string, unknown>>("admin_analytics_referrals", { p_since: since }),
+      params.query
+        ? callRpc<Array<Record<string, unknown>>>("admin_analytics_search_users", {
+            p_query: params.query,
+            p_limit: 10,
+          })
+        : Promise.resolve({ data: [], error: null }),
+      params.user
+        ? callRpc<Record<string, unknown>>("admin_analytics_user_summary", {
+            p_user_id: params.user,
+            p_since: since,
+          })
+        : Promise.resolve({ data: null, error: null }),
+      params.user
+        ? callRpc<Array<Record<string, unknown>>>("admin_analytics_user_timeline", {
+            p_user_id: params.user,
+            p_since: since,
+            p_limit: 100,
+          })
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+  const errors = [recentResult.error, referralsResult.error, searchResult.error].filter(Boolean);
+
+  return {
+    range: {
+      key: range.key as AnalyticsDateRangeKey,
+      label: range.label,
+      sinceIso: range.sinceIso,
+    },
+    recentEvents: (recentResult.data ?? []).map(mapRecentEvent),
+    referrals: mapReferrals(referralsResult.data),
+    searchResults: (searchResult.data ?? []).map(mapUserSummary),
+    selectedUser: selectedUserResult.data ? mapUserSummary(selectedUserResult.data) : null,
+    userTimeline: (userTimelineResult.data ?? []).map(
+      (row) => mapRecentEvent(row) as AnalyticsUserTimelineEvent,
+    ),
+    error: errors[0] ?? null,
+  };
 }

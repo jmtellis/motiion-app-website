@@ -1,6 +1,5 @@
-import Link from "next/link";
-
-import { getProfileInitials } from "@/lib/auth/avatar";
+import { AnalyticsPersonCell } from "@/components/analytics/dashboard/AnalyticsPersonCell";
+import { identityFromFields } from "@/lib/analytics/person-identity";
 import type {
   AnalyticsRecentReferral,
   AnalyticsReferralsData,
@@ -21,70 +20,51 @@ function sourceLabel(source: string) {
   return source || "—";
 }
 
-function Avatar({
-  name,
-  avatarUrl,
-  size = "md",
-}: {
-  name: string;
-  avatarUrl: string | null;
-  size?: "sm" | "md";
-}) {
-  const className = size === "sm" ? "h-8 w-8 text-[10px]" : "h-10 w-10 text-xs";
-
-  if (avatarUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={avatarUrl} alt="" className={`${className} rounded-full object-cover`} />
-    );
-  }
-
-  return (
-    <div
-      className={`flex ${className} items-center justify-center rounded-full bg-[var(--line)] font-semibold text-[var(--ink)]`}
-    >
-      {getProfileInitials(name)}
-    </div>
-  );
-}
-
 function UserLink({
   userId,
   name,
-  secondary,
+  email,
+  username,
   avatarUrl,
+  hrefBase,
   range,
 }: {
   userId: string;
   name: string;
-  secondary: string | null;
+  email?: string | null;
+  username?: string | null;
   avatarUrl?: string | null;
+  hrefBase: string;
   range: string;
 }) {
+  const person = identityFromFields({
+    userId,
+    displayName: name,
+    email,
+    username,
+    avatarUrl,
+  });
+
   if (!userId) {
-    return <span className="text-[var(--ink-soft)]">{name}</span>;
+    return <AnalyticsPersonCell person={person} />;
   }
 
   return (
-    <Link
-      href={`/admin/analytics?range=${range}&user=${userId}`}
-      className="flex items-center gap-2 hover:opacity-80"
-    >
-      {avatarUrl !== undefined ? <Avatar name={name} avatarUrl={avatarUrl} size="sm" /> : null}
-      <span>
-        <span className="block font-medium text-[var(--ink)]">{name}</span>
-        {secondary ? <span className="block text-xs text-[var(--ink-soft)]">{secondary}</span> : null}
-      </span>
-    </Link>
+    <AnalyticsPersonCell
+      person={person}
+      href={`${hrefBase}?range=${range}&user=${encodeURIComponent(userId)}`}
+    />
   );
 }
 
 function TopReferrersTable({
   referrers,
   range,
+  hrefBase,
 }: {
   referrers: AnalyticsTopReferrer[];
   range: string;
+  hrefBase: string;
 }) {
   if (referrers.length === 0) {
     return <p className="text-sm text-[var(--ink-soft)]">No referrers in this range.</p>;
@@ -106,8 +86,10 @@ function TopReferrersTable({
                 <UserLink
                   userId={referrer.userId}
                   name={referrer.displayName}
-                  secondary={referrer.email ?? (referrer.username ? `@${referrer.username}` : null)}
+                  email={referrer.email}
+                  username={referrer.username}
                   avatarUrl={referrer.avatarUrl}
+                  hrefBase={hrefBase}
                   range={range}
                 />
               </td>
@@ -123,9 +105,11 @@ function TopReferrersTable({
 function RecentReferralsTable({
   referrals,
   range,
+  hrefBase,
 }: {
   referrals: AnalyticsRecentReferral[];
   range: string;
+  hrefBase: string;
 }) {
   if (referrals.length === 0) {
     return <p className="text-sm text-[var(--ink-soft)]">No referred signups in this range.</p>;
@@ -149,10 +133,10 @@ function RecentReferralsTable({
                 <UserLink
                   userId={referral.refereeUserId}
                   name={referral.refereeDisplayName}
-                  secondary={
-                    referral.refereeEmail ??
-                    (referral.refereeUsername ? `@${referral.refereeUsername}` : null)
-                  }
+                  email={referral.refereeEmail}
+                  username={referral.refereeUsername}
+                  avatarUrl={referral.refereeAvatarUrl}
+                  hrefBase={hrefBase}
                   range={range}
                 />
               </td>
@@ -160,13 +144,10 @@ function RecentReferralsTable({
                 <UserLink
                   userId={referral.referrerUserId}
                   name={referral.referrerDisplayName}
-                  secondary={
-                    referral.referrerUsername
-                      ? `@${referral.referrerUsername}`
-                      : referral.referralCode
-                        ? `code ${referral.referralCode}`
-                        : null
-                  }
+                  email={referral.referrerEmail}
+                  username={referral.referrerUsername}
+                  avatarUrl={referral.referrerAvatarUrl}
+                  hrefBase={hrefBase}
                   range={range}
                 />
               </td>
@@ -185,9 +166,11 @@ function RecentReferralsTable({
 export function AnalyticsReferralsPanel({
   data,
   range,
+  hrefBase = "/admin/analytics",
 }: {
   data: AnalyticsReferralsData;
   range: string;
+  hrefBase?: string;
 }) {
   return (
     <div className="space-y-6">
@@ -201,25 +184,25 @@ export function AnalyticsReferralsPanel({
         </p>
       </article>
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <article className="ui-card p-5">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-2">
+        <article className="ui-card min-w-0 overflow-hidden p-5">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-[var(--ink)]">Top referrers</h3>
             <p className="mt-1 text-sm text-[var(--ink-soft)]">
               Members who brought the most signups in this window.
             </p>
           </div>
-          <TopReferrersTable referrers={data.topReferrers} range={range} />
+          <TopReferrersTable referrers={data.topReferrers} range={range} hrefBase={hrefBase} />
         </article>
 
-        <article className="ui-card p-5">
+        <article className="ui-card min-w-0 overflow-hidden p-5">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-[var(--ink)]">Recent referred signups</h3>
             <p className="mt-1 text-sm text-[var(--ink-soft)]">
               Who signed up, who referred them, and how the code was claimed.
             </p>
           </div>
-          <RecentReferralsTable referrals={data.recentReferrals} range={range} />
+          <RecentReferralsTable referrals={data.recentReferrals} range={range} hrefBase={hrefBase} />
         </article>
       </div>
     </div>

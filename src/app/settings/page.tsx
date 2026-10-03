@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { AppShell } from "@/components/app/AppShell";
+import { SettingsAdminAnalyticsSection } from "@/components/settings/SettingsAdminAnalyticsSection";
 import { TalentAccountForm } from "@/components/settings/TalentAccountForm";
 import { TalentAdminPanel } from "@/components/settings/TalentAdminPanel";
 import { TalentResourcesPanel } from "@/components/settings/TalentResourcesPanel";
@@ -101,18 +102,21 @@ export default async function SettingsPage({
       id: "account",
       label: "Account",
       content: (
-        <TalentAccountForm
-          firstName={account?.first_name ?? ""}
-          lastName={account?.last_name ?? ""}
-          username={account?.username ?? profile.username ?? ""}
-          dateOfBirth={account?.date_of_birth?.slice(0, 10) ?? ""}
-          email={account?.email ?? profile.email ?? ""}
-          contactEmail={account?.contact_email ?? ""}
-          memberNumber={account?.member_number == null ? null : String(account.member_number)}
-          isPrivate={account?.is_private === true}
-          canChangePassword={canChangePassword}
-          profileLabel={profileLabel}
-        />
+        <div className="talent-settings-stack">
+          {admin ? <SettingsAdminAnalyticsSection variant="talent" /> : null}
+          <TalentAccountForm
+            firstName={account?.first_name ?? ""}
+            lastName={account?.last_name ?? ""}
+            username={account?.username ?? profile.username ?? ""}
+            dateOfBirth={account?.date_of_birth?.slice(0, 10) ?? ""}
+            email={account?.email ?? profile.email ?? ""}
+            contactEmail={account?.contact_email ?? ""}
+            memberNumber={account?.member_number == null ? null : String(account.member_number)}
+            isPrivate={account?.is_private === true}
+            canChangePassword={canChangePassword}
+            profileLabel={profileLabel}
+          />
+        </div>
       ),
     },
   ];

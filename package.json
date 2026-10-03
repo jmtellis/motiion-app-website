@@ -15,6 +15,7 @@
     "test:talent-credits": "npx tsx --test scripts/talent-credit-search.test.ts",
     "test:talent-intent": "npx tsx --test scripts/talent-navigator-intent.test.ts",
     "test:industry-billing": "npx tsx --test scripts/industry-billing.test.ts",
+    "test:analytics-early-signals": "npx tsx --test scripts/analytics-early-signals.test.ts",
     "test:inbox-partition": "npx tsx --test scripts/inbox-partition.test.ts",
     "postinstall": "patch-package",
     "test:composable-projects": "npx tsx --test scripts/composable-projects.test.ts",

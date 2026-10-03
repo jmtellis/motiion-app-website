@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it } from "node:test";
 
+import {
+  ADMIN_ANALYTICS_HREF,
+  SettingsAdminAnalyticsSection,
+} from "../src/components/settings/SettingsAdminAnalyticsSection";
 import {
   ANALYTICS_EARLY_SIGNAL_ROW_COLUMNS,
   ANALYTICS_SIGNAL_SUMMARY_COLUMNS,
@@ -63,6 +69,24 @@ describe("mapSignalSummary", () => {
         firstActivityAfterSetup: 0,
       },
     );
+  });
+});
+
+describe("Settings admin analytics link", () => {
+  it("points both settings variants at /admin/analytics", () => {
+    assert.equal(ADMIN_ANALYTICS_HREF, "/admin/analytics");
+
+    const talent = renderToStaticMarkup(
+      createElement(SettingsAdminAnalyticsSection, { variant: "talent" }),
+    );
+    const industry = renderToStaticMarkup(
+      createElement(SettingsAdminAnalyticsSection, { variant: "industry" }),
+    );
+
+    assert.match(talent, /Admin/);
+    assert.match(industry, /Admin/);
+    assert.match(talent, /href="\/admin\/analytics"/);
+    assert.match(industry, /href="\/admin\/analytics"/);
   });
 });
 

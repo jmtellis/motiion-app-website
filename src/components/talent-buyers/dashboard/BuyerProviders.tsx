@@ -11,7 +11,7 @@ import { ToastProvider } from "./ToastProvider";
 
 export function BuyerProviders({
   children,
-  hasIndustryPro = true,
+  hasIndustryPro = false,
 }: {
   children: ReactNode;
   hasIndustryPro?: boolean;

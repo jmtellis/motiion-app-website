@@ -15,7 +15,7 @@ import {
   getProfileInitials,
 } from "@/lib/auth/avatar";
 import { getShellMenuAction, isCommunityAccount } from "@/lib/auth/profile";
-import { hasTalentProAccess } from "@/lib/billing/entitlement";
+import { hasCommunityProAccess, hasTalentProAccess } from "@/lib/billing/entitlement";
 import { getAppEnvironment } from "@/lib/environment";
 import type { DashboardProfile } from "@/types/database";
 
@@ -55,7 +55,10 @@ export async function AppShell({
   const navVariant = isCommunityAccount(profile.accountType)
     ? "community"
     : "talent";
-  const isPro = await hasTalentProAccess(profile.id);
+  const isPro =
+    navVariant === "community"
+      ? await hasCommunityProAccess(profile.id)
+      : await hasTalentProAccess(profile.id);
   const upgradeDetail =
     navVariant === "community"
       ? "Unlock Pro community features."

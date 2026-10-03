@@ -11,8 +11,9 @@ import { FadeInSection } from "@/components/talent-buyers/dashboard/FadeInSectio
 import { IndustryPageHeader } from "@/components/talent-buyers/dashboard/IndustryUI";
 import { IndustrySettings } from "@/components/talent-buyers/dashboard/IndustrySettings";
 import { SectionHeader } from "@/components/talent-buyers/dashboard/SectionHeader";
+import { SettingsAdminAnalyticsSection } from "@/components/settings/SettingsAdminAnalyticsSection";
 import { fetchBuyerSettingsExtras } from "@/lib/talent-buyers/buyer-settings";
-import { requireHiringAccount } from "@/lib/auth/session";
+import { isPlatformAdmin, requireHiringAccount } from "@/lib/auth/session";
 import { getUserEntitlement } from "@/lib/billing/entitlement";
 
 export default async function BuyerSettingsPage({
@@ -22,9 +23,10 @@ export default async function BuyerSettingsPage({
 }) {
   const profile = await requireHiringAccount();
   const params = await searchParams;
-  const [entitlement, settingsExtras] = await Promise.all([
+  const [entitlement, settingsExtras, admin] = await Promise.all([
     getUserEntitlement(profile.id),
     fetchBuyerSettingsExtras(profile.id),
+    isPlatformAdmin(),
   ]);
   const connectHighlight =
     params.connect === "return" || params.connect === "refresh";
@@ -50,6 +52,7 @@ export default async function BuyerSettingsPage({
                     description="Your profile and sign-in details."
                     size="dashboard"
                   />
+                  {admin ? <SettingsAdminAnalyticsSection variant="industry" /> : null}
                   <BuyerSettingsProfileForm
                     profile={profile}
                     variant="dashboard"

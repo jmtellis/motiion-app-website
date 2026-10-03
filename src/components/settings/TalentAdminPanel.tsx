@@ -10,6 +10,7 @@ import {
   type AnnouncementAudience,
   type ProfileReviewItem,
 } from "@/app/settings/work-actions";
+import { ADMIN_ANALYTICS_HREF } from "@/components/settings/SettingsAdminAnalyticsSection";
 import type { KpiMetric } from "@/lib/analytics/kpi-types";
 
 const audiences: { id: AnnouncementAudience; label: string }[] = [
@@ -125,7 +126,7 @@ export function TalentAdminPanel({
             <h2>Analytics</h2>
             <p>The same KPI snapshot used by admin analytics.</p>
           </div>
-          <Link className="talent-settings-secondary" href="/admin/analytics">
+          <Link className="talent-settings-secondary" href={ADMIN_ANALYTICS_HREF}>
             Open full analytics
           </Link>
         </div>

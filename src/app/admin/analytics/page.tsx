@@ -19,6 +19,8 @@ import {
 } from "@/components/analytics/dashboard/AnalyticsRecentEvents";
 import { AnalyticsReferralsPanel } from "@/components/analytics/dashboard/AnalyticsReferralsPanel";
 import { AnalyticsUserTable } from "@/components/analytics/dashboard/AnalyticsUserTable";
+import { AnalyticsEarlySignals } from "@/components/analytics/dashboard/AnalyticsEarlySignals";
+import { fetchEarlySignals } from "@/lib/analytics/early-signals-query";
 import { fetchAnalyticsDashboard } from "@/lib/analytics/queries";
 import { fetchKpiDashboard } from "@/lib/analytics/kpi-queries";
 import { hasAdminSupabaseEnv } from "@/lib/supabase/admin";
@@ -53,13 +55,14 @@ function Panel({
 
 export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const [dashboard, kpi] = await Promise.all([
+  const [dashboard, kpi, earlySignals] = await Promise.all([
     fetchAnalyticsDashboard({
       range: params.range,
       query: params.query,
       user: params.user,
     }),
     fetchKpiDashboard(),
+    fetchEarlySignals(),
   ]);
 
   return (
@@ -73,8 +76,7 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
             Product analytics
           </h1>
           <p className="mt-2 max-w-3xl text-sm text-[var(--ink-soft)]">
-            Visual insights across web and iOS behavior, enriched with user profiles and product health
-            signals.
+            Early activation signals first, then visual insights across web and iOS behavior.
           </p>
         </div>
         <div className="flex gap-3">
@@ -95,6 +97,12 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
           Add `SUPABASE_SERVICE_ROLE_KEY` to the website environment to load analytics aggregates.
         </section>
       ) : null}
+
+      <AnalyticsEarlySignals
+        summary={earlySignals.summary}
+        rows={earlySignals.rows}
+        error={earlySignals.error}
+      />
 
       {dashboard ? (
         <>

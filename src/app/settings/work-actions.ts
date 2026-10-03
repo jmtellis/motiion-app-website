@@ -3,6 +3,12 @@
 import { revalidatePath } from "next/cache";
 
 import { isPlatformAdmin } from "@/lib/auth/session";
+import {
+  isLiveSubscriptionRow,
+  userIsPaidFromRows,
+  type AccessCodeGrantRow,
+  type SubscriptionAccessRow,
+} from "@/lib/billing/entitlement";
 import { callSupabaseFunctionAsUser } from "@/lib/supabaseRest";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -194,24 +200,30 @@ export async function loadTalentPlan(): Promise<{ label: string; canManageBillin
   } = await supabase.auth.getUser();
   if (!user) return { label: "Free Plan", canManageBilling: false };
 
-  const { data } = await supabase
-    .from("subscriptions")
-    .select("status, tier, provider, customer_id")
-    .eq("user_id", user.id);
+  const [{ data }, grantsQuery] = await Promise.all([
+    supabase
+      .from("subscriptions")
+      .select("status, tier, provider, customer_id, current_period_end")
+      .eq("user_id", user.id),
+    supabase
+      .from("access_code_grants")
+      .select("entitlement, status, expires_at, revoked_at")
+      .eq("user_id", user.id),
+  ]);
 
-  const rows = (data ?? []) as {
-    status: string;
-    tier: string | null;
+  const rows = (data ?? []) as (SubscriptionAccessRow & {
     provider: string | null;
     customer_id: string | null;
-  }[];
-  const active = rows.filter((row) => row.status === "active" || row.status === "trialing");
+  })[];
+  const grants = grantsQuery.error ? [] : ((grantsQuery.data ?? []) as AccessCodeGrantRow[]);
+  const now = new Date();
   const canManageBilling = rows.some((row) => row.provider === "stripe" && row.customer_id);
-  if (!active.length) return { label: "Free Plan", canManageBilling };
-  const pro = active.filter((row) => row.tier === "pro");
-  if (pro.length > 1) return { label: "Dual Pro", canManageBilling };
-  if (pro.length === 1) return { label: "Pro", canManageBilling };
-  return { label: "Free Plan", canManageBilling };
+  const paid =
+    userIsPaidFromRows({ subscriptions: rows, grants, entitlement: "talent_pro", now }) ||
+    userIsPaidFromRows({ subscriptions: rows, grants, entitlement: "community_pro", now });
+  if (!paid) return { label: "Free Plan", canManageBilling };
+  const liveCount = rows.filter((row) => isLiveSubscriptionRow(row, now)).length;
+  return { label: liveCount > 1 ? "Dual Pro" : "Pro", canManageBilling };
 }
 
 const announcementAudiences = {

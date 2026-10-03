@@ -1,5 +1,6 @@
 import { cache } from "react";
 
+import { userHasPaidEntitlement } from "@/lib/billing/entitlement";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type PortfolioPlanTier = "free" | "starter" | "pro";
@@ -92,7 +93,7 @@ export const fetchPortfolioOwnerData = cache(async (userId: string): Promise<Por
   const supabase = await createServerSupabaseClient();
   if (!supabase) return null;
 
-  const [{ data }, tier] = await Promise.all([
+  const [{ data }, paid] = await Promise.all([
     supabase
       .from("profiles")
       .select(
@@ -100,10 +101,7 @@ export const fetchPortfolioOwnerData = cache(async (userId: string): Promise<Por
       )
       .eq("user_id", userId)
       .maybeSingle<Row>(),
-    supabase.rpc("effective_dancer_plan_tier", { p_user_id: userId }).then(
-      ({ data: value }) => value,
-      () => null,
-    ),
+    userHasPaidEntitlement(userId, "talent_pro"),
   ]);
   if (!data) return null;
 
@@ -139,7 +137,7 @@ export const fetchPortfolioOwnerData = cache(async (userId: string): Promise<Por
     userId: data.user_id,
     displayName,
     username: data.username?.trim() || null,
-    plan: tier === "pro" || tier === "starter" ? tier : "free",
+    plan: paid ? "pro" : "free",
     headshotUrls,
     headshotOriginalUrls: headshotUrls.map((url, index) => originals[index] || url),
     headshotLabels: headshotUrls.map((_, index) => labels[index] ?? ""),

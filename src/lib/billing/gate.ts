@@ -1,4 +1,4 @@
-import { getUserEntitlement, requireProEntitlement } from "@/lib/billing/entitlement";
+import { requireProEntitlement, userHasPaidEntitlement } from "@/lib/billing/entitlement";
 import type { ProFeatureKey } from "@/lib/billing/pro-features";
 
 /**
@@ -19,8 +19,7 @@ export function isPaywallEnforced(): boolean {
  * Used for soft UI locks (blurred profiles, Pro chips, upgrade dialogs).
  */
 export async function hasIndustryProAccess(userId: string): Promise<boolean> {
-  const entitlement = await getUserEntitlement(userId);
-  return entitlement.active && entitlement.tier === "pro";
+  return userHasPaidEntitlement(userId, "industry_pro");
 }
 
 /** @deprecated Prefer feature-level locks via requireIndustryProFeature. */

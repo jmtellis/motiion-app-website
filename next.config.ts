@@ -1,11 +1,20 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
-import { assertDeploymentIsolation } from "./src/lib/environment";
+import { prepareBuildEnvironment, previewPublicEnvOverrides } from "./src/lib/environment";
 
-const appEnvironment = assertDeploymentIsolation(process.env);
+const prepared = prepareBuildEnvironment(process.env);
+const appEnvironment = prepared.environment;
+if (prepared.disconnected) {
+  console.warn(
+    "Preview build inherited production credentials. This deployment is disconnected from production data and payments.",
+  );
+}
 
 const nextConfig: NextConfig = {
-  env: { NEXT_PUBLIC_APP_ENV: appEnvironment },
+  env: {
+    NEXT_PUBLIC_APP_ENV: appEnvironment,
+    ...(prepared.disconnected ? previewPublicEnvOverrides(process.env) : {}),
+  },
   async headers() {
     return appEnvironment === "production" ? [] : [{
       source: "/:path*",

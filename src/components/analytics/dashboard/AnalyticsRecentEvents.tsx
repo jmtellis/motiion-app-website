@@ -1,7 +1,6 @@
-import Link from "next/link";
-
+import { AnalyticsPersonCell } from "@/components/analytics/dashboard/AnalyticsPersonCell";
 import { getEventLabel } from "@/lib/analytics/events";
-import { getProfileInitials } from "@/lib/auth/avatar";
+import { identityFromFields } from "@/lib/analytics/person-identity";
 import type { AnalyticsRecentEvent, AnalyticsUserTimelineEvent } from "@/lib/analytics/types";
 
 import { AnalyticsUserCard } from "./AnalyticsUserTable";
@@ -13,40 +12,47 @@ function formatTimestamp(value: string) {
   }).format(new Date(value));
 }
 
-function UserCell({ event }: { event: AnalyticsRecentEvent | AnalyticsUserTimelineEvent }) {
+function UserCell({
+  event,
+  hrefBase,
+}: {
+  event: AnalyticsRecentEvent | AnalyticsUserTimelineEvent;
+  hrefBase: string;
+}) {
+  const person = identityFromFields({
+    userId: event.userId,
+    displayName: event.displayName,
+    email: event.email,
+    username: event.username,
+    avatarUrl: event.avatarUrl,
+  });
+
   if (!event.userId) {
-    return <span className="text-[var(--ink-soft)]">Anonymous</span>;
+    return <AnalyticsPersonCell person={person} />;
   }
 
   return (
-    <Link
-      href={`/admin/analytics?user=${event.userId}`}
-      className="flex items-center gap-2 hover:opacity-80"
-    >
-      {event.avatarUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={event.avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
-      ) : (
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--line)] text-[10px] font-semibold">
-          {getProfileInitials(event.displayName)}
-        </div>
-      )}
-      <div>
-        <p className="font-medium text-[var(--ink)]">{event.displayName}</p>
-        <p className="text-xs text-[var(--ink-soft)]">{event.email ?? event.username ?? event.userId}</p>
-      </div>
-    </Link>
+    <AnalyticsPersonCell
+      person={person}
+      href={`${hrefBase}?user=${encodeURIComponent(event.userId)}`}
+    />
   );
 }
 
-function EventRow({ event }: { event: AnalyticsRecentEvent | AnalyticsUserTimelineEvent }) {
+function EventRow({
+  event,
+  hrefBase,
+}: {
+  event: AnalyticsRecentEvent | AnalyticsUserTimelineEvent;
+  hrefBase: string;
+}) {
   return (
     <tr className="border-b border-[var(--line)] last:border-0">
       <td className="px-3 py-3 whitespace-nowrap text-[var(--ink-soft)]">
         {formatTimestamp(event.createdAt)}
       </td>
       <td className="px-3 py-3">
-        <UserCell event={event} />
+        <UserCell event={event} hrefBase={hrefBase} />
       </td>
       <td className="px-3 py-3 font-medium text-[var(--ink)]">{getEventLabel(event.eventName)}</td>
       <td className="px-3 py-3 uppercase text-[var(--ink-soft)]">{event.platform}</td>
@@ -60,7 +66,13 @@ function EventRow({ event }: { event: AnalyticsRecentEvent | AnalyticsUserTimeli
   );
 }
 
-export function AnalyticsRecentEventsTable({ events }: { events: AnalyticsRecentEvent[] }) {
+export function AnalyticsRecentEventsTable({
+  events,
+  hrefBase = "/admin/analytics",
+}: {
+  events: AnalyticsRecentEvent[];
+  hrefBase?: string;
+}) {
   if (events.length === 0) {
     return <p className="text-sm text-[var(--ink-soft)]">No recent events in this range.</p>;
   }
@@ -80,7 +92,7 @@ export function AnalyticsRecentEventsTable({ events }: { events: AnalyticsRecent
         </thead>
         <tbody>
           {events.map((event) => (
-            <EventRow key={event.id} event={event} />
+            <EventRow key={event.id} event={event} hrefBase={hrefBase} />
           ))}
         </tbody>
       </table>
@@ -91,9 +103,11 @@ export function AnalyticsRecentEventsTable({ events }: { events: AnalyticsRecent
 export function AnalyticsUserTimeline({
   user,
   events,
+  hrefBase = "/admin/analytics",
 }: {
   user: NonNullable<Parameters<typeof AnalyticsUserCard>[0]["user"]>;
   events: AnalyticsUserTimelineEvent[];
+  hrefBase?: string;
 }) {
   return (
     <section className="space-y-4">
@@ -115,7 +129,7 @@ export function AnalyticsUserTimeline({
             </thead>
             <tbody>
               {events.map((event) => (
-                <EventRow key={event.id} event={event} />
+                <EventRow key={event.id} event={event} hrefBase={hrefBase} />
               ))}
             </tbody>
           </table>

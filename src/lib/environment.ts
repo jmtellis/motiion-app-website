@@ -54,20 +54,130 @@ export function assertTestStripeKey(key: string | undefined, environment: AppEnv
   }
 }
 
+const LIVE_SITE_HOSTS = ["motiion.app", "www.motiion.app", ...PRODUCTION_API_HOSTS];
+const PUBLIC_SITE_URL_KEYS = ["NEXT_PUBLIC_SITE_URL", "NEXT_PUBLIC_APP_URL", "NEXT_PUBLIC_PROFILE_OG_BASE_URL"] as const;
+const INLINED_PUBLIC_ENV_KEYS = [
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+  ...PUBLIC_SITE_URL_KEYS,
+] as const;
+
+/**
+ * Set on a Vercel preview that inherited production credentials. The sample
+ * preview can build without a database; this flag does not allow a production URL.
+ */
+export const PREVIEW_DISCONNECTED_ENV = "MOTIION_PREVIEW_DISCONNECTED";
+
+function isLiveStripeKey(key: string | undefined) {
+  return Boolean(key?.trim() && !/^(sk|rk|pk)_test_/.test(key.trim()));
+}
+
+function productionSupabaseHost(url: string | undefined) {
+  const trimmed = url?.trim();
+  if (!trimmed) return null;
+  try {
+    return new URL(trimmed).hostname.replace(/^www\./, "");
+  } catch {
+    return "invalid";
+  }
+}
+
+function previewOrigin(env: Environment) {
+  const host = env.VERCEL_URL?.trim() || env.VERCEL_BRANCH_URL?.trim();
+  if (!host) return undefined;
+  if (/^https?:\/\//i.test(host)) return host.replace(/\/$/, "");
+  return `https://${host}`;
+}
+
+/**
+ * Preview deployments on this project inherit Production env vars. Drop those
+ * credentials so the build cannot read or charge production. A preview that
+ * already points at staging is left alone.
+ */
+export function disconnectPreviewFromProduction(env: Environment) {
+  const declared = env.NEXT_PUBLIC_APP_ENV?.trim();
+  if (declared && declared !== "staging" && declared !== "development") {
+    env.NEXT_PUBLIC_APP_ENV = "staging";
+  }
+
+  const supabaseHost = productionSupabaseHost(env.NEXT_PUBLIC_SUPABASE_URL);
+  const supabaseBlocked = supabaseHost === null || supabaseHost === "invalid" || PRODUCTION_API_HOSTS.includes(supabaseHost);
+  if (supabaseBlocked) {
+    env.NEXT_PUBLIC_SUPABASE_URL = "";
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "";
+    env.SUPABASE_SERVICE_ROLE_KEY = "";
+    env[PREVIEW_DISCONNECTED_ENV] = "1";
+  }
+
+  const liveSecretKey = isLiveStripeKey(env.STRIPE_SECRET_KEY);
+  if (liveSecretKey) {
+    env.STRIPE_SECRET_KEY = "";
+    env.STRIPE_WEBHOOK_SECRET = "";
+  }
+  if (isLiveStripeKey(env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)) {
+    env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "";
+  }
+
+  const origin = previewOrigin(env);
+  for (const name of PUBLIC_SITE_URL_KEYS) {
+    const value = env[name]?.trim();
+    if (!value) continue;
+    let live = false;
+    try {
+      live = LIVE_SITE_HOSTS.includes(new URL(value).hostname);
+    } catch {
+      live = true;
+    }
+    if (!live) continue;
+    env[name] = origin ?? "";
+  }
+}
+
+export type PreparedBuildEnvironment = {
+  environment: AppEnvironment;
+  disconnected: boolean;
+};
+
+/** Next config entry. Production and a correctly configured staging preview stay unchanged. */
+export function prepareBuildEnvironment(env: Environment): PreparedBuildEnvironment {
+  if (env.VERCEL_ENV !== "preview") {
+    return { environment: assertDeploymentIsolation(env), disconnected: false };
+  }
+
+  try {
+    return {
+      environment: assertDeploymentIsolation(env),
+      disconnected: env[PREVIEW_DISCONNECTED_ENV] === "1",
+    };
+  } catch {
+    disconnectPreviewFromProduction(env);
+    return { environment: assertDeploymentIsolation(env), disconnected: true };
+  }
+}
+
+/** Force sanitized public values into the client bundle when a preview was disconnected. */
+export function previewPublicEnvOverrides(env: Environment): Record<string, string> {
+  return Object.fromEntries(INLINED_PUBLIC_ENV_KEYS.map((key) => [key, env[key] ?? ""]));
+}
+
 /** Called before Next starts or builds, including routes that call REST directly. */
 export function assertDeploymentIsolation(env: Environment) {
   const environment = resolveAppEnvironment(env);
   const url = env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   if (url) assertSupabaseIsolation(url, environment);
-  if (environment === "staging" && !url) throw new Error("Staging requires its own Supabase URL.");
+  if (environment === "staging" && !url) {
+    const disconnectedPreview = env.VERCEL_ENV === "preview" && env[PREVIEW_DISCONNECTED_ENV] === "1";
+    if (!disconnectedPreview) throw new Error("Staging requires its own Supabase URL.");
+  }
   assertTestStripeKey(env.STRIPE_SECRET_KEY, environment);
   assertTestStripeKey(env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, environment);
   if (environment !== "production") {
-    for (const name of ["NEXT_PUBLIC_SITE_URL", "NEXT_PUBLIC_APP_URL", "NEXT_PUBLIC_PROFILE_OG_BASE_URL"]) {
+    for (const name of PUBLIC_SITE_URL_KEYS) {
       const value = env[name]?.trim();
       if (!value) continue;
       const host = new URL(value).hostname;
-      if (["motiion.app", "www.motiion.app", ...PRODUCTION_API_HOSTS].includes(host)) {
+      if (LIVE_SITE_HOSTS.includes(host)) {
         throw new Error(`${name} must point to the test environment, not the live website or backend.`);
       }
     }

@@ -117,10 +117,13 @@ export type AnalyticsRecentReferral = {
   referrerUserId: string;
   referrerDisplayName: string;
   referrerUsername: string | null;
+  referrerEmail: string | null;
+  referrerAvatarUrl: string | null;
   refereeUserId: string;
   refereeDisplayName: string;
   refereeUsername: string | null;
   refereeEmail: string | null;
+  refereeAvatarUrl: string | null;
 };
 
 export type AnalyticsReferralsData = {

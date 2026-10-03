@@ -17,6 +17,7 @@
     "test:industry-billing": "npx tsx --test scripts/industry-billing.test.ts",
     "test:account-subscription": "npx tsx --test scripts/account-subscription-check.test.ts",
     "test:analytics-early-signals": "npx tsx --test scripts/analytics-early-signals.test.ts",
+    "test:analytics-signup-series": "npx tsx --test scripts/analytics-signup-series.test.ts",
     "test:inbox-partition": "npx tsx --test scripts/inbox-partition.test.ts",
     "postinstall": "patch-package",
     "test:composable-projects": "npx tsx --test scripts/composable-projects.test.ts",

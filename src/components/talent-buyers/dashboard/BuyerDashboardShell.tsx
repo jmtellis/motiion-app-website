@@ -37,7 +37,6 @@ import "./industry-studio.css";
 import "@/components/workspace/workspace-controls.css";
 import "@/components/ui/chips.css";
 import "@/components/ui/motion.css";
-import "@/components/workspace/inset-dark.css";
 
 /** Match Find Talent hubs: no top chrome unless the page needs nested crumbs or end actions. */
 function buyerShellNeedsChrome(

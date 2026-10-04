@@ -1,0 +1,649 @@
+/* Tinted inset: cool charcoal panel inside the dark shell.
+   A whisper of blue-gray, not a brand-color fill. Light surfaces that
+   were washing the workspace out are lifted one step and their text,
+   icons, borders, buttons, and inputs are retinted for that ground.
+   Printed paper previews stay paper-white. Photo overlays keep light type. */
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame,
+html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) :is(.buyer-modal-panel, .buyer-command-panel, .buyer-toast),
+:is(.workspace-shell--industry, .workspace-shell--talent) :is(.workspace-notifications, .workspace-side-panel) {
+  color-scheme: dark;
+  --inset-canvas: #151a20;
+  --inset-raised: #1e262e;
+  --inset-sunken: #10151b;
+  --inset-hover: #2a343e;
+  --inset-line: rgb(186 210 224 / 0.16);
+  --inset-line-strong: rgb(186 210 224 / 0.34);
+  --inset-text: #f4f7f9;
+  --inset-muted: #b7c3cc;
+  --inset-icon: #d5dee6;
+  --inset-accent: #5eead4;
+  --studio-canvas: #151a20;
+  --studio-shadow: 0 1px 2px #00000066, 0 12px 32px #00000047;
+  --industry-text: #f4f7f9;
+  --industry-muted: #b7c3cc;
+  --industry-surface: #1e262e;
+  --industry-fill: #222b34;
+  --industry-line: rgb(186 210 224 / 0.16);
+  --industry-control-line: rgb(186 210 224 / 0.34);
+  --industry-focus: #5eead4;
+  --industry-shadow: 0 1px 2px #0006, 0 10px 28px #0005;
+  --industry-accent: #f4f7f9;
+  --industry-success: #b7f0d0;
+  --industry-warning: #f6e0a4;
+  --industry-danger: #ffc7c2;
+  --ink: #f4f7f9;
+  --ink-soft: #b7c3cc;
+  --line: rgb(186 210 224 / 0.16);
+  --surface-card: #1e262e;
+  --surface-soft: #222b34;
+  --paper: #151a20;
+  --accent: #5eead4;
+  --accent-dark: #9af3e6;
+  --buyer-bg: #151a20;
+  --buyer-surface: #1e262e;
+  --buyer-card: #1e262e;
+  --buyer-raised: #222b34;
+  --buyer-fill: #222b34;
+  --buyer-fill-subtle: #1a2128;
+  --buyer-line: rgb(186 210 224 / 0.16);
+  --buyer-line-subtle: rgb(186 210 224 / 0.1);
+  --buyer-text: #f4f7f9;
+  --buyer-text-soft: #b7c3cc;
+  --buyer-text-muted: #b7c3cc;
+  --buyer-focus-ring: #5eead4;
+  --buyer-accent-bg: #14302e;
+  --buyer-accent-bg-hover: #1a3d3a;
+  --buyer-accent-border: #2a6f68;
+  --buyer-accent-fill: #14302e;
+  --buyer-accent-fill-hover: #1a3d3a;
+  --bd-surface-hover: #2a343e;
+  --bd-surface-active: #323d48;
+  --ds-background: #151a20;
+  --ds-surface: #1e262e;
+  --ds-surface-raised: #26303a;
+  --ds-border: rgb(186 210 224 / 0.16);
+  --ds-text-default: #f4f7f9;
+  --ds-on-surface: #f4f7f9;
+  --ds-on-background: #f4f7f9;
+  --ds-muted: #b7c3cc;
+  --ds-subtle: #b7c3cc;
+  --ds-text-low: #b7c3cc;
+  --ds-text-disabled: #93a3ae;
+  --ds-surface-default: #1e262e;
+  --ds-surface-high: #26303a;
+  --ds-surface-low: #10151b;
+  --ds-border-default: rgb(186 210 224 / 0.34);
+  --ds-border-low: rgb(186 210 224 / 0.16);
+  --ds-border-strong: rgb(186 210 224 / 0.4);
+  --workspace-surface: #151a20;
+  --workspace-line: rgb(186 210 224 / 0.16);
+  --tn-border-strong: rgb(186 210 224 / 0.28);
+  --tn-elevated-border: rgb(186 210 224 / 0.16);
+  --tn-elevated-border-strong: rgb(186 210 224 / 0.34);
+  --tn-elevated-shadow: 0 8px 24px #0006;
+  --tn-success: #8ddeb4;
+  color: #f4f7f9;
+  border-color: rgb(186 210 224 / 0.18);
+  background-color: #151a20;
+  background-image: radial-gradient(120% 72% at 100% 0%, rgb(78 132 148 / 0.2), transparent 46%);
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .industry-studio-canvas,
+  .workspace-talent-main,
+  .buyer-dashboard-shell__main
+) {
+  color: #f4f7f9 !important;
+  background-color: #151a20 !important;
+  background-image: radial-gradient(120% 72% at 100% 0%, rgb(78 132 148 / 0.2), transparent 46%) !important;
+  border-color: rgb(186 210 224 / 0.14) !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .buyer-chrome-bar,
+  .buyer-chrome-bar--dashboard,
+  .workspace-toolbar,
+  .workspace-industry-mobile-toolbar
+) {
+  color: #f4f7f9 !important;
+  background-color: #151a20 !important;
+  background-image: none !important;
+  border-color: rgb(186 210 224 / 0.14) !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .industry-card,
+  .bd-panel,
+  .bd-muted-panel,
+  .project-bookings__panel,
+  .industry-empty,
+  .industry-work-list,
+  .industry-work-list__labels,
+  .buyer-notifications__list,
+  .buyer-notifications__item,
+  .events-hub__schedule,
+  .project-workspace__panel,
+  .library-talent-card,
+  .bd-project-card,
+  .bd-project-card__footer,
+  .bd-visual-card,
+  .studio-next,
+  .buyer-empty__card,
+  .buyer-empty__card-body,
+  .talent-portfolio-card,
+  .home-open-call-card,
+  .portfolio-editor,
+  .portfolio-completion,
+  .portfolio-highlight,
+  .portfolio-menu,
+  .portfolio-add-menu,
+  .portfolio-empty-card,
+  .portfolio-savebar,
+  .talent-discovery-chip,
+  .talent-discovery-list-menu,
+  .talent-discovery-list-menu button,
+  .studio-booking-projects a,
+  .buyer-messages-workspace > div:last-child,
+  .industry-work-summary,
+  .workspace-account-settings-links a
+),
+html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) :is(.buyer-modal-panel, .buyer-command-panel, .buyer-toast),
+:is(.workspace-shell--industry, .workspace-shell--talent) :is(.workspace-notifications, .workspace-side-panel) {
+  background-color: #1e262e !important;
+  background-image: none !important;
+  color: #f4f7f9 !important;
+  border-color: rgb(186 210 224 / 0.16) !important;
+  box-shadow: 0 1px 2px #0006, 0 12px 32px #00000038 !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .industry-work-row:hover,
+  .buyer-notifications__item--unread,
+  .industry-summary-item:hover,
+  .industry-summary-item[aria-pressed="true"],
+  .portfolio-menu-row:hover,
+  .portfolio-pick-row:hover,
+  .home-panel-row:hover
+) {
+  background-color: #2a343e !important;
+  color: #f4f7f9 !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  h1, h2, h3, h4,
+  .industry-page-description,
+  .industry-eyebrow,
+  .industry-field__label,
+  .industry-field__hint,
+  .industry-result-count,
+  .buyer-chrome-title,
+  .buyer-chrome-title__text,
+  .buyer-chrome-breadcrumbs a,
+  .project-workspace-tabs__tab
+) {
+  color: #f4f7f9 !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .industry-page-description,
+  .industry-eyebrow,
+  .industry-field__hint,
+  .industry-result-count,
+  [class*="__description"],
+  [class*="__subtitle"],
+  [class*="__hint"],
+  [class*="__meta"],
+  [class*="__empty"],
+  [class*="__sub"],
+  small
+) {
+  color: #b7c3cc !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  [class*="__title"],
+  [class*="__name"],
+  .industry-field__label,
+  .industry-work-row strong,
+  .studio-next__item strong,
+  .studio-work-counts strong
+) {
+  color: #f4f7f9 !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .industry-icon-action,
+  .industry-empty__symbol,
+  .studio-next__icon,
+  .studio-next__item > svg,
+  .home-open-call-card__logo,
+  .home-open-call-card__arrow,
+  .workspace-notifications-button
+) {
+  color: #d5dee6 !important;
+  border-color: rgb(186 210 224 / 0.2) !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .industry-empty__symbol,
+  .studio-next__icon,
+  .industry-journey__number,
+  .home-open-call-card__logo,
+  .home-open-call-card__tags li,
+  .home-open-call-card__arrow
+) {
+  background-color: #222b34 !important;
+  color: #d5dee6 !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-icon-action {
+  background-color: transparent !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .workspace-notifications-button,
+  .portfolio-action,
+  .portfolio-icon-button
+) {
+  background-color: #1e262e !important;
+  color: #d5dee6 !important;
+  border-color: rgb(186 210 224 / 0.34) !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .workspace-notifications-button,
+  .portfolio-action,
+  .portfolio-icon-button
+):hover {
+  background-color: #2a343e !important;
+  color: #f4f7f9 !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-icon-action:hover {
+  background-color: #2a343e !important;
+  color: #f4f7f9 !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .industry-search,
+  .library-search-wrap,
+  .library-select,
+  .studio-type-filter,
+  .industry-segments,
+  .industry-layout-switch,
+  .projects-hub__files,
+  .projects-hub__files-drop,
+  .projects-hub__files-dropzone,
+  .casting-toolbar,
+  .casting-role-card,
+  .industry-casting-navigation .project-workspace-tabs__scroller,
+  .ui-chip-group__search,
+  .portfolio-picker,
+  .portfolio-picker__search,
+  .talent-navigator__nl-compose-inner,
+  .workspace-input-shell
+),
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not(.workspace-bare-input):not(.talent-navigator__nl-input),
+  textarea:not(.workspace-bare-input):not(.talent-navigator__nl-input),
+  select
+),
+html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal-panel :is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  textarea,
+  select
+) {
+  color: #f4f7f9 !important;
+  background-color: #10151b !important;
+  border-color: rgb(186 210 224 / 0.34) !important;
+  box-shadow: none !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .industry-search input,
+  .library-search,
+  .talent-navigator__nl-input,
+  .workspace-bare-input,
+  .ui-chip-group__search input
+) {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: #f4f7f9 !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(input, textarea)::placeholder,
+html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal-panel :is(input, textarea)::placeholder {
+  color: #93a3ae !important;
+  opacity: 1;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(input, textarea, select):disabled {
+  background-color: #1a2128 !important;
+  color: #93a3ae !important;
+  opacity: 1;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .bd-btn-secondary,
+  .btn-outline,
+  .btn-secondary,
+  .portfolio-button-secondary,
+  .home-view-all,
+  .ui-chip,
+  .casting-wizard-pill,
+  .portfolio-option,
+  .portfolio-chips button,
+  .projects-hub__files-add
+) {
+  color: #f4f7f9 !important;
+  background-color: #1e262e !important;
+  background-image: none !important;
+  border-color: rgb(186 210 224 / 0.34) !important;
+  box-shadow: none !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .bd-btn-secondary,
+  .btn-outline,
+  .btn-secondary,
+  .portfolio-button-secondary,
+  .home-view-all,
+  .ui-chip,
+  .projects-hub__files-add
+):hover {
+  background-color: #2a343e !important;
+  border-color: rgb(186 210 224 / 0.5) !important;
+  color: #f4f7f9 !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .bd-btn-primary,
+  .bd-btn-accent,
+  .btn-primary,
+  .buyer-chrome-bar__cta,
+  .portfolio-panel-save,
+  .studio-spotlight__action,
+  .talent-navigator__nl-send
+) {
+  color: #12161b !important;
+  background: #f4f7f9 !important;
+  background-image: none !important;
+  border-color: #f4f7f9 !important;
+  box-shadow: none !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .bd-btn-primary,
+  .bd-btn-accent,
+  .btn-primary,
+  .buyer-chrome-bar__cta,
+  .portfolio-panel-save,
+  .studio-spotlight__action,
+  .talent-navigator__nl-send
+):hover {
+  color: #12161b !important;
+  background: #ffffff !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .industry-segments,
+  .industry-layout-switch
+) {
+  background-color: #10151b !important;
+  border: 1px solid rgb(186 210 224 / 0.22) !important;
+  box-shadow: none !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .industry-segments button,
+  .industry-layout-switch button,
+  .industry-settings-nav button,
+  .project-workspace-tabs__tab
+) {
+  color: #b7c3cc !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .industry-layout-switch button[aria-pressed="true"],
+  .industry-segments button[aria-pressed="true"],
+  .industry-settings-nav button[aria-selected="true"],
+  .project-workspace-tabs__tab--active,
+  .ui-chip[aria-pressed="true"],
+  .casting-wizard-pill[aria-pressed="true"],
+  .portfolio-option[aria-pressed="true"],
+  .portfolio-chips button[aria-selected="true"]
+) {
+  color: #12161b !important;
+  background-color: #f4f7f9 !important;
+  border-color: #f4f7f9 !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-segments button[aria-pressed="true"] > span[aria-hidden],
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-segments [class~="bg-white"] {
+  background-color: #f4f7f9 !important;
+  box-shadow: none !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(.industry-badge, .studio-booking-status) {
+  background-color: #2a343e !important;
+  color: #d5dee6 !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(.industry-badge--success, .studio-booking-status--confirmed) {
+  background-color: #163528 !important;
+  color: #b7f0d0 !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(.industry-badge--attention, .studio-booking-status--negotiating) {
+  background-color: #3d3214 !important;
+  color: #f6e0a4 !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .studio-booking-status--completed {
+  background-color: #1c2740 !important;
+  color: #c9d7ff !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  [class*="text-white"],
+  [class*="text-zinc-"],
+  [class*="text-neutral-"]
+) {
+  color: #f4f7f9 !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  [class*="text-white/"],
+  [class*="text-white/4"],
+  [class*="text-white/5"],
+  [class*="text-white/6"]
+) {
+  color: #b7c3cc !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame [class*="border-white"] {
+  border-color: rgb(244 247 249 / 0.16) !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame [class*="bg-white/"] {
+  background-color: rgb(244 247 249 / 0.06) !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is([class~="bg-white"], [class*="bg-[#f"]) {
+  background-color: #1e262e !important;
+  color: #f4f7f9 !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  [class*="bg-[#151515]"],
+  [class*="bg-[#111]"],
+  [class*="bg-[#1a1a1a]"]
+) {
+  background-color: #1e262e !important;
+  color: #f4f7f9 !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .projects-hub__sticky-header,
+  .events-hub__sticky-header,
+  .library-hub__sticky-header
+)::before,
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__main-header {
+  background: linear-gradient(#151a20f2, #151a20c7, transparent) !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__grid-vignette,
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__grid-shell--labeled .talent-navigator__grid-vignette {
+  background: radial-gradient(ellipse at center, transparent 42%, #151a20cc 100%) !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__grid-edge-fade--left { background: linear-gradient(90deg, #151a20, transparent) !important; }
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__grid-edge-fade--right { background: linear-gradient(270deg, #151a20, transparent) !important; }
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__grid-edge-fade--top { background: linear-gradient(180deg, #151a20, transparent) !important; }
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__grid-edge-fade--bottom { background: linear-gradient(0deg, #151a20, transparent) !important; }
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator-grid-bg__ambient {
+  background: linear-gradient(#151a20, #10151b) !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .casting-create-wizard__scroll-fade {
+  background: linear-gradient(to top, #151a20, #151a20cc 35%, transparent) !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .projects-hub__files {
+  background-image: none !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__filter-backdrop::after {
+  background: #151a20 !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .talent-navigator__nl-rail,
+  .talent-navigator__nl-rail:hover,
+  .talent-navigator__nl-rail:focus-within,
+  .talent-navigator__focus-card
+) {
+  background-color: #1e262ee6 !important;
+  border-color: rgb(186 210 224 / 0.28) !important;
+  color: #f4f7f9 !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .project-workspace__cover-title,
+  .project-card__title,
+  .talent-navigator__card-name,
+  .talent-navigator__card-sub,
+  .talent-navigator__card-why,
+  .bd-project-card__overlay-title
+),
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
+  .industry-photo-surface,
+  .bd-project-card__overlay,
+  .project-workspace__cover,
+  .talent-navigator__card-overlay-content,
+  .studio-spotlight,
+  .studio-spotlight__content
+) :is(h1, h2, h3, p, span, dt, dd, small, strong) {
+  color: #fff !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .studio-spotlight__action,
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .studio-spotlight__action:hover {
+  color: #12161b !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(.size-sheet-paper, .resume-paper) {
+  background: #fff !important;
+  background-image: none !important;
+  color: #1a1a1a !important;
+  border-color: #e5e5e5 !important;
+  box-shadow: 0 0 0 1px #e5e5e5, 0 10px 30px #00000014 !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(.size-sheet-paper, .resume-paper) :is(h1, h2, h3, h4, p, span, td, li, small, strong) {
+  color: inherit !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .size-sheet-paper th {
+  background: #242424 !important;
+  color: #fff !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .size-sheet-paper tbody tr:nth-child(odd) {
+  background: #f5f5f5 !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-portfolio-card-preview:has(> .paper-frame) {
+  background: #fff !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(button, a, input, textarea, select, [tabindex]):focus-visible,
+html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal-panel :is(button, a, input, textarea, select):focus-visible {
+  outline: 2px solid #5eead4 !important;
+  outline-offset: 3px;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is([class*="text-amber-"], [class*="text-yellow-"]) { color: #f6e0a4 !important; }
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is([class*="text-red-"], [class*="text-rose-"]) { color: #ffc7c2 !important; }
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is([class*="text-green-"], [class*="text-emerald-"]) { color: #b7f0d0 !important; }
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is([class*="text-cyan-"], [class*="text-teal-"]) { color: #5eead4 !important; }
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-workspace-tabs__underline,
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-workspace-tabs__badge {
+  background: #5eead4 !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-workspace-tabs__badge {
+  color: #10221f !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame [role="menu"] {
+  background: #1e262e !important;
+  color: #f4f7f9 !important;
+  border-color: rgb(186 210 224 / 0.2) !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame [role="menu"] :is(a, button) {
+  color: #f4f7f9 !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame [role="menu"] :is(a, button):hover {
+  background: #2a343e !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .studio-booking-stats {
+  background: #10151b !important;
+  color: #f4f7f9 !important;
+  border: 1px solid rgb(186 210 224 / 0.16);
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .studio-booking-stats :is(span, p) {
+  color: #b7c3cc !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .studio-booking-stats strong {
+  color: #f4f7f9 !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .buyer-messages-workspace li[data-active="true"] {
+  background: #2a343e !important;
+  color: #f4f7f9 !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .studio-conversation-unread {
+  background: #f4f7f9 !important;
+  color: #12161b !important;
+}
+
+/* Selection pills stay light so they read on the sunken track. */
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-segments [class~="bg-white"],
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-segments button[aria-pressed="true"] > span[aria-hidden],
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-layout-switch button[aria-pressed="true"] {
+  background-color: #f4f7f9 !important;
+  color: #12161b !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-save-bar--dirty {
+  background: #f4f7f9 !important;
+  color: #12161b !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-save-bar--dirty > span {
+  color: #12161b !important;
+}
+
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-bookings__table th {
+  background: #10151b !important;
+  color: #b7c3cc !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-bookings__table td {
+  border-color: rgb(186 210 224 / 0.12) !important;
+  color: #f4f7f9 !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .buyer-notifications__item {
+  border-color: rgb(186 210 224 / 0.12) !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .studio-work-thumbnail {
+  background: #10151b !important;
+  color: #d5dee6 !important;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .studio-avatars > span {
+  border-color: #1e262e !important;
+  background: #2a343e !important;
+  color: #f4f7f9 !important;
+}

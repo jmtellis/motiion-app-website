@@ -1,4 +1,4 @@
-/* Industry workspace: dark navigation around a light working canvas. */
+/* Earlier light canvas. Signed-in insets are retinted in inset-dark.css, imported after this file. */
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame {
   color-scheme: light;
   --workspace-surface: #fff;

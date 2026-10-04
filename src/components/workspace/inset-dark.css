@@ -1,92 +1,95 @@
-/* Tinted inset: cool charcoal panel inside the dark shell.
-   A whisper of blue-gray, not a brand-color fill. Light surfaces that
-   were washing the workspace out are lifted one step and their text,
-   icons, borders, buttons, and inputs are retinted for that ground.
+/* Signed-in inset, matched to Linear's app panel.
+   The shell stays near-black. The content window is Linear's neutral
+   panel gray, with Linear's hairline border and radius. Cards sit one
+   luminance step up. Text, icons, borders, inputs, chips, and buttons
+   use Linear's neutral contrast on that ground. No blue wash.
    Printed paper previews stay paper-white. Photo overlays keep light type. */
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame,
 html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) :is(.buyer-modal-panel, .buyer-command-panel, .buyer-toast),
 :is(.workspace-shell--industry, .workspace-shell--talent) :is(.workspace-notifications, .workspace-side-panel) {
   color-scheme: dark;
-  --inset-canvas: #151a20;
-  --inset-raised: #1e262e;
-  --inset-sunken: #10151b;
-  --inset-hover: #2a343e;
-  --inset-line: rgb(186 210 224 / 0.16);
-  --inset-line-strong: rgb(186 210 224 / 0.34);
-  --inset-text: #f4f7f9;
-  --inset-muted: #b7c3cc;
-  --inset-icon: #d5dee6;
-  --inset-accent: #5eead4;
-  --studio-canvas: #151a20;
-  --studio-shadow: 0 1px 2px #00000066, 0 12px 32px #00000047;
-  --industry-text: #f4f7f9;
-  --industry-muted: #b7c3cc;
-  --industry-surface: #1e262e;
-  --industry-fill: #222b34;
-  --industry-line: rgb(186 210 224 / 0.16);
-  --industry-control-line: rgb(186 210 224 / 0.34);
-  --industry-focus: #5eead4;
-  --industry-shadow: 0 1px 2px #0006, 0 10px 28px #0005;
-  --industry-accent: #f4f7f9;
+  --inset-canvas: #0f1011;
+  --inset-raised: #191a1b;
+  --inset-sunken: #141516;
+  --inset-hover: #28282c;
+  --inset-line: rgb(255 255 255 / 0.08);
+  --inset-line-strong: rgb(255 255 255 / 0.08);
+  --inset-text: #f7f8f8;
+  --inset-muted: #8a8f98;
+  --inset-icon: #d0d6e0;
+  --inset-accent: #f7f8f8;
+  --studio-canvas: #0f1011;
+  --studio-shadow: none;
+  --industry-text: #f7f8f8;
+  --industry-muted: #8a8f98;
+  --industry-surface: #191a1b;
+  --industry-fill: #1c1c1f;
+  --industry-line: rgb(255 255 255 / 0.08);
+  --industry-control-line: rgb(255 255 255 / 0.08);
+  --industry-focus: #f7f8f8;
+  --industry-shadow: none;
+  --industry-accent: #f7f8f8;
   --industry-success: #b7f0d0;
   --industry-warning: #f6e0a4;
   --industry-danger: #ffc7c2;
-  --ink: #f4f7f9;
-  --ink-soft: #b7c3cc;
-  --line: rgb(186 210 224 / 0.16);
-  --surface-card: #1e262e;
-  --surface-soft: #222b34;
-  --paper: #151a20;
-  --accent: #5eead4;
-  --accent-dark: #9af3e6;
-  --buyer-bg: #151a20;
-  --buyer-surface: #1e262e;
-  --buyer-card: #1e262e;
-  --buyer-raised: #222b34;
-  --buyer-fill: #222b34;
-  --buyer-fill-subtle: #1a2128;
-  --buyer-line: rgb(186 210 224 / 0.16);
-  --buyer-line-subtle: rgb(186 210 224 / 0.1);
-  --buyer-text: #f4f7f9;
-  --buyer-text-soft: #b7c3cc;
-  --buyer-text-muted: #b7c3cc;
-  --buyer-focus-ring: #5eead4;
-  --buyer-accent-bg: #14302e;
-  --buyer-accent-bg-hover: #1a3d3a;
-  --buyer-accent-border: #2a6f68;
-  --buyer-accent-fill: #14302e;
-  --buyer-accent-fill-hover: #1a3d3a;
-  --bd-surface-hover: #2a343e;
-  --bd-surface-active: #323d48;
-  --ds-background: #151a20;
-  --ds-surface: #1e262e;
-  --ds-surface-raised: #26303a;
-  --ds-border: rgb(186 210 224 / 0.16);
-  --ds-text-default: #f4f7f9;
-  --ds-on-surface: #f4f7f9;
-  --ds-on-background: #f4f7f9;
-  --ds-muted: #b7c3cc;
-  --ds-subtle: #b7c3cc;
-  --ds-text-low: #b7c3cc;
-  --ds-text-disabled: #93a3ae;
-  --ds-surface-default: #1e262e;
-  --ds-surface-high: #26303a;
-  --ds-surface-low: #10151b;
-  --ds-border-default: rgb(186 210 224 / 0.34);
-  --ds-border-low: rgb(186 210 224 / 0.16);
-  --ds-border-strong: rgb(186 210 224 / 0.4);
-  --workspace-surface: #151a20;
-  --workspace-line: rgb(186 210 224 / 0.16);
-  --tn-border-strong: rgb(186 210 224 / 0.28);
-  --tn-elevated-border: rgb(186 210 224 / 0.16);
-  --tn-elevated-border-strong: rgb(186 210 224 / 0.34);
-  --tn-elevated-shadow: 0 8px 24px #0006;
+  --ink: #f7f8f8;
+  --ink-soft: #8a8f98;
+  --line: rgb(255 255 255 / 0.08);
+  --surface-card: #191a1b;
+  --surface-soft: #1c1c1f;
+  --paper: #0f1011;
+  --accent: #f7f8f8;
+  --accent-dark: #d0d6e0;
+  --buyer-bg: #0f1011;
+  --buyer-surface: #191a1b;
+  --buyer-card: #191a1b;
+  --buyer-raised: #1c1c1f;
+  --buyer-fill: #1c1c1f;
+  --buyer-fill-subtle: #141516;
+  --buyer-line: rgb(255 255 255 / 0.08);
+  --buyer-line-subtle: rgb(255 255 255 / 0.05);
+  --buyer-text: #f7f8f8;
+  --buyer-text-soft: #8a8f98;
+  --buyer-text-muted: #8a8f98;
+  --buyer-focus-ring: #f7f8f8;
+  --buyer-accent-bg: #191a1b;
+  --buyer-accent-bg-hover: #28282c;
+  --buyer-accent-border: #23252a;
+  --buyer-accent-fill: #191a1b;
+  --buyer-accent-fill-hover: #28282c;
+  --bd-surface-hover: #28282c;
+  --bd-surface-active: #323236;
+  --ds-background: #0f1011;
+  --ds-surface: #191a1b;
+  --ds-surface-raised: #28282c;
+  --ds-border: rgb(255 255 255 / 0.08);
+  --ds-text-default: #f7f8f8;
+  --ds-on-surface: #f7f8f8;
+  --ds-on-background: #f7f8f8;
+  --ds-muted: #8a8f98;
+  --ds-subtle: #8a8f98;
+  --ds-text-low: #8a8f98;
+  --ds-text-disabled: #8a8f98;
+  --ds-surface-default: #191a1b;
+  --ds-surface-high: #28282c;
+  --ds-surface-low: #141516;
+  --ds-border-default: rgb(255 255 255 / 0.08);
+  --ds-border-low: rgb(255 255 255 / 0.08);
+  --ds-border-strong: rgb(255 255 255 / 0.12);
+  --workspace-surface: #0f1011;
+  --workspace-line: rgb(255 255 255 / 0.08);
+  --tn-border-strong: rgb(255 255 255 / 0.08);
+  --tn-elevated-border: rgb(255 255 255 / 0.08);
+  --tn-elevated-border-strong: rgb(255 255 255 / 0.08);
+  --tn-elevated-shadow: none;
   --tn-success: #8ddeb4;
-  color: #f4f7f9;
-  border-color: rgb(186 210 224 / 0.18);
-  background-color: #151a20;
-  background-image: radial-gradient(120% 72% at 100% 0%, rgb(78 132 148 / 0.2), transparent 46%);
+  color: #f7f8f8;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 8px;
+  box-shadow: none;
+  background-color: #0f1011;
+  background-image: none;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
@@ -94,10 +97,11 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) :is(.buyer-m
   .workspace-talent-main,
   .buyer-dashboard-shell__main
 ) {
-  color: #f4f7f9 !important;
-  background-color: #151a20 !important;
-  background-image: radial-gradient(120% 72% at 100% 0%, rgb(78 132 148 / 0.2), transparent 46%) !important;
-  border-color: rgb(186 210 224 / 0.14) !important;
+  color: #f7f8f8 !important;
+  background-color: #0f1011 !important;
+  background-image: none !important;
+  border-color: rgb(255 255 255 / 0.05) !important;
+  border-radius: 0 !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
@@ -106,10 +110,10 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) :is(.buyer-m
   .workspace-toolbar,
   .workspace-industry-mobile-toolbar
 ) {
-  color: #f4f7f9 !important;
-  background-color: #151a20 !important;
+  color: #f7f8f8 !important;
+  background-color: #0f1011 !important;
   background-image: none !important;
-  border-color: rgb(186 210 224 / 0.14) !important;
+  border-color: rgb(255 255 255 / 0.05) !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
@@ -150,11 +154,13 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) :is(.buyer-m
 ),
 html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) :is(.buyer-modal-panel, .buyer-command-panel, .buyer-toast),
 :is(.workspace-shell--industry, .workspace-shell--talent) :is(.workspace-notifications, .workspace-side-panel) {
-  background-color: #1e262e !important;
+  background-color: #191a1b !important;
   background-image: none !important;
-  color: #f4f7f9 !important;
-  border-color: rgb(186 210 224 / 0.16) !important;
-  box-shadow: 0 1px 2px #0006, 0 12px 32px #00000038 !important;
+  color: #f7f8f8 !important;
+  border-color: rgb(255 255 255 / 0.08) !important;
+  border: 1px solid rgb(255 255 255 / 0.08) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
@@ -166,8 +172,8 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) :is(.buyer-m
   .portfolio-pick-row:hover,
   .home-panel-row:hover
 ) {
-  background-color: #2a343e !important;
-  color: #f4f7f9 !important;
+  background-color: #28282c !important;
+  color: #f7f8f8 !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
@@ -182,7 +188,7 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) :is(.buyer-m
   .buyer-chrome-breadcrumbs a,
   .project-workspace-tabs__tab
 ) {
-  color: #f4f7f9 !important;
+  color: #f7f8f8 !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
@@ -190,15 +196,20 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) :is(.buyer-m
   .industry-eyebrow,
   .industry-field__hint,
   .industry-result-count,
+  .industry-work-list__labels,
   [class*="__description"],
   [class*="__subtitle"],
   [class*="__hint"],
   [class*="__meta"],
   [class*="__empty"],
   [class*="__sub"],
-  small
+  small,
+  .talent-portfolio-card p,
+  .industry-card p,
+  .home-open-call-card p,
+  .talent-home__header p
 ) {
-  color: #b7c3cc !important;
+  color: #8a8f98 !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
@@ -209,7 +220,7 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) :is(.buyer-m
   .studio-next__item strong,
   .studio-work-counts strong
 ) {
-  color: #f4f7f9 !important;
+  color: #f7f8f8 !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
@@ -219,10 +230,11 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) :is(.buyer-m
   .studio-next__item > svg,
   .home-open-call-card__logo,
   .home-open-call-card__arrow,
-  .workspace-notifications-button
+  .workspace-notifications-button,
+  .talent-portfolio-card > svg
 ) {
-  color: #d5dee6 !important;
-  border-color: rgb(186 210 224 / 0.2) !important;
+  color: #d0d6e0 !important;
+  border-color: rgb(255 255 255 / 0.08) !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
@@ -233,8 +245,8 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) :is(.buyer-m
   .home-open-call-card__tags li,
   .home-open-call-card__arrow
 ) {
-  background-color: #222b34 !important;
-  color: #d5dee6 !important;
+  background-color: #1c1c1f !important;
+  color: #d0d6e0 !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-icon-action {
@@ -245,21 +257,21 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) :is(.buyer-m
   .portfolio-action,
   .portfolio-icon-button
 ) {
-  background-color: #1e262e !important;
-  color: #d5dee6 !important;
-  border-color: rgb(186 210 224 / 0.34) !important;
+  background-color: #191a1b !important;
+  color: #d0d6e0 !important;
+  border-color: rgb(255 255 255 / 0.08) !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
   .workspace-notifications-button,
   .portfolio-action,
   .portfolio-icon-button
 ):hover {
-  background-color: #2a343e !important;
-  color: #f4f7f9 !important;
+  background-color: #28282c !important;
+  color: #f7f8f8 !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-icon-action:hover {
-  background-color: #2a343e !important;
-  color: #f4f7f9 !important;
+  background-color: #28282c !important;
+  color: #f7f8f8 !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
@@ -291,9 +303,9 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal
   textarea,
   select
 ) {
-  color: #f4f7f9 !important;
-  background-color: #10151b !important;
-  border-color: rgb(186 210 224 / 0.34) !important;
+  color: #f7f8f8 !important;
+  background-color: #141516 !important;
+  border-color: rgb(255 255 255 / 0.08) !important;
   box-shadow: none !important;
 }
 
@@ -307,18 +319,18 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal
   background-color: transparent !important;
   border-color: transparent !important;
   box-shadow: none !important;
-  color: #f4f7f9 !important;
+  color: #f7f8f8 !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(input, textarea)::placeholder,
 html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal-panel :is(input, textarea)::placeholder {
-  color: #93a3ae !important;
+  color: #8a8f98 !important;
   opacity: 1;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(input, textarea, select):disabled {
-  background-color: #1a2128 !important;
-  color: #93a3ae !important;
+  background-color: #141516 !important;
+  color: #8a8f98 !important;
   opacity: 1;
 }
 
@@ -334,10 +346,10 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal
   .portfolio-chips button,
   .projects-hub__files-add
 ) {
-  color: #f4f7f9 !important;
-  background-color: #1e262e !important;
+  color: #f7f8f8 !important;
+  background-color: rgb(255 255 255 / 0.05) !important;
   background-image: none !important;
-  border-color: rgb(186 210 224 / 0.34) !important;
+  border: 1px solid rgb(255 255 255 / 0.08) !important;
   box-shadow: none !important;
 }
 
@@ -350,9 +362,9 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal
   .ui-chip,
   .projects-hub__files-add
 ):hover {
-  background-color: #2a343e !important;
-  border-color: rgb(186 210 224 / 0.5) !important;
-  color: #f4f7f9 !important;
+  background-color: #28282c !important;
+  border-color: rgb(255 255 255 / 0.14) !important;
+  color: #f7f8f8 !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
@@ -364,10 +376,10 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal
   .studio-spotlight__action,
   .talent-navigator__nl-send
 ) {
-  color: #12161b !important;
-  background: #f4f7f9 !important;
+  color: #08090a !important;
+  background: #e5e5e6 !important;
   background-image: none !important;
-  border-color: #f4f7f9 !important;
+  border-color: #e5e5e6 !important;
   box-shadow: none !important;
 }
 
@@ -380,7 +392,7 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal
   .studio-spotlight__action,
   .talent-navigator__nl-send
 ):hover {
-  color: #12161b !important;
+  color: #08090a !important;
   background: #ffffff !important;
 }
 
@@ -388,8 +400,8 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal
   .industry-segments,
   .industry-layout-switch
 ) {
-  background-color: #10151b !important;
-  border: 1px solid rgb(186 210 224 / 0.22) !important;
+  background-color: #141516 !important;
+  border: 1px solid rgb(255 255 255 / 0.08) !important;
   box-shadow: none !important;
 }
 
@@ -399,7 +411,7 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal
   .industry-settings-nav button,
   .project-workspace-tabs__tab
 ) {
-  color: #b7c3cc !important;
+  color: #8a8f98 !important;
   background-color: transparent !important;
   box-shadow: none !important;
 }
@@ -414,20 +426,20 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal
   .portfolio-option[aria-pressed="true"],
   .portfolio-chips button[aria-selected="true"]
 ) {
-  color: #12161b !important;
-  background-color: #f4f7f9 !important;
-  border-color: #f4f7f9 !important;
+  color: #08090a !important;
+  background-color: #e5e5e6 !important;
+  border-color: #e5e5e6 !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-segments button[aria-pressed="true"] > span[aria-hidden],
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-segments [class~="bg-white"] {
-  background-color: #f4f7f9 !important;
+  background-color: #e5e5e6 !important;
   box-shadow: none !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(.industry-badge, .studio-booking-status) {
-  background-color: #2a343e !important;
-  color: #d5dee6 !important;
+  background-color: #28282c !important;
+  color: #d0d6e0 !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(.industry-badge--success, .studio-booking-status--confirmed) {
   background-color: #163528 !important;
@@ -438,8 +450,8 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal
   color: #f6e0a4 !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .studio-booking-status--completed {
-  background-color: #1c2740 !important;
-  color: #c9d7ff !important;
+  background-color: #28282c !important;
+  color: #d0d6e0 !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
@@ -447,7 +459,7 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal
   [class*="text-zinc-"],
   [class*="text-neutral-"]
 ) {
-  color: #f4f7f9 !important;
+  color: #f7f8f8 !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
   [class*="text-white/"],
@@ -455,25 +467,25 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal
   [class*="text-white/5"],
   [class*="text-white/6"]
 ) {
-  color: #b7c3cc !important;
+  color: #8a8f98 !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame [class*="border-white"] {
-  border-color: rgb(244 247 249 / 0.16) !important;
+  border-color: rgb(255 255 255 / 0.08) !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame [class*="bg-white/"] {
-  background-color: rgb(244 247 249 / 0.06) !important;
+  background-color: rgb(255 255 255 / 0.04) !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is([class~="bg-white"], [class*="bg-[#f"]) {
-  background-color: #1e262e !important;
-  color: #f4f7f9 !important;
+  background-color: #191a1b !important;
+  color: #f7f8f8 !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
   [class*="bg-[#151515]"],
   [class*="bg-[#111]"],
   [class*="bg-[#1a1a1a]"]
 ) {
-  background-color: #1e262e !important;
-  color: #f4f7f9 !important;
+  background-color: #191a1b !important;
+  color: #f7f8f8 !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
@@ -482,27 +494,27 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal
   .library-hub__sticky-header
 )::before,
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__main-header {
-  background: linear-gradient(#151a20f2, #151a20c7, transparent) !important;
+  background: linear-gradient(#0f1011f2, #0f1011c7, transparent) !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__grid-vignette,
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__grid-shell--labeled .talent-navigator__grid-vignette {
-  background: radial-gradient(ellipse at center, transparent 42%, #151a20cc 100%) !important;
+  background: radial-gradient(ellipse at center, transparent 42%, #0f1011cc 100%) !important;
 }
-:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__grid-edge-fade--left { background: linear-gradient(90deg, #151a20, transparent) !important; }
-:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__grid-edge-fade--right { background: linear-gradient(270deg, #151a20, transparent) !important; }
-:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__grid-edge-fade--top { background: linear-gradient(180deg, #151a20, transparent) !important; }
-:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__grid-edge-fade--bottom { background: linear-gradient(0deg, #151a20, transparent) !important; }
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__grid-edge-fade--left { background: linear-gradient(90deg, #0f1011, transparent) !important; }
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__grid-edge-fade--right { background: linear-gradient(270deg, #0f1011, transparent) !important; }
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__grid-edge-fade--top { background: linear-gradient(180deg, #0f1011, transparent) !important; }
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__grid-edge-fade--bottom { background: linear-gradient(0deg, #0f1011, transparent) !important; }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator-grid-bg__ambient {
-  background: linear-gradient(#151a20, #10151b) !important;
+  background: linear-gradient(#0f1011, #141516) !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .casting-create-wizard__scroll-fade {
-  background: linear-gradient(to top, #151a20, #151a20cc 35%, transparent) !important;
+  background: linear-gradient(to top, #0f1011, #0f1011cc 35%, transparent) !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .projects-hub__files {
   background-image: none !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .talent-navigator__filter-backdrop::after {
-  background: #151a20 !important;
+  background: #0f1011 !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
   .talent-navigator__nl-rail,
@@ -510,9 +522,9 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal
   .talent-navigator__nl-rail:focus-within,
   .talent-navigator__focus-card
 ) {
-  background-color: #1e262ee6 !important;
-  border-color: rgb(186 210 224 / 0.28) !important;
-  color: #f4f7f9 !important;
+  background-color: #191a1be6 !important;
+  border-color: rgb(255 255 255 / 0.08) !important;
+  color: #f7f8f8 !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(
@@ -535,7 +547,7 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .studio-spotlight__action,
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .studio-spotlight__action:hover {
-  color: #12161b !important;
+  color: #08090a !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(.size-sheet-paper, .resume-paper) {
@@ -561,89 +573,103 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(button, a, input, textarea, select, [tabindex]):focus-visible,
 html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal-panel :is(button, a, input, textarea, select):focus-visible {
-  outline: 2px solid #5eead4 !important;
+  outline: 2px solid #f7f8f8 !important;
   outline-offset: 3px;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is([class*="text-amber-"], [class*="text-yellow-"]) { color: #f6e0a4 !important; }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is([class*="text-red-"], [class*="text-rose-"]) { color: #ffc7c2 !important; }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is([class*="text-green-"], [class*="text-emerald-"]) { color: #b7f0d0 !important; }
-:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is([class*="text-cyan-"], [class*="text-teal-"]) { color: #5eead4 !important; }
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is([class*="text-cyan-"], [class*="text-teal-"]) { color: #f7f8f8 !important; }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-workspace-tabs__underline,
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-workspace-tabs__badge {
-  background: #5eead4 !important;
+  background: #e5e5e6 !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-workspace-tabs__badge {
-  color: #10221f !important;
+  color: #08090a !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame [role="menu"] {
-  background: #1e262e !important;
-  color: #f4f7f9 !important;
-  border-color: rgb(186 210 224 / 0.2) !important;
+  background: #191a1b !important;
+  color: #f7f8f8 !important;
+  border-color: rgb(255 255 255 / 0.08) !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame [role="menu"] :is(a, button) {
-  color: #f4f7f9 !important;
+  color: #f7f8f8 !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame [role="menu"] :is(a, button):hover {
-  background: #2a343e !important;
+  background: #28282c !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .studio-booking-stats {
-  background: #10151b !important;
-  color: #f4f7f9 !important;
-  border: 1px solid rgb(186 210 224 / 0.16);
+  background: #141516 !important;
+  color: #f7f8f8 !important;
+  border: 1px solid rgb(255 255 255 / 0.08);
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .studio-booking-stats :is(span, p) {
-  color: #b7c3cc !important;
+  color: #8a8f98 !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .studio-booking-stats strong {
-  color: #f4f7f9 !important;
+  color: #f7f8f8 !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .buyer-messages-workspace li[data-active="true"] {
-  background: #2a343e !important;
-  color: #f4f7f9 !important;
+  background: #28282c !important;
+  color: #f7f8f8 !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .studio-conversation-unread {
-  background: #f4f7f9 !important;
-  color: #12161b !important;
+  background: #e5e5e6 !important;
+  color: #08090a !important;
 }
 
 /* Selection pills stay light so they read on the sunken track. */
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-segments [class~="bg-white"],
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-segments button[aria-pressed="true"] > span[aria-hidden],
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-layout-switch button[aria-pressed="true"] {
-  background-color: #f4f7f9 !important;
-  color: #12161b !important;
+  background-color: #e5e5e6 !important;
+  color: #08090a !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-save-bar--dirty {
-  background: #f4f7f9 !important;
-  color: #12161b !important;
+  background: #e5e5e6 !important;
+  color: #08090a !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-save-bar--dirty > span {
-  color: #12161b !important;
+  color: #08090a !important;
 }
 
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-bookings__table th {
-  background: #10151b !important;
-  color: #b7c3cc !important;
+  background: #141516 !important;
+  color: #8a8f98 !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-bookings__table td {
-  border-color: rgb(186 210 224 / 0.12) !important;
-  color: #f4f7f9 !important;
+  border-color: rgb(255 255 255 / 0.05) !important;
+  color: #f7f8f8 !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .buyer-notifications__item {
-  border-color: rgb(186 210 224 / 0.12) !important;
+  border-color: rgb(255 255 255 / 0.05) !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .studio-work-thumbnail {
-  background: #10151b !important;
-  color: #d5dee6 !important;
+  background: #141516 !important;
+  color: #d0d6e0 !important;
 }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .studio-avatars > span {
-  border-color: #1e262e !important;
-  background: #2a343e !important;
-  color: #f4f7f9 !important;
+  border-color: #191a1b !important;
+  background: #28282c !important;
+  color: #f7f8f8 !important;
+}
+
+/* The surround is Linear's near-black. The inset above is the lighter panel. */
+:is(.workspace-shell--industry, .workspace-shell--talent).workspace-shell {
+  --workspace-canvas: #08090a;
+  background: #08090a;
+  color: #f7f8f8;
+}
+
+@media (max-width: 1023px) {
+  :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame {
+    border-radius: 0;
+    border-width: 0;
+  }
 }

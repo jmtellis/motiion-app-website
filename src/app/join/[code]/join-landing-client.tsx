@@ -11,7 +11,7 @@ import { MarketingBodySurface } from "@/components/landing/MarketingBodySurface"
 import { getProfileInitials } from "@/lib/auth/avatar";
 import { MARKETING_DARK } from "@/lib/marketing/dark-theme";
 import { getIosAppStoreUrl } from "@/lib/referrals/app-store";
-import { joinPagePath, joinPageUrl } from "@/lib/referrals/code";
+import { joinPagePath } from "@/lib/referrals/code";
 import type { PublicReferrerProfile } from "@/lib/referrals/resolve-referrer";
 
 type JoinLandingClientProps = {
@@ -80,7 +80,6 @@ function ReferralCodeCard({ code }: { code: string }) {
 export function JoinLandingClient({ code, referrer }: JoinLandingClientProps) {
   const appStoreUrl = getIosAppStoreUrl();
   const analyticsPath = joinPagePath(code);
-  const openInAppHref = joinPageUrl(code);
   const headline = referrer
     ? `${referrer.displayName} invited you to Motiion`
     : "You’re invited to Motiion";
@@ -138,8 +137,8 @@ export function JoinLandingClient({ code, referrer }: JoinLandingClientProps) {
                 <AppleLogo className="h-[1.125rem] w-[1.125rem] shrink-0" />
                 Download on the App Store
               </a>
-              <a href={openInAppHref} className="btn-hero-pill btn-hero-pill-ghost w-full">
-                Open in Motiion
+              <a href="/" className="btn-hero-pill btn-hero-pill-ghost w-full">
+                Continue in Browser
               </a>
             </div>
 

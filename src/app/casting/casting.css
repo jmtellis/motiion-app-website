@@ -870,6 +870,203 @@ html.event-program-page body::-webkit-scrollbar {
   color: rgba(255, 255, 255, 0.92);
 }
 
+.event-program-showcase-location {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.event-program-detail-section {
+  display: grid;
+  gap: 12px;
+}
+
+.event-program-detail-copy {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.82);
+  white-space: pre-wrap;
+}
+
+.event-program-detail-list {
+  margin: 0;
+  display: grid;
+}
+
+.event-program-detail-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.event-program-detail-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.event-program-detail-row:first-child {
+  padding-top: 0;
+}
+
+.event-program-detail-row dt {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.event-program-detail-row dd {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.event-program-detail-sub {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.event-program-host-avatars {
+  display: flex;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.event-program-host-avatars img,
+.event-program-host-avatars span {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 2px solid #111111;
+  margin-left: -8px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.event-program-host-avatars img:first-child,
+.event-program-host-avatars span:first-child {
+  margin-left: 0;
+}
+
+.event-program-host-avatars span {
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.event-program-inline-link {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.event-program-ticket-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.event-program-ticket-provider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.event-program-ticket-logo {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  object-fit: contain;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.event-program-bullet-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.event-program-bullet-list li {
+  position: relative;
+  padding-left: 16px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.event-program-bullet-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.event-program-cta-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.event-program-booking-card {
+  width: 100%;
+  max-width: 400px;
+  max-height: min(88vh, 760px);
+  overflow: auto;
+  padding: 22px;
+  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(24, 24, 24, 0.92);
+  -webkit-backdrop-filter: blur(28px) saturate(1.4);
+  backdrop-filter: blur(28px) saturate(1.4);
+  box-shadow: 0 32px 64px rgb(0 0 0 / 0.45);
+}
+
+.event-program-booking-title {
+  margin: 0 0 16px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+
+.event-program-booking-dismiss {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .event-program-cast-section {
   display: grid;
   gap: 12px;
@@ -1005,6 +1202,12 @@ html.event-program-page body::-webkit-scrollbar {
   text-align: center;
   display: inline-flex;
   justify-content: center;
+}
+
+button.event-program-cta-glass {
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
 }
 
 .event-program-cta-glass {

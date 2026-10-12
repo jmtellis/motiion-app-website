@@ -251,23 +251,6 @@ export function formatActivityWhenLine(activity: PublicActivity): string | null 
   return line;
 }
 
-function formatShortActivityDate(value: string | null | undefined): string | null {
-  const raw = value?.trim();
-  if (!raw) return null;
-  const date = new Date(`${raw.slice(0, 10)}T12:00:00`);
-  if (Number.isNaN(date.getTime())) return raw;
-  return date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-}
-
-/** Readable range under the When & where date, or null when there is no extra span. */
-export function formatActivityThroughLine(activity: PublicActivity): string | null {
-  const start = activity.activityDate?.trim();
-  const end = activity.endDate?.trim();
-  if (!end || !start || end === start) return null;
-  const label = formatShortActivityDate(end);
-  return label ? `Through ${label}` : null;
-}
-
 export function activityRouteKind(sharePath: string): PublicActivity["kind"] | null {
   if (sharePath.startsWith("/class")) return "class";
   if (sharePath.startsWith("/session")) return "session";

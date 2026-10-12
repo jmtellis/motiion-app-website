@@ -3,6 +3,9 @@ import { getIosAppStoreUrl } from "@/lib/referrals/app-store";
 /** Registered iOS custom URL scheme (`CFBundleURLSchemes`) in the Motiion app. */
 export const MOTIION_CUSTOM_SCHEME = "motiion";
 
+/** Web host DeepLinkRouter accepts when the URL arrives via the custom scheme. */
+export const MOTIION_APP_SCHEME_HOST = "www.motiion.app";
+
 const DEFAULT_SITE_URL = "https://www.motiion.app";
 
 export function talentProfileSlug(talent: {
@@ -28,17 +31,21 @@ export function profileWebUrl(slug: string, siteUrl?: string): string {
 }
 
 /**
- * Custom-scheme profile URL that DeepLinkRouter can map onto `/profile/{slug}`.
+ * Custom-scheme profile URL for the shipped iOS DeepLinkRouter.
  *
  * iOS will not honor a Universal Link tapped on the same domain (motiion.app →
- * motiion.app/profile/… stays in Safari). The custom scheme bypasses that.
+ * motiion.app/profile/… stays in Safari). The custom scheme `motiion` is
+ * registered and opens the app.
  *
- * SharedRouting treats the custom-scheme host as the first path component, so
- * `motiion://profile/{slug}` normalizes to the same `/profile/{slug}` route as
- * `https://www.motiion.app/profile/{slug}`.
+ * Foundation parses `motiion://profile/{slug}` as host=`profile` with an empty
+ * path. DeepLinkRouter only accepts Motiion web hosts (`motiion.app` /
+ * `www.motiion.app`), so that form opens the app but does not land on the
+ * profile. Including the web host makes host=`www.motiion.app` and
+ * path=`/profile/{slug}`, which the router maps to the talent profile
+ * (username or UUID).
  */
 export function profileAppSchemeUrl(slug: string): string {
-  return `${MOTIION_CUSTOM_SCHEME}://profile/${encodeURIComponent(slug)}`;
+  return `${MOTIION_CUSTOM_SCHEME}://${MOTIION_APP_SCHEME_HOST}${profileWebPath(slug)}`;
 }
 
 export function isIosUserAgent(userAgent: string): boolean {

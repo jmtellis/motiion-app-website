@@ -22,8 +22,11 @@ describe("motiion profile deep links", () => {
     assert.equal(profileWebPath("alexandra"), "/profile/alexandra");
     assert.equal(profileWebPath("a b"), "/profile/a%20b");
     assert.equal(profileWebUrl("alexandra", "https://www.motiion.app/"), "https://www.motiion.app/profile/alexandra");
-    assert.equal(profileAppSchemeUrl("alexandra"), `${MOTIION_CUSTOM_SCHEME}://profile/alexandra`);
-    assert.equal(profileAppSchemeUrl("a/b"), `${MOTIION_CUSTOM_SCHEME}://profile/a%2Fb`);
+    assert.equal(
+      profileAppSchemeUrl("alexandra"),
+      `${MOTIION_CUSTOM_SCHEME}://www.motiion.app/profile/alexandra`,
+    );
+    assert.equal(profileAppSchemeUrl("a/b"), `${MOTIION_CUSTOM_SCHEME}://www.motiion.app/profile/a%2Fb`);
   });
 
   it("detects iOS and falls back to the App Store there, web profile elsewhere", () => {

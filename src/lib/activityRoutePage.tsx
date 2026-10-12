@@ -71,20 +71,19 @@ export function createActivityRoutePage(pathPrefix: string) {
     }
 
     const sharePath = `${pathPrefix}/${encodeURIComponent(id)}`;
-    const ticketProvider = resolveExternalTicketProvider(activity.externalTicketUrl);
-    const ticketProviderName = ticketProvider?.displayName ?? null;
-    const ticketProviderLogoUrl = ticketProvider?.logoURL ?? null;
 
     if (pathPrefix === "/event" || activity.kind === "event") {
       return (
         <EventShowcasePageClient
           activity={activity}
           sharePath={sharePath.startsWith("/event") ? sharePath : `/event/${encodeURIComponent(id)}`}
-          ticketProviderName={ticketProviderName}
-          ticketProviderLogoUrl={ticketProviderLogoUrl}
         />
       );
     }
+
+    const ticketProvider = resolveExternalTicketProvider(activity.externalTicketUrl);
+    const ticketProviderName = ticketProvider?.displayName ?? null;
+    const ticketProviderLogoUrl = ticketProvider?.logoURL ?? null;
 
     return (
       <ActivityPageClient
@@ -106,18 +105,16 @@ export async function ActivityRoutePage({ params }: PageProps) {
     notFound();
   }
 
-  const ticketProvider = resolveExternalTicketProvider(activity.externalTicketUrl);
-
   if (activity.kind === "event") {
     return (
       <EventShowcasePageClient
         activity={activity}
         sharePath={`/event/${encodeURIComponent(id)}`}
-        ticketProviderName={ticketProvider?.displayName ?? null}
-        ticketProviderLogoUrl={ticketProvider?.logoURL ?? null}
       />
     );
   }
+
+  const ticketProvider = resolveExternalTicketProvider(activity.externalTicketUrl);
 
   return (
     <ActivityPageClient

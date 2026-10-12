@@ -10,6 +10,7 @@
           "/class/*",
           "/session/*",
           "NOT /event/*/program",
+          "NOT /program/*",
           "/event/*",
           "/casting/*",
           "/refer/*",
@@ -31,7 +32,9 @@
       {
         "appID": "9NF3WG298D.com.jaymtellis.Motiion.Clip",
         "paths": [
-          "/shortlist/*"
+          "/shortlist/*",
+          "/event/*/program",
+          "/program/*"
         ]
       }
     ]

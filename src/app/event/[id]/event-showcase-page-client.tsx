@@ -13,7 +13,7 @@ import {
   billedArtistsLine,
   eventHeroEyebrow,
   formatActivityDateTime,
-  formatActivityWhenLine,
+  formatActivityThroughLine,
   formatEventScheduleTime,
   formatMoney,
   formatProgramDateTime,
@@ -53,8 +53,8 @@ export default function EventShowcasePageClient({
   const showFullMetadata = activity.requirePayment;
 
   const analyticsPath = sharePath.startsWith("/") ? sharePath : `/${sharePath}`;
-  const whenLine = formatActivityWhenLine(activity);
   const dateLine = formatActivityDateTime(activity);
+  const throughLine = formatActivityThroughLine(activity);
   const programDate = formatProgramDateTime(activity);
   const location = activity.location?.trim() ?? "";
   const appearance = resolveTalentAppearance(activity);
@@ -165,10 +165,8 @@ export default function EventShowcasePageClient({
                 <dt>Date</dt>
                 <dd>
                   <span>{dateLine}</span>
-                  {whenLine && whenLine !== activity.activityDate ? (
-                    <span className="event-program-detail-sub">{whenLine}</span>
-                  ) : activity.startTime ? (
-                    <span className="event-program-detail-sub">{activity.startTime.slice(0, 5)}</span>
+                  {throughLine ? (
+                    <span className="event-program-detail-sub">{throughLine}</span>
                   ) : null}
                 </dd>
               </div>

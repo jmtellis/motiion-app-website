@@ -340,6 +340,9 @@ export async function completeTalentBuyerOnboarding(
     return { ok: false, error: "You must be signed in to finish onboarding." };
   }
 
+  const approval = await supabase.rpc("has_industry_approval");
+  if (approval.error || approval.data !== true) return { ok: false, error: "Your industry application must be approved before setting up your workspace." };
+
   const completedAt = new Date().toISOString();
   const contactEmail = data.contactEmail.trim().toLowerCase();
   const fullName = data.fullName.trim();

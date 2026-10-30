@@ -19,7 +19,8 @@
           "/featured-invite/*",
           "/shortlist/*",
           "/t/*",
-          "/u/*"
+          "/u/*",
+          "/industry/approved"
         ]
       }
     ]

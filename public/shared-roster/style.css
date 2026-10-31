@@ -217,3 +217,8 @@ html.modal-scroll-locked{overflow:hidden;overscroll-behavior:none}html.modal-scr
 #profile:focus,#profile:focus-visible,#media-view:focus,#media-view:focus-visible{outline:none}
 html:not(.keyboard-focus) #profile :focus,html:not(.keyboard-focus) #media-view :focus{outline:none!important}
 html.keyboard-focus #profile :focus-visible,html.keyboard-focus #media-view :focus-visible{outline:2px solid #738b62;outline-offset:3px}
+
+/* Instagram is the only card social, centered beside the name and location. */
+.card-meta>.socials,#grid.list-view .card-meta>.socials{margin:0;align-self:center}
+.card-meta>.socials a,#grid.list-view .card-meta>.socials a{width:36px;height:44px;color:#535b4d}
+.card-meta>.socials svg{width:20px;height:20px}

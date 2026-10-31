@@ -53,10 +53,11 @@ $('close').onclick=()=>$('profile').close();$('profile').onclick=e=>{if(e.target
 
 
 function disposeRoster(){disposeGallery();disposeGallery=()=>{};}
-function socialLinks(p){
+function socialLinks(p,instagramOnly=false){
  const links=document.createElement('div');links.className='socials';
  const icons={Instagram:'<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".7" fill="currentColor" stroke="none"/>',YouTube:'<rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3Z"/>'};
  for(const [label,value] of [['Instagram',p.instagram_url],['YouTube',p.youtube_url]]){
+  if(instagramOnly&&label!=='Instagram')continue;
   if(!value)continue;let url;try{url=new URL(value);}catch{continue;}if(!['https:','http:'].includes(url.protocol))continue;
   const a=document.createElement('a');a.href=url.href;a.target='_blank';a.rel='noopener noreferrer';a.setAttribute('aria-label',label+' — '+(p.full_name||'Profile'));a.title=label;
   // Only fixed, authored icon markup enters innerHTML. Profile data uses textContent.
@@ -71,8 +72,8 @@ function rosterCard(p,index){
  button.append(photo(p),text('span',String(index+1).padStart(2,'0'),'portrait-number'));button.onclick=()=>openProfile(p);
  const meta=document.createElement('div');meta.className='card-meta';
  const name=document.createElement('button');name.className='name-button';name.append(text('h2',p.full_name||'Talent'));name.onclick=()=>openProfile(p);
- const summary=document.createElement('div');summary.append(name,text('p',[p.location,p.height].filter(Boolean).join(' / ')));
- summary.append(socialLinks(p));const action=text('button','','list-profile-action');action.setAttribute('aria-label','View '+(p.full_name||'profile'));action.append(arrowIcon('inline-arrow'));action.onclick=()=>openProfile(p);meta.append(summary,action);article.append(button,meta);return article;
+ const summary=document.createElement('div');summary.append(name,text('p',p.location||''));
+ meta.append(summary,socialLinks(p,true));article.append(button,meta);return article;
 }
 function renderRoster(profiles){
  rosterProfiles=profiles;

@@ -1,13 +1,19 @@
 /* eslint-disable @next/next/no-img-element -- Admin preview displays stored external headshot URLs. */
 import Link from "next/link";
+import { AccountDetail } from "./AccountDetail";
+import { PersonAvatar } from "./PersonAvatar";
+import { industryReviewProfile } from "@/lib/admin-dashboard/industry-review";
+import { personImageCandidates } from "@/lib/admin-dashboard/avatar";
 import { sortDirectory, directoryState } from "@/lib/admin-dashboard/directory";
 import { buildTrend, type TrendKind } from "@/lib/admin-dashboard/trends";
 import { TrendChart } from "./TrendChart";
+import { TrendSelector } from "./TrendSelector";
+import { BusinessScorecard } from "./BusinessScorecard";
+import { recordedMoney } from "@/lib/admin-dashboard/finance";
 import { ArrowUpRight, ArrowRight, Clock3 } from "lucide-react";
 import {
   activityActive,
   castingOpen,
-  currencyTotals,
   goalLabels,
   inPeriod,
   isIndustry,
@@ -90,20 +96,16 @@ function Person({
   p,
   href,
   subtitle,
+  industry,
 }: {
   p: Row;
   href: string;
   subtitle?: string;
+  industry?: boolean;
 }) {
   return (
     <Link className="launch-person" href={href}>
-      <span className="launch-person-icon">
-        {name(p)
-          .split(" ")
-          .map((w) => w[0])
-          .slice(0, 2)
-          .join("")}
-      </span>
+      <PersonAvatar key={text(p.user_id)} urls={personImageCandidates(p, industry)} name={name(p)} />
       <span>
         {name(p)}
         <small>
@@ -204,8 +206,8 @@ export function Dashboard({
       : null;
   const titles: Record<Section, [string, string]> = {
     overview: [
-      "Ready for the next chapter.",
-      "Your launch priorities, people, and platform at a glance.",
+      "Motiion at a glance.",
+      "Growth, pending reviews, and the business today.",
     ],
     talent: [
       "The talent behind Motiion.",
@@ -228,8 +230,8 @@ export function Dashboard({
       "One inbox for industry applications and submitted talent profiles.",
     ],
     goals: [
-      "Make launch readiness tangible.",
-      "Set shared targets. Assign an owner. Record your progress.",
+      "Business KPI scorecard.",
+      "Current priorities, documented targets, and measurement coverage.",
     ],
   };
   const linkTitle = (
@@ -246,46 +248,10 @@ export function Dashboard({
       {link && <Link href={link}>{label} →</Link>}
     </div>
   );
-  const goalRows = (
-    <>
-      {Object.entries(goalLabels)
-        .slice(0, 4)
-        .map(([key, label]) => {
-          const g = goals.find((g) => g.metric_key === key);
-          const target = number(g?.target);
-          const p =
-            target === null
-              ? null
-              : progress(values[key], target, key === "review_backlog");
-          return (
-            <div className="launch-goal-row" key={key}>
-              <p>{label}</p>
-              <p>
-                {fmt(values[key])}
-                <small>
-                  {" "}
-                  {target === null ? "· target not set" : `/ ${fmt(target)}`}
-                </small>
-              </p>
-              <div
-                className="launch-track"
-                role={p === null ? undefined : "progressbar"}
-                aria-label={label}
-                aria-valuenow={p ?? undefined}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              >
-                <span style={{ width: `${p ?? 0}%` }} />
-              </div>
-            </div>
-          );
-        })}
-    </>
-  );
   const profilePreview = (p: Row) => (
     <>
       <div className="launch-inline">
-        <Person p={p} href={personHref(p)} />
+        <Person industry={view === "industry" ? true : view === "talent" ? false : undefined} p={p} href={personHref(p)} />
         <Pill value={p.profile_review_status} />
         {text(p.username) && (
           <a
@@ -464,6 +430,7 @@ export function Dashboard({
                               </td>
                               <td>
                                 <Person
+                                  industry={view === "industry" ? true : view === "talent" ? false : undefined}
                                   p={p}
                                   href={personHref(p)}
                                   subtitle={company(p)}
@@ -497,7 +464,7 @@ export function Dashboard({
     return (
       <section className="launch-card">
         {linkTitle(
-          "People making things happen",
+          "Momentum & community",
           `Top creators by category · created in last ${data.days} days`,
         )}
         {(["Projects", "Classes", "Sessions", "Castings"] as const).map(
@@ -542,6 +509,7 @@ export function Dashboard({
                     .map(([id, n]) => (
                       <div className="launch-review-line" key={id}>
                         <Person
+                          industry={view === "industry" ? true : view === "talent" ? false : undefined}
                           p={profile(id)}
                           href={personHref(profile(id))}
                           subtitle={company(profile(id))}
@@ -646,6 +614,7 @@ export function Dashboard({
                     <tr key={text(p.user_id)}>
                       <td>
                         <Person
+                          industry={view === "industry" ? true : view === "talent" ? false : undefined}
                           p={p}
                           href={href(kind, {
                             ...directoryState(params),
@@ -710,168 +679,6 @@ export function Dashboard({
             )}
           </nav>
         </section>
-      </>
-    );
-  }
-  function detail(p: Row, kind: "talent" | "industry") {
-    const events = rows("analytics_events")
-      .filter((e) => e.user_id === p.user_id && period(e))
-      .sort((a, b) => text(b.created_at).localeCompare(text(a.created_at)));
-    const imports = rows("resume_parse_runs").filter(
-      (r) => r.user_id === p.user_id,
-    );
-    const latest = imports.sort((a, b) =>
-      text(b.created_at).localeCompare(text(a.created_at)),
-    )[0];
-    const a = app(text(p.user_id));
-    const myLists = rows("talent_lists").filter((r) => owner(r) === p.user_id);
-    const favorites = new Set(
-      myLists.filter((r) => r.kind === "favorites").map((r) => r.id),
-    );
-    return (
-      <>
-        <dl className="launch-detail-grid">
-          <div>
-            <dt>Resume import</dt>
-            <dd>
-              {!ok("resume_parse_runs")
-                ? "Unavailable"
-                : latest
-                  ? `${latest.error ? "Import reported an error" : "Import run recorded"} · ${date(latest.created_at)}`
-                  : "No recorded import run"}
-            </dd>
-          </div>
-          <div>
-            <dt>Identity verification</dt>
-            <dd>{text(p.identity_verification_status) || "Not recorded"}</dd>
-          </div>
-          <div>
-            <dt>Stripe connection</dt>
-            <dd>
-              {p.stripe_connect_account_id
-                ? "Account linked; payout readiness not inferred"
-                : "No linked account recorded"}
-            </dd>
-          </div>
-          {kind === "industry" && (
-            <>
-              <div>
-                <dt>Company affiliation</dt>
-                <dd>{company(p)}</dd>
-              </div>
-              <div>
-                <dt>Application</dt>
-                <dd>
-                  <Pill
-                    value={
-                      ok("industry_applications") ? a?.status : "Unavailable"
-                    }
-                  />
-                  {a && (
-                    <p>
-                      {text(a.professional_role)} · {text(a.hiring_projects)}
-                    </p>
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt>Saved dancers</dt>
-                <dd>
-                  {fmt(
-                    ok("talent_lists", "talent_list_members")
-                      ? rows("talent_list_members").filter((r) =>
-                          favorites.has(r.list_id),
-                        ).length
-                      : null,
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt>Saved search filters</dt>
-                <dd>
-                  {ok("saved_searches")
-                    ? rows("saved_searches")
-                        .filter((r) => owner(r) === p.user_id)
-                        .map((r) => (
-                          <details key={text(r.id)}>
-                            <summary>
-                              {text(r.label) || text(r.name) || "Saved search"}
-                            </summary>
-                            <pre
-                              style={{ whiteSpace: "pre-wrap", fontSize: 11 }}
-                            >
-                              {JSON.stringify(
-                                r.filters ?? r.criteria ?? {},
-                                null,
-                                2,
-                              )}
-                            </pre>
-                          </details>
-                        ))
-                    : "Unavailable"}
-                  <small className="launch-note">
-                    {" "}
-                    Saved filters are not executed-search counts.
-                  </small>
-                </dd>
-              </div>
-            </>
-          )}
-        </dl>
-        {kind === "industry" && (
-          <>
-            <div className="launch-section-title">
-              <h2>Projects & castings</h2>
-            </div>
-            {!ok("projects", "castings") ? (
-              <Empty>Project source unavailable.</Empty>
-            ) : (
-              rows("projects")
-                .filter((r) => owner(r) === p.user_id)
-                .map((r) => (
-                  <div className="launch-review-line" key={text(r.id)}>
-                    <span>{text(r.title)}</span>
-                    <strong>
-                      {
-                        rows("castings").filter((c) => c.project_id === r.id)
-                          .length
-                      }{" "}
-                      castings · {projectActive(r, now) ? "active" : "inactive"}
-                    </strong>
-                  </div>
-                ))
-            )}
-          </>
-        )}
-        <div className="launch-section-title">
-          <h2>Recorded activity</h2>
-          <span>Last {data.days} days · latest 30</span>
-        </div>
-        {!ok("analytics_events") ? (
-          <Empty>Activity source unavailable.</Empty>
-        ) : events.length === 0 ? (
-          <Empty>No recorded activity in this period.</Empty>
-        ) : (
-          <ul className="launch-activity-list">
-            {events.slice(0, 30).map((e, i) => (
-              <li key={text(e.id) || i}>
-                <span>
-                  {text(e.event_name).replaceAll("_", " ")}
-                  {text(e.platform) && (
-                    <small className="launch-note"> · {text(e.platform)}</small>
-                  )}
-                </span>
-                <time>{date(e.created_at)}</time>
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="launch-note">
-          Portfolio counts are current stored assets. Playback, headshot
-          selection, and executed dancer-search filters are not consistently
-          instrumented; no usage rate is inferred. Readiness is the five-item
-          operational checklist above, separate from approval.
-        </p>
       </>
     );
   }
@@ -1125,21 +932,7 @@ export function Dashboard({
       const k = `${text(r.provider) || text(r.billing_source) || "Unknown provider"} / ${text(r.app_store_product_id) || text(r.tier) || "Unknown plan"}`;
       groups.set(k, (groups.get(k) ?? 0) + 1);
     });
-    function money(
-      source: string,
-      field: string,
-      predicate: (r: Row) => boolean,
-    ) {
-      if (!ok(source)) return "Unavailable";
-      const selected = rows(source).filter(predicate);
-      if (!selected.length) return "No recorded charges";
-      const totals = currencyTotals(selected, field);
-      return totals
-        ? Object.entries(totals)
-            .map(([currency, cents]) => `${currency} ${fmt(cents / 100)}`)
-            .join(" · ")
-        : "Amount or currency coverage incomplete";
-    }
+    const money = (source: string, field: string, predicate: (r: Row) => boolean) => recordedMoney(s, source, field, predicate);
     return (
       <>
         <div className="launch-grid four">
@@ -1456,20 +1249,11 @@ export function Dashboard({
                     Submitted {date(a.submitted_at)} · version{" "}
                     {String(a.version)}
                   </p>
-                  {data.preview ? (
-                    <>
-                      <p>
-                        {text(a.professional_role)} · {text(a.hiring_projects)}
-                      </p>
-                      <button className="launch-button secondary" disabled>
-                        Preview · decisions disabled
-                      </button>
-                    </>
-                  ) : (
-                    <IndustryApplicationReview
-                      application={a as unknown as IndustryApplication}
-                    />
-                  )}
+                  <IndustryApplicationReview
+                    application={a as unknown as IndustryApplication}
+                    profile={industryReviewProfile(text(a.user_id), s.profiles)}
+                    disabled={data.preview}
+                  />
                 </details>
               ))
             )}
@@ -1487,6 +1271,10 @@ export function Dashboard({
   function goalView() {
     return (
       <>
+        <BusinessScorecard sources={s} />
+        <details className="launch-saved-goals">
+          <summary>Staff operational targets & history</summary>
+          <p className="launch-note">Your saved readiness targets remain editable here. These are separate from the documented company KPI scorecard.</p>
         {!ok("admin_launch_goals") && (
           <div className="launch-notice">
             Goal persistence is unavailable. Apply the reviewed local dashboard
@@ -1572,6 +1360,7 @@ export function Dashboard({
           Progress observations are explicitly recorded by staff, not an
           automatic daily time series. No legacy targets are prefilled.
         </p>
+        </details>
         <section className="launch-card">
           {linkTitle(
             "Analytics exclusions",
@@ -1600,33 +1389,16 @@ export function Dashboard({
     const kind = view === "industry" ? "industry" : "talent";
     const back = href(kind,directoryState(params));
     if (!p) return <><Link className="launch-link" href={back}>← Back to {kind} directory</Link><h1>Account unavailable</h1><Empty>This account could not be loaded, does not exist, or is excluded from this dashboard.</Empty></>;
-    const headshot=list(p.headshot_urls).map(safeUrl).find(Boolean);
-    const request=rows("profile_review_requests").filter(r=>r.user_id===p.user_id && r.status==="pending").sort((a,b)=>text(b.submitted_at).localeCompare(text(a.submitted_at)))[0];
-    const application=app(text(p.user_id));
-    const myEvents=rows("analytics_events").filter(e=>e.user_id===p.user_id && period(e));
-    return <div className="launch-user-detail">
-      <Link className="launch-link" href={back}>← Back to {kind} directory</Link>
-      <header className="launch-user-hero">
-        {headshot ? <img src={headshot} alt={`${name(p)} headshot`} /> : <div className="launch-user-placeholder" aria-label="No headshot recorded">{name(p).split(" ").map(w=>w[0]).slice(0,2).join("")}</div>}
-        <div><div className="launch-eyebrow">MOTIION / ACCOUNT DETAIL</div><h1>{name(p)}</h1><p>{text(p.email)||"Email not recorded"}</p><div className="launch-checks"><Pill value={p.account_type}/>{isTalent(p)&&<Pill value="Talent access"/>}{isIndustry(p)&&<Pill value="Industry access"/>}<Pill value={p.profile_review_status}/></div><p className="launch-note">Joined {date(p.created_at)}{isIndustry(p)?` · ${company(p)}`:""}</p></div>
-      </header>
-      <section className="launch-card launch-acquisition"><h2>How they heard about Motiion</h2><p>{text(p.acquisition_source).replaceAll("_"," ")||"Not recorded"}</p><p className="launch-note">{text(p.acquisition_source_detail)||"No additional source detail recorded."}</p></section>
-      <section className="launch-card"><h2>Portfolio & readiness</h2>{profilePreview(p)}{!list(p.headshot_urls).length&&<Empty>No headshots recorded.</Empty>}{!list(p.profile_visuals).length&&<p className="launch-note">No profile videos recorded.</p>}{!safeUrl(p.resume_url)&&<p className="launch-note">No resume file recorded.</p>}</section>
-      <section className="launch-card"><h2>Account context & activity</h2><p className="launch-note">Last {data.days} days · {date(data.since)} – {date(data.fetchedAt)} · UTC</p><div className="launch-detail-summary"><Stat label="Meaningful events" value={ok("analytics_events")?myEvents.filter(e=>meaningfulEvents.includes(text(e.event_name))).length:null} hint="Observed registrations, RSVPs, submissions, saves, booking requests and messages"/><Stat label="Recorded events" value={ok("analytics_events")?myEvents.length:null} hint="Selected period; telemetry may be incomplete"/></div>{detail(p,isIndustry(p)?"industry":"talent")}</section>
-      <section className="launch-card"><h2>Created projects, opportunities & rosters</h2>{["projects","activities","castings","talent_lists"].map(key=>{
-        const owned=rows(key).filter(r=>(owner(r)===p.user_id || (key==="castings" && rows("projects").some(project=>project.id===r.project_id && owner(project)===p.user_id))) && (key!=="talent_lists"||r.kind!=="favorites"));
-        return <div key={key}><h3>{key==="talent_lists"?"Rosters":key.replaceAll("_"," ")}</h3>{!ok(key)?<Empty>Source unavailable.</Empty>:owned.length?owned.map((r,i)=><div className="launch-review-line" key={text(r.id)||i}><span>{text(r.title)||text(r.name)||"Untitled record"}</span><span>{text(r.status)||"Status not recorded"} · {date(r.created_at)}</span></div>):<p className="launch-note">No recorded {key==="talent_lists"?"rosters":key}.</p>}</div>;
-      })}</section>
-      <section className="launch-card"><h2>Review actions</h2>{p.profile_review_status==="pending" ? request ? <TalentReview userId={text(p.user_id)} requestId={text(request.id)} disabled={data.preview}/> : <Empty>Pending request details unavailable; no decision can be submitted.</Empty> : <p className="launch-note">No pending talent review.</p>}{application?.status==="pending" ? data.preview ? <button className="launch-button secondary" disabled>Preview · industry decisions disabled</button> : <IndustryApplicationReview application={application as unknown as IndustryApplication}/> : <p className="launch-note">No pending industry application.</p>}</section>
-    </div>;
+    return <AccountDetail data={data} person={p} industry={kind === "industry"} backHref={back} company={company(p)}/>;
   }
+
   return (
     <>
       <div className="launch-heading">
         <div>
           <div className="launch-eyebrow">
             MOTIION /{" "}
-            {view === "overview" ? "LAUNCH READINESS" : view.toUpperCase()}
+            {view.toUpperCase()}
           </div>
           <h1>{titles[view][0]}</h1>
           <p>{titles[view][1]}</p>
@@ -1653,24 +1425,12 @@ export function Dashboard({
       )}
       {view === "overview" && (
         <>
-          <div className="launch-grid two">
+          <div className="launch-grid two launch-overview-top">
+            <TrendSelector trends={(["profiles", "activity", "projects", "opportunities", "rosters"] as TrendKind[]).map(kind => buildTrend(s, kind, data.days, data.fetchedAt))} />
             <section className="launch-card">
               {linkTitle(
-                "Launch readiness",
-                "The foundations of a healthy launch",
-                href("goals"),
-                "Manage goals",
-              )}
-              {goalRows}
-              <p className="launch-note">
-                Operational readiness, not a single blended score. Set
-                team-approved targets to measure progress.
-              </p>
-            </section>
-            <section className="launch-card">
-              {linkTitle(
-                "A little attention goes a long way",
-                "Your review inbox",
+                "Pending reviews",
+                "Profiles and applications awaiting a decision",
               )}
               <div className="launch-review-count">
                 {fmt(values.review_backlog)}{" "}
@@ -1703,14 +1463,16 @@ export function Dashboard({
               </Link>
             </section>
           </div>
-          <div className="launch-section-title launch-trends-heading"><h2>Trends over time</h2><span>Last {data.days} days · compared with preceding {data.days} days</span></div>
-          {trends()}
           {inventory()}
-          <div className="launch-section-title">
-            <h2>Momentum & community</h2>
-            <span>Selected period</span>
-          </div>
-          <div className="launch-grid two">
+          <div className="launch-grid two launch-overview-bottom">
+            <section className="launch-card">
+              {linkTitle("Financial summary", `Last ${data.days} days · recorded currencies`, href("revenue"), "View finances")}
+              <div className="launch-finance-line"><span>Recurring revenue / MRR</span><strong>Unavailable</strong><p>Verified billed amounts and intervals are missing. No list-price estimate is treated as income.</p></div>
+              <div className="launch-finance-line"><span>Identity verification charges</span><strong>{recordedMoney(s,"identity_verification_fee_payments","amount_cents",r=>period(r)&&r.status==="succeeded")}</strong><p>Recorded customer charges; costs and refunds are separate.</p></div>
+              <div className="launch-finance-line"><span>Booking charge volume</span><strong>{recordedMoney(s,"booking_deal_memos","charge_amount_cents",r=>period(r,"paid_at"))}</strong><p>Includes money owed to talent; not all platform income.</p></div>
+              <div className="launch-finance-line"><span>Contractual booking fees</span><strong>{recordedMoney(s,"booking_deal_memos","platform_fee_cents",r=>period(r,"paid_at"))}</strong><p>Before processing and refunds; included in charge volume, not additive.</p></div>
+              <div className="launch-finance-line"><span>Ticket / class passthrough</span><strong>Amounts unavailable</strong><p>Checkout counts do not establish settled proceeds. Retained income requires reconciliation.</p></div>
+            </section>
             {creators()}
           </div>
         </>

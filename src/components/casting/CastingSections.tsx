@@ -77,7 +77,8 @@ export function RoleDetailPanel({ role }: { role: PublicCastingRole }) {
 
       <h2 className="casting-section-title">Requirements</h2>
       <dl className="casting-requirements">
-        <RequirementRow label="Age Range" value={role.ageRangeText} />
+        {role.hasAgeRequirement !== false ? <RequirementRow label="Age Range" value={role.ageRangeText} /> : null}
+        {role.talentPaysTravel ? <RequirementRow label="Travel" value="Talent pays their own travel" /> : null}
         {role.gender?.trim() ? <RequirementRow label="Gender" value={role.gender.trim()} /> : null}
         {role.ethnicityPreferences.length > 0 ? (
           <RequirementRow label="Ethnicity" value={role.ethnicityPreferences.join(", ")} />

@@ -217,6 +217,8 @@ export type PublicCastingScheduleGroup = {
 };
 
 export type PublicCastingRole = {
+  talentPaysTravel?: boolean;
+  hasAgeRequirement?: boolean;
   id: string;
   title: string;
   description: string | null;

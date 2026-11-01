@@ -41,7 +41,7 @@ export async function fetchSignedInCasting(roleId: string): Promise<SignedInCast
       .maybeSingle(),
     supabase
       .from("roles")
-      .select("id, title, description, cover_image_url, is_active, is_casting_finalized, final_select_ids, age_range_min, age_range_max, gender, ethnicity_preferences, special_skills, height_min, height_max, union_status, people_needed, agency_required, casting:castings(submission_deadline)")
+      .select("id, title, description, cover_image_url, is_active, is_casting_finalized, final_select_ids, age_range_min, age_range_max, talent_pays_travel, submission_limit, submission_deadline, submissions(count), gender, ethnicity_preferences, special_skills, height_min, height_max, union_status, people_needed, agency_required, casting:castings(submission_deadline)")
       .eq("project_id", lead.project_id)
       .order("created_at", { ascending: true }),
   ]);
@@ -117,7 +117,11 @@ function mapRole(role: Record<string, unknown>, deadline: string | null, externa
   const max = numberOr(role.age_range_max, 65);
   const active = role.is_active !== false;
   const finalized = role.is_casting_finalized === true;
-  const deadlinePassed = Boolean(deadline) && new Date(deadline ?? "").getTime() < Date.now();
+  const roleDeadline = text(role.submission_deadline) ?? deadline;
+  const deadlinePassed = Boolean(roleDeadline) && new Date(roleDeadline ?? "").getTime() < Date.now();
+  const limit = numberOr(role.submission_limit, 0);
+  const count = numberOr(one(role.submissions)?.count, 0);
+  const capped = limit > 0 && count >= limit;
   return {
     id: text(role.id) ?? "",
     title: text(role.title) ?? "Role",
@@ -128,13 +132,15 @@ function mapRole(role: Record<string, unknown>, deadline: string | null, externa
     ageRangeMin: min,
     ageRangeMax: max,
     ageRangeText: `${min}-${max}`,
+    hasAgeRequirement: role.age_range_min != null || role.age_range_max != null,
+    talentPaysTravel: role.talent_pays_travel === true,
     gender: text(role.gender),
     ethnicityPreferences: stringList(role.ethnicity_preferences),
     specialSkills: stringList(role.special_skills),
     heightRangeText: heightRange(text(role.height_min), text(role.height_max)),
     unionStatus: text(role.union_status),
     peopleNeeded: numberOr(role.people_needed, 1),
-    eligibleForSubmission: active && !finalized && !deadlinePassed && !externalSubmissionURL,
+    eligibleForSubmission: active && !finalized && !deadlinePassed && !capped && !externalSubmissionURL,
   };
 }
 

@@ -8,15 +8,21 @@ import { fetchPublicCasting } from "@/lib/publicCasting";
 
 type PageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ role?: string }>;
 };
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const casting = await fetchPublicCasting(id);
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.motiion.app").replace(/\/$/, "");
   const castingUrl = `${siteUrl}/casting/${encodeURIComponent(id)}`;
 
-  const title = casting ? `${casting.title} · Motiion` : "Casting on Motiion";
+  const { role } = await searchParams;
+  const selectedRole = casting?.roles.find((item) => item.id === (role ?? casting.selectedRoleId));
+  const title = casting
+    ? `Casting for ${casting.title}${selectedRole ? ` — ${selectedRole.title}` : ""} · Motiion`
+    : "Casting on Motiion";
+  const previewImage = casting?.coverImageURL || `${siteUrl}/casting-share-fallback.png`;
   const description = casting
     ? `${casting.production ? `${casting.production} — ` : ""}View this casting on Motiion and submit in the app.`
     : "View this casting on Motiion.";
@@ -28,25 +34,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title,
       description,
-      url: castingUrl,
+      url: selectedRole ? `${castingUrl}?role=${encodeURIComponent(selectedRole.id)}` : castingUrl,
       siteName: "Motiion",
       type: "website",
-      ...(casting?.coverImageURL
-        ? {
-            images: [
-              {
-                url: casting.coverImageURL,
-                alt: casting.title,
-              },
-            ],
-          }
-        : {}),
+      images: [{ url: previewImage, alt: title }],
     },
     twitter: {
-      card: casting?.coverImageURL ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title,
       description,
-      ...(casting?.coverImageURL ? { images: [casting.coverImageURL] } : {}),
+      images: [previewImage],
     },
   };
 }

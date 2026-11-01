@@ -1,6 +1,6 @@
 # Industry Free / Pro rollout
 
-Production backend deployed November 1, 2026: migration `20261101182153` and `openai-chat` version 9 on `pygdxcscmebeqjxhzzuq`. Website release is in progress. No App Store or TestFlight binary has been distributed. Existing configured prices and Talent offers are unchanged. Industry entitlement uses the existing authoritative `effective_choreographer_plan_tier`; Dual Pro continues to grant Industry access.
+Production backend deployed November 1, 2026: migration `20261101182153` and `openai-chat` version 9 on `pygdxcscmebeqjxhzzuq`. Website commit `7ff094c` is live at https://www.motiion.app (Vercel `dpl_5Bx45NKaiuZ5r7xmJGRu5NFiMNvy`, READY). No App Store or TestFlight binary has been distributed. Existing configured prices and Talent offers are unchanged. Industry entitlement uses the existing authoritative `effective_choreographer_plan_tier`; Dual Pro continues to grant Industry access.
 
 ## Rules
 
@@ -51,3 +51,13 @@ Group entitlement follows the project owner; existing authorization checks remai
 - Website: TypeScript source/full checks and focused lint. Stale generated Next development route validation can be regenerated/removed without changing application source.
 
 The linked project's relevant schema and roster indexes/types were inspected read-only to confirm compatibility. Production database RPC presence and unauthenticated denial were verified. The eight legacy shortlist shares whose owners no longer exist are excluded from account-history backfill; their content is preserved.
+
+## Production verification — November 1, 2026
+
+- Main migration `20261101182153` and follow-up indexes `20261101182322` applied successfully. Local migration filenames match the production ledger. The initial attempt rolled back on orphaned share owners; the corrected backfill leaves their content untouched.
+- `openai-chat` v9 is ACTIVE. All deployed source files match the release bundle; the existing authentication configuration is preserved. Anonymous Industry voice requests return HTTP 401.
+- Production Free-account checks deny voice, roster sharing, and groups. Private tables have RLS and no authenticated schema access; voice entitlement execution is service-role-only. No persistent smoke-test data was created.
+- Disposable PostgreSQL regression and concurrent publish/review tests passed after the backfill fix. Isolated production-branch website TypeScript and focused ESLint passed, followed by Vercel's successful production build. Live `/pricing?audience=casting` contains the new casting, roster, review, and voice offerings.
+- Security advisor additions are the intentional private-table/no-policy notices and four authenticated, authorization-checked SECURITY DEFINER RPCs. See https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy and https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable . Two new missing-FK-index notices were fixed by the follow-up migration. Existing unrelated advisories were not changed.
+- Website rollback target: `https://motiion-app-website-qlfqwro8o-motiion.vercel.app` (`dpl_8B3nknTrwRV5krE8KauAaXu8cZnN`). Preserve quota/history tables on any frontend rollback.
+- Native client remains local source with passing simulator build/tests. The only repository CI workflow uploads simulator builds to Revyl. Available keychain identities are Apple Development; no Apple Distribution identity or App Store Connect API key files were found. Native distribution requires configured distribution signing and App Store Connect upload access; no TestFlight/App Store release is claimed.

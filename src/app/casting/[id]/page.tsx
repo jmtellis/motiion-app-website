@@ -22,7 +22,7 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   const title = casting
     ? `Casting for ${casting.title}${selectedRole ? ` — ${selectedRole.title}` : ""} · Motiion`
     : "Casting on Motiion";
-  const previewImage = casting?.coverImageURL || `${siteUrl}/casting-share-fallback.png`;
+  const previewImage = casting?.coverImageURL || `${siteUrl}/casting-share-logo-v2.png`;
   const description = casting
     ? `${casting.production ? `${casting.production} — ` : ""}View this casting on Motiion and submit in the app.`
     : "View this casting on Motiion.";

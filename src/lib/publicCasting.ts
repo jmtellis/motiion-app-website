@@ -1,16 +1,16 @@
-import { callSupabaseFunction } from "@/lib/supabaseRest";
+import { callSupabaseFunction, callSupabaseFunctionAsUser } from "@/lib/supabaseRest";
 import type { PublicCasting } from "@/types/public";
 
 type CastingResponse = { casting: PublicCasting };
 
-export async function fetchPublicCasting(id: string): Promise<PublicCasting | null> {
+export async function fetchPublicCasting(id: string, accessToken?: string): Promise<PublicCasting | null> {
   const trimmed = decodeURIComponent(id).trim();
   if (!trimmed) return null;
 
   try {
-    const data = await callSupabaseFunction<CastingResponse>("public-casting-detail", {
-      roleId: trimmed,
-    });
+    const data = accessToken
+      ? await callSupabaseFunctionAsUser<CastingResponse>("public-casting-detail", { roleId: trimmed }, accessToken)
+      : await callSupabaseFunction<CastingResponse>("public-casting-detail", { roleId: trimmed });
     return data.casting ?? null;
   } catch {
     return null;

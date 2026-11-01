@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 import { getCastingAccess } from "@/app/casting/[id]/access";
 import CastingPageClient from "@/app/casting/[id]/casting-page-client";
@@ -13,11 +13,11 @@ type PageProps = {
 
 export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const casting = await fetchPublicCasting(id);
+  const { role } = await searchParams;
+  const casting = await fetchPublicCasting(role ?? id);
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.motiion.app").replace(/\/$/, "");
   const castingUrl = `${siteUrl}/casting/${encodeURIComponent(id)}`;
 
-  const { role } = await searchParams;
   const selectedRole = casting?.roles.find((item) => item.id === (role ?? casting.selectedRoleId));
   const title = casting
     ? `Casting for ${casting.title}${selectedRole ? ` — ${selectedRole.title}` : ""} · Motiion`
@@ -31,6 +31,7 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
     title,
     description,
     metadataBase: new URL(siteUrl),
+    robots: { index: false, follow: false },
     openGraph: {
       title,
       description,
@@ -48,16 +49,24 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   };
 }
 
-export default async function CastingPage({ params }: PageProps) {
+export default async function CastingPage({ params, searchParams }: PageProps) {
   const { id } = await params;
-  const [casting, access] = await Promise.all([fetchPublicCasting(id), getCastingAccess(id)]);
+  const { role } = await searchParams;
+  const lookupId = role ?? id;
+  const client = await createServerSupabaseClient();
+  const session = client ? await client.auth.getSession() : null;
+  const [casting, access] = await Promise.all([fetchPublicCasting(lookupId, session?.data.session?.access_token), getCastingAccess(lookupId)]);
 
   if (!casting) {
-    notFound();
+    return <main className="mx-auto max-w-md px-6 py-24 text-center">
+      <h1 className="text-2xl font-semibold">Casting unavailable</h1>
+      <p className="mt-4">This role may require an invitation. Sign in with the account that received it, or ask the organizer for access.</p>
+      <a className="mt-6 inline-block underline" href={`/login?next=${encodeURIComponent(`/casting/${lookupId}`)}`}>Sign in</a>
+    </main>;
   }
 
   if (access.requiresPassword && !access.unlocked) {
-    return <CastingPasswordGate roleId={id} title={casting.title} />;
+    return <CastingPasswordGate roleId={lookupId} title={casting.title} />;
   }
 
   return <CastingPageClient casting={casting} />;

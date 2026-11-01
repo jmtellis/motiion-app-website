@@ -365,13 +365,22 @@ const form = { ...parsed.data, projectId };
     return { ok: false, error: "Project not found." };
   }
 
+  let pendingPublish = true;
+  if (form.castingId) {
+    const { data: existing, error } = await supabase.from("castings")
+      .select("status, configuration").eq("id", form.castingId).eq("project_id", projectId).single();
+    if (error || !existing) return { ok: false, error: error?.message ?? "Casting not found." };
+    pendingPublish = existing.status !== "open" || existing.configuration?.composer_draft === true;
+  }
   const mobileConfiguration = normalizeCastingConfigurationForMobile(form, false);
-  const baseCastingRow = buildChildCastingRow(projectId, form, false);
+  // Failed setup must remain a draft and must not consume the rolling publish allowance.
+  const baseCastingRow = buildChildCastingRow(projectId, form, pendingPublish);
   const castingRow = {
     ...baseCastingRow,
     configuration: {
       ...baseCastingRow.configuration,
       ...mobileConfiguration,
+      composer_draft: pendingPublish,
     },
   };
   let castingId = form.castingId ?? null;
@@ -385,9 +394,14 @@ const form = { ...parsed.data, projectId };
     castingId = inserted.id as string;
   }
 
-  const rolesResult = await syncCastingRoles(supabase, userId, projectId, castingId, form, false);
+  const rolesResult = await syncCastingRoles(supabase, userId, projectId, castingId, form, pendingPublish);
   if (!rolesResult.ok) return { ok: false, error: rolesResult.error };
 
+  const { error: publishError } = await supabase.rpc("publish_industry_child_casting", {
+    p_casting_id: castingId,
+    p_configuration: mobileConfiguration,
+  });
+  if (publishError) return { ok: false, error: publishError.message };
   await syncProjectCastingConfiguration(supabase, projectId, mobileConfiguration, false, form);
   await notifyCastingMatchesForRoles(supabase, rolesResult.roleIds, {
     isPublicOpenCall: isPublicOpenCallForMatchNotify(form),

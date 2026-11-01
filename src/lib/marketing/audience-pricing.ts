@@ -94,12 +94,11 @@ export const industryPricingContent: IndustryPricingContent = {
       "href": "/signup"
     },
     "features": [
-      "Up to 4 headshots",
-      "Reel & slate videos only",
-      "Highlight up to 2 portfolio credits",
-      "Favorites & Notify me included; create & share custom lists with Pro",
-      "Publish up to 2 castings",
-      "Casting submissions require Talent Pro"
+      "One new casting every rolling 30 days; one accepting applications",
+      "Unlimited Saved Talent and 3 custom rosters, with unlimited talent",
+      "One-time client shortlist review on one project, all roles",
+      "Whole-cast schedule, individual messages and project conversation",
+      "Existing feedback, conversations and rosters stay accessible"
     ]
   },
   "pro": {
@@ -112,12 +111,13 @@ export const industryPricingContent: IndustryPricingContent = {
       "href": "/signup?plan=pro"
     },
     "features": [
-      "Unlimited published castings",
-      "Find talent, projects, and rosters",
-      "Up to 10 headshots",
-      "All visual skill & genre categories",
-      "Highlight up to 10 portfolio credits",
-      "Up to 3 visuals per resume experience"
+      "Unlimited new and open castings",
+      "Unlimited custom rosters and unlimited talent",
+      "Roster sharing, including expiring access",
+      "Client shortlist review across all projects and roles",
+      "Project groups with group schedules and contextual chats",
+      "Voice search for talent",
+      "Industry benefits also included with Dual Pro; invited participants join free"
     ],
     "highlighted": true
   }

@@ -15,7 +15,7 @@ Prepared 2 November 2026. This is the concrete release boundary, not authorizati
 | Production Supabase | `pygdxcscmebeqjxhzzuq` / custom API host `api.motiion.app` |
 | Test Supabase, excluded from production configuration | `mvkvztpvakybrhyupown` |
 | Shared Edge source repository / baseline | `jmtellis/motiion-app-ios`, `main`, `604ccd28beeb0af5995ca12bd02dc196c0811a76` |
-| Release commit | Not yet committed. Record the exact reviewed website and shared Edge commit SHAs before deployment; the dirty working tree is not a release identifier. |
+| Release commit | Website `56301d2515b6167ebf748617f60eaa536a00e9d0` (plus this documentation-only SHA record); shared Edge `5e2bdf119078d31560b83bc9de7bc4530b41ae7f`. Local `main` only; not pushed or deployed. |
 
 Vercel project/deployment metadata was retrieved through the connected integration. Secret metadata was inspected without exporting values. Presence of a protected variable is not proof of its correctness or environment.
 

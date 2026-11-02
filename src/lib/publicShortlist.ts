@@ -54,6 +54,7 @@ export async function fetchPublicShortlist(token: string): Promise<PublicShortli
 export async function submitShortlistVotes(args: {
   token: string;
   recipientId: string;
+  reviewerName: string;
   votes: PublicShortlistVoteInput[];
 }): Promise<{ success: boolean; submittedCount: number }> {
   const trimmed = decodeURIComponent(args.token).trim();
@@ -61,6 +62,7 @@ export async function submitShortlistVotes(args: {
     action: "submit",
     token: trimmed,
     recipientId: args.recipientId,
+    reviewerName: args.reviewerName.trim(),
     votes: args.votes,
   });
 }

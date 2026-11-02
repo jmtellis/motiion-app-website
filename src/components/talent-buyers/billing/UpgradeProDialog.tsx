@@ -68,8 +68,11 @@ export function UpgradeProDialog({
       <div className="upgrade-pro-dialog__card">
         <p className="upgrade-pro-dialog__eyebrow">Industry Pro</p>
         <p className="upgrade-pro-dialog__copy">
-          Get full access to casting, talent search, and outreach. Enter a card to start — you won’t
-          be charged until the trial ends.
+          Publish unlimited castings, create unlimited rosters, share rosters with expiring access,
+          and run client shortlist reviews across projects. Project groups include group schedules
+          and contextual chats. Voice search is included. These Industry benefits are also included
+          with Dual Pro; invited participants can view and reply free. Enter a card to start — you
+          won’t be charged until the trial ends.
         </p>
       </div>
     </Modal>

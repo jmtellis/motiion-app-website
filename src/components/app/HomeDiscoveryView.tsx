@@ -2,18 +2,36 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, ChevronLeft, ChevronRight, Sparkles, Users } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  Users,
+} from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 import { homeEventDateLabel } from "@/lib/app/home-event-copy";
+import type { HomeCampaign } from "@/lib/catalog/live-catalog";
 import type { HomeEvent } from "@/lib/app/home-discovery";
 import {
+  refreshFeaturedHomeContent,
   loadCommunityRoster,
   loadHomeEventDetail,
   type HomeEventDetail,
   type HomeRosterPerson,
 } from "@/app/(app)/home/actions";
-import { TalentProfileSheet, type TalentProfileChrome } from "@/components/app/talent-profile/TalentProfileSheet";
+import {
+  TalentProfileSheet,
+  type TalentProfileChrome,
+} from "@/components/app/talent-profile/TalentProfileSheet";
 import { getProfileInitials } from "@/lib/auth/avatar";
 import { primaryTalentLabel } from "@/lib/app/talent-label";
 import { useNotificationsPanel } from "@/components/workspace/WorkspaceNotifications";
@@ -40,14 +58,21 @@ type OpenProfile = { name: string; slug: string };
 function rosterTitle(card: HomeCommunityCard) {
   const title = card.title.trim();
   if (/^featured\b/i.test(title)) return title;
-  if (card.subtype === "dancer" || /\bdancers?\b/i.test(title)) return "Featured Dancers";
-  if (card.subtype === "choreographer" || /\bchoreographers?\b/i.test(title)) return "Featured Choreographers";
+  if (card.subtype === "dancer" || /\bdancers?\b/i.test(title))
+    return "Featured Dancers";
+  if (card.subtype === "choreographer" || /\bchoreographers?\b/i.test(title))
+    return "Featured Choreographers";
   return title;
 }
 
 function rosterRole(card: HomeCommunityCard, person: HomeRosterPerson) {
-  if (card.subtype === "dancer" || /\bdancers?\b/i.test(card.title)) return "Dancer";
-  if (card.subtype === "choreographer" || /\bchoreographers?\b/i.test(card.title)) return "Choreographer";
+  if (card.subtype === "dancer" || /\bdancers?\b/i.test(card.title))
+    return "Dancer";
+  if (
+    card.subtype === "choreographer" ||
+    /\bchoreographers?\b/i.test(card.title)
+  )
+    return "Choreographer";
   return primaryTalentLabel([person.role]);
 }
 
@@ -66,17 +91,43 @@ function cardDateLabel(date: string | null) {
 }
 
 export function HomeDiscoveryView({
+  upcomingSlot,
+  campaigns,
   cards,
   sponsored,
   cast,
   navigatorHref = "/discover",
 }: {
+  upcomingSlot?: ReactNode;
+  campaigns: HomeCampaign[];
   cards: HomeCommunityCard[];
   sponsored: HomeEvent[];
   cast: HomeEvent[];
   navigatorHref?: string;
 }) {
+  const router = useRouter();
   const notifications = useNotificationsPanel();
+  useEffect(() => {
+    const key = "motiion:home-cms-refresh";
+    try {
+      const last = Number(window.sessionStorage.getItem(key) ?? 0);
+      if (Date.now() - last < 5 * 60 * 1000) return;
+      window.sessionStorage.setItem(key, String(Date.now()));
+    } catch {
+      return;
+    }
+    let cancelled = false;
+    void refreshFeaturedHomeContent()
+      .then((result) => {
+        if (result.refreshed && !cancelled) router.refresh();
+      })
+      .catch(() => {
+        /* Keep the last synced content visible. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
   const [panel, setPanel] = useState<OpenPanel | null>(null);
   const [roster, setRoster] = useState<HomeRosterPerson[] | null>(null);
   const [eventDetail, setEventDetail] = useState<HomeEventDetail | null>(null);
@@ -87,8 +138,14 @@ export function HomeDiscoveryView({
   const profilePop = useRef<(() => void) | null>(null);
   const [shareLabel, setShareLabel] = useState("Share");
   const events = [...sponsored, ...cast];
-  const rosterCard = panel?.kind === "roster" ? cards.find((card) => card.id === panel.cardId) ?? null : null;
-  const selectedEvent = panel?.kind === "event" ? events.find((event) => event.id === panel.eventId) ?? null : null;
+  const rosterCard =
+    panel?.kind === "roster"
+      ? (cards.find((card) => card.id === panel.cardId) ?? null)
+      : null;
+  const selectedEvent =
+    panel?.kind === "event"
+      ? (events.find((event) => event.id === panel.eventId) ?? null)
+      : null;
 
   useEffect(() => {
     if (!panel) return;
@@ -97,7 +154,10 @@ export function HomeDiscoveryView({
     if (panel.kind === "roster") {
       const card = cards.find((item) => item.id === panel.cardId);
       if (!card) return;
-      void loadCommunityRoster({ talentIds: card.talentIds, subtype: card.subtype }).then((result) => {
+      void loadCommunityRoster({
+        talentIds: card.talentIds,
+        subtype: card.subtype,
+      }).then((result) => {
         if (cancelled) return;
         setRoster(result.people);
         setError(result.error);
@@ -153,7 +213,9 @@ export function HomeDiscoveryView({
 
   const handleProfileChrome = useCallback((chrome: TalentProfileChrome) => {
     profilePop.current = chrome.pop;
-    setProfileTitle((current) => current === chrome.title ? current : chrome.title);
+    setProfileTitle((current) =>
+      current === chrome.title ? current : chrome.title,
+    );
   }, []);
 
   function closeOrPopProfile() {
@@ -186,7 +248,9 @@ export function HomeDiscoveryView({
   const panelTitle = profile
     ? profileTitle || profile.name
     : panel?.kind === "roster"
-      ? rosterCard ? rosterTitle(rosterCard) : "Community"
+      ? rosterCard
+        ? rosterTitle(rosterCard)
+        : "Community"
       : panel?.kind === "event"
         ? panel.label
         : "";
@@ -210,14 +274,27 @@ export function HomeDiscoveryView({
                 key={card.id}
                 type="button"
                 className={`talent-discovery-card talent-discovery-card--${index}`}
-                aria-expanded={panel?.kind === "roster" && panel.cardId === card.id}
+                aria-expanded={
+                  panel?.kind === "roster" && panel.cardId === card.id
+                }
                 aria-controls={PANEL_ID}
                 onClick={() => openRoster(card.id)}
               >
                 {card.image ? (
-                  <Image src={card.image} alt="" fill sizes="(max-width: 700px) 85vw, 33vw" unoptimized />
+                  <Image
+                    src={card.image}
+                    alt=""
+                    fill
+                    sizes="(max-width: 700px) 85vw, 33vw"
+                    unoptimized
+                  />
                 ) : (
-                  <Users size={64} strokeWidth={1} aria-hidden className="talent-discovery-card-icon" />
+                  <Users
+                    size={64}
+                    strokeWidth={1}
+                    aria-hidden
+                    className="talent-discovery-card-icon"
+                  />
                 )}
                 <div>
                   <span>{card.eyebrow}</span>
@@ -230,8 +307,59 @@ export function HomeDiscoveryView({
             ))}
           </div>
         </section>
-        <EventRail events={sponsored} label="Motiion Events" onOpen={openEvent} activeId={panel?.kind === "event" ? panel.eventId : null} />
-        <CastRail events={cast} onOpen={openEvent} activeId={panel?.kind === "event" ? panel.eventId : null} />
+        {upcomingSlot}
+        <EventRail
+          events={sponsored}
+          label="Motiion Events"
+          onOpen={openEvent}
+          activeId={panel?.kind === "event" ? panel.eventId : null}
+        />
+        <CastRail
+          events={cast}
+          onOpen={openEvent}
+          activeId={panel?.kind === "event" ? panel.eventId : null}
+        />
+        {campaigns.length ? (
+          <section aria-labelledby="home-brands-title">
+            <div className="talent-section-heading">
+              <h2 id="home-brands-title">Featured Brands</h2>
+            </div>
+            <div className="home-campaign-rail">
+              {campaigns
+                .filter((campaign) => campaign.image_url)
+                .map((campaign) => {
+                  const safeUrl =
+                    campaign.cta_url && /^https?:\/\//i.test(campaign.cta_url)
+                      ? campaign.cta_url
+                      : null;
+                  const content = (
+                    <Image
+                      src={campaign.image_url!}
+                      alt={campaign.title}
+                      width={72}
+                      height={72}
+                      unoptimized
+                    />
+                  );
+                  return safeUrl ? (
+                    <a
+                      className="home-brand-logo"
+                      key={campaign.id}
+                      href={safeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {content}
+                    </a>
+                  ) : (
+                    <article className="home-brand-logo" key={campaign.id}>
+                      {content}
+                    </article>
+                  );
+                })}
+            </div>
+          </section>
+        ) : null}
       </div>
 
       <WorkspaceSidePanel
@@ -244,25 +372,48 @@ export function HomeDiscoveryView({
           setProfile(null);
           setPanel(null);
         }}
-        leading={profile ? (
-          <button type="button" className="workspace-notifications__close" aria-label={profileTitle ? "Back" : "Back to the list"} onClick={closeOrPopProfile}>
-            <ChevronLeft size={18} aria-hidden />
-          </button>
-        ) : null}
-        actions={!profile && panel?.kind === "event" ? (
-          <button type="button" className="workspace-notifications__mark" onClick={() => void shareEvent()}>
-            {shareLabel}
-          </button>
-        ) : null}
+        leading={
+          profile ? (
+            <button
+              type="button"
+              className="workspace-notifications__close"
+              aria-label={profileTitle ? "Back" : "Back to the list"}
+              onClick={closeOrPopProfile}
+            >
+              <ChevronLeft size={18} aria-hidden />
+            </button>
+          ) : null
+        }
+        actions={
+          !profile && panel?.kind === "event" ? (
+            <button
+              type="button"
+              className="workspace-notifications__mark"
+              onClick={() => void shareEvent()}
+            >
+              {shareLabel}
+            </button>
+          ) : null
+        }
       >
-        {profile ? <TalentProfileSheet key={profile.slug} slug={profile.slug} onChrome={handleProfileChrome} /> : null}
+        {profile ? (
+          <TalentProfileSheet
+            key={profile.slug}
+            slug={profile.slug}
+            onChrome={handleProfileChrome}
+          />
+        ) : null}
         {!profile && panel?.kind === "roster" ? (
           <PersonList
             people={roster ?? []}
             loading={loading}
             error={error}
             empty="No one to show in this list yet."
-            roleFor={rosterCard ? (person) => rosterRole(rosterCard, person) : undefined}
+            roleFor={
+              rosterCard
+                ? (person) => rosterRole(rosterCard, person)
+                : undefined
+            }
             onOpen={openProfile}
           />
         ) : null}
@@ -298,7 +449,12 @@ function CastRail({
           <p>Explore the people behind upcoming and featured events.</p>
         </div>
       </div>
-      <CoverRail events={events} label="Meet the Cast" onOpen={onOpen} activeId={activeId} />
+      <CoverRail
+        events={events}
+        label="Meet the Cast"
+        onOpen={onOpen}
+        activeId={activeId}
+      />
     </section>
   );
 }
@@ -323,7 +479,13 @@ function EventRail({
           <p>Get together with the Motiion community.</p>
         </div>
       </div>
-      <CoverRail events={events} label={label} sponsored onOpen={onOpen} activeId={activeId} />
+      <CoverRail
+        events={events}
+        label={label}
+        sponsored
+        onOpen={onOpen}
+        activeId={activeId}
+      />
     </section>
   );
 }
@@ -357,7 +519,13 @@ function CoverRail({
             onClick={() => onOpen(event.id, label)}
           >
             {event.cover_image_url ? (
-              <Image src={event.cover_image_url} alt="" fill sizes="(max-width: 767px) 220px, 280px" unoptimized />
+              <Image
+                src={event.cover_image_url}
+                alt=""
+                fill
+                sizes="(max-width: 767px) 220px, 280px"
+                unoptimized
+              />
             ) : null}
             {sponsored ? (
               <span className="talent-cast-card__chip">
@@ -366,13 +534,25 @@ function CoverRail({
               </span>
             ) : null}
             <div className="talent-cast-card__copy">
-              <p className="talent-cast-card__eyebrow">{cardDateLabel(event.activity_date)}</p>
+              <p className="talent-cast-card__eyebrow">
+                {cardDateLabel(event.activity_date)}
+              </p>
               <h3 className="talent-cast-card__title">{event.title}</h3>
               {shown.length ? (
-                <div className="talent-cast-card__people" aria-label={people.map((person) => person.name).join(", ")}>
+                <div
+                  className="talent-cast-card__people"
+                  aria-label={people.map((person) => person.name).join(", ")}
+                >
                   {shown.map((person) =>
                     person.src ? (
-                      <Image key={person.userId} src={person.src} alt="" width={36} height={36} unoptimized />
+                      <Image
+                        key={person.userId}
+                        src={person.src}
+                        alt=""
+                        width={36}
+                        height={36}
+                        unoptimized
+                      />
                     ) : (
                       <span key={person.userId} aria-hidden>
                         {person.name.charAt(0).toUpperCase()}
@@ -405,20 +585,33 @@ function EventDetail({
 }) {
   const title = detail?.title ?? event.title;
   const cover = detail?.coverUrl ?? event.cover_image_url;
-  const dateLabel = detail?.dateLabel ?? homeEventDateLabel(event.activity_date, event.start_time);
+  const dateLabel =
+    detail?.dateLabel ??
+    homeEventDateLabel(event.activity_date, event.start_time);
 
   return (
     <div className="home-event-panel">
       <div className="home-event-panel__cover">
         {cover ? (
-          <Image src={cover} alt="" fill sizes="480px" unoptimized style={{ objectPosition: "center bottom" }} />
+          <Image
+            src={cover}
+            alt=""
+            fill
+            sizes="480px"
+            unoptimized
+            style={{ objectPosition: "center bottom" }}
+          />
         ) : null}
         <h3>{title}</h3>
       </div>
       <p className="home-event-panel__date">{dateLabel}</p>
       {error ? <p className="home-panel-status">{error}</p> : null}
-      {loading && !detail ? <p className="home-panel-status">Loading cast…</p> : null}
-      {detail?.emptyMessage ? <p className="home-panel-status">{detail.emptyMessage}</p> : null}
+      {loading && !detail ? (
+        <p className="home-panel-status">Loading cast…</p>
+      ) : null}
+      {detail?.emptyMessage ? (
+        <p className="home-panel-status">{detail.emptyMessage}</p>
+      ) : null}
       {detail?.sections.map((section) =>
         section.people.length ? (
           <section key={section.id}>
@@ -428,7 +621,7 @@ function EventDetail({
                 {section.detail ? <p>{section.detail}</p> : null}
               </div>
             ) : null}
-            <PersonRows people={section.people} onOpen={onOpen} />
+            <PersonRows people={section.people} onOpen={onOpen} portraits />
           </section>
         ) : null,
       )}
@@ -451,38 +644,68 @@ function PersonList({
   roleFor?: (person: HomeRosterPerson) => string | null;
   onOpen: (person: HomeRosterPerson) => void;
 }) {
-  if (loading && !people.length) return <p className="home-panel-status">Loading…</p>;
+  if (loading && !people.length)
+    return <p className="home-panel-status">Loading…</p>;
   if (error) return <p className="home-panel-status">{error}</p>;
   if (!people.length) return <p className="home-panel-status">{empty}</p>;
-  return <PersonRows people={people} roleFor={roleFor} onOpen={onOpen} />;
+  return (
+    <PersonRows people={people} roleFor={roleFor} onOpen={onOpen} portraits />
+  );
 }
 
 function PersonRows({
+  portraits = false,
   people,
   roleFor,
   onOpen,
 }: {
+  portraits?: boolean;
   people: HomeRosterPerson[];
   roleFor?: (person: HomeRosterPerson) => string | null;
   onOpen: (person: HomeRosterPerson) => void;
 }) {
   return (
-    <ul className="home-panel-people">
+    <ul
+      className={`home-panel-people${portraits ? " home-panel-people--portraits" : ""}`}
+    >
       {people.map((person) => {
-        const meta = personMeta(roleFor ? roleFor(person) : person.role, person.location);
+        const meta = personMeta(
+          roleFor ? roleFor(person) : person.role,
+          person.location,
+        );
         return (
           <li key={person.id}>
-            <button type="button" className="home-panel-row" onClick={() => onOpen(person)} disabled={!person.slug}>
+            <button
+              type="button"
+              className="home-panel-row"
+              onClick={() => onOpen(person)}
+              disabled={!person.slug}
+            >
               {person.avatarUrl ? (
-                <Image className="home-panel-row__avatar" src={person.avatarUrl} alt="" width={40} height={40} unoptimized />
+                <Image
+                  className="home-panel-row__avatar"
+                  src={person.avatarUrl}
+                  alt=""
+                  width={portraits ? 360 : 40}
+                  height={portraits ? 480 : 40}
+                  unoptimized
+                />
               ) : (
-                <span className="home-panel-row__avatar" aria-hidden>{getProfileInitials(person.name) || "?"}</span>
+                <span className="home-panel-row__avatar" aria-hidden>
+                  {getProfileInitials(person.name) || "?"}
+                </span>
               )}
               <span className="home-panel-row__copy">
                 <span className="home-panel-row__name">{person.name}</span>
-                {meta ? <span className="home-panel-row__meta">{meta}</span> : null}
+                {meta ? (
+                  <span className="home-panel-row__meta">{meta}</span>
+                ) : null}
               </span>
-              <ChevronRight className="home-panel-row__chevron" size={16} aria-hidden />
+              <ChevronRight
+                className="home-panel-row__chevron"
+                size={16}
+                aria-hidden
+              />
             </button>
           </li>
         );

@@ -3,6 +3,7 @@ import Stripe from "npm:stripe";
 import { corsHeaders } from "../_shared/http.ts";
 import { env } from "../_shared/env.ts";
 import { stripe } from "../_shared/stripe.ts";
+import { assertUnconfirmedWorkStillOpen } from "../_shared/booking-work-window-guard.ts";
 import {
   BOOKING_DEAL_MEMO_PURPOSE,
   BOOKING_PLATFORM_FEE_BPS,
@@ -114,15 +115,16 @@ serve((req) => {
     if (viewer !== "industry") throw new BookingError("FORBIDDEN", "Only Industry can pay for this booking.");
     assertVersion(memo, intField(body, "expectedVersion"));
     if (memo.status === "paid") throw new BookingError("ALREADY_PAID", "This booking is already paid.");
+    if (memo.payment_state === "processing" || memo.payment_state === "succeeded") {
+      return await memoPayload(memo.id, viewer, checkoutInfo("payment_intent", { status: memo.payment_state }));
+    }
     if (memo.status === "expired" || isMemoExpired(memo)) {
       throw new BookingError("MEMO_EXPIRED", "This deal memo expired before payment. Send a new offer.");
     }
     if (memo.status !== "payment_pending") {
       throw new BookingError("MEMO_NOT_READY", "Payment opens after the talent accepts the deal.");
     }
-    if (memo.payment_state === "processing") {
-      return await memoPayload(memo.id, viewer, checkoutInfo("payment_intent", { status: "processing" }));
-    }
+    await assertUnconfirmedWorkStillOpen(memo);
 
     const fees = assertFeesLocked(memo, loaded.provisions);
     const destination = await requireActiveRecipient(memo.talent_user_id);

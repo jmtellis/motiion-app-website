@@ -44,7 +44,7 @@ export const settingsFaqSections: SettingsFaqSection[] = [
         id: "add-shell",
         question: "How do I add an Industry Professional or Talent account?",
         answer:
-          "Open the account menu at the bottom of the sidebar. If you only have one profile type, choose Add profile, enter the industry access password when asked, then finish the short setup. Your login, calendar, and messages stay on the same account. Community accounts cannot add a second profile type.",
+          "Open the account menu at the bottom of the sidebar. If you only have one profile type, choose Apply for industry access and submit a short application. Motiion staff reviews your professional work before granting access. Your login, calendar, and messages stay on the same account. Community accounts cannot add a second profile type.",
       },
       {
         id: "switch-shell",

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { requireHiringAccount } from "@/lib/auth/session";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { BuyerAppPage } from "@/components/talent-buyers/dashboard/BuyerAppPage";
-import { IndustryDealMemoDesk } from "@/components/booking/DealMemoDesk";
+import { IndustryBookingsView } from "@/components/booking/IndustryBookingsView";
 import { loadIndustryDealMemoDesk } from "@/lib/booking/deal-memo-data";
 import "@/components/talent-buyers/project/project-bookings.css";
 import "@/components/booking/deal-memo.css";
@@ -56,39 +56,14 @@ export default async function BookingsPage() {
             </Link>
           }
         />
+        <IndustryBookingsView confirmed={dealMemos.confirmed} memos={dealMemos.memos} error={dealMemos.error} />
         {error || bookingError ? (
           <p role="alert">
             Could not load your booking workspace. Please refresh to try again.
           </p>
         ) : (
           <>
-            <div
-              className="studio-booking-stats"
-              aria-label="Booking status summary"
-            >
-              {[
-                { status: "confirmed", label: "Confirmed" },
-                { status: "negotiating", label: "In discussion" },
-                { status: "draft", label: "To prepare" },
-              ].map((item) => (
-                <div key={item.status}>
-                  <span>{item.label}</span>
-                  <strong>
-                    {rows.filter((row) => row.status === item.status).length}
-                  </strong>
-                </div>
-              ))}
-              <p>
-                Keep each agreement connected to the production it belongs to.
-              </p>
-            </div>
-            {dealMemos.unavailable ? null : (
-              <IndustryDealMemoDesk
-                confirmed={dealMemos.confirmed}
-                memos={dealMemos.memos}
-                error={dealMemos.error}
-              />
-            )}
+            <details style={{ marginTop: 24 }}><summary>Project booking coordination</summary>
             {rows.length ? (
               <div className="project-bookings__panel">
                 <h2>Your booking desk</h2>
@@ -176,6 +151,7 @@ export default async function BookingsPage() {
                 </div>
               </div>
             )}
+            </details>
           </>
         )}
       </section>

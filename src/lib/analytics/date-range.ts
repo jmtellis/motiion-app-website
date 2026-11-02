@@ -21,12 +21,12 @@ const RANGE_LABELS: Record<AnalyticsDateRangeKey, string> = {
   "90d": "Last 90 days",
 };
 
-export function parseAnalyticsDateRange(value: string | null | undefined): AnalyticsDateRange {
+export function parseAnalyticsDateRange(value: string | null | undefined, now = new Date()): AnalyticsDateRange {
   const key: AnalyticsDateRangeKey =
     value === "24h" || value === "7d" || value === "30d" || value === "90d" ? value : "30d";
 
   const days = RANGE_DAYS[key];
-  const since = new Date();
+  const since = new Date(now);
   since.setUTCDate(since.getUTCDate() - days);
 
   return {

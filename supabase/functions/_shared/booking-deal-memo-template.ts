@@ -8,9 +8,32 @@
 
 export const BOOKING_DEAL_MEMO_PURPOSE = "booking_deal_memo";
 export const TOUR_LIVE_DANCER = "tour_live_dancer";
-export const BOOKING_TEMPLATE_KEYS = [TOUR_LIVE_DANCER] as const;
+export const AWARD_SHOW = "award_show";
+export const RESIDENCY = "residency";
+export const TELEVISION_FILM = "television_film";
+export const STANDARD_PERFORMANCE = "standard_performance";
+export const FLAT_SCOPE = "flat_scope";
+/** Wire keys from Motiion/Models/BookingDealMemoTemplate.swift. Tour stays first. */
+export const BOOKING_TEMPLATE_KEYS = [
+  TOUR_LIVE_DANCER,
+  AWARD_SHOW,
+  RESIDENCY,
+  TELEVISION_FILM,
+  STANDARD_PERFORMANCE,
+  FLAT_SCOPE,
+] as const;
 export type BookingTemplateKey = (typeof BOOKING_TEMPLATE_KEYS)[number];
 export const BOOKING_TEMPLATE_VERSION = 1;
+/** `booking_contract_templates.legal_status`. Only `existing` may be created or sent. */
+export const CONTRACT_LEGAL_EXISTING = "existing";
+export const CONTRACT_LEGAL_DRAFT = "draft_pending_counsel";
+/**
+ * Operational draft copy from BookingDealMemoAdditionalTemplates.swift.
+ * This is not approved counsel language.
+ */
+export const DRAFT_LEGAL_VERSION = "motiion-draft-pending-counsel-v0";
+export const DRAFT_LEGAL_TEXT =
+  "Draft for review. This is not approved legal language and cannot be sent until counsel approves it.";
 
 /** Jay lock: Motiion platform fee is 10% charged on top of the talent deal. */
 export const BOOKING_PLATFORM_FEE_BPS = 1000;
@@ -29,6 +52,8 @@ export const EOR_PLACEHOLDER_VERSION = "motiion-eor-placeholder-v0";
 export const BOOKING_ERROR_CODES = [
   "AVAILABILITY_NOT_ELIGIBLE",
   "TEMPLATE_UNSUPPORTED",
+  "TEMPLATE_PENDING_COUNSEL",
+  "EXECUTED_CONTRACT_EXISTS",
   "COMMUNITY_NOT_ALLOWED",
   "MEMO_EXISTS",
   "REQUIRED_MODULES_MISSING",
@@ -39,6 +64,7 @@ export const BOOKING_ERROR_CODES = [
   "NOT_YOUR_TURN",
   "MEMO_NOT_READY",
   "MEMO_EXPIRED",
+  "WORK_DATES_PASSED",
   "MEMO_CONFLICT",
   "SIGNATURE_REQUIRED",
   "CONNECT_ONBOARDING_REQUIRED",
@@ -656,10 +682,532 @@ const MODULES: ModuleSpec[] = [
 
 export const TOUR_LIVE_DANCER_MODULES: readonly ModuleSpec[] = MODULES;
 export const MODULE_CODES: readonly string[] = MODULES.map((m) => m.code);
-const MODULE_BY_CODE = new Map(MODULES.map((m) => [m.code, m]));
 
-export function getModuleSpec(code: string): ModuleSpec | null {
-  return MODULE_BY_CODE.get(code) ?? null;
+// ---------------------------------------------------------------------------
+// Additional agreement templates
+// Field keys, choice keys, defaults, required flags, and limits match
+// Motiion/Models/BookingDealMemoAdditionalTemplates.swift.
+// Legal modules stay placeholders and are not approved counsel language.
+// ---------------------------------------------------------------------------
+
+const MONEY_MAX_CENTS = 50_000_000;
+
+function moneyField(key: string, label: string): FieldSpec {
+  return { key, label, type: "money", max: MONEY_MAX_CENTS };
+}
+
+function countField(key: string, label: string, unit: string): FieldSpec {
+  return { key, label, type: "int", min: 0, max: 365, unit };
+}
+
+function choices(options: Array<[string, string]>): Option[] {
+  return options.map(([value, label]) => ({ value, label }));
+}
+
+/** Swift `options.keys.sorted()` — lexicographic choice order and default. */
+function sortedRoleOptions(options: Record<string, string>): Option[] {
+  return Object.keys(options)
+    .sort()
+    .map((value) => ({ value, label: options[value] ?? value }));
+}
+
+function draftLegal(code: string, label: string, description: string): ModuleSpec {
+  return {
+    code,
+    section: "legal",
+    label,
+    description,
+    required: false,
+    defaultIncluded: true,
+    removable: false,
+    talentAddable: false,
+    placeholder: { version: DRAFT_LEGAL_VERSION, text: DRAFT_LEGAL_TEXT },
+    fields: [],
+    defaults: {},
+  };
+}
+
+function roleModule(label: string, options: Record<string, string>): ModuleSpec {
+  const roleOptions = sortedRoleOptions(options);
+  return {
+    code: "services_role",
+    section: "role_credit",
+    label,
+    description: "The role covered by this agreement.",
+    required: true,
+    defaultIncluded: true,
+    removable: false,
+    talentAddable: false,
+    fields: [
+      { key: "role", label: "Role", type: "enum", options: roleOptions },
+      { key: "role_title", label: "Role title", type: "text", maxLength: 80, required: true },
+    ],
+    defaults: { role: roleOptions[0]?.value ?? "", role_title: "" },
+  };
+}
+
+function creditModule(): ModuleSpec {
+  return {
+    code: "billing_credit",
+    section: "role_credit",
+    label: "Credit",
+    description: "How the person is credited.",
+    required: false,
+    defaultIncluded: true,
+    removable: true,
+    talentAddable: true,
+    fields: [
+      {
+        key: "credit",
+        label: "Credit",
+        type: "enum",
+        options: choices([
+          ["program_listing", "Program or credits listing"],
+          ["shared_card_end_titles", "Shared card"],
+          ["none", "No separate credit"],
+        ]),
+      },
+    ],
+    defaults: { credit: "program_listing" },
+  };
+}
+
+function datesModule(description: string, kinds: Array<[string, string]>): ModuleSpec {
+  return {
+    code: "work_dates",
+    section: "dates",
+    label: "Dates",
+    description,
+    required: true,
+    defaultIncluded: true,
+    removable: false,
+    talentAddable: false,
+    fields: [{ key: "blocks", label: "Date blocks", type: "date_blocks", kinds: choices(kinds), minItems: 0, maxItems: 24 }],
+    defaults: { blocks: [] },
+  };
+}
+
+function ratesModule(description: string, fields: FieldSpec[], defaults: Record<string, unknown>): ModuleSpec {
+  return {
+    code: "rates",
+    section: "money",
+    label: "Compensation",
+    description,
+    required: true,
+    defaultIncluded: true,
+    removable: false,
+    talentAddable: false,
+    fields,
+    defaults,
+  };
+}
+
+function usageModule(options: Array<[string, string]>, extra: FieldSpec[] = []): ModuleSpec {
+  return {
+    code: "usage_buyout",
+    section: "usage_extras",
+    label: "Usage",
+    description: "How the performance may be recorded or distributed.",
+    required: false,
+    defaultIncluded: true,
+    removable: false,
+    talentAddable: false,
+    fields: [
+      { key: "usage", label: "Usage", type: "enum", options: choices(options) },
+      moneyField("buyout_fee_cents", "Buyout fee"),
+      ...extra,
+    ],
+    defaults: {
+      usage: options[0]?.[0] ?? "",
+      buyout_fee_cents: 0,
+      territory: "",
+      term: "",
+    },
+  };
+}
+
+function travelModule(): ModuleSpec {
+  return {
+    code: "travel",
+    section: "travel_stay",
+    label: "Travel",
+    description: "Travel provided for the engagement.",
+    required: false,
+    defaultIncluded: false,
+    removable: true,
+    talentAddable: true,
+    fields: [
+      {
+        key: "air_class",
+        label: "Air travel",
+        type: "enum",
+        options: choices([
+          ["economy", "Economy"],
+          ["none", "No air travel"],
+        ]),
+      },
+      { key: "ground_transport", label: "Ground transport provided", type: "bool" },
+    ],
+    defaults: { air_class: "economy", ground_transport: false, comfort_upgrade_hours: 0 },
+  };
+}
+
+function wardrobeModule(): ModuleSpec {
+  return {
+    code: "wardrobe_hmu",
+    section: "protection",
+    label: "Wardrobe and grooming",
+    description: "Wardrobe, hair, and make-up for the performance.",
+    required: false,
+    defaultIncluded: true,
+    removable: false,
+    talentAddable: false,
+    fields: [
+      { key: "wardrobe_provided", label: "Wardrobe provided", type: "bool" },
+      { key: "hmu_provided", label: "Hair and make-up provided", type: "bool" },
+    ],
+    defaults: { wardrobe_provided: true, hmu_provided: true, grooming_stipend_cents: 0 },
+  };
+}
+
+function safetyModule(): ModuleSpec {
+  return {
+    code: "physical_floors",
+    section: "protection",
+    label: "Safety",
+    description: "Safe surfaces and disclosed hazards.",
+    required: false,
+    defaultIncluded: true,
+    removable: false,
+    talentAddable: false,
+    fields: [
+      { key: "no_concrete", label: "No dancing on concrete", type: "bool" },
+      { key: "warmup_space", label: "Warm-up space provided", type: "bool" },
+    ],
+    defaults: { no_concrete: true, warmup_space: true },
+  };
+}
+
+function cancellationModule(): ModuleSpec {
+  return {
+    code: "cancellation",
+    section: "protection",
+    label: "Cancellation",
+    description: "Pay owed if the engagement is cancelled after agreement.",
+    required: false,
+    defaultIncluded: true,
+    removable: false,
+    talentAddable: false,
+    fields: [countField("full_pay_weeks", "Weeks paid in full", "weeks")],
+    defaults: { full_pay_weeks: 0, half_pay_weeks: 0 },
+  };
+}
+
+function motiionTermsModule(): ModuleSpec {
+  return draftLegal("motiion_terms", "Motiion terms", "Marketplace terms pending counsel review.");
+}
+
+const AWARD_SHOW_MODULES: readonly ModuleSpec[] = [
+  roleModule("Award-show role", {
+    featured_dancer: "Featured dancer",
+    ensemble_dancer: "Ensemble dancer",
+    presenter_support: "Presenter support",
+  }),
+  creditModule(),
+  datesModule("Rehearsal and show dates.", [
+    ["rehearsal", "Rehearsal"],
+    ["show", "Show"],
+  ]),
+  ratesModule(
+    "Guaranteed rehearsal and performance compensation.",
+    [
+      moneyField("rehearsal_day_rate_cents", "Rehearsal day rate"),
+      countField("rehearsal_days", "Rehearsal days", "days"),
+      moneyField("show_rate_cents", "Performance rate"),
+      countField("show_count", "Performances", "shows"),
+      moneyField("flat_fee_cents", "Flat amount, if used instead"),
+    ],
+    {
+      rehearsal_day_rate_cents: 0,
+      rehearsal_days: 0,
+      show_rate_cents: 0,
+      show_count: 0,
+      flat_fee_cents: 0,
+    },
+  ),
+  usageModule([
+    ["live_only", "Live only"],
+    ["live_plus_promo", "Live plus promotional clips"],
+    ["broadcast_buyout", "Broadcast buyout"],
+  ]),
+  travelModule(),
+  wardrobeModule(),
+  safetyModule(),
+  cancellationModule(),
+  draftLegal("governing_law", "Governing terms", "Counsel-owned terms for this award show."),
+  motiionTermsModule(),
+];
+
+const RESIDENCY_MODULES: readonly ModuleSpec[] = [
+  roleModule("Residency role", {
+    principal_dancer: "Principal dancer",
+    ensemble_dancer: "Ensemble dancer",
+    swing: "Swing",
+  }),
+  creditModule(),
+  datesModule("Residency term, rehearsals, and performances.", [
+    ["rehearsal", "Rehearsal"],
+    ["performance", "Performance"],
+    ["dark", "Dark or hold"],
+  ]),
+  ratesModule(
+    "Weekly or per-performance guarantee.",
+    [
+      moneyField("week_rate_cents", "Weekly guarantee"),
+      countField("work_weeks", "Guaranteed weeks", "weeks"),
+      moneyField("show_rate_cents", "Performance rate"),
+      countField("show_count", "Guaranteed performances", "shows"),
+    ],
+    {
+      week_rate_cents: 0,
+      work_weeks: 0,
+      show_rate_cents: 0,
+      show_count: 0,
+    },
+  ),
+  {
+    code: "additional_performances",
+    section: "usage_extras",
+    label: "Extension",
+    description: "Optional extension after the initial term.",
+    required: false,
+    defaultIncluded: false,
+    removable: true,
+    talentAddable: true,
+    fields: [moneyField("per_show_cents", "Rate during an extension")],
+    defaults: { per_show_cents: 0 },
+  },
+  {
+    code: "hotel",
+    section: "travel_stay",
+    label: "Housing",
+    description: "Housing during the residency.",
+    required: false,
+    defaultIncluded: true,
+    removable: false,
+    talentAddable: false,
+    fields: [
+      {
+        key: "room",
+        label: "Housing",
+        type: "enum",
+        options: choices([
+          ["single", "Private housing"],
+          ["shared", "Shared housing"],
+          ["stipend", "Housing stipend"],
+        ]),
+      },
+    ],
+    defaults: { room: "single" },
+  },
+  travelModule(),
+  {
+    code: "per_diem",
+    section: "money",
+    label: "Per diem",
+    description: "Daily allowance paid by the hiring entity, not part of today's charge.",
+    required: false,
+    defaultIncluded: true,
+    removable: true,
+    talentAddable: true,
+    fields: [moneyField("domestic_cents", "Per day")],
+    defaults: { domestic_cents: 0 },
+  },
+  {
+    code: "specialty_talent",
+    section: "role_credit",
+    label: "Understudy",
+    description: "Understudy or swing coverage.",
+    required: false,
+    defaultIncluded: false,
+    removable: true,
+    talentAddable: true,
+    fields: [moneyField("bump_cents", "Coverage bump")],
+    defaults: { bump_cents: 0, skills: [] },
+  },
+  cancellationModule(),
+  draftLegal("governing_law", "Governing terms", "Counsel-owned residency terms."),
+  motiionTermsModule(),
+];
+
+const TELEVISION_FILM_MODULES: readonly ModuleSpec[] = [
+  roleModule("Screen role", {
+    principal_dancer: "Principal dancer",
+    featured_dancer: "Featured dancer",
+    ensemble_dancer: "Ensemble dancer",
+  }),
+  creditModule(),
+  datesModule("Fittings, rehearsals, and shoot days.", [
+    ["fitting", "Fitting"],
+    ["rehearsal", "Rehearsal"],
+    ["shoot", "Shoot"],
+  ]),
+  ratesModule(
+    "Day, week, or shoot-day compensation.",
+    [
+      moneyField("day_rate_cents", "Day rate"),
+      countField("work_days", "Work days", "days"),
+      moneyField("week_rate_cents", "Weekly rate"),
+      countField("work_weeks", "Work weeks", "weeks"),
+      moneyField("shoot_day_rate_cents", "Shoot day rate"),
+      countField("shoot_days", "Shoot days", "days"),
+      moneyField("overtime_hourly_cents", "Overtime hourly rate"),
+    ],
+    {
+      day_rate_cents: 0,
+      work_days: 0,
+      week_rate_cents: 0,
+      work_weeks: 0,
+      shoot_day_rate_cents: 0,
+      shoot_days: 0,
+      overtime_hourly_cents: 0,
+    },
+  ),
+  usageModule(
+    [
+      ["production_only", "Production use only"],
+      ["live_plus_promo", "Promotional use"],
+      ["broadcast_buyout", "Media buyout"],
+    ],
+    [
+      { key: "territory", label: "Territory", type: "text", maxLength: 120, required: false },
+      { key: "term", label: "Term", type: "text", maxLength: 120, required: false },
+    ],
+  ),
+  travelModule(),
+  safetyModule(),
+  cancellationModule(),
+  draftLegal("governing_law", "Governing terms", "Counsel-owned screen terms, including residual treatment."),
+  motiionTermsModule(),
+];
+
+const STANDARD_PERFORMANCE_MODULES: readonly ModuleSpec[] = [
+  roleModule("Performance role", {
+    featured_dancer: "Featured dancer",
+    ensemble_dancer: "Ensemble dancer",
+    swing: "Swing",
+  }),
+  datesModule("Rehearsal and performance dates.", [
+    ["rehearsal", "Rehearsal"],
+    ["performance", "Performance"],
+  ]),
+  ratesModule(
+    "Flat or per-show compensation.",
+    [
+      moneyField("flat_fee_cents", "Flat amount"),
+      moneyField("show_rate_cents", "Rate per show"),
+      countField("show_count", "Shows", "shows"),
+      moneyField("overtime_hourly_cents", "Overtime hourly rate"),
+    ],
+    {
+      flat_fee_cents: 0,
+      show_rate_cents: 0,
+      show_count: 0,
+      overtime_hourly_cents: 0,
+    },
+  ),
+  {
+    code: "holding_day_room",
+    section: "dates",
+    label: "Venue",
+    description: "Where the work happens.",
+    required: true,
+    defaultIncluded: true,
+    removable: false,
+    talentAddable: false,
+    fields: [{ key: "commitment", label: "Venue", type: "text", maxLength: 160, required: true }],
+    defaults: { commitment: "" },
+  },
+  usageModule([
+    ["live_only", "Live only"],
+    ["live_plus_promo", "Live plus promotional recording"],
+  ]),
+  travelModule(),
+  cancellationModule(),
+  draftLegal("governing_law", "Governing terms", "Counsel-owned performance terms."),
+  motiionTermsModule(),
+];
+
+const FLAT_SCOPE_MODULES: readonly ModuleSpec[] = [
+  {
+    code: "services_role",
+    section: "role_credit",
+    label: "Scope of work",
+    description: "The work covered by the flat amount.",
+    required: true,
+    defaultIncluded: true,
+    removable: false,
+    talentAddable: false,
+    fields: [{ key: "role_title", label: "Scope", type: "text", maxLength: 240, required: true }],
+    defaults: { role_title: "" },
+  },
+  datesModule("Dates and location for the scope.", [["work", "Work"]]),
+  ratesModule("One flat amount for the scope.", [moneyField("flat_fee_cents", "Flat amount")], { flat_fee_cents: 0 }),
+  {
+    code: "payment_terms",
+    section: "money",
+    label: "When it is due",
+    description: "The flat amount is charged through Motiion after both sides sign.",
+    required: true,
+    defaultIncluded: true,
+    removable: false,
+    talentAddable: false,
+    fields: [
+      {
+        key: "net_days",
+        label: "Due",
+        type: "enum",
+        options: choices([
+          ["on_signature", "When both sides sign"],
+          ["7", "Within 7 days"],
+          ["30", "Within 30 days"],
+        ]),
+      },
+    ],
+    defaults: { net_days: "on_signature" },
+  },
+  {
+    code: "travel",
+    section: "travel_stay",
+    label: "Expenses",
+    description: "Expenses covered in addition to the flat amount.",
+    required: false,
+    defaultIncluded: false,
+    removable: true,
+    talentAddable: true,
+    fields: [{ key: "ground_transport", label: "Approved expenses are reimbursed", type: "bool" }],
+    defaults: { ground_transport: false, air_class: "economy", comfort_upgrade_hours: 0 },
+  },
+  cancellationModule(),
+  draftLegal("governing_law", "Governing terms", "Counsel-owned flat-compensation terms."),
+  motiionTermsModule(),
+];
+
+const TEMPLATES: Record<BookingTemplateKey, readonly ModuleSpec[]> = {
+  tour_live_dancer: MODULES,
+  award_show: AWARD_SHOW_MODULES,
+  residency: RESIDENCY_MODULES,
+  television_film: TELEVISION_FILM_MODULES,
+  standard_performance: STANDARD_PERFORMANCE_MODULES,
+  flat_scope: FLAT_SCOPE_MODULES,
+};
+
+export function modulesForTemplate(templateKey: string | null | undefined = TOUR_LIVE_DANCER): readonly ModuleSpec[] {
+  return isBookingTemplateKey(templateKey) ? TEMPLATES[templateKey] : MODULES;
+}
+
+export function getModuleSpec(code: string, templateKey: string | null | undefined = TOUR_LIVE_DANCER): ModuleSpec | null {
+  return modulesForTemplate(templateKey).find((module) => module.code === code) ?? null;
 }
 
 export function isBookingTemplateKey(value: unknown): value is BookingTemplateKey {
@@ -681,6 +1229,16 @@ export type SoftKindSnapshot = {
   abilities: string[];
 };
 
+function softKindSnapshot(project: SoftKindProject): SoftKindSnapshot {
+  if (!project) return { source: "no_project", project_id: null, abilities: [] };
+  const modules = project.enabled_modules ?? {};
+  return {
+    source: "project_abilities",
+    project_id: project.id ?? null,
+    abilities: ["casting", "roster", "classes"].filter((key) => modules[key] === true),
+  };
+}
+
 export function resolveBookingTemplate(input: {
   requestedKey?: string | null;
   project: SoftKindProject;
@@ -688,7 +1246,11 @@ export function resolveBookingTemplate(input: {
   | { ok: true; templateKey: BookingTemplateKey; softKind: SoftKindSnapshot }
   | { ok: false; code: "TEMPLATE_UNSUPPORTED"; message: string } {
   if (input.requestedKey != null && input.requestedKey !== "" && !isBookingTemplateKey(input.requestedKey)) {
-    return { ok: false, code: "TEMPLATE_UNSUPPORTED", message: "Tour deal memo only in v1." };
+    return { ok: false, code: "TEMPLATE_UNSUPPORTED", message: "That agreement type is not available." };
+  }
+  // An explicit non-tour key is the caller's choice. Tour is still inferred from abilities.
+  if (isBookingTemplateKey(input.requestedKey) && input.requestedKey !== TOUR_LIVE_DANCER) {
+    return { ok: true, templateKey: input.requestedKey, softKind: softKindSnapshot(input.project) };
   }
   if (!input.project) {
     return {
@@ -697,18 +1259,161 @@ export function resolveBookingTemplate(input: {
       softKind: { source: "no_project", project_id: null, abilities: [] },
     };
   }
-  const modules = input.project.enabled_modules ?? {};
-  const abilities = ["casting", "roster", "classes"].filter((key) => modules[key] === true);
-  const softKind: SoftKindSnapshot = {
-    source: "project_abilities",
-    project_id: input.project.id ?? null,
-    abilities,
-  };
-  const tourShape = abilities.includes("casting") || abilities.includes("roster");
-  if (!tourShape && abilities.includes("classes")) {
+  const softKind = softKindSnapshot(input.project);
+  const tourShape = softKind.abilities.includes("casting") || softKind.abilities.includes("roster");
+  if (!tourShape && softKind.abilities.includes("classes")) {
     return { ok: false, code: "TEMPLATE_UNSUPPORTED", message: "Tour deal memo only in v1." };
   }
   return { ok: true, templateKey: TOUR_LIVE_DANCER, softKind };
+}
+
+export function agreementCounselGate(legalStatus: string | null | undefined):
+  | { ok: true }
+  | { ok: false; code: "TEMPLATE_PENDING_COUNSEL"; message: string } {
+  if (legalStatus === CONTRACT_LEGAL_EXISTING) return { ok: true };
+  return {
+    ok: false,
+    code: "TEMPLATE_PENDING_COUNSEL",
+    message: "This agreement is a draft for review. It is not approved legal language and cannot be sent until counsel approves it.",
+  };
+}
+
+export type AvailabilityForMemo = {
+  id: string;
+  requester_id: string;
+  talent_id: string;
+  status: string;
+  response_kind: string | null;
+  project_id: string | null;
+};
+
+export type BookingForMemo = {
+  id: string;
+  industry_user_id: string;
+  talent_user_id: string;
+  project_id: string | null;
+  availability_check_request_id: string | null;
+  deal_memo_id: string | null;
+};
+
+const TERMINAL_AGREEMENT_STATUSES = ["declined", "cancelled", "expired"];
+
+export function isOpenAgreementStatus(status: string | null | undefined): boolean {
+  return !!status && !TERMINAL_AGREEMENT_STATUSES.includes(status);
+}
+
+/**
+ * Create entry for one current agreement path.
+ * Tour still requires a confirmed availability request. Other templates may start from a booking
+ * with no availability request. An active executed-contract upload blocks a new memo: the upload
+ * is a record only and is not itself a deal memo.
+ */
+export function decideDealMemoCreate(input: {
+  requesterId: string;
+  templateKey: BookingTemplateKey;
+  legalStatus: string | null;
+  availability: AvailabilityForMemo | null;
+  booking: BookingForMemo | null;
+  activeExecutedContract: boolean;
+  openMemoId: string | null;
+}):
+  | { ok: false; code: BookingErrorCode; message: string; extra?: Record<string, unknown> }
+  | {
+      ok: true;
+      templateKey: BookingTemplateKey;
+      availabilityRequestId: string | null;
+      bookingId: string | null;
+      projectId: string | null;
+      talentUserId: string;
+      /** Set `bookings.deal_memo_id` to the new memo. Does not change booking status or payment. */
+      linkBookingId: string | null;
+    } {
+  const counsel = agreementCounselGate(input.legalStatus);
+  if (!counsel.ok) return counsel;
+  const booking = input.booking;
+  if (booking && booking.industry_user_id !== input.requesterId) {
+    return { ok: false, code: "NOT_FOUND", message: "Booking not found." };
+  }
+  if (booking && input.activeExecutedContract) {
+    return {
+      ok: false,
+      code: "EXECUTED_CONTRACT_EXISTS",
+      message:
+        "An uploaded contract is already on file for this booking. It is a record only, not a signature or a deal memo, and it does not change participation or payment.",
+    };
+  }
+  if (input.openMemoId) {
+    return {
+      ok: false,
+      code: "MEMO_EXISTS",
+      message: input.booking
+        ? "A deal memo is already open for this booking."
+        : "A deal memo is already open for this availability request.",
+      extra: { memoId: input.openMemoId },
+    };
+  }
+
+  const availability = input.availability;
+  const availabilityOk = !!availability &&
+    availability.requester_id === input.requesterId &&
+    isAvailabilityEligible(availability);
+  if (availability && !availabilityOk) {
+    return {
+      ok: false,
+      code: "AVAILABILITY_NOT_ELIGIBLE",
+      message: "Booking starts from an availability request the talent confirmed.",
+    };
+  }
+  if (booking && availabilityOk && availability && booking.talent_user_id !== availability.talent_id) {
+    return { ok: false, code: "NOT_FOUND", message: "Booking not found." };
+  }
+
+  if (input.templateKey === TOUR_LIVE_DANCER) {
+    if (!availabilityOk || !availability) {
+      return {
+        ok: false,
+        code: "AVAILABILITY_NOT_ELIGIBLE",
+        message: "Booking starts from an availability request the talent confirmed.",
+      };
+    }
+    return {
+      ok: true,
+      templateKey: input.templateKey,
+      availabilityRequestId: availability.id,
+      bookingId: booking?.id ?? null,
+      projectId: availability.project_id ?? booking?.project_id ?? null,
+      talentUserId: availability.talent_id,
+      linkBookingId: booking?.id ?? null,
+    };
+  }
+
+  if (booking) {
+    return {
+      ok: true,
+      templateKey: input.templateKey,
+      availabilityRequestId: availabilityOk && availability ? availability.id : null,
+      bookingId: booking.id,
+      projectId: booking.project_id ?? availability?.project_id ?? null,
+      talentUserId: booking.talent_user_id,
+      linkBookingId: booking.id,
+    };
+  }
+  if (availabilityOk && availability) {
+    return {
+      ok: true,
+      templateKey: input.templateKey,
+      availabilityRequestId: availability.id,
+      bookingId: null,
+      projectId: availability.project_id,
+      talentUserId: availability.talent_id,
+      linkBookingId: null,
+    };
+  }
+  return {
+    ok: false,
+    code: "AVAILABILITY_NOT_ELIGIBLE",
+    message: "This agreement starts from a booking.",
+  };
 }
 
 export function isAvailabilityEligible(row: {
@@ -869,8 +1574,8 @@ function blankProvision(spec: ModuleSpec, index: number): ProvisionRecord {
   };
 }
 
-export function defaultProvisions(): ProvisionRecord[] {
-  return MODULES.map((spec, index) => blankProvision(spec, index));
+export function defaultProvisions(templateKey: string | null | undefined = TOUR_LIVE_DANCER): ProvisionRecord[] {
+  return modulesForTemplate(templateKey).map((spec, index) => blankProvision(spec, index));
 }
 
 export type ComposeModuleInput = { moduleCode: string; included?: boolean; value?: unknown };
@@ -881,18 +1586,21 @@ export type ComposeModuleInput = { moduleCode: string; included?: boolean; value
  */
 export function composeProvisions(
   modules: ComposeModuleInput[] | null | undefined,
+  templateKey: string | null | undefined = TOUR_LIVE_DANCER,
 ): { provisions: ProvisionRecord[]; errors: FieldError[] } {
+  const specs = modulesForTemplate(templateKey);
+  const known = new Set(specs.map((spec) => spec.code));
   const byCode = new Map<string, ComposeModuleInput>();
   const errors: FieldError[] = [];
   for (const item of Array.isArray(modules) ? modules : []) {
     if (!item || typeof item.moduleCode !== "string") continue;
-    if (!MODULE_BY_CODE.has(item.moduleCode)) {
+    if (!known.has(item.moduleCode)) {
       errors.push({ moduleCode: String(item.moduleCode), message: "Unknown module for this template." });
       continue;
     }
     byCode.set(item.moduleCode, item);
   }
-  const provisions = MODULES.map((spec, index) => {
+  const provisions = specs.map((spec, index) => {
     const base = blankProvision(spec, index);
     const input = byCode.get(spec.code);
     if (!input) return base;
@@ -908,7 +1616,10 @@ export function composeProvisions(
 }
 
 /** Server gate for Send (Design §2 rules): required modules, deal amount, release approval. */
-export function validateForSend(provisions: ProvisionRecord[]): {
+export function validateForSend(
+  provisions: ProvisionRecord[],
+  templateKey: string | null | undefined = TOUR_LIVE_DANCER,
+): {
   ok: boolean;
   code: "REQUIRED_MODULES_MISSING" | "RELEASE_NOT_APPROVED" | "INVALID_MODULE_VALUE" | null;
   errors: FieldError[];
@@ -916,8 +1627,9 @@ export function validateForSend(provisions: ProvisionRecord[]): {
   const errors: FieldError[] = [];
   let code: "REQUIRED_MODULES_MISSING" | "RELEASE_NOT_APPROVED" | "INVALID_MODULE_VALUE" | null = null;
   const byCode = new Map(provisions.map((p) => [p.module_code, p]));
+  const specs = modulesForTemplate(templateKey);
 
-  for (const spec of MODULES) {
+  for (const spec of specs) {
     const provision = byCode.get(spec.code);
     if (!provision) {
       if (spec.required) errors.push({ moduleCode: spec.code, message: `${spec.label} is required.` });
@@ -939,8 +1651,10 @@ export function validateForSend(provisions: ProvisionRecord[]): {
     }
   }
 
-  const blocks = (byCode.get("work_dates")?.value.blocks as DateBlock[] | undefined) ?? [];
-  if (!blocks.length) errors.push({ moduleCode: "work_dates", field: "blocks", message: "Add at least one date block." });
+  if (specs.some((spec) => spec.code === "work_dates")) {
+    const blocks = (byCode.get("work_dates")?.value.blocks as DateBlock[] | undefined) ?? [];
+    if (!blocks.length) errors.push({ moduleCode: "work_dates", field: "blocks", message: "Add at least one date block." });
+  }
 
   const deal = computeTalentDeal(provisions).talentDealCents;
   if (deal < BOOKING_MIN_DEAL_CENTS) {
@@ -951,7 +1665,8 @@ export function validateForSend(provisions: ProvisionRecord[]): {
 
   if (errors.length && !code) code = "REQUIRED_MODULES_MISSING";
 
-  const release = byCode.get("talent_release")?.value;
+  const releaseSpec = specs.find((spec) => spec.code === "talent_release");
+  const release = releaseSpec ? byCode.get("talent_release")?.value : undefined;
   if (release && release.release_required === true && release.release_approved !== true) {
     errors.push({ moduleCode: "talent_release", field: "release_approved", message: "Talent release is not approved yet." });
     code = "RELEASE_NOT_APPROVED";
@@ -1002,6 +1717,27 @@ export function computeTalentDeal(provisions: ProvisionRecord[]): { talentDealCe
   const usage = included("usage_buyout");
   if (usage && usage.usage === "broadcast_buyout" && num(usage.buyout_fee_cents)) {
     lines.push({ label: "TV / stream buyout", cents: num(usage.buyout_fee_cents) });
+  }
+  // Additional rate keys are charged only when that template's rates module actually stores them.
+  // Overtime, per diem, and expense flags stay out of today's charge.
+  if (rates && "flat_fee_cents" in rates && num(rates.flat_fee_cents)) {
+    lines.push({ label: "Flat compensation", cents: num(rates.flat_fee_cents) });
+  }
+  if (rates && "show_count" in rates && "show_rate_cents" in rates && num(rates.show_count) && num(rates.show_rate_cents)) {
+    const shows = num(rates.show_count);
+    lines.push({ label: `Performances (${shows})`, cents: num(rates.show_rate_cents) * shows });
+  }
+  if (rates && "work_days" in rates && "day_rate_cents" in rates && num(rates.work_days) && num(rates.day_rate_cents)) {
+    const days = num(rates.work_days);
+    lines.push({ label: `Work days (${days})`, cents: num(rates.day_rate_cents) * days });
+  }
+  if (rates && "work_weeks" in rates && "week_rate_cents" in rates && num(rates.work_weeks) && num(rates.week_rate_cents)) {
+    const weeks = num(rates.work_weeks);
+    lines.push({ label: `Work weeks (${weeks})`, cents: num(rates.week_rate_cents) * weeks });
+  }
+  if (rates && "shoot_days" in rates && "shoot_day_rate_cents" in rates && num(rates.shoot_days) && num(rates.shoot_day_rate_cents)) {
+    const days = num(rates.shoot_days);
+    lines.push({ label: `Shoot days (${days})`, cents: num(rates.shoot_day_rate_cents) * days });
   }
   return { talentDealCents: lines.reduce((sum, line) => sum + line.cents, 0), lines };
 }
@@ -1070,6 +1806,7 @@ function sameValue(a: unknown, b: unknown): boolean {
 export function applyTalentFlags(
   provisions: ProvisionRecord[],
   flags: TalentFlagInput[],
+  templateKey: string | null | undefined = TOUR_LIVE_DANCER,
 ): { ok: true; provisions: ProvisionRecord[]; changed: number } | { ok: false; errors: FieldError[] } {
   const errors: FieldError[] = [];
   const byCode = new Map<string, TalentFlagInput>();
@@ -1098,7 +1835,7 @@ export function applyTalentFlags(
       industry_note: null,
     };
     if (!flag || flag.flag === "accept") return accepted;
-    const spec = getModuleSpec(provision.module_code);
+    const spec = getModuleSpec(provision.module_code, templateKey);
     if (!spec) {
       errors.push({ moduleCode: provision.module_code, message: "Unknown module." });
       return provision;
@@ -1174,6 +1911,7 @@ export type IndustryReplyInput = {
 export function applyIndustryReplies(
   provisions: ProvisionRecord[],
   replies: IndustryReplyInput[],
+  templateKey: string | null | undefined = TOUR_LIVE_DANCER,
 ): { ok: true; provisions: ProvisionRecord[] } | { ok: false; errors: FieldError[] } {
   const errors: FieldError[] = [];
   const byCode = new Map<string, IndustryReplyInput>();
@@ -1187,7 +1925,7 @@ export function applyIndustryReplies(
       if (reply) errors.push({ moduleCode: provision.module_code, message: "No change was requested here." });
       return provision;
     }
-    const spec = getModuleSpec(provision.module_code);
+    const spec = getModuleSpec(provision.module_code, templateKey);
     if (!spec) return provision;
     if (!reply) {
       errors.push({ moduleCode: spec.code, message: `Respond to the change on ${spec.label}.` });
@@ -1276,7 +2014,11 @@ export type StatusChip =
   | "Expired"
   | "Canceled";
 
-export function isMemoExpired(memo: { status: string; expires_at?: string | null }, now = Date.now()): boolean {
+export function isMemoExpired(
+  memo: { status: string; expires_at?: string | null; payment_state?: string | null },
+  now = Date.now(),
+): boolean {
+  if (memo.payment_state === "processing" || memo.payment_state === "succeeded") return false;
   if (memo.status === "expired") return true;
   if (memo.status !== "payment_pending" || !memo.expires_at) return false;
   return new Date(memo.expires_at).getTime() <= now;

@@ -78,7 +78,7 @@ export function TalentScheduleCalendar({
   return (
     <div className="talent-schedule buyer-dashboard buyer-calendar-page events-hub events-hub--schedule">
       <header className="talent-schedule__header">
-        <h1>Schedule</h1>
+        <h1>Calendar</h1>
         <button type="button" className="talent-schedule__create" onClick={openCreate}>
           <Plus size={16} aria-hidden />
           Create session

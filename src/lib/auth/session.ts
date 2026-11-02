@@ -76,6 +76,9 @@ export async function requireTalentAccount() {
 export async function requireHiringAccount() {
   const profile = await requireCompleteProfile();
   if (getActiveShell(profile) !== "lookingForTalent") redirect(getProfileDestination(profile));
+  const supabase = await createServerSupabaseClient();
+  const approval = supabase ? await supabase.rpc("has_industry_approval") : null;
+  if (!approval || approval.error || approval.data !== true) redirect("/talent-buyers/application");
   return profile;
 }
 

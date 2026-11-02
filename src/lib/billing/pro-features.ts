@@ -3,17 +3,17 @@ export const PRO_FEATURES = {
     key: "view_talent_profile",
     title: "Reach talent with Industry Pro",
     description:
-      "View full talent profiles, message talent, and request availability or size sheets.",
+      "Explore talent profiles and message individually on Free. Industry Pro adds voice search and advanced hiring workflows.",
   },
   talent_outreach: {
     key: "talent_outreach",
     title: "Reach talent with Industry Pro",
-    description: "Message talent, request availability or size sheets, and run unlimited invites.",
+    description: "Individual messaging is included free. Upgrade for advanced group workflows and unlimited casting outreach.",
   },
   roster_write: {
     key: "roster_write",
     title: "Build rosters with Industry Pro",
-    description: "Create named rosters, organize saved talent, and share collections with your team.",
+    description: "Free includes unlimited Saved Talent and 3 custom rosters with unlimited talent. Industry Pro adds unlimited rosters and sharing, including expiring links.",
   },
   casting_invite_limit: {
     key: "casting_invite_limit",

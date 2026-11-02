@@ -1,15 +1,29 @@
-import { fetchHomeCollections, fetchHomeEvents } from "@/lib/app/home-discovery";
+import type { ReactNode } from "react";
+import {
+  fetchHomeCollections,
+  fetchHomeEvents,
+  fetchHomeCampaigns,
+} from "@/lib/app/home-discovery";
 
-import { HomeDiscoveryView, type HomeCommunityCard } from "@/components/app/HomeDiscoveryView";
+import {
+  HomeDiscoveryView,
+  type HomeCommunityCard,
+} from "@/components/app/HomeDiscoveryView";
 
 export async function HomeDiscovery({
+  upcomingSlot,
   navigatorHref = "/discover",
 }: {
   navigatorHref?: string;
+  upcomingSlot?: ReactNode;
 } = {}) {
-  const [collections, events] = await Promise.all([fetchHomeCollections(), fetchHomeEvents()]);
+  const [collections, events, campaigns] = await Promise.all([
+    fetchHomeCollections(),
+    fetchHomeEvents(),
+    fetchHomeCampaigns(),
+  ]);
   const cards: HomeCommunityCard[] = collections.length
-    ? collections.slice(0, 3).map((row) => ({
+    ? collections.map((row) => ({
         id: row.id,
         title: row.headline,
         eyebrow: row.eyebrow ?? "Featured",
@@ -18,13 +32,36 @@ export async function HomeDiscovery({
         subtype: null,
       }))
     : [
-        { id: "dancer", title: "Discover dancers", eyebrow: "Find your community", image: null, talentIds: [], subtype: "dancer" },
-        { id: "choreographer", title: "Meet choreographers", eyebrow: "Explore creative voices", image: null, talentIds: [], subtype: "choreographer" },
-        { id: "instructor", title: "Find instructors", eyebrow: "Keep growing", image: null, talentIds: [], subtype: "instructor" },
+        {
+          id: "dancer",
+          title: "Discover dancers",
+          eyebrow: "Find your community",
+          image: null,
+          talentIds: [],
+          subtype: "dancer",
+        },
+        {
+          id: "choreographer",
+          title: "Meet choreographers",
+          eyebrow: "Explore creative voices",
+          image: null,
+          talentIds: [],
+          subtype: "choreographer",
+        },
+        {
+          id: "instructor",
+          title: "Find instructors",
+          eyebrow: "Keep growing",
+          image: null,
+          talentIds: [],
+          subtype: "instructor",
+        },
       ];
 
   return (
     <HomeDiscoveryView
+      upcomingSlot={upcomingSlot}
+      campaigns={campaigns}
       cards={cards}
       sponsored={events.sponsored}
       cast={events.cast}

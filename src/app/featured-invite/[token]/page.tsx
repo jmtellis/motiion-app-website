@@ -4,11 +4,14 @@ import { FeaturedInviteLandingClient } from "@/app/featured-invite/[token]/featu
 import { MARKETING_DARK } from "@/lib/marketing/dark-theme";
 import { getIosAppStoreId } from "@/lib/referrals/app-store";
 import { getFeaturedTalentInviteCard } from "@/lib/publicFeaturedTalentInvite.server";
-import { normalizeFeaturedTalentInviteToken } from "@/lib/publicFeaturedTalentInvite";
+import { normalizeFeaturedTalentInviteToken, projectInvitationTitle } from "@/lib/publicFeaturedTalentInvite";
 
 type PageProps = {
   params: Promise<{ token: string }>;
 };
+
+// Invite access can be disabled or rotated at any time. Never cache its availability.
+export const dynamic = "force-dynamic";
 
 export const viewport: Viewport = {
   themeColor: MARKETING_DARK.bg,
@@ -20,10 +23,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { token: rawToken } = await params;
   const token = normalizeFeaturedTalentInviteToken(rawToken);
   const card = token ? await getFeaturedTalentInviteCard(token) : null;
-  const title = card
+  const title = card?.workspaceTitle ? projectInvitationTitle(card.inviterName) : card
     ? `Featured at ${card.eventTitle} on Motiion`
     : "Featured talent invite on Motiion";
-  const description = card
+  const description = card?.workspaceTitle ? `${projectInvitationTitle(card.inviterName)}: ${card.workspaceTitle}. Create an account or open Motiion to accept.` : card
     ? `${card.inviterName ?? "Someone"} invited ${card.displayName} to be featured at ${card.eventTitle}. Sign up or open Motiion to accept.`
     : "Accept a Motiion featured talent invite.";
   const pageUrl = `https://www.motiion.app/featured-invite/${encodeURIComponent(token || rawToken)}`;
@@ -50,7 +53,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     ...(appStoreId
       ? {
           other: {
-            "apple-itunes-app": `app-id=${appStoreId}`,
+            "apple-itunes-app": `app-id=${appStoreId}, app-argument=${pageUrl}`,
           },
         }
       : {}),

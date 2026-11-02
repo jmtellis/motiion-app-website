@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { corsHeaders } from "../_shared/http.ts";
+import { assertUnconfirmedWorkStillOpen } from "../_shared/booking-work-window-guard.ts";
 import {
   applyTalentFlags,
   BOOKING_NOTE_MAX,
@@ -52,11 +53,12 @@ serve((req) => {
 
     if (viewer !== "talent") throw new BookingError("FORBIDDEN", "Only the talent can request changes.");
     if (isMemoExpired(memo)) throw new BookingError("MEMO_EXPIRED", "This deal memo has expired.");
+    await assertUnconfirmedWorkStillOpen(memo);
     if (!["offered", "negotiating"].includes(memo.status) || memo.awaiting_party !== "talent") {
       throw new BookingError("NOT_YOUR_TURN", "Waiting on Industry.");
     }
 
-    const result = applyTalentFlags(provisions, (body.flags ?? []) as TalentFlagInput[]);
+    const result = applyTalentFlags(provisions, (body.flags ?? []) as TalentFlagInput[], memo.template_key);
     if (!result.ok) throw new BookingError("INVALID_FLAG", "Check your requested changes.", result.errors);
 
     await writeMemo({

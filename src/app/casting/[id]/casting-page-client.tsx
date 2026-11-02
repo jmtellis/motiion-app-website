@@ -13,12 +13,12 @@ import {
 } from "@/components/casting/CastingSections";
 import { OpenInAppBar } from "@/components/product/OpenInAppBar";
 import { PublicPageAnalytics } from "@/components/analytics/PublicPageAnalytics";
-import { submitToCastingRole } from "@/lib/casting/submit";
+import { CastingApplicationModal } from "@/components/casting/CastingApplicationModal";
 import { formatCastingDeadline } from "@/lib/publicCasting";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 import type { PublicCasting } from "@/types/public";
 
-const SITE_HOME = "https://www.motiion.app";
+
 
 export default function CastingPageClient({ casting }: { casting: PublicCasting }) {
   const searchParams = useSearchParams();
@@ -35,11 +35,9 @@ export default function CastingPageClient({ casting }: { casting: PublicCasting 
   }, [casting.roles, casting.selectedRoleId, roleFromQuery]);
 
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(initialRoleId);
-  const [submitOpen, setSubmitOpen] = useState(false);
-  const [submitNote, setSubmitNote] = useState("");
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitOpen, setSubmitOpen] = useState(searchParams.get("apply") === "1");
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmitting = false;
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -73,19 +71,6 @@ export default function CastingPageClient({ casting }: { casting: PublicCasting 
     return projectPath;
   }, [casting.id, selectedRoleId]);
 
-  async function handleSubmit() {
-    if (!selectedRole?.id) return;
-    setSubmitError(null);
-    setIsSubmitting(true);
-    const result = await submitToCastingRole({ roleId: selectedRole.id, note: submitNote });
-    setIsSubmitting(false);
-    if (!result.ok) {
-      setSubmitError(result.message);
-      return;
-    }
-    setSubmitSuccess(true);
-    setSubmitOpen(false);
-  }
 
   return (
     <CastingPublicShell>
@@ -224,109 +209,11 @@ export default function CastingPageClient({ casting }: { casting: PublicCasting 
         </div>
       ) : null}
 
-      {submitOpen ? (
-        <CastingSubmitModal
-          isSignedIn={Boolean(isSignedIn)}
-          note={submitNote}
-          error={submitError}
-          isSubmitting={isSubmitting}
-          onNoteChange={setSubmitNote}
-          onClose={() => {
-            if (!isSubmitting) {
-              setSubmitOpen(false);
-              setSubmitError(null);
-            }
-          }}
-          onSubmit={() => void handleSubmit()}
-        />
+      {submitOpen && selectedRole ? (
+        <CastingApplicationModal projectId={casting.id} roleId={selectedRole.id} roleTitle={selectedRole.title}
+          onClose={() => setSubmitOpen(false)}
+          onComplete={() => { setSubmitSuccess(true); setSubmitOpen(false); }} />
       ) : null}
     </CastingPublicShell>
-  );
-}
-
-function CastingSubmitModal({
-  isSignedIn,
-  note,
-  error,
-  isSubmitting,
-  onNoteChange,
-  onClose,
-  onSubmit,
-}: {
-  isSignedIn: boolean;
-  note: string;
-  error: string | null;
-  isSubmitting: boolean;
-  onNoteChange: (value: string) => void;
-  onClose: () => void;
-  onSubmit: () => void;
-}) {
-  if (!isSignedIn) {
-    return (
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="casting-signup-title"
-        className="casting-modal-backdrop"
-        onClick={onClose}
-      >
-        <div className="casting-modal-card" onClick={(event) => event.stopPropagation()}>
-          <h2 id="casting-signup-title" className="casting-modal-title">
-            Sign in to submit
-          </h2>
-          <p className="casting-body-copy">
-            Create a Motiion account or sign in on the web to submit to this casting. You can also use the mobile app.
-          </p>
-          <div className="casting-modal-actions">
-            <a href={`${SITE_HOME}/login`} className="casting-modal-primary">
-              Sign in
-            </a>
-            <a href={`${SITE_HOME}#signup`} className="casting-modal-dismiss">
-              Get the app
-            </a>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="casting-submit-title"
-      className="casting-modal-backdrop"
-      onClick={onClose}
-    >
-      <div className="casting-modal-card" onClick={(event) => event.stopPropagation()}>
-        <h2 id="casting-submit-title" className="casting-modal-title">
-          Submit to casting
-        </h2>
-        <p className="casting-body-copy">Add an optional note for the casting team.</p>
-        <label className="casting-submit-note-label">
-          <span>Note (optional)</span>
-          <textarea
-            className="casting-submit-note"
-            rows={4}
-            value={note}
-            onChange={(event) => onNoteChange(event.target.value)}
-            disabled={isSubmitting}
-          />
-        </label>
-        {error ? (
-          <p className="casting-submit-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <div className="casting-modal-actions">
-          <button type="button" className="casting-modal-primary" onClick={onSubmit} disabled={isSubmitting}>
-            {isSubmitting ? "Submitting…" : "Confirm submit"}
-          </button>
-          <button type="button" onClick={onClose} className="casting-modal-dismiss" disabled={isSubmitting}>
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }

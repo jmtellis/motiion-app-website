@@ -2,6 +2,8 @@ export const PENDING_FEATURED_TALENT_INVITE_TOKEN_KEY =
   "motiion.pending_featured_talent_invite_token";
 
 export type FeaturedTalentInviteCard = {
+  workspaceTitle?: string | null;
+  invitationRole?: "admin" | "participant" | null;
   inviteId: string;
   activityId: string;
   parentId: string | null;
@@ -54,4 +56,10 @@ export function clearPendingFeaturedTalentInviteToken(): void {
 
 export function featuredInvitePath(token: string): string {
   return `/featured-invite/${encodeURIComponent(normalizeFeaturedTalentInviteToken(token) || token)}`;
+}
+
+/** Shared by link metadata and the no-app landing page. */
+export function projectInvitationTitle(inviterName: string | null | undefined): string {
+  const name = inviterName?.trim();
+  return name ? `${name} is inviting you to join their project` : "You’re invited to join a project";
 }

@@ -356,7 +356,7 @@ export function buildSampleAdminAnalytics(params: {
   now?: Date;
 }): { home: AdminAnalyticsHomeData; detail: AdminAnalyticsDetailData } {
   const now = params.now ?? new Date();
-  const range = parseAnalyticsDateRange(params.range);
+  const range = parseAnalyticsDateRange(params.range, now);
   const query = params.query?.trim() ?? "";
   const series = buildSignupSeries(sampleSignupRows(now, range.sinceIso), range.sinceIso, now);
   const visiblePeople = SAMPLE_PEOPLE.filter((person) =>

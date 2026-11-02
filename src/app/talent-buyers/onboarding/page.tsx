@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { TalentBuyerOnboardingFlow } from "@/components/talent-buyers/TalentBuyerOnboardingFlow";
-import { IndustryAccessGate } from "@/components/talent-buyers/IndustryAccessGate";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getActiveShell, hasEnabledShell, isCommunityAccount, isOnboardingComplete } from "@/lib/auth/profile";
 import { getProfileDestination, requireAuth } from "@/lib/auth/session";
 
@@ -12,6 +12,11 @@ export default async function TalentBuyerOnboardingPage({
 }) {
   const params = await searchParams;
   const profile = await requireAuth();
+  const db = await createServerSupabaseClient();
+  const approval = db ? await db.rpc("has_industry_approval") : null;
+  if (!approval || approval.error || approval.data !== true) redirect("/talent-buyers/application");
+  const { data: application } = await db!.from("industry_applications").select("full_name,professional_role,organization,contact_email,work_url").eq("user_id", profile.id).maybeSingle();
+  const applicationProfile = application ? { ...profile, fullName: application.full_name, customRole: application.professional_role, buyerRole: "other" as const, organizationName: application.organization, organizationWebsite: application.work_url } : profile;
   const addingIndustry = params.addShell === "industry";
 
   if (addingIndustry) {
@@ -22,9 +27,7 @@ export default async function TalentBuyerOnboardingPage({
       !isCommunityAccount(profile.accountType);
     if (!canAdd) redirect(getProfileDestination(profile));
     return (
-      <IndustryAccessGate>
-        <TalentBuyerOnboardingFlow profile={profile} exitHref="/home" />
-      </IndustryAccessGate>
+      <TalentBuyerOnboardingFlow profile={applicationProfile} exitHref="/home" />
     );
   }
 
@@ -40,5 +43,5 @@ export default async function TalentBuyerOnboardingPage({
     redirect("/onboarding");
   }
 
-  return <TalentBuyerOnboardingFlow profile={profile} />;
+  return <TalentBuyerOnboardingFlow profile={applicationProfile} />;
 }

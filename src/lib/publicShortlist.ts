@@ -43,6 +43,9 @@ async function callShortlistFunction<T>(body: Record<string, unknown>): Promise<
 }
 
 export async function fetchPublicShortlist(token: string): Promise<PublicShortlistPayload> {
+  if (process.env.NODE_ENV === "development" && token === "local-review-preview") {
+    return (await import("@/lib/shortlist-review-preview")).shortlistReviewPreview;
+  }
   const trimmed = decodeURIComponent(token).trim();
   if (!trimmed) {
     throw new PublicShortlistError("Missing share token", 400);
@@ -54,13 +57,18 @@ export async function fetchPublicShortlist(token: string): Promise<PublicShortli
 export async function submitShortlistVotes(args: {
   token: string;
   recipientId: string;
+  reviewerName: string;
   votes: PublicShortlistVoteInput[];
 }): Promise<{ success: boolean; submittedCount: number }> {
+  if (process.env.NODE_ENV === "development" && args.token === "local-review-preview") {
+    return { success: true, submittedCount: args.votes.length };
+  }
   const trimmed = decodeURIComponent(args.token).trim();
   return callShortlistFunction({
     action: "submit",
     token: trimmed,
     recipientId: args.recipientId,
+    reviewerName: args.reviewerName.trim(),
     votes: args.votes,
   });
 }

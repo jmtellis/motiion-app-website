@@ -1,3 +1,5 @@
+import { HomeUpcomingActivities } from "@/components/app/HomeUpcomingActivities";
+import { fetchTalentCalendarEvents } from "@/lib/app/schedule";
 import Link from "next/link";
 import { FileSignature } from "lucide-react";
 
@@ -10,9 +12,10 @@ import { countTalentDealMemosAwaiting } from "@/lib/booking/deal-memo-data";
 
 export default async function HomePage() {
   const profile = await requireTalentAccount();
-  const [activities, awaitingDealMemos] = await Promise.all([
+  const [activities, awaitingDealMemos, calendar] = await Promise.all([
     fetchUpcomingClassesAndSessions(),
     countTalentDealMemosAwaiting(profile.id),
+    fetchTalentCalendarEvents(profile.id),
   ]);
   const firstName = profile.fullName.split(" ")[0];
   const hour = new Date().getHours();
@@ -35,7 +38,7 @@ export default async function HomePage() {
           </p>
         ) : null
       }
-      discoverySlot={<HomeDiscovery />}
+      discoverySlot={<HomeDiscovery upcomingSlot={<HomeUpcomingActivities events={calendar} />} />}
       listingsSlot={<HomeListings activities={activities} />}
     />
   );

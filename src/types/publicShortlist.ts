@@ -1,6 +1,10 @@
 export type PublicShortlistVote = "yes" | "no";
 
 export type PublicShortlistShare = {
+  createdAt?: string | null;
+  expiresAt?: string | null;
+  expirationKind?: string | null;
+  sharedBy?: { name: string; avatarUrl: string | null } | null;
   id: string;
   title: string;
   message: string | null;
@@ -32,6 +36,12 @@ export type PublicShortlistExperience = {
 };
 
 export type PublicShortlistSubmission = {
+  roleId?: string;
+  roleTitle?: string;
+  instagramUrl?: string | null;
+  styles?: string[];
+  unionStatus?: string | null;
+  highlights?: { title: string; subtitle?: string | null; imageUrl?: string | null }[];
   id: string;
   talentId: string | null;
   displayName: string;

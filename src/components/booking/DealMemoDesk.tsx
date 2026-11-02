@@ -49,15 +49,17 @@ export function IndustryDealMemoDesk({
   confirmed,
   memos,
   error,
+  readyOnly = false,
 }: {
   confirmed: ConfirmedAvailability[];
   memos: DealMemoListItem[];
   error: boolean;
+  readyOnly?: boolean;
 }) {
   const ready = confirmed.filter((row) => !row.openMemoId);
   return (
     <div className="deal-memo" data-theme="light" data-embedded="true">
-      <div className="deal-memo__grid" data-layout="even">
+      <div className="deal-memo__grid" data-layout="even" style={readyOnly ? { gridTemplateColumns: "1fr" } : undefined}>
         <section className="deal-memo__panel deal-memo__stack" aria-labelledby="deal-memo-desk-confirmed" style={{ gap: 12 }}>
           <div>
             <h2 id="deal-memo-desk-confirmed" style={{ margin: 0 }}>Ready to book</h2>
@@ -97,7 +99,7 @@ export function IndustryDealMemoDesk({
             </p>
           )}
         </section>
-        <section className="deal-memo__panel deal-memo__stack" aria-labelledby="deal-memo-desk-memos" style={{ gap: 12 }}>
+        {!readyOnly ? <section className="deal-memo__panel deal-memo__stack" aria-labelledby="deal-memo-desk-memos" style={{ gap: 12 }}>
           <div>
             <h2 id="deal-memo-desk-memos" style={{ margin: 0 }}>Deal memos</h2>
             <p className="deal-memo__sub">Negotiate structured terms, then pay to book.</p>
@@ -110,7 +112,7 @@ export function IndustryDealMemoDesk({
               emptyCopy="No deal memos yet."
             />
           )}
-        </section>
+        </section> : null}
       </div>
     </div>
   );

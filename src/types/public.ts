@@ -217,6 +217,8 @@ export type PublicCastingScheduleGroup = {
 };
 
 export type PublicCastingRole = {
+  talentPaysTravel?: boolean;
+  hasAgeRequirement?: boolean;
   id: string;
   title: string;
   description: string | null;
@@ -236,6 +238,8 @@ export type PublicCastingRole = {
 };
 
 export type PublicCasting = {
+  clientLogoURL?: string | null;
+  projectType?: string | null;
   id: string;
   title: string;
   production: string | null;

@@ -1,3 +1,4 @@
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { cache } from "react";
 
 import { getProfileAvatarUrl } from "@/lib/auth/avatar";
@@ -767,22 +768,24 @@ export const getPillarHeadshotImages = cache(async () => {
   return images.slice(0, PILLAR_STACK_HEADSHOT_LIMIT);
 });
 
-/** Curated rosters resolve explicit user IDs, independently of navigator pagination. */
+/** Resolve the full Notion roster through the public talent view, preserving CMS order. */
 export async function searchCuratedTalent(userIds: string[]): Promise<SearchResult> {
   const empty: SearchResult = { items: [], total: 0, page: 1, pageSize: 0, source: "talent", usingFallbackData: false };
-  const ids = [...new Set(userIds)].slice(0, 200);
+  const ids = [...new Set(userIds.filter(id => /^[0-9a-f-]{36}$/i.test(id)))];
   if (!ids.length) return empty;
-  const admin = createAdminSupabaseClient();
-  if (admin) {
-    const { data, error } = await admin.from("talent_professional_profiles").select(PROFESSIONAL_PROFILE_SELECT)
-      .in("user_id", ids).eq("is_verified", true).in("subtype", [...TALENT_SUBTYPES]);
-    if (!error && data?.length) {
-      const profiles = await enrichProfessionalProfileRows(admin, data);
-      profiles.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
-      return { ...empty, items: profiles, total: profiles.length, pageSize: profiles.length };
+  const client = await createServerSupabaseClient();
+  const found = new Map<string, SearchProfileRecord>();
+  let failed = false;
+  for (let offset = 0; offset < ids.length; offset += 100) {
+    const batch = ids.slice(offset, offset + 100);
+    if (client) {
+      const { data, error } = await client.from("talent").select(TALENT_SELECT).in("id", batch).returns<SearchProfileRecord[]>();
+      if (error) failed = true;
+      for (const row of data ?? []) found.set(row.id, normalizeSearchProfile(row));
     }
+    const missing = batch.filter(id => !found.has(id));
+    for (const row of await readLiveSearchProfiles(missing)) found.set(row.id, row);
   }
-  const live = await readLiveSearchProfiles(ids);
-  if (!live.length) return { ...empty, source: admin ? "unavailable" : "talent" };
-  return { ...empty, items: live, total: live.length, pageSize: live.length };
+  const items = ids.flatMap(id => found.has(id) ? [found.get(id)!] : []);
+  return { ...empty, items, total: items.length, pageSize: items.length, source: failed && !items.length ? "unavailable" : "talent" };
 }

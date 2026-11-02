@@ -1,3 +1,4 @@
+import { filterCreditProfiles } from "@/lib/search/credit-profile-filters";
 import { fetchHomeCollections } from "@/lib/app/home-discovery";
 import { buildNavigatorInitialData } from "@/lib/talent-navigator/profile-adapter";
 import { searchTalentByCredit } from "@/lib/talent-navigator/search-navigator-rpc";
@@ -68,8 +69,11 @@ export async function loadDiscoverCanvas(
   const recentPromise = fetchRecentlyViewedTalent();
   if (credit && !collection) {
     const creditSearch = await searchTalentByCredit(credit);
-    result = creditSearch.result;
-    initialData = creditSearch.initial;
+    const matches = filterCreditProfiles(creditSearch.result.items, filters);
+    const pageSize = Math.max(1, creditSearch.result.pageSize);
+    const page = Math.max(1, Math.min(filters.page ?? 1, Math.max(1, Math.ceil(matches.length / pageSize))));
+    result = { ...creditSearch.result, items: matches.slice((page - 1) * pageSize, page * pageSize), total: matches.length, page };
+    initialData = { ...creditSearch.initial, talent: creditSearch.initial.talent.filter(talent => matches.some(profile => profile.id === talent.id)) };
   } else if (collection) {
     result = await searchCuratedTalent(collection.talent_ids);
     initialData = buildNavigatorInitialData(result);

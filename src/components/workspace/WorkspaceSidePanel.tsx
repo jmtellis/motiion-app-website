@@ -20,6 +20,7 @@ export function WorkspaceSidePanel({
   actions,
   leading,
   children,
+  persistent = false,
 }: {
   id: string;
   open: boolean;
@@ -28,6 +29,7 @@ export function WorkspaceSidePanel({
   actions?: ReactNode;
   leading?: ReactNode;
   children: ReactNode;
+  persistent?: boolean;
 }) {
   const host = useContext(SidePanelHostContext);
   const panelRef = useRef<HTMLElement>(null);
@@ -53,10 +55,11 @@ export function WorkspaceSidePanel({
     <aside
       ref={panelRef}
       id={id}
-      className="workspace-frame workspace-side-frame"
+      className={`workspace-frame workspace-side-frame${persistent ? " workspace-side-frame--persistent" : ""}`}
       aria-label={title}
       data-open={open}
-      inert={!open}
+      data-persistent={persistent}
+      inert={!open && !persistent}
     >
       <div className="workspace-side-panel">
         <header className="workspace-side-panel__header">

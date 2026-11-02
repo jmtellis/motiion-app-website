@@ -5,10 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, Pencil, Pin, Search, Trash2 } from "lucide-react";
 
+import { WorkspaceSidePanel } from "@/components/workspace/WorkspaceSidePanel";
 import { ConversationPane } from "@/components/messaging/ConversationPane";
 import { RequestsPane } from "@/components/messaging/RequestsPane";
 import { IndustryPageHeader } from "@/components/talent-buyers/dashboard/IndustryUI";
-import { InboxEmptyState } from "@/components/messaging/InboxEmptyState";
 import { formatAttachmentPreviewLabel } from "@/lib/messaging/attachment-payload";
 import {
   archiveConversations,
@@ -27,7 +27,11 @@ import {
   type ChatInboxFilter,
 } from "@/lib/messaging/inbox-partition";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
-import type { HomePendingRequest, InboxConversation, MessageRequest } from "@/types/app";
+import type {
+  HomePendingRequest,
+  InboxConversation,
+  MessageRequest,
+} from "@/types/app";
 
 const PIN_STORAGE_KEY = "motiion:pinned-conversations";
 
@@ -73,7 +77,9 @@ export function MessengerShell({
   initialFilter?: ChatInboxFilter;
 }) {
   const router = useRouter();
-  const [activeId, setActiveId] = useState<string | null>(initialConversationId ?? null);
+  const [activeId, setActiveId] = useState<string | null>(
+    initialConversationId ?? null,
+  );
   const [query, setQuery] = useState("");
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
   const [filter, setFilter] = useState<ChatInboxFilter>(initialFilter);
@@ -111,9 +117,21 @@ export function MessengerShell({
 
     const channel = supabase
       .channel(`inbox-${currentUserId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, refresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "message_requests" }, refresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "conversation_participants" }, refresh)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        refresh,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "message_requests" },
+        refresh,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "conversation_participants" },
+        refresh,
+      )
       .subscribe();
 
     return () => {
@@ -134,7 +152,10 @@ export function MessengerShell({
   }, [conversations, pendingOpenId]);
 
   const listed = useMemo(
-    () => conversationsWithInboxActivity(conversations).filter((row) => !removedIds.includes(row.conversation_id)),
+    () =>
+      conversationsWithInboxActivity(conversations).filter(
+        (row) => !removedIds.includes(row.conversation_id),
+      ),
     [conversations, removedIds],
   );
 
@@ -147,7 +168,9 @@ export function MessengerShell({
     let rows = partitioned;
     if (projectFilterTitle?.trim()) {
       const needle = projectFilterTitle.trim().toLowerCase();
-      rows = rows.filter((row) => row.context_title?.toLowerCase().includes(needle));
+      rows = rows.filter((row) =>
+        row.context_title?.toLowerCase().includes(needle),
+      );
     }
     if (query.trim()) {
       const needle = query.trim().toLowerCase();
@@ -170,7 +193,10 @@ export function MessengerShell({
     () => ({
       primary: partitionUnreadCount(listed, "primary"),
       general: partitionUnreadCount(listed, "general"),
-      requests: requestsChipCount(pendingRequests.length, messageRequests.length),
+      requests: requestsChipCount(
+        pendingRequests.length,
+        messageRequests.length,
+      ),
     }),
     [listed, messageRequests.length, pendingRequests.length],
   );
@@ -204,7 +230,10 @@ export function MessengerShell({
     setConfirmDelete(false);
   }
 
-  async function runSelectionAction(action: "read" | "unread" | "archive", ids: string[]) {
+  async function runSelectionAction(
+    action: "read" | "unread" | "archive",
+    ids: string[],
+  ) {
     if (!ids.length || busy) return;
     setBusy(true);
     setActionError(null);
@@ -252,7 +281,13 @@ export function MessengerShell({
   const mutedText = isDashboard ? "text-white/55" : "text-[var(--ds-muted)]";
 
   return (
-    <div className={isWorkspace ? "buyer-messages-workspace flex h-full min-h-0 flex-1 flex-col" : "inbox-page"}>
+    <div
+      className={
+        isWorkspace
+          ? "buyer-messages-workspace flex h-full min-h-0 flex-1 flex-col"
+          : "inbox-page"
+      }
+    >
       {isDashboard ? (
         <IndustryPageHeader
           title="Inbox"
@@ -263,8 +298,16 @@ export function MessengerShell({
           }
           actions={
             filter === "requests" ? null : (
-              <button type="button" className="inbox-page__edit" onClick={() => (editing ? exitEditing() : setEditing(true))}>
-                {editing ? <Check className="size-3.5" /> : <Pencil className="size-3.5" />}
+              <button
+                type="button"
+                className="inbox-page__edit"
+                onClick={() => (editing ? exitEditing() : setEditing(true))}
+              >
+                {editing ? (
+                  <Check className="size-3.5" />
+                ) : (
+                  <Pencil className="size-3.5" />
+                )}
                 {editing ? "Done" : "Edit"}
               </button>
             )
@@ -274,8 +317,16 @@ export function MessengerShell({
         <header className="inbox-page__header">
           <h1>Inbox</h1>
           {filter === "requests" ? null : (
-            <button type="button" className="inbox-page__edit" onClick={() => (editing ? exitEditing() : setEditing(true))}>
-              {editing ? <Check className="size-3.5" /> : <Pencil className="size-3.5" />}
+            <button
+              type="button"
+              className="inbox-page__edit"
+              onClick={() => (editing ? exitEditing() : setEditing(true))}
+            >
+              {editing ? (
+                <Check className="size-3.5" />
+              ) : (
+                <Pencil className="size-3.5" />
+              )}
               {editing ? "Done" : "Edit"}
             </button>
           )}
@@ -303,19 +354,25 @@ export function MessengerShell({
             >
               {label}
               {count > 0 ? (
-                <span className="opportunities-count">{count > 99 ? "99+" : count}</span>
+                <span className="opportunities-count">
+                  {count > 99 ? "99+" : count}
+                </span>
               ) : null}
             </button>
           );
         })}
       </div>
 
-      {actionError ? <p className="text-sm text-amber-500">{actionError}</p> : null}
+      {actionError ? (
+        <p className="text-sm text-amber-500">{actionError}</p>
+      ) : null}
 
       {!isWorkspace && projectFilterTitle ? (
         <p className={`text-sm ${mutedText}`}>
           Showing conversations related to{" "}
-          <span className="font-medium text-[var(--ds-on-surface)]">{projectFilterTitle}</span>
+          <span className="font-medium text-[var(--ds-on-surface)]">
+            {projectFilterTitle}
+          </span>
         </p>
       ) : null}
 
@@ -326,12 +383,10 @@ export function MessengerShell({
           variant={variant}
           onAccepted={openAcceptedConversation}
         />
-      ) : isDashboard && !listed.length && !query.trim() ? (
-        <InboxEmptyState hideHeader />
       ) : (
         <div
           key={filter}
-          className={`ui-swap grid min-h-0 overflow-hidden md:grid-cols-[minmax(240px,1fr)_2fr] ${
+          className={`messenger-list ui-swap min-h-0 overflow-hidden ${
             isWorkspace
               ? "h-full flex-1"
               : `rounded-2xl border ${
@@ -344,10 +399,14 @@ export function MessengerShell({
           <aside
             className={`flex min-h-0 flex-col border-r md:flex ${
               isDashboard ? "border-white/8" : "border-[var(--ds-border)]"
-            } ${active ? "hidden md:flex" : "flex"}`}
+            } flex`}
           >
-            <div className={`border-b p-3 ${isDashboard ? "border-white/8" : "border-[var(--ds-border)]"}`}>
-              <label className={`inbox-search${isDashboard ? " inbox-search--dark" : ""}`}>
+            <div
+              className={`border-b p-3 ${isDashboard ? "border-white/8" : "border-[var(--ds-border)]"}`}
+            >
+              <label
+                className={`inbox-search${isDashboard ? " inbox-search--dark" : ""}`}
+              >
                 <Search aria-hidden="true" />
                 <input
                   value={query}
@@ -369,7 +428,9 @@ export function MessengerShell({
                   {filtered.map((row) => {
                     const isActive = row.conversation_id === activeId;
                     const isPinned = pinnedIds.includes(row.conversation_id);
-                    const isSelected = selectedIds.includes(row.conversation_id);
+                    const isSelected = selectedIds.includes(
+                      row.conversation_id,
+                    );
                     const name = inboxDisplayName(row);
                     return (
                       <li key={row.conversation_id} data-active={isActive}>
@@ -379,7 +440,9 @@ export function MessengerShell({
                               <input
                                 type="checkbox"
                                 checked={isSelected}
-                                onChange={() => toggleSelected(row.conversation_id)}
+                                onChange={() =>
+                                  toggleSelected(row.conversation_id)
+                                }
                                 aria-label={`Select ${name}`}
                               />
                             </label>
@@ -387,7 +450,9 @@ export function MessengerShell({
                           <button
                             type="button"
                             onClick={() =>
-                              editing ? toggleSelected(row.conversation_id) : setActiveId(row.conversation_id)
+                              editing
+                                ? toggleSelected(row.conversation_id)
+                                : setActiveId(row.conversation_id)
                             }
                             className={`studio-conversation-row flex min-w-0 flex-1 items-start gap-3 px-4 py-3 text-left transition ${
                               isActive
@@ -400,30 +465,46 @@ export function MessengerShell({
                             }`}
                           >
                             <ListAvatar
-                              url={isMotiionBrandedThread(row) ? null : row.participant_avatar_url}
+                              url={
+                                isMotiionBrandedThread(row)
+                                  ? null
+                                  : row.participant_avatar_url
+                              }
                               name={name}
                               branded={isMotiionBrandedThread(row)}
                             />
                             <span className="min-w-0 flex-1">
                               <span className="flex items-baseline justify-between gap-2">
-                                <span className={`truncate text-sm font-semibold ${isDashboard ? "text-white/90" : "text-[var(--ds-text-default)]"}`}>
+                                <span
+                                  className={`truncate text-sm font-semibold ${isDashboard ? "text-white/90" : "text-[var(--ds-text-default)]"}`}
+                                >
                                   {name}
                                 </span>
-                                <span className={`shrink-0 text-[11px] ${isDashboard ? "text-white/40" : "text-[var(--ds-subtle)]"}`}>
+                                <span
+                                  className={`shrink-0 text-[11px] ${isDashboard ? "text-white/40" : "text-[var(--ds-subtle)]"}`}
+                                >
                                   {formatInboxTimestamp(row.last_message_at)}
                                 </span>
                               </span>
-                              {row.context_title && !isMotiionBrandedThread(row) ? (
+                              {row.context_title &&
+                              !isMotiionBrandedThread(row) ? (
                                 <span className="studio-conversation-context mt-0.5 block truncate text-[11px] text-[var(--ds-accent)]/80">
                                   {row.context_title}
                                 </span>
                               ) : null}
-                              <span className={`studio-conversation-preview mt-0.5 line-clamp-1 block text-xs ${isDashboard ? "text-white/50" : "text-[var(--ds-muted)]"}`}>
-                                {formatConversationPreview(row.last_message_body)}
+                              <span
+                                className={`studio-conversation-preview mt-0.5 line-clamp-1 block text-xs ${isDashboard ? "text-white/50" : "text-[var(--ds-muted)]"}`}
+                              >
+                                {formatConversationPreview(
+                                  row.last_message_body,
+                                )}
                               </span>
                             </span>
                             {row.unread_count > 0 ? (
-                              <span className="mt-2 size-2 shrink-0 rounded-full bg-[var(--ds-accent)]" aria-label={`${row.unread_count} unread`} />
+                              <span
+                                className="mt-2 size-2 shrink-0 rounded-full bg-[var(--ds-accent)]"
+                                aria-label={`${row.unread_count} unread`}
+                              />
                             ) : null}
                           </button>
                           {!editing ? (
@@ -431,7 +512,11 @@ export function MessengerShell({
                               type="button"
                               onClick={() => togglePin(row.conversation_id)}
                               className={`px-2 text-white/30 hover:text-[var(--ds-accent)] ${isPinned ? "text-[var(--ds-accent)]" : ""}`}
-                              aria-label={isPinned ? "Unpin conversation" : "Pin conversation"}
+                              aria-label={
+                                isPinned
+                                  ? "Unpin conversation"
+                                  : "Pin conversation"
+                              }
                             >
                               <Pin className="size-3.5" />
                             </button>
@@ -444,11 +529,18 @@ export function MessengerShell({
               )}
             </div>
             {editing ? (
-              <div className={`flex flex-wrap items-center gap-2 border-t px-3 py-2 ${isDashboard ? "border-white/8" : "border-[var(--ds-border)]"}`}>
+              <div
+                className={`flex flex-wrap items-center gap-2 border-t px-3 py-2 ${isDashboard ? "border-white/8" : "border-[var(--ds-border)]"}`}
+              >
                 <EditAction
                   label="Read all"
                   disabled={busy || !filtered.length}
-                  onClick={() => void runSelectionAction("read", filtered.map((row) => row.conversation_id))}
+                  onClick={() =>
+                    void runSelectionAction(
+                      "read",
+                      filtered.map((row) => row.conversation_id),
+                    )
+                  }
                 />
                 <EditAction
                   label="Read"
@@ -471,44 +563,68 @@ export function MessengerShell({
               </div>
             ) : null}
           </aside>
-
-          <section className={`min-h-0 ${active ? "block" : "hidden md:block"}`}>
-            {active ? (
-              <div className="flex h-full min-h-0 flex-col">
-                <button
-                  type="button"
-                  onClick={() => setActiveId(null)}
-                  className={`flex items-center gap-1.5 px-4 pt-3 text-xs font-medium md:hidden ${mutedText}`}
-                >
-                  <ArrowLeft className="size-3.5" /> All conversations
-                </button>
-                <ConversationPane
-                  key={active.conversation_id}
-                  conversation={active}
-                  currentUserId={currentUserId}
-                  variant={variant}
-                />
-              </div>
-            ) : (
-              <div className="flex h-full items-center justify-center p-8 text-center">
-                <p className={`text-sm ${isDashboard ? "text-white/45" : "text-[var(--ds-subtle)]"}`}>
-                  Select a conversation to read and reply.
-                </p>
-              </div>
-            )}
-          </section>
         </div>
       )}
 
+      <WorkspaceSidePanel
+        id="inbox-thread-panel"
+        title="Messages"
+        open={Boolean(active)}
+        persistent
+        onClose={() => setActiveId(null)}
+      >
+        {active ? (
+          <div className="inbox-thread-content flex h-full min-h-0 flex-col">
+            <button
+              type="button"
+              onClick={() => setActiveId(null)}
+              className={`flex items-center gap-1.5 px-4 pt-3 text-xs font-medium md:hidden ${mutedText}`}
+            >
+              <ArrowLeft className="size-3.5" /> All conversations
+            </button>
+            <ConversationPane
+              key={active.conversation_id}
+              conversation={active}
+              currentUserId={currentUserId}
+              variant="default"
+            />
+          </div>
+        ) : (
+          <div className="inbox-thread-content flex h-full items-center justify-center p-8 text-center">
+            <p className="text-sm text-[var(--ds-subtle)]">
+              Select a conversation to read and reply.
+            </p>
+          </div>
+        )}
+      </WorkspaceSidePanel>
+
       {confirmDelete ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="presentation">
-          <div role="dialog" aria-modal="true" aria-labelledby="delete-conversations-title" className="w-full max-w-sm rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-surface)] p-5 text-[var(--ds-text-default)]">
-            <h2 id="delete-conversations-title" className="text-base font-semibold">Delete Conversations</h2>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-conversations-title"
+            className="w-full max-w-sm rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-surface)] p-5 text-[var(--ds-text-default)]"
+          >
+            <h2
+              id="delete-conversations-title"
+              className="text-base font-semibold"
+            >
+              Delete Conversations
+            </h2>
             <p className="mt-2 text-sm text-[var(--ds-muted)]">
-              This removes the selected conversations from your inbox. The other people can still see their copy.
+              This removes the selected conversations from your inbox. The other
+              people can still see their copy.
             </p>
             <div className="mt-5 flex justify-end gap-2">
-              <button type="button" onClick={() => setConfirmDelete(false)} className="rounded-full px-3.5 py-1.5 text-sm text-[var(--ds-muted)]">
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                className="rounded-full px-3.5 py-1.5 text-sm text-[var(--ds-muted)]"
+              >
                 Cancel
               </button>
               <button
@@ -537,7 +653,12 @@ function EditAction({
   onClick: () => void;
 }) {
   return (
-    <button type="button" disabled={disabled} onClick={onClick} className="rounded-full px-2 py-1 text-xs font-medium text-[var(--ds-muted)] disabled:opacity-40">
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="rounded-full px-2 py-1 text-xs font-medium text-[var(--ds-muted)] disabled:opacity-40"
+    >
       {label}
     </button>
   );
@@ -556,7 +677,11 @@ function ListAvatar({
     return (
       <span className="relative block size-10 shrink-0 overflow-hidden rounded-full bg-black">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/LogoMotiion.svg" alt="" className="size-full object-contain p-1.5" />
+        <img
+          src="/LogoMotiion.svg"
+          alt=""
+          className="size-full object-contain p-1.5"
+        />
       </span>
     );
   }

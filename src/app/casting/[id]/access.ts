@@ -18,6 +18,7 @@ function accessCookieName(roleId: string) {
 type RoleAccessRow = {
   visibility: string | null;
   password_hash: string | null;
+  projects: { casting_link_access: string } | null;
 };
 
 async function fetchRoleAccess(roleId: string): Promise<RoleAccessRow | null> {
@@ -26,7 +27,7 @@ async function fetchRoleAccess(roleId: string): Promise<RoleAccessRow | null> {
 
   const { data } = await admin
     .from("roles")
-    .select("visibility, password_hash")
+    .select("visibility, password_hash, projects(casting_link_access)")
     .eq("id", roleId)
     .maybeSingle<RoleAccessRow>();
 
@@ -37,7 +38,7 @@ async function fetchRoleAccess(roleId: string): Promise<RoleAccessRow | null> {
 export async function getCastingAccess(roleId: string): Promise<CastingAccessInfo> {
   const role = await fetchRoleAccess(roleId);
   const visibility = (role?.visibility ?? "public") as CastingAccessInfo["visibility"];
-  const requiresPassword = visibility === "private" && Boolean(role?.password_hash);
+  const requiresPassword = (!role?.projects?.casting_link_access || role.projects.casting_link_access === "legacy") && visibility === "private" && Boolean(role?.password_hash);
 
   if (!requiresPassword) {
     return { visibility, requiresPassword: false, unlocked: true };

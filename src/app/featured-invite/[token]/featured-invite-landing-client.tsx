@@ -13,6 +13,7 @@ import { getIosAppStoreUrl } from "@/lib/referrals/app-store";
 import {
   clearPendingFeaturedTalentInviteToken,
   featuredInvitePath,
+  projectInvitationTitle,
   storePendingFeaturedTalentInviteToken,
   type FeaturedTalentInviteCard,
 } from "@/lib/publicFeaturedTalentInvite";
@@ -47,7 +48,7 @@ export function FeaturedInviteLandingClient({
   cardError = null,
 }: FeaturedInviteLandingClientProps) {
   const appStoreUrl = getIosAppStoreUrl();
-  const openInAppHref = `https://www.motiion.app/featured-invite/${encodeURIComponent(token)}`;
+  const openInAppHref = `motiion://www.motiion.app/featured-invite/${encodeURIComponent(token)}`;
   const [status, setStatus] = useState<"idle" | "working" | "done" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(cardError);
   const [isAuthed, setIsAuthed] = useState(false);
@@ -84,6 +85,14 @@ export function FeaturedInviteLandingClient({
           setErrorMessage("Unable to connect.");
           return;
         }
+        if (token.startsWith("ws_")) {
+          if (action === "decline") { clearPendingFeaturedTalentInviteToken(); window.location.assign("/"); return; }
+          const { error } = await supabase.rpc("join_featured_workspace", { p_token: token });
+          if (error) throw error;
+          clearPendingFeaturedTalentInviteToken();
+          setStatus("done");
+          return;
+        }
         const { data, error } = await supabase.rpc("claim_activity_featured_talent_invite", {
           p_token: token,
           p_action: action,
@@ -113,7 +122,9 @@ export function FeaturedInviteLandingClient({
     [token],
   );
 
-  const headline = card
+  const headline = card?.workspaceTitle
+    ? projectInvitationTitle(card.inviterName)
+    : card
     ? `You're invited to be featured at ${card.eventTitle}`
     : "Featured talent invite";
 
@@ -147,17 +158,26 @@ export function FeaturedInviteLandingClient({
           <main className="flex flex-1 flex-col justify-center py-12">
             <div className="flex flex-col items-center text-center">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8a8a8a]">
-                Featured talent invite
+                {card?.workspaceTitle ? "Private workspace invitation" : "Featured talent invite"}
               </p>
               <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#fafafa]">
                 {headline}
               </h1>
-              {card?.inviterName ? (
+              {card?.workspaceTitle ? (
+                <p className="mt-3 text-lg font-medium text-[#fafafa]">{card.workspaceTitle}</p>
+              ) : card?.inviterName ? (
                 <p className="mt-3 text-sm text-[#a3a3a3]">
                   {card.inviterName} invited {card.displayName}
                 </p>
               ) : card ? (
                 <p className="mt-3 text-sm text-[#a3a3a3]">Invited as {card.displayName}</p>
+              ) : null}
+              {card?.workspaceTitle ? (
+                <p className="mt-4 text-sm text-[#a3a3a3]">{card.invitationRole === "admin"
+                    ? "Accept to become a project admin. Sign in or create an account using the verified email address your invitation was sent to."
+                    : card.invitationRole === "participant"
+                      ? "Accept to join this project’s workspace."
+                      : `Accept to join the private team and Featured Performers for ${card.eventTitle}.`} Already have Motiion? Open this invitation in the app. Otherwise, create your account here first so your invitation is saved, then download the app if you use iPhone.</p>
               ) : null}
               {!card ? (
                 <p className="mt-4 text-sm text-[#a3a3a3]">
@@ -187,8 +207,8 @@ export function FeaturedInviteLandingClient({
                     {status === "working"
                       ? "Accepting…"
                       : status === "done"
-                        ? "Accepted"
-                        : "Accept invite"}
+                        ? (token.startsWith("ws_") ? "Joined workspace" : "Accepted")
+                        : card.workspaceTitle ? "Join workspace" : "Accept invite"}
                   </button>
                   <button
                     type="button"
@@ -196,7 +216,7 @@ export function FeaturedInviteLandingClient({
                     disabled={status === "working" || status === "done"}
                     className="inline-flex h-12 items-center justify-center rounded-full border border-white/16 px-5 text-sm font-medium text-[#fafafa] transition hover:bg-white/6 disabled:opacity-60"
                   >
-                    Decline
+                    {token.startsWith("ws_") ? "Not now" : "Decline"}
                   </button>
                 </>
               ) : null}
@@ -206,7 +226,7 @@ export function FeaturedInviteLandingClient({
                   href={`/signup?featured=${encodeURIComponent(token)}`}
                   className="inline-flex h-12 items-center justify-center rounded-full bg-[#00aacc] px-5 text-sm font-semibold text-[#041018] transition hover:bg-[#33bbd6]"
                 >
-                  Sign up to accept
+                  Create an account to join
                 </Link>
               ) : null}
 

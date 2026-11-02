@@ -14,13 +14,14 @@ import {
 
 import { trackClientEvent } from "@/lib/analytics/track-client";
 
-/** Canonical talent IA: Home · Inbox · Discover · Schedule · Portfolio. */
+/** Talent navigation matches the iOS workspace. */
 const talentTabs = [
   { href: "/home", label: "Home", icon: House },
-  { href: "/opportunities", label: "Opportunities", icon: Megaphone },
-  { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/discover", label: "Discover", icon: Search },
-  { href: "/schedule", label: "Schedule", icon: CalendarDays },
+  { href: "/opportunities", label: "Opportunities", icon: Megaphone },
+  { href: "/deal-memos", label: "Bookings", icon: CalendarDays },
+  { href: "/inbox", label: "Inbox", icon: Inbox },
+  { href: "/schedule", label: "Calendar", icon: CalendarDays },
   { href: "/portfolio", label: "Portfolio", icon: Layers },
 ] as const;
 

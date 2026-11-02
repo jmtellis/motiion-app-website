@@ -25,6 +25,7 @@ import { suggestCreditCollaborators } from "@/lib/talent/discover-actions";
 import type { SearchFilters, SearchProfileRecord, SearchResult } from "@/types/search";
 
 type Attributes = {
+  location: string;
   gender: string;
   height: string;
   union: string;
@@ -43,7 +44,7 @@ type BrowseQuery = Attributes & {
   page: number;
 };
 
-const EMPTY_ATTRIBUTES: Attributes = { gender: "", height: "", union: "", rep: "", skills: [], ethnicity: [], hair: [], eyes: [] };
+const EMPTY_ATTRIBUTES: Attributes = { location: "", gender: "", height: "", union: "", rep: "", skills: [], ethnicity: [], hair: [], eyes: [] };
 
 function countAttributes(attributes: Attributes) {
   return Object.values(attributes).reduce(
@@ -252,6 +253,9 @@ function AttributesFilter({ value, onApply }: { value: Attributes; onApply: (att
       onClear={() => setDraft(EMPTY_ATTRIBUTES)}
       onApply={() => onApply(draft)}
     >
+      <FilterSection label="Location">
+        <input aria-label="Location" placeholder="City or region" className="workspace-bare-input" value={draft.location} onChange={(event) => set("location")(event.target.value)} />
+      </FilterSection>
       <FilterSection label="Gender">
         <ChipGroup includeAny ariaLabel="Gender" options={GENDER_OPTIONS} value={draft.gender} onChange={set("gender")} />
       </FilterSection>
@@ -297,6 +301,7 @@ export function DiscoverView({
   const { openTalent, lookupTalent } = useDiscoverTalent();
   const totalPages = Math.max(1, Math.ceil(result.total / Math.max(result.pageSize, 1)));
   const attributes: Attributes = {
+    location: filters.location ?? "",
     gender: filters.gender ?? "",
     height: filters.height ?? "",
     union: filters.unionStatus ?? "",
@@ -320,7 +325,7 @@ export function DiscoverView({
     rootRef.current?.closest(".talent-discovery-results")?.scrollTo({ top: 0, behavior: "smooth" });
   }, [result.page]);
 
-  function go(next: Partial<BrowseQuery>, keepCredit = false) {
+  function go(next: Partial<BrowseQuery>, keepCredit = true) {
     const href = buildHref(basePath, { ...current, page: 1, ...next }, keepCredit ? credit : "");
     startTransition(() => router.push(href, { scroll: false }));
   }
@@ -329,15 +334,11 @@ export function DiscoverView({
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const keyword = String(form.get("keyword") ?? "").trim();
-    const location = String(form.get("location") ?? "").trim();
     const explicit = explicitWorkedWith(keyword);
     const names = !explicit && keyword.length >= 2 ? await suggestCreditCollaborators(keyword) : [];
     const creditName = explicit ?? pickCreditRewrite(keyword, names);
-    if (creditName && !location && !current.subtype && !current.styles.length && !countAttributes(attributes)) {
-      startTransition(() => router.push(`${basePath}?credit=${encodeURIComponent(creditName)}`, { scroll: false }));
-      return;
-    }
-    go({ keyword, location });
+    const href = buildHref(basePath, { ...current, keyword: creditName ? "" : keyword, page: 1 }, creditName ?? "");
+    startTransition(() => router.push(href, { scroll: false }));
   }
 
   const start = (result.page - 1) * result.pageSize + 1;
@@ -353,23 +354,6 @@ export function DiscoverView({
       </div>
 
       <div className="discover-browse__toolbar">
-        <div className="discover-browse__types" role="group" aria-label="Talent type">
-          <button type="button" className="ui-chip" aria-pressed={!current.subtype} onClick={() => go({ subtype: "" })}>
-            All talent
-          </button>
-          {talentSubtypeOptions.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className="ui-chip"
-              aria-pressed={current.subtype === option.value}
-              onClick={() => go({ subtype: current.subtype === option.value ? "" : option.value })}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-
         <form key={queryKey} className="discover-browse__filters" onSubmit={(event) => void onSearch(event)}>
           <label className="discover-browse__field discover-browse__field--search">
             <Search size={15} aria-hidden />
@@ -382,18 +366,11 @@ export function DiscoverView({
               enterKeyHint="search"
             />
           </label>
-          <label className="discover-browse__field">
-            <MapPin size={15} aria-hidden />
-            <input
-              name="location"
-              defaultValue={current.location}
-              placeholder="Location"
-              aria-label="Location"
-              className="workspace-bare-input"
-              enterKeyHint="search"
-            />
-          </label>
           <button type="submit" className="sr-only">Search</button>
+          <select className="discover-browse__type-select" aria-label="Talent type" value={current.subtype} onChange={(event) => go({ subtype: event.target.value })}>
+            <option value="">All talent</option>
+            {talentSubtypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
           <StylesFilter value={current.styles} onApply={(styles) => go({ styles })} />
           <AttributesFilter value={attributes} onApply={(next) => go(next)} />
         </form>

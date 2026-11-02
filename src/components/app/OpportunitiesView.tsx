@@ -5,11 +5,15 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Megaphone } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { respondToCastingRequest } from "@/app/(app)/opportunities/actions";
 import { CastingDetailPanel } from "@/components/app/CastingDetailPanel";
 import { useNotificationsPanel } from "@/components/workspace/WorkspaceNotifications";
+import { groupOpportunityProjects as projectGroups } from "@/lib/app/opportunity-groups";
 import { outcomeLabel } from "@/lib/app/talent-casting-state";
-import type { TalentCastingCard, TalentInviteCard, TalentOpportunities, TalentSubmissionCard } from "@/lib/app/talent-castings";
+import type {
+  TalentCastingCard,
+  TalentOpportunities,
+  TalentSubmissionCard,
+} from "@/lib/app/talent-castings";
 
 type Tab = "open" | "invited" | "submitted";
 type Roster = "active" | "closed";
@@ -35,18 +39,22 @@ export function OpportunitiesView({
   const notifications = useNotificationsPanel();
   const [tab, setTab] = useState<Tab>(initialTab);
   const [roster, setRoster] = useState<Roster>("active");
-  const [castingRoleId, setCastingRoleId] = useState<string | null>(initialCasting);
+  const [castingRoleId, setCastingRoleId] = useState<string | null>(
+    initialCasting,
+  );
   const [preferRole, setPreferRole] = useState(initialPreferRole);
-  const [decliningId, setDecliningId] = useState<string | null>(null);
 
   const submitted = useMemo(
-    () => opportunities.submitted.filter((card) => (roster === "closed" ? card.closed : !card.closed)),
+    () =>
+      opportunities.submitted.filter((card) =>
+        roster === "closed" ? card.closed : !card.closed,
+      ),
     [opportunities.submitted, roster],
   );
   const counts = {
-    open: opportunities.openCalls.length,
-    invited: opportunities.invited.length,
-    submitted: opportunities.submitted.length,
+    open: projectGroups(opportunities.openCalls).length,
+    invited: projectGroups(opportunities.invited).length,
+    submitted: projectGroups(opportunities.submitted).length,
   };
 
   function openCasting(roleId: string, roleView: boolean) {
@@ -66,14 +74,9 @@ export function OpportunitiesView({
     if (nextTab !== "open") params.set("tab", nextTab);
     if (roleId) params.set("casting", roleId);
     const query = params.toString();
-    router.replace(query ? `/opportunities?${query}` : "/opportunities", { scroll: false });
-  }
-
-  async function decline(card: TalentInviteCard) {
-    setDecliningId(card.requestId);
-    const result = await respondToCastingRequest(card.requestId, "negative");
-    setDecliningId(null);
-    if (result.ok) router.refresh();
+    router.replace(query ? `/opportunities?${query}` : "/opportunities", {
+      scroll: false,
+    });
   }
 
   return (
@@ -81,7 +84,10 @@ export function OpportunitiesView({
       <header className="opportunities-page__header">
         <div>
           <h1>Opportunities</h1>
-          <p>Open calls, private invites, and the castings you’ve already submitted to.</p>
+          <p>
+            Open calls, private invites, and the castings you’ve already
+            submitted to.
+          </p>
         </div>
       </header>
 
@@ -111,46 +117,70 @@ export function OpportunitiesView({
         {tab === "invited" ? (
           opportunities.invited.length ? (
             <ul className="home-open-call-grid">
-              {opportunities.invited.map((card) => (
-                <li key={card.key}>
-                  <CastingCard card={card} badge="Invited" onOpen={() => openCasting(card.roleId, true)} />
-                  <button
-                    type="button"
-                    className="opportunities-decline"
-                    disabled={decliningId === card.requestId}
-                    onClick={() => void decline(card)}
-                  >
-                    {decliningId === card.requestId ? "Declining…" : "Decline"}
-                  </button>
-                </li>
-              ))}
+              {projectGroups(opportunities.invited).map((group) => {
+                const card = group[0];
+                return (
+                  <li key={card.key}>
+                    <CastingCard
+                      card={card}
+                      badge={
+                        group.length > 1
+                          ? `${group.length} invited roles`
+                          : "Invited"
+                      }
+                      onOpen={() => openCasting(card.roleId, false)}
+                    />
+                  </li>
+                );
+              })}
             </ul>
           ) : (
-            <EmptyCopy>Private castings you’re invited to submit for will show up here.</EmptyCopy>
+            <EmptyCopy>
+              Private castings you’re invited to submit for will show up here.
+            </EmptyCopy>
           )
         ) : null}
 
         {tab === "submitted" ? (
           <>
-            <div className="home-browser__filters" role="group" aria-label="Submission status">
-              <button type="button" aria-pressed={roster === "active"} onClick={() => setRoster("active")}>
+            <div
+              className="home-browser__filters"
+              role="group"
+              aria-label="Submission status"
+            >
+              <button
+                type="button"
+                aria-pressed={roster === "active"}
+                onClick={() => setRoster("active")}
+              >
                 Active
               </button>
-              <button type="button" aria-pressed={roster === "closed"} onClick={() => setRoster("closed")}>
+              <button
+                type="button"
+                aria-pressed={roster === "closed"}
+                onClick={() => setRoster("closed")}
+              >
                 Closed
               </button>
             </div>
             {submitted.length ? (
               <ul className="home-open-call-grid">
-                {submitted.map((card) => (
-                  <li key={card.key}>
-                    <CastingCard
-                      card={card}
-                      badge={outcomeLabel(card.outcome)}
-                      onOpen={() => openCasting(card.roleId, true)}
-                    />
-                  </li>
-                ))}
+                {projectGroups(submitted).map((group) => {
+                  const card = group[0];
+                  return (
+                    <li key={card.key}>
+                      <CastingCard
+                        card={card}
+                        badge={
+                          group.length > 1
+                            ? `${group.length} submitted roles`
+                            : outcomeLabel(card.outcome)
+                        }
+                        onOpen={() => openCasting(card.roleId, false)}
+                      />
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <EmptyCopy>
@@ -188,18 +218,30 @@ function CardGrid({
   if (!cards.length) return <EmptyCopy>{empty}</EmptyCopy>;
   return (
     <ul className="home-open-call-grid">
-      {cards.map((card) => (
-        <li key={card.key}>
-          <CastingCard card={card} badge={card.matched ? "Matched to you" : undefined} onOpen={() => onOpen(card)} />
-        </li>
-      ))}
+      {projectGroups(cards).map((group) => {
+        const card = group[0];
+        return (
+          <li key={card.key}>
+            <CastingCard
+              card={card}
+              badge={
+                group.length > 1
+                  ? `${group.length} roles`
+                  : card.matched
+                    ? "Matched to you"
+                    : undefined
+              }
+              onOpen={() => onOpen(card)}
+            />
+          </li>
+        );
+      })}
     </ul>
   );
 }
 
 function CastingCard({
   card,
-  badge,
   onOpen,
 }: {
   card: TalentCastingCard | TalentSubmissionCard;
@@ -212,7 +254,14 @@ function CastingCard({
       <div className="home-open-call-card__header">
         <span className="home-open-call-card__logo">
           {card.logoUrl && !logoFailed ? (
-            <Image src={card.logoUrl} alt="" width={48} height={48} unoptimized onError={() => setLogoFailed(true)} />
+            <Image
+              src={card.logoUrl}
+              alt=""
+              width={48}
+              height={48}
+              unoptimized
+              onError={() => setLogoFailed(true)}
+            />
           ) : (
             <Megaphone size={18} strokeWidth={2.2} aria-hidden />
           )}
@@ -222,13 +271,9 @@ function CastingCard({
           <p>{card.subtitle}</p>
         </div>
       </div>
-      <ul className="home-open-call-card__tags" aria-label="Details">
-        {badge ? <li>{badge}</li> : null}
-        {card.tags.map((tag) => (
-          <li key={tag}>{tag}</li>
-        ))}
-      </ul>
-      {card.description ? <p className="home-open-call-card__description">{card.description}</p> : null}
+      {card.description ? (
+        <p className="home-open-call-card__description">{card.description}</p>
+      ) : null}
       <div className="home-open-call-card__footer">
         <strong>{card.payLine}</strong>
         <span className="home-open-call-card__cta">

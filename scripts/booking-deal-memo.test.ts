@@ -3,15 +3,25 @@ import { describe, it } from "node:test";
 
 import {
   acceptAllProvisions,
+  agreementCounselGate,
   applyIndustryReplies,
   applyTalentFlags,
   BOOKING_ERROR_CODES,
   BOOKING_MAX_CHARGE_CENTS,
+  BOOKING_TEMPLATE_KEYS,
   composeProvisions,
   computeBookingFees,
   computeTalentDeal,
+  CONTRACT_LEGAL_DRAFT,
+  CONTRACT_LEGAL_EXISTING,
+  decideDealMemoCreate,
   defaultProvisions,
   destinationChargeParams,
+  DRAFT_LEGAL_TEXT,
+  DRAFT_LEGAL_VERSION,
+  EXHIBIT_A_PLACEHOLDER_VERSION,
+  type FieldSpec,
+  getModuleSpec,
   isAvailabilityEligible,
   memoStatusChip,
   MODULE_CODES,
@@ -103,7 +113,104 @@ describe("talent deal", () => {
     );
     assert.equal(computeTalentDeal(provisions).talentDealCents, 50_000 * 10 + 400_000 * 6);
   });
+
+  it("keeps tour totals unchanged when new rate keys are submitted", () => {
+    const { provisions, errors } = composeProvisions([
+      {
+        moduleCode: "rates",
+        value: {
+          rehearsal_day_rate_cents: 50_000,
+          rehearsal_days: 10,
+          tour_weekly_rate_cents: 400_000,
+          tour_weeks: 6,
+          flat_fee_cents: 99_000,
+          show_rate_cents: 1,
+          show_count: 9,
+          day_rate_cents: 1,
+          work_days: 9,
+          week_rate_cents: 1,
+          work_weeks: 9,
+          shoot_day_rate_cents: 1,
+          shoot_days: 9,
+        },
+      },
+    ]);
+    assert.deepEqual(errors, []);
+    const rates = find(provisions, "rates").value;
+    assert.equal(rates.flat_fee_cents, undefined);
+    assert.equal(rates.show_rate_cents, undefined);
+    assert.equal("flat_fee_cents" in rates, false);
+    const tourFields = getModuleSpec("rates")?.fields.map((field) => field.key) ?? [];
+    for (const key of ["flat_fee_cents", "show_rate_cents", "day_rate_cents", "week_rate_cents", "shoot_day_rate_cents"]) {
+      assert.equal(tourFields.includes(key), false, key);
+    }
+    assert.equal(computeTalentDeal(provisions).talentDealCents, 50_000 * 10 + 400_000 * 6);
+  });
+
+  it("adds flat, show, day, week, and shoot lines only when those keys are non-zero", () => {
+    const rates = {
+      flat_fee_cents: 50_000,
+      show_rate_cents: 1_000,
+      show_count: 3,
+      day_rate_cents: 2_000,
+      work_days: 4,
+      week_rate_cents: 3_000,
+      work_weeks: 2,
+      shoot_day_rate_cents: 4_000,
+      shoot_days: 5,
+      overtime_hourly_cents: 9_999,
+    };
+    const deal = computeTalentDeal([
+      { ...blank("rates"), value: rates },
+      { ...blank("per_diem"), value: { domestic_cents: 8_000 } },
+      { ...blank("travel"), value: { ground_transport: true } },
+    ]);
+    assert.deepEqual(
+      deal.lines.map((line) => line.label),
+      [
+        "Flat compensation",
+        "Performances (3)",
+        "Work days (4)",
+        "Work weeks (2)",
+        "Shoot days (5)",
+      ],
+    );
+    assert.equal(deal.talentDealCents, 50_000 + 1_000 * 3 + 2_000 * 4 + 3_000 * 2 + 4_000 * 5);
+    const zeros = computeTalentDeal([{ ...blank("rates"), value: { flat_fee_cents: 0, show_rate_cents: 1_000, show_count: 0 } }]);
+    assert.equal(zeros.talentDealCents, 0);
+  });
 });
+
+function blank(code: string): ProvisionRecord {
+  return {
+    module_code: code,
+    section: "money",
+    sort_order: 0,
+    included: true,
+    value: {},
+    previous_included: null,
+    previous_value: null,
+    state: "pending",
+    talent_flag: null,
+    talent_proposed_value: null,
+    talent_note: null,
+    industry_reply: null,
+    industry_decline_reason: null,
+    industry_note: null,
+  };
+}
+
+function enumValues(templateKey: string, moduleCode: string, fieldKey: string): string[] {
+  const field = getModuleSpec(moduleCode, templateKey)?.fields.find((item) => item.key === fieldKey);
+  assert.equal(field?.type, "enum");
+  return (field as Extract<FieldSpec, { type: "enum" }>).options.map((option) => option.value);
+}
+
+function dateKinds(templateKey: string): string[] {
+  const field = getModuleSpec("work_dates", templateKey)?.fields.find((item) => item.key === "blocks");
+  assert.equal(field?.type, "date_blocks");
+  return (field as Extract<FieldSpec, { type: "date_blocks" }>).kinds.map((kind) => kind.value);
+}
 
 describe("send gate", () => {
   it("passes a complete memo", () => {
@@ -251,9 +358,205 @@ describe("entry and template", () => {
   });
 
   it("exposes the shared error codes", () => {
-    for (const code of ["CONNECT_ONBOARDING_REQUIRED", "MEMO_NOT_READY", "ALREADY_PAID", "FEE_MISMATCH", "AVAILABILITY_NOT_ELIGIBLE", "TEMPLATE_UNSUPPORTED"]) {
+    for (const code of [
+      "CONNECT_ONBOARDING_REQUIRED",
+      "MEMO_NOT_READY",
+      "ALREADY_PAID",
+      "FEE_MISMATCH",
+      "AVAILABILITY_NOT_ELIGIBLE",
+      "TEMPLATE_UNSUPPORTED",
+      "TEMPLATE_PENDING_COUNSEL",
+      "EXECUTED_CONTRACT_EXISTS",
+    ]) {
       assert.ok((BOOKING_ERROR_CODES as readonly string[]).includes(code), code);
     }
+  });
+
+  it("resolves an explicit agreement key and still infers tour", () => {
+    const award = resolveBookingTemplate({ requestedKey: "award_show", project: { id: "p2", enabled_modules: { classes: true } } });
+    assert.equal(award.ok && award.templateKey, "award_show");
+    assert.deepEqual(BOOKING_TEMPLATE_KEYS, [
+      "tour_live_dancer",
+      "award_show",
+      "residency",
+      "television_film",
+      "standard_performance",
+      "flat_scope",
+    ]);
+  });
+});
+
+const NEW_TEMPLATES = ["award_show", "residency", "television_film", "standard_performance", "flat_scope"] as const;
+
+describe("additional agreement templates", () => {
+  it("normalizes each template with sorted role defaults, money limits, counts, and date kinds", () => {
+    assert.deepEqual(enumValues("award_show", "services_role", "role"), [
+      "ensemble_dancer",
+      "featured_dancer",
+      "presenter_support",
+    ]);
+    assert.equal(defaultProvisions("award_show").find((p) => p.module_code === "services_role")?.value.role, "ensemble_dancer");
+    assert.deepEqual(enumValues("residency", "services_role", "role"), ["ensemble_dancer", "principal_dancer", "swing"]);
+    assert.deepEqual(enumValues("television_film", "services_role", "role"), ["ensemble_dancer", "featured_dancer", "principal_dancer"]);
+    assert.deepEqual(enumValues("standard_performance", "services_role", "role"), ["ensemble_dancer", "featured_dancer", "swing"]);
+    assert.equal(getModuleSpec("services_role", "flat_scope")?.fields.some((field) => field.key === "role"), false);
+
+    assert.deepEqual(dateKinds("award_show"), ["rehearsal", "show"]);
+    assert.deepEqual(dateKinds("residency"), ["rehearsal", "performance", "dark"]);
+    assert.deepEqual(dateKinds("television_film"), ["fitting", "rehearsal", "shoot"]);
+    assert.deepEqual(dateKinds("standard_performance"), ["rehearsal", "performance"]);
+    assert.deepEqual(dateKinds("flat_scope"), ["work"]);
+
+    for (const templateKey of NEW_TEMPLATES) {
+      const { provisions, errors } = composeProvisions([], templateKey);
+      assert.deepEqual(errors, [], templateKey);
+      assert.ok(provisions.length > 0);
+      const legal = provisions.filter((provision) => provision.section === "legal");
+      assert.ok(legal.length >= 2, templateKey);
+      for (const provision of legal) {
+        assert.equal(provision.value.placeholder_version, DRAFT_LEGAL_VERSION);
+        const placeholder = getModuleSpec(provision.module_code, templateKey)?.placeholder;
+        assert.equal(placeholder?.version, DRAFT_LEGAL_VERSION);
+        assert.equal(placeholder?.text, DRAFT_LEGAL_TEXT);
+      }
+      const money = getModuleSpec("rates", templateKey)?.fields.find((field) => field.type === "money");
+      assert.equal(money && money.type === "money" ? money.max : 0, 50_000_000);
+      const count = getModuleSpec("rates", templateKey)?.fields.find((field) => field.type === "int");
+      if (count && count.type === "int") {
+        assert.equal(count.min, 0);
+        assert.equal(count.max, 365);
+      }
+    }
+
+    const overMoney = composeProvisions(
+      [{ moduleCode: "rates", value: { flat_fee_cents: 50_000_001 } }],
+      "flat_scope",
+    );
+    assert.ok(overMoney.errors.some((error) => error.field === "flat_fee_cents"));
+    const atMoney = composeProvisions(
+      [{ moduleCode: "rates", value: { flat_fee_cents: 50_000_000 } }],
+      "flat_scope",
+    );
+    assert.equal(atMoney.errors.some((error) => error.field === "flat_fee_cents"), false);
+
+    const overCount = composeProvisions(
+      [{ moduleCode: "rates", value: { show_rate_cents: 100, show_count: 366, flat_fee_cents: 0, overtime_hourly_cents: 0 } }],
+      "standard_performance",
+    );
+    assert.ok(overCount.errors.some((error) => error.field === "show_count"));
+    const atCount = composeProvisions(
+      [{ moduleCode: "rates", value: { show_rate_cents: 100, show_count: 365, flat_fee_cents: 0, overtime_hourly_cents: 0 } }],
+      "standard_performance",
+    );
+    assert.equal(atCount.errors.some((error) => error.field === "show_count"), false);
+
+    const badKind = composeProvisions(
+      [{ moduleCode: "work_dates", value: { blocks: [{ kind: "tour", start_date: "2026-11-01", end_date: "2026-11-02", location: "Los Angeles" }] } }],
+      "award_show",
+    );
+    assert.ok(badKind.errors.some((error) => error.moduleCode === "work_dates"));
+    const showKind = composeProvisions(
+      [{ moduleCode: "work_dates", value: { blocks: [{ kind: "show", start_date: "2026-11-01", end_date: "2026-11-02", location: "Los Angeles" }] } }],
+      "award_show",
+    );
+    assert.equal(showKind.errors.some((error) => error.moduleCode === "work_dates"), false);
+
+    assert.equal(find(composeProvisions([], "residency").provisions, "specialty_talent").value.skills, undefined);
+    assert.equal(find(composeProvisions([], "television_film").provisions, "usage_buyout").value.territory, "");
+    assert.equal(find(composeProvisions([], "award_show").provisions, "usage_buyout").value.territory, undefined);
+    assert.equal(find(composeProvisions([], "flat_scope").provisions, "payment_terms").value.net_days, "on_signature");
+    assert.equal(getModuleSpec("governing_law")?.placeholder?.version, EXHIBIT_A_PLACEHOLDER_VERSION);
+    assert.notEqual(getModuleSpec("governing_law")?.placeholder?.text, DRAFT_LEGAL_TEXT);
+  });
+
+  it("refuses to create or send a draft template and links a booking when counsel has approved it", () => {
+    const booking = {
+      id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      industry_user_id: "industry",
+      talent_user_id: "talent",
+      project_id: "project",
+      availability_check_request_id: null,
+      deal_memo_id: null,
+    };
+    const availability = {
+      id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      requester_id: "industry",
+      talent_id: "talent",
+      status: "submitted" as const,
+      response_kind: "available" as const,
+      project_id: "project",
+    };
+    for (const templateKey of NEW_TEMPLATES) {
+      const refused = decideDealMemoCreate({
+        requesterId: "industry",
+        templateKey,
+        legalStatus: CONTRACT_LEGAL_DRAFT,
+        availability: null,
+        booking,
+        activeExecutedContract: false,
+        openMemoId: null,
+      });
+      assert.equal(refused.ok, false);
+      assert.equal(refused.ok ? null : refused.code, "TEMPLATE_PENDING_COUNSEL");
+    }
+    assert.equal(agreementCounselGate(CONTRACT_LEGAL_EXISTING).ok, true);
+    assert.equal(agreementCounselGate("draft_pending_counsel").ok, false);
+
+    const linked = decideDealMemoCreate({
+      requesterId: "industry",
+      templateKey: "tour_live_dancer",
+      legalStatus: CONTRACT_LEGAL_EXISTING,
+      availability,
+      booking: { ...booking, availability_check_request_id: availability.id },
+      activeExecutedContract: false,
+      openMemoId: null,
+    });
+    assert.equal(linked.ok, true);
+    if (linked.ok) {
+      assert.equal(linked.bookingId, booking.id);
+      assert.equal(linked.linkBookingId, booking.id);
+      assert.equal(linked.availabilityRequestId, availability.id);
+      assert.equal(linked.talentUserId, "talent");
+    }
+
+    const fromBooking = decideDealMemoCreate({
+      requesterId: "industry",
+      templateKey: "flat_scope",
+      legalStatus: CONTRACT_LEGAL_EXISTING,
+      availability: null,
+      booking,
+      activeExecutedContract: false,
+      openMemoId: null,
+    });
+    assert.equal(fromBooking.ok, true);
+    if (fromBooking.ok) {
+      assert.equal(fromBooking.availabilityRequestId, null);
+      assert.equal(fromBooking.bookingId, booking.id);
+      assert.equal(fromBooking.linkBookingId, booking.id);
+    }
+
+    const tourWithoutAvailability = decideDealMemoCreate({
+      requesterId: "industry",
+      templateKey: "tour_live_dancer",
+      legalStatus: CONTRACT_LEGAL_EXISTING,
+      availability: null,
+      booking,
+      activeExecutedContract: false,
+      openMemoId: null,
+    });
+    assert.equal(tourWithoutAvailability.ok ? null : tourWithoutAvailability.code, "AVAILABILITY_NOT_ELIGIBLE");
+
+    const recorded = decideDealMemoCreate({
+      requesterId: "industry",
+      templateKey: "flat_scope",
+      legalStatus: CONTRACT_LEGAL_EXISTING,
+      availability: null,
+      booking,
+      activeExecutedContract: true,
+      openMemoId: null,
+    });
+    assert.equal(recorded.ok, false);
+    assert.equal(recorded.ok ? null : recorded.code, "EXECUTED_CONTRACT_EXISTS");
   });
 });
 

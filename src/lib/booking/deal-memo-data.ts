@@ -211,7 +211,7 @@ export async function loadIndustryDealMemoDesk(industryUserId: string): Promise<
       .limit(50),
     db
       .from("booking_deal_memos")
-      .select("id,availability_check_request_id,talent_user_id,status,awaiting_party,expires_at,charge_amount_cents,talent_deal_cents,updated_at")
+      .select("id,project_id,availability_check_request_id,talent_user_id,status,awaiting_party,expires_at,charge_amount_cents,talent_deal_cents,updated_at")
       .eq("industry_user_id", industryUserId)
       .order("updated_at", { ascending: false })
       .limit(100),
@@ -220,6 +220,9 @@ export async function loadIndustryDealMemoDesk(industryUserId: string): Promise<
   if (availability.error || memos.error) return { confirmed: [], memos: [], error: true };
   const availabilityRows = availability.data ?? [];
   const memoRows = memos.data ?? [];
+  const projectIds = [...new Set(memoRows.flatMap(row => row.project_id ? [row.project_id as string] : []))];
+  const { data: projectRows } = projectIds.length ? await db.from("projects").select("id,title").in("id", projectIds) : { data: [] };
+  const projectTitles = new Map((projectRows ?? []).map(row => [row.id, row.title]));
   const names = await profileNames(db, [
     ...availabilityRows.map((r) => r.talent_id as string),
     ...memoRows.map((r) => r.talent_user_id as string),
@@ -244,6 +247,8 @@ export async function loadIndustryDealMemoDesk(industryUserId: string): Promise<
       openMemoId: openByAvailability.get(row.id as string) ?? null,
     })),
     memos: memoRows.map((row) => ({
+      projectId: row.project_id as string | null,
+      projectTitle: projectTitles.get(row.project_id as string) ?? byAvailability.get(row.availability_check_request_id as string)?.project_name ?? null,
       id: row.id as string,
       status: row.status as string,
       awaiting_party: row.awaiting_party as MemoParty | null,
@@ -252,7 +257,7 @@ export async function loadIndustryDealMemoDesk(industryUserId: string): Promise<
       talent_deal_cents: Number(row.talent_deal_cents),
       updated_at: row.updated_at as string,
       counterpartName: names.get(row.talent_user_id as string) ?? "Motiion member",
-      title: titleFor(byAvailability.get(row.availability_check_request_id as string)),
+      title: projectTitles.get(row.project_id as string) || titleFor(byAvailability.get(row.availability_check_request_id as string)),
     })),
   };
 }
@@ -304,7 +309,7 @@ export async function loadTalentDealMemos(talentUserId: string): Promise<{
   const [memos, payout] = await Promise.all([
     db
       .from("booking_deal_memos")
-      .select("id,availability_check_request_id,industry_user_id,status,awaiting_party,expires_at,charge_amount_cents,talent_deal_cents,updated_at")
+      .select("id,project_id,availability_check_request_id,industry_user_id,status,awaiting_party,expires_at,charge_amount_cents,talent_deal_cents,updated_at")
       .eq("talent_user_id", talentUserId)
       .neq("status", "draft")
       .order("updated_at", { ascending: false })
@@ -327,6 +332,9 @@ export async function loadTalentDealMemos(talentUserId: string): Promise<{
     error: false,
     payout,
     memos: rows.map((row) => ({
+      availabilityId: row.availability_check_request_id as string,
+      projectId: row.project_id as string | null,
+      projectTitle: titles.get(row.availability_check_request_id as string)?.project_name ?? null,
       id: row.id as string,
       status: row.status as string,
       awaiting_party: row.awaiting_party as MemoParty | null,

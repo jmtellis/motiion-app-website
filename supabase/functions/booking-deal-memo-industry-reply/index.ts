@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { corsHeaders } from "../_shared/http.ts";
+import { assertUnconfirmedWorkStillOpen } from "../_shared/booking-work-window-guard.ts";
 import {
   applyIndustryReplies,
   BOOKING_PLATFORM_FEE_BPS,
@@ -35,8 +36,9 @@ serve((req) => {
     if (memo.status !== "negotiating" || memo.awaiting_party !== "industry") {
       throw new BookingError("NOT_YOUR_TURN", "Waiting on talent.");
     }
+    await assertUnconfirmedWorkStillOpen(memo);
 
-    const result = applyIndustryReplies(provisions, (body.replies ?? []) as IndustryReplyInput[]);
+    const result = applyIndustryReplies(provisions, (body.replies ?? []) as IndustryReplyInput[], memo.template_key);
     if (!result.ok) throw new BookingError("INVALID_REPLY", "Respond to each requested change.", result.errors);
 
     await writeMemo({

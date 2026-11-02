@@ -56,6 +56,7 @@ export type MemoRow = {
   declined_at: string | null;
   cancelled_at: string | null;
   idempotency_key: string | null;
+  booking_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -85,6 +86,8 @@ const PROVISION_COLUMNS =
 const HTTP_STATUS: Record<BookingErrorCode, number> = {
   AVAILABILITY_NOT_ELIGIBLE: 409,
   TEMPLATE_UNSUPPORTED: 422,
+  TEMPLATE_PENDING_COUNSEL: 422,
+  EXECUTED_CONTRACT_EXISTS: 409,
   COMMUNITY_NOT_ALLOWED: 403,
   MEMO_EXISTS: 409,
   REQUIRED_MODULES_MISSING: 422,
@@ -95,6 +98,7 @@ const HTTP_STATUS: Record<BookingErrorCode, number> = {
   NOT_YOUR_TURN: 409,
   MEMO_NOT_READY: 409,
   MEMO_EXPIRED: 409,
+  WORK_DATES_PASSED: 409,
   MEMO_CONFLICT: 409,
   SIGNATURE_REQUIRED: 400,
   CONNECT_ONBOARDING_REQUIRED: 409,
@@ -257,11 +261,23 @@ function mapDbError(error: { message?: string; code?: string; details?: string }
   if (message.includes("AVAILABILITY_NOT_ELIGIBLE")) {
     throw new BookingError("AVAILABILITY_NOT_ELIGIBLE", "Booking starts from a confirmed availability request.");
   }
+  if (message.includes("BOOKING_NOT_ELIGIBLE")) {
+    throw new BookingError("NOT_FOUND", "Booking not found.");
+  }
   if (message.includes("COMMUNITY_NOT_ALLOWED")) {
     throw new BookingError("COMMUNITY_NOT_ALLOWED", "Booking is available to Industry accounts.");
   }
   if (message.includes("booking_deal_memos_active_availability_uidx")) {
     throw new BookingError("MEMO_EXISTS", "A deal memo is already open for this availability request.");
+  }
+  if (message.includes("booking_deal_memos_active_booking_uidx") || message.includes("MEMO_EXISTS")) {
+    throw new BookingError("MEMO_EXISTS", "A deal memo is already open for this booking.");
+  }
+  if (message.includes("EXECUTED_CONTRACT_EXISTS")) {
+    throw new BookingError(
+      "EXECUTED_CONTRACT_EXISTS",
+      "An uploaded contract is already on file for this booking. It is a record only, not a signature or a deal memo, and it does not change participation or payment.",
+    );
   }
   if (message.includes("booking_deal_memo_terms_locked") || message.includes("booking_deal_memo_terminal")) {
     throw new BookingError("MEMO_NOT_READY", "This deal memo can no longer be changed.");

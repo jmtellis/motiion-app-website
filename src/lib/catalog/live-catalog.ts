@@ -248,3 +248,10 @@ export async function readLivePublicActivity(id: string): Promise<PublicActivity
     return null;
   }
 }
+
+export type HomeCampaign = { id: string; title: string; subtitle: string | null; image_url: string | null; cta_text: string | null; cta_url: string | null };
+
+export async function readLiveHomeCampaigns(): Promise<HomeCampaign[]> {
+  const now = encodeURIComponent(new Date().toISOString());
+  return await restGet<HomeCampaign[]>(`campaigns?select=id,title,subtitle,image_url,cta_text,cta_url&is_active=eq.true&start_at=lte.${now}&end_at=gt.${now}&order=priority.desc,updated_at.desc&limit=10`, "secret") ?? [];
+}

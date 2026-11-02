@@ -1407,3 +1407,18 @@ html.event-program-page body::-webkit-scrollbar {
   );
 }
 
+
+.casting-application { width: min(560px, calc(100% - 32px)); max-height: calc(100dvh - 48px); margin: auto; padding: 32px; border: 0; border-radius: 24px; background: #fff; color: #111; overflow-y: auto; }
+.casting-application::backdrop { background: rgb(0 0 0 / 65%); backdrop-filter: blur(6px); }
+.casting-application-close { display: block; margin-left: auto; width: 40px; height: 40px; font-size: 28px; }
+.casting-application form, .casting-application > div { display: grid; gap: 16px; }
+.casting-application p { margin: 12px 0; line-height: 1.5; }
+.casting-application label { display: grid; gap: 7px; font-size: 14px; font-weight: 600; }
+.casting-application input, .casting-application textarea { min-width: 0; width: 100%; border: 1px solid #ddd; border-radius: 10px; padding: 12px; font: inherit; font-weight: 400; background: white; color: #111; }
+.casting-application .casting-modal-primary { background: #111; color: white; text-align: center; }
+.casting-application .casting-modal-dismiss { color: #333; }
+.casting-application-names { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.casting-application-help { color: #666; font-size: 12px; }
+.casting-application-help a { text-decoration: underline; }
+.casting-application .casting-submit-error { color: #b42318; }
+.casting-application button:disabled { opacity: 0.55; cursor: default; }

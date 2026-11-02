@@ -1,19 +1,10 @@
-import { AnalyticsDetailView } from "@/components/analytics/dashboard/AnalyticsDetailView";
-import { loadAdminAnalyticsDetail } from "@/lib/analytics/load-admin-analytics";
-
-type PageProps = {
-  searchParams: Promise<{
-    range?: string;
-  }>;
-};
-
-export default async function AdminAnalyticsDetailPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const data = await loadAdminAnalyticsDetail(params);
-
-  return (
-    <main className="mx-auto w-full min-w-0 max-w-7xl overflow-x-hidden px-6 py-10 lg:px-10">
-      <AnalyticsDetailView data={data} hrefBase="/admin/analytics" />
-    </main>
-  );
+import { redirect } from "next/navigation";
+export default async function LegacyAnalyticsDetail({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string }>;
+}) {
+  const { range } = await searchParams;
+  const days = range === "7d" ? "7" : range === "90d" ? "90" : "30";
+  redirect(`/admin/analytics?view=engagement&range=${days}`);
 }

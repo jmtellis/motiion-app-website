@@ -32,7 +32,6 @@ export type ProfileShell = "talent" | "lookingForTalent" | "community";
 
 export type ShellMenuAction =
   | { kind: "link"; label: string; href: string }
-  | { kind: "passcode"; label: string; href: string }
   | { kind: "switch"; label: string; shell: "talent" | "lookingForTalent" };
 
 type ShellProfile = Pick<DashboardProfile, "accountType" | "enabledShells" | "activeShell"> | null | undefined;
@@ -80,9 +79,9 @@ export function getShellMenuAction(profile: ShellProfile): ShellMenuAction | nul
   }
   if (other === "lookingForTalent") {
     return {
-      kind: "passcode",
-      label: "Add profile",
-      href: "/talent-buyers/onboarding?addShell=industry",
+      kind: "link",
+      label: "Apply for industry access",
+      href: "/talent-buyers/application",
     };
   }
   return {

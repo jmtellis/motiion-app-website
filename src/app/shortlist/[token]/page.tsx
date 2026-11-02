@@ -20,6 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
       title,
       description,
+      robots: { index: false, follow: false },
       metadataBase: new URL(siteUrl),
       openGraph: {
         title,
@@ -39,6 +40,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   } catch {
     return {
       title: "Shortlist review · Motiion",
+      robots: { index: false, follow: false },
       description: "Review talent on a shared Motiion shortlist.",
       metadataBase: new URL(siteUrl),
     };

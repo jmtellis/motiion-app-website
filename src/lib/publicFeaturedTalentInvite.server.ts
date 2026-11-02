@@ -6,6 +6,9 @@ import {
 
 type RpcCard = {
   ok?: boolean;
+  workspace_title?: string;
+  invitation_role?: "admin" | "participant";
+  project_id?: string;
   error?: string;
   invite_id?: string;
   activity_id?: string;
@@ -27,7 +30,7 @@ export async function getFeaturedTalentInviteCard(
   try {
     const supabase = createAdminSupabaseClient();
     if (!supabase) return null;
-    const { data, error } = await supabase.rpc("get_activity_featured_talent_invite_card", {
+    const { data, error } = await supabase.rpc(trimmed.startsWith("ws_") ? "get_workspace_invite_card" : "get_activity_featured_talent_invite_card", {
       p_token: trimmed,
     });
     if (error) {
@@ -35,10 +38,21 @@ export async function getFeaturedTalentInviteCard(
       return null;
     }
     const row = data as RpcCard | null;
-    if (!row?.ok || !row.activity_id || !row.display_name) return null;
+    if (!row?.ok || (!row.activity_id && !row.project_id) || !row.display_name) return null;
+    let workspaceTitle: string | null = row.workspace_title ?? null;
+    if (!workspaceTitle && row.parent_id) {
+      const { data: workspace } = await supabase.from("featured_talent_workspaces")
+        .select("project_id").eq("featured_talent_id", row.parent_id).is("ended_at", null).maybeSingle();
+      if (workspace?.project_id) {
+        const { data: project } = await supabase.from("projects").select("title").eq("id", workspace.project_id).maybeSingle();
+        workspaceTitle = project?.title ?? null;
+      }
+    }
     return {
+      workspaceTitle,
+      invitationRole: row.invitation_role ?? null,
       inviteId: row.invite_id ?? "",
-      activityId: row.activity_id,
+      activityId: row.activity_id ?? "",
       parentId: row.parent_id ?? null,
       displayName: row.display_name,
       eventTitle: row.event_title?.trim() || "Event",

@@ -4,13 +4,13 @@ export const BUYER_HOME_PATH = "/dashboard";
 /** Legacy dashboard path — redirects to home; settings still live under `/dashboard/settings`. */
 export const BUYER_DASHBOARD_PATH = "/dashboard";
 
-/** Primary workflow items. Home, Discover, Inbox, then the rest of the work. */
+/** Industry navigation matches the iOS workspace. */
 export const buyerMenuNavItems = [
   { href: "/dashboard", label: "Home", segment: "home" },
   { href: "/talent", label: "Discover", segment: "talent" },
-  { href: "/messages", label: "Inbox", segment: "messages" },
   { href: "/projects", label: "Projects", segment: "projects" },
   { href: "/bookings", label: "Bookings", segment: "bookings" },
+  { href: "/messages", label: "Inbox", segment: "messages" },
   { href: "/events", label: "Calendar", segment: "events" },
   { href: "/library", label: "Roster", segment: "library" },
 ] as const;

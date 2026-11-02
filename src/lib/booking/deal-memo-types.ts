@@ -100,6 +100,9 @@ export type PayoutStatus = {
 };
 
 export type DealMemoListItem = {
+  availabilityId?: string;
+  projectId?: string | null;
+  projectTitle?: string | null;
   id: string;
   status: string;
   awaiting_party: MemoParty | null;

@@ -1,3 +1,4 @@
+import { requireIndustryApproval } from "./require-industry-approval";
 import { getIndustryIdentityVerificationByUserId } from "@/lib/billing/identity";
 import { INDUSTRY_IDENTITY_REQUIRED_CODE } from "@/lib/talent-buyers/industry-identity-errors";
 
@@ -22,6 +23,8 @@ export type IndustryIdentityGateResult =
 export async function requireIndustryIdentityVerified(
   userId: string,
 ): Promise<IndustryIdentityGateResult> {
+  const approval = await requireIndustryApproval(userId);
+  if (!approval.ok) return { ok: false, code: INDUSTRY_IDENTITY_REQUIRED_CODE, error: approval.error, verified: false };
   const row = await getIndustryIdentityVerificationByUserId(userId);
   if (row?.status === "verified") {
     return { ok: true, verified: true };

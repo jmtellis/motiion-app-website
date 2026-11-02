@@ -31,7 +31,6 @@ import {
   buyerMenuNavItems,
 } from "@/lib/talent-buyers/dashboard-data";
 import { useBuyerInboxUnread } from "@/hooks/use-buyer-inbox-unread";
-import { openBuyerCommandPalette } from "@/lib/talent-buyers/command-palette";
 import type { DashboardProfile } from "@/types/database";
 
 import "./buyer-chrome.css";
@@ -291,21 +290,6 @@ function SidebarContent({
     >
       <WorkspaceSidebarHeader href={BUYER_HOME_PATH} collapsed={collapsed} expanded={Boolean(showExpanded)} mobile={isMobileDrawer} onToggle={onToggleSidebar} />
 
-      <button
-        type="button"
-        className={`industry-sidebar-search${collapsed ? " industry-sidebar-search--collapsed" : ""}`}
-        title="Quick navigation (⌘K / Ctrl K)"
-        aria-label="Quick navigation"
-        onClick={openBuyerCommandPalette}
-      >
-        <Search size={16} aria-hidden />
-        {!collapsed && (
-          <>
-            <span>Jump to…</span>
-            <kbd>⌘ K</kbd>
-          </>
-        )}
-      </button>
       <div className="buyer-sidebar__scroll buyer-dashboard-shell__sidebar-scroll">
         <NavSection label="Workflow" collapsed={collapsed}>
           {buyerMenuNavItems.map((item) => {
@@ -404,25 +388,10 @@ export function SidebarNav({
   const skipNextExpandReveal = useRef(true);
 
   useEffect(() => {
-    if (showMobileDrawer) {
-      setContentFadeIn(false);
-      skipNextExpandReveal.current = false;
-      return;
-    }
-
-    if (collapsed) {
-      setContentFadeIn(false);
-      skipNextExpandReveal.current = false;
-      return;
-    }
-
-    if (skipNextExpandReveal.current) {
-      skipNextExpandReveal.current = false;
-      setContentFadeIn(false);
-      return;
-    }
-
-    setContentFadeIn(true);
+    const reveal = !showMobileDrawer && !collapsed && !skipNextExpandReveal.current;
+    skipNextExpandReveal.current = false;
+    const frame = window.requestAnimationFrame(() => setContentFadeIn(reveal));
+    return () => window.cancelAnimationFrame(frame);
   }, [collapsed, showMobileDrawer]);
 
   return (

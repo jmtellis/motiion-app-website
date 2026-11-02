@@ -155,6 +155,11 @@ export async function GET(request: NextRequest) {
     return redirectWithAuthError(origin, resolveAuthErrorPath(intent), "profile_setup_failed");
   }
 
+  const castingReturn = request.nextUrl.searchParams.get("casting_return");
+  // Only return to a local casting path; never trust an arbitrary redirect origin.
+  if (castingReturn && /^\/casting\/[a-zA-Z0-9-]+\?role=[a-zA-Z0-9-]+&apply=1$/.test(castingReturn)) {
+    return NextResponse.redirect(new URL(castingReturn, origin));
+  }
   const destination = await resolveOAuthRedirectPath(supabase, user.id, intent, user);
   return NextResponse.redirect(`${origin}${destination}`);
 }

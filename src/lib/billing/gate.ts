@@ -1,3 +1,4 @@
+import { requireIndustryApproval } from "@/lib/talent-buyers/require-industry-approval";
 import { requireProEntitlement, userHasPaidEntitlement } from "@/lib/billing/entitlement";
 import type { ProFeatureKey } from "@/lib/billing/pro-features";
 
@@ -34,7 +35,9 @@ export async function isIndustryLocked(userId: string): Promise<boolean> {
 export async function requireIndustryProFeature(
   userId: string,
   feature: ProFeatureKey,
-): Promise<{ ok: true } | { ok: false; reason: "paywall"; feature: ProFeatureKey }> {
+): Promise<{ ok: true } | { ok: false; reason: "paywall" | "approval"; feature: ProFeatureKey; error?: string }> {
+  const approval = await requireIndustryApproval(userId);
+  if (!approval.ok) return { ok: false, reason: "approval", feature, error: approval.error };
   if (!isPaywallEnforced()) return { ok: true };
   const check = await requireProEntitlement(userId);
   if (check.ok) return { ok: true };

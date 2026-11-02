@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { corsHeaders } from "../_shared/http.ts";
+import { assertUnconfirmedWorkStillOpen } from "../_shared/booking-work-window-guard.ts";
 import {
   acceptAllProvisions,
   BOOKING_MAX_CHARGE_CENTS,
@@ -48,7 +49,7 @@ serve((req) => {
     const signature = cleanSignature(body.signatureName);
     if (!signature) throw new BookingError("SIGNATURE_REQUIRED", "Type your full name to sign.");
 
-    const gate = validateForSend(provisions);
+    const gate = validateForSend(provisions, memo.template_key);
     if (!gate.ok) {
       throw new BookingError(gate.code ?? "REQUIRED_MODULES_MISSING", "This deal memo is missing required terms.", gate.errors);
     }
@@ -58,6 +59,7 @@ serve((req) => {
     }
 
     const now = new Date();
+    await assertUnconfirmedWorkStillOpen(memo);
     await writeMemo({
       memoId: memo.id,
       expectedVersion: memo.version,

@@ -63,7 +63,7 @@ function personFromProfile(profile: SearchProfileRecord): HomeRosterPerson {
     avatarUrl: profile.headshot_url?.trim() || getProfileAvatarUrl(profile.headshot_urls),
     role: role || null,
     location: profile.location?.trim() || null,
-    slug: profile.username?.trim() || null,
+    slug: profile.username?.trim() || profile.id,
   };
 }
 
@@ -76,7 +76,7 @@ function personFromTalent(node: PublicFeaturedTalent, places: Map<string, Talent
     avatarUrl: node.headshotUrl,
     role: role || null,
     location: place?.location ?? null,
-    slug: node.username?.trim() || place?.slug || null,
+    slug: node.username?.trim() || place?.slug || node.userId || null,
   };
 }
 
@@ -284,4 +284,19 @@ async function loadLocalPublicEvent(id: string): Promise<PublicActivity | null> 
     eventType: activity.event_type,
     featuredTalent,
   } as PublicActivity;
+}
+
+/** Authenticated, best-effort refresh through the same Notion sync used by iOS. */
+export async function refreshFeaturedHomeContent(): Promise<{ refreshed: boolean }> {
+  await requireCompleteProfile();
+  // A staging live-catalog mirror must never invoke sync against another environment.
+  const { liveCatalogEnabled } = await import("@/lib/catalog/live-catalog");
+  if (liveCatalogEnabled()) return { refreshed: false };
+  const client = await createServerSupabaseClient();
+  if (!client) return { refreshed: false };
+  const results = await Promise.allSettled([
+    client.functions.invoke("sync-notion-featured-carousel", { body: { deactivateMissing: false }, signal: AbortSignal.timeout(8000) }),
+    client.functions.invoke("sync-notion-campaigns", { body: { deactivateMissing: false }, signal: AbortSignal.timeout(8000) }),
+  ]);
+  return { refreshed: results.some(result => result.status === "fulfilled" && !result.value.error && result.value.data?.success === true) };
 }

@@ -1,0 +1,2 @@
+CREATE INDEX child_publications_owner_id_idx ON industry_private.child_publications(owner_id);
+CREATE INDEX main_conversations_conversation_id_idx ON industry_private.main_conversations(conversation_id);

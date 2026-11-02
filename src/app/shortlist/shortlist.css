@@ -279,3 +279,913 @@
   border: 2px solid #f87171;
   color: #f87171;
 }
+
+/* Shared roster canvas, scoped so other public review flows retain their styling. */
+.shortlist-review {
+  min-height:100svh;
+  background:#eeefeb;
+  color:#292a28;
+  font-family:Arial,Helvetica,sans-serif;
+  padding:0 clamp(20px,4vw,64px);
+  color-scheme:light
+}
+
+
+.shortlist-review * {
+  box-sizing:border-box
+}
+
+
+.shortlist-review button,.shortlist-review input {
+  font:inherit
+}
+
+
+.shortlist-review button,.shortlist-review a {
+  -webkit-tap-highlight-color:transparent
+}
+
+
+.shortlist-review button {
+  cursor:pointer
+}
+
+
+.shortlist-review button:disabled {
+  opacity:.45;
+  cursor:not-allowed
+}
+
+
+.shortlist-review :is(button,a,input):focus-visible {
+  outline:2px solid #007a99;
+  outline-offset:4px
+}
+
+
+.shortlist-review__main {
+  max-width:1440px;
+  margin:auto
+}
+
+
+.shortlist-review__header {
+  min-height:100px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  border-bottom:1px solid #d9d9d5
+}
+
+
+.shortlist-review__header img {
+  display:block;
+  max-width:120px;
+  height:auto;
+  filter:brightness(.35)
+}
+
+
+.shortlist-review__header>span,.shortlist-eyebrow {
+  text-transform:uppercase;
+  letter-spacing:.13em;
+  font-size:11px;
+  line-height:1.6;
+  color:#626262
+}
+
+
+.shortlist-review__intro {
+  display:grid;
+  grid-template-columns:1.2fr 1fr;
+  gap:64px;
+  padding:60px 0 44px;
+  align-items:end
+}
+
+
+.shortlist-review h1 {
+  font-size:clamp(40px,5.5vw,78px);
+  line-height:1.02;
+  letter-spacing:-.055em;
+  font-weight:500;
+  margin:16px 0 22px;
+  overflow-wrap:anywhere
+}
+
+
+.shortlist-review h2 {
+  font-size:30px;
+  line-height:1.15;
+  letter-spacing:-.04em;
+  font-weight:500;
+  margin:8px 0 16px;
+  overflow-wrap:anywhere
+}
+
+
+.shortlist-review p {
+  line-height:1.65
+}
+
+
+.shortlist-review__intro p:not(.shortlist-eyebrow),.shortlist-review__welcome p,.shortlist-review__ready>p {
+  color:#626262;
+  font-size:15px
+}
+
+
+.shortlist-review__brief {
+  max-width:480px;
+  justify-self:end
+}
+
+.shortlist-review__brief>span {
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.08em
+}
+
+
+.shortlist-review blockquote {
+  border-left:2px solid #b0b0ab;
+  padding-left:18px;
+  margin:20px 0 0;
+  font-size:14px;
+  line-height:1.7;
+  white-space:pre-wrap
+}
+
+
+.shortlist-review__welcome {
+  background:#f8f9f5;
+  border:1px solid #d9d9d5;
+  border-radius:12px;
+  padding:clamp(24px,4vw,48px);
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:64px;
+  margin:16px 0 64px
+}
+
+
+.shortlist-review__welcome>div {
+  max-width:420px
+}
+
+.shortlist-review__welcome form {
+  display:grid;
+  gap:10px;
+  align-content:center;
+  max-width:440px;
+  width:100%;
+  justify-self:end
+}
+
+
+.shortlist-review__welcome label {
+  font-size:13px;
+  font-weight:600
+}
+
+.shortlist-review__welcome input {
+  width:100%;
+  border:1px solid #bdbdb9;
+  background:#fff;
+  border-radius:6px;
+  padding:15px 16px;
+  font-size:16px;
+  color:#292a28
+}
+
+.shortlist-review__welcome form p {
+  font-size:12px;
+  margin:0 0 12px
+}
+
+
+.shortlist-primary {
+  border:1px solid #292a28;
+  border-radius:28px;
+  background:#292a28;
+  color:#fff;
+  padding:15px 24px;
+  min-height:50px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:16px;
+  font-size:14px;
+  white-space:nowrap
+}
+
+
+.shortlist-primary:hover:not(:disabled) {
+  background:#444c3c
+}
+
+
+.shortlist-review__progress {
+  display:flex;
+  align-items:center;
+  gap:24px;
+  flex-wrap:wrap;
+  padding:20px 0;
+  border-top:1px solid #d9d9d5;
+  border-bottom:1px solid #d9d9d5;
+  font-size:13px
+}
+
+
+.shortlist-review__progress>div {
+  margin-right:auto
+}
+
+.shortlist-review__progress button {
+  margin-left:12px;
+  background:none;
+  border:0;
+  color:#626262;
+  text-decoration:underline;
+  min-height:36px
+}
+
+.shortlist-review__progress progress {
+  width:140px;
+  height:5px;
+  border:0;
+  accent-color:#007a99;
+  border-radius:4px;
+  overflow:hidden;
+  background:#d9d9d5
+}
+
+.shortlist-review__progress progress::-webkit-progress-bar {
+  background:#d9d9d5
+}
+
+.shortlist-review__progress progress::-webkit-progress-value {
+  background:#007a99
+}
+
+
+.shortlist-role-nav {
+  display:flex;
+  gap:10px;
+  overflow-x:auto;
+  padding:22px 0
+}
+
+.shortlist-role-nav a {
+  display:flex;
+  align-items:center;
+  gap:16px;
+  flex-shrink:0;
+  text-decoration:none;
+  color:inherit;
+  border:1px solid #d0d0cd;
+  border-radius:24px;
+  padding:10px 16px;
+  font-size:13px
+}
+
+.shortlist-role-nav span {
+  color:#626262;
+  font-size:11px
+}
+
+
+.shortlist-role {
+  padding:44px 0 20px;
+  scroll-margin-top:24px
+}
+
+.shortlist-role__heading {
+  display:flex;
+  justify-content:space-between;
+  align-items:end;
+  gap:24px;
+  margin-bottom:24px
+}
+
+.shortlist-role__heading h2 {
+  margin-bottom:0
+}
+
+.shortlist-role__heading>p {
+  font-size:13px;
+  color:#626262;
+  margin:0
+}
+
+
+.shortlist-review__grid {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:40px 20px
+}
+
+.shortlist-talent {
+  min-width:0
+}
+
+.shortlist-talent__portrait {
+  border:0;
+  padding:0;
+  width:100%;
+  aspect-ratio:4/5;
+  position:relative;
+  border-radius:5px;
+  background:#dedfd7;
+  overflow:hidden;
+  display:grid;
+  place-items:center;
+  color:#727c69;
+  font-size:48px
+}
+
+.shortlist-talent__portrait>img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center 25%;
+  transition:transform .3s
+}
+
+.shortlist-talent__portrait:hover>img {
+  transform:scale(1.025)
+}
+
+.shortlist-talent__expand {
+  position:absolute;
+  bottom:12px;
+  right:12px;
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  background:#f7f8f2e8;
+  display:grid;
+  place-items:center;
+  color:#292a28
+}
+
+.shortlist-talent__badge {
+  position:absolute;
+  top:12px;
+  left:12px;
+  padding:7px 11px;
+  background:#f7f8f2ee;
+  border-radius:20px;
+  font-size:11px;
+  color:#292a28
+}
+
+.shortlist-talent h3 {
+  font-size:20px;
+  letter-spacing:-.025em;
+  font-weight:600;
+  margin:18px 0 5px;
+  line-height:1.3;
+  overflow-wrap:anywhere
+}
+
+.shortlist-talent__meta {
+  font-size:13px;
+  color:#626262;
+  margin:0;
+  min-height:22px
+}
+
+.shortlist-talent__links {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:6px;
+  flex-wrap:wrap;
+  margin:10px 0 14px;
+  font-size:12px
+}
+
+.shortlist-talent__links a,.shortlist-talent__links button {
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  min-height:36px;
+  color:#424242;
+  text-decoration:none;
+  border:0;
+  background:none;
+  padding:0
+}
+
+.shortlist-talent__links a {
+  font-weight:600
+}
+
+.shortlist-talent__links>span {
+  font-size:11px;
+  color:#626262
+}
+
+.shortlist-talent__votes {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px
+}
+
+.shortlist-talent__votes button {
+  border:1px solid #d0d0cd;
+  border-radius:24px;
+  min-height:44px;
+  background:transparent;
+  color:#4b4b4b;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  font-size:13px
+}
+
+.shortlist-talent__votes button[aria-pressed=true] {
+  background:#007a99;
+  color:#fff;
+  border-color:#007a99
+}
+
+.shortlist-talent__votes button:first-child[aria-pressed=true] {
+  background:#535353;
+  border-color:#535353
+}
+
+
+.shortlist-review__ready {
+  margin-top:64px;
+  border-top:1px solid #d0d0cd;
+  padding:36px 0
+}
+
+.shortlist-review__totals {
+  display:grid;
+  gap:16px;
+  max-width:600px;
+  margin-top:28px
+}
+
+.shortlist-review__totals>div {
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+  font-size:14px
+}
+
+.shortlist-review__totals span {
+  color:#626262
+}
+
+
+.shortlist-review__submit {
+  position:sticky;
+  bottom:16px;
+  z-index:10;
+  background:#f8f9f5f5;
+  border:1px solid #d0d0cd;
+  box-shadow:0 8px 40px #292a2810;
+  backdrop-filter:blur(12px);
+  border-radius:12px;
+  padding:18px 22px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin:24px 0
+}
+
+.shortlist-review__submit>div {
+  display:grid;
+  gap:5px;
+  font-size:15px
+}
+
+.shortlist-review__submit span {
+  font-size:12px;
+  color:#626262
+}
+
+.shortlist-review__error {
+  padding:16px 20px;
+  border:1px solid #cba99b;
+  background:#faf1eb;
+  color:#843b28;
+  border-radius:8px;
+  white-space:pre-wrap
+}
+
+
+.shortlist-review__notice {
+  padding:90px 0;
+  max-width:760px;
+  min-height:50vh
+}
+
+.shortlist-review__notice>p:not(.shortlist-eyebrow) {
+  color:#626262
+}
+
+.shortlist-success {
+  display:grid;
+  place-items:center;
+  width:56px;
+  height:56px;
+  border:1px solid #b5dfe7;
+  border-radius:50%;
+  color:#007a99;
+  margin-bottom:32px
+}
+
+.shortlist-summary {
+  margin-top:28px;
+  color:#007a99;
+  font-size:14px
+}
+
+
+.shortlist-review__footer {
+  display:flex;
+  justify-content:space-between;
+  align-items:end;
+  gap:24px;
+  padding:56px 0 32px;
+  border-top:1px solid #d9d9d5;
+  margin-top:64px;
+  font-size:26px;
+  line-height:1.2;
+  letter-spacing:-.04em
+}
+
+.shortlist-review__footer>span:last-child {
+  font-size:10px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#626262
+}
+
+.shortlist-review__wordmark {
+  padding:48px 0 0;
+  overflow:hidden
+}
+
+.shortlist-review__wordmark img {
+  width:100%;
+  display:block;
+  opacity:.18
+}
+
+
+.shortlist-review .shortlist-profile-modal {
+  background:#f3f4ef;
+  color:#292a28;
+  border-color:#d9d9d5
+}
+
+.shortlist-review .public-review-page-title {
+  font-size:30px;
+  margin:0
+}
+
+.shortlist-review .public-review-body,.shortlist-review .public-review-subtitle {
+  color:#626262;
+  font-size:14px;
+  margin:0
+}
+
+.shortlist-review .public-review-section-title {
+  font-size:13px;
+  margin:0 0 12px
+}
+
+.shortlist-review .shortlist-profile-modal__chip {
+  background:#e3e7dc;
+  color:#4b4b4b
+}
+
+.shortlist-review .shortlist-profile-modal__close {
+  color:#4b4b4b;
+  min-height:44px
+}
+
+.shortlist-review .shortlist-profile-modal__experience {
+  border-color:#d9d9d5
+}
+
+.shortlist-review .shortlist-profile-modal__hero {
+  position:relative
+}
+
+.shortlist-review .shortlist-profile-modal__hero img {
+  object-position:center 25%
+}
+
+.shortlist-review .shortlist-deck-card__portrait-fallback {
+  color:#007a99;
+  background:#dedfd7
+}
+
+.shortlist-review .shortlist-profile-modal-backdrop {
+  place-items:center;
+  background:#20251b70;
+  backdrop-filter:blur(10px)
+}
+
+
+@media(max-width:1000px) {
+  .shortlist-review__grid {
+  grid-template-columns:repeat(3,minmax(0,1fr))
+}
+
+.shortlist-review__intro,.shortlist-review__welcome {
+  gap:32px
+}
+
+
+}
+
+
+@media(max-width:700px) {
+  .shortlist-review__header {
+  min-height:80px
+}
+
+.shortlist-review__intro {
+  grid-template-columns:1fr;
+  gap:20px;
+  padding:36px 0
+}
+
+.shortlist-review__intro h1 {
+  font-size:44px
+}
+
+.shortlist-review__brief {
+  justify-self:start;
+  max-width:none
+}
+
+.shortlist-review__welcome {
+  grid-template-columns:1fr;
+  gap:24px
+}
+
+.shortlist-review__welcome form {
+  max-width:none
+}
+
+.shortlist-review__grid {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:32px 12px
+}
+
+.shortlist-talent h3 {
+  font-size:18px
+}
+
+.shortlist-talent__links {
+  align-items:start;
+  flex-direction:column;
+  gap:0
+}
+
+.shortlist-review__progress {
+  gap:10px
+}
+
+.shortlist-review__progress progress {
+  width:100%
+}
+
+.shortlist-role__heading {
+  align-items:start;
+  flex-direction:column;
+  gap:8px
+}
+
+.shortlist-review__submit {
+  padding:14px 12px;
+  bottom:max(12px,env(safe-area-inset-bottom))
+}
+
+.shortlist-review__submit .shortlist-primary {
+  padding:13px 16px;
+  gap:8px;
+  font-size:13px
+}
+
+.shortlist-review__submit span {
+  max-width:150px
+}
+
+.shortlist-review__footer {
+  font-size:22px
+}
+
+.shortlist-review__footer>span:last-child {
+  max-width:100px;
+  line-height:1.6
+}
+
+.shortlist-review__totals>div {
+  flex-direction:column;
+  gap:4px
+}
+
+.shortlist-review .shortlist-profile-modal-backdrop {
+  padding:12px
+}
+
+.shortlist-review .shortlist-profile-modal {
+  max-height:90svh
+}
+
+
+}
+
+
+@media(prefers-reduced-motion:reduce) {
+  .shortlist-talent__portrait>img {
+  transition:none
+}
+
+
+}
+
+/* A quiet name entry, followed by one role at a time. */
+.shortlist-review--entry .shortlist-review__header { border: 0; }
+.shortlist-review--entry .shortlist-review__header > span { display: none; }
+.shortlist-review--entry .shortlist-review__welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  max-width: 440px;
+  margin: clamp(40px, 10vh, 110px) auto 0;
+  padding: 0 0 60px;
+  border: 0;
+  background: none;
+}
+.shortlist-review--entry .shortlist-review__welcome h1 { font-size: clamp(36px, 5vw, 54px); margin: 12px 0 18px; }
+.shortlist-review--entry .shortlist-review__welcome > p { margin: 0; }
+.shortlist-review--entry .shortlist-review__welcome form { margin-top: 32px; gap: 12px; }
+.shortlist-review--entry .shortlist-review__welcome .shortlist-primary { margin-top: 8px; }
+.shortlist-review--entry .shortlist-review__error { max-width: 440px; margin: 0 auto 30px; }
+.shortlist-role-nav button {
+  display: flex; align-items: center; gap: 16px; flex-shrink: 0;
+  border: 1px solid #d0d0cd; border-radius: 24px; padding: 12px 18px;
+  background: transparent; color: #4b4b4b; font-size: 13px;
+}
+.shortlist-role-nav button[aria-current="step"] { background: #007a99; color: white; border-color: #007a99; }
+.shortlist-role-nav button[aria-current="step"] span { color: #fff; }
+.shortlist-role h2, .shortlist-review__ready h2 { scroll-margin-top: 28px; }
+.shortlist-talent__other-roles { font-size: 12px; color: #626262; margin: 8px 0; }
+.shortlist-talent__other-roles button { padding: 0; border: 0; background: none; color: #424242; text-decoration: underline; }
+.shortlist-final-roles { display: grid; gap: 24px; margin-top: 32px; }
+.shortlist-final-role { padding: 24px; background: #f8f9f5; border: 1px solid #d9d9d5; border-radius: 12px; }
+.shortlist-final-role h3 { margin: 0; font-size: 22px; font-weight: 500; }
+.shortlist-final-role p { font-size: 14px; color: #626262; margin: 8px 0; }
+.shortlist-final-role .shortlist-role__heading > button { display: flex; gap: 8px; align-items: center; background: none; border: 0; color: #424242; min-height: 44px; }
+.shortlist-final-people { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; list-style: none; padding: 0; }
+.shortlist-final-people button { width: 100%; display: flex; align-items: center; gap: 12px; border: 0; padding: 8px; background: #eeefeb; color: #292a28; border-radius: 8px; text-align: left; }
+.shortlist-final-people img, .shortlist-final-initials { width: 44px; height: 56px; object-fit: cover; object-position: center 25%; border-radius: 4px; flex-shrink: 0; }
+.shortlist-final-initials { display: grid; place-items: center; background: #dedfd7; }
+.shortlist-final-people button > span:not(.shortlist-final-initials) { flex: 1; overflow-wrap: anywhere; }
+.shortlist-final-people svg { flex-shrink: 0; }
+.shortlist-final-role summary { cursor: pointer; color: #626262; font-size: 13px; padding: 12px 0; }
+@media (max-width: 700px) {
+  .shortlist-final-people { grid-template-columns: 1fr; }
+  .shortlist-final-role { padding: 20px; }
+  .shortlist-review__submit { align-items: center; }
+  .shortlist-review__submit > div { min-width: 0; }
+  .shortlist-review__submit span { line-height: 1.5; }
+}
+.shortlist-role-nav { scroll-margin-top: 16px; }
+.shortlist-review__ready { margin-top: 16px; padding-top: 24px; }
+
+/* Roster canvas parity, with Motiion's cyan interaction accent. */
+.shortlist-review {
+  --shortlist-accent: #00d4f0;
+  --shortlist-accent-ink: #042028;
+  --brand-bottom: calc(clamp(22px, 3.5vh, 48px) + env(safe-area-inset-bottom));
+  --brand-clearance: calc(14.35vw + var(--brand-bottom) + 64px);
+  padding-inline: clamp(22px, 3.3vw, 64px);
+  position: relative;
+  isolation: isolate;
+}
+.shortlist-review__main { position: relative; z-index: 1; padding-bottom: var(--brand-clearance); }
+.shortlist-review--entry .shortlist-review__main { padding-bottom: 0; }
+.shortlist-review__header { position: sticky; top: 0; z-index: 15; isolation: isolate; border: 0; min-height: 124px; }
+.shortlist-review__header::before { content: ""; position: absolute; inset: 0 calc(-1 * clamp(22px, 3.3vw, 64px)); z-index: -1; background: #eeefebc7; backdrop-filter: blur(10px) saturate(1.05); }
+.shortlist-review.is-scrolled .shortlist-review__header::before { border-bottom: 1px solid #292a2810; }
+.shortlist-review__intro { padding: 28px 0; gap: 24px; }
+.shortlist-review__intro h1 { font-size: clamp(32px, 3.4vw, 54px); margin: 0 0 10px; }
+.shortlist-review__intro p { margin: 0; }
+.shortlist-review__brief { font-size: 13px; color: #626262; }
+.shortlist-review__brief summary { cursor: pointer; padding: 12px 0; }
+.shortlist-entry-label { font-size: 14px; color: #626262; }
+.shortlist-review__footer { border: 0; padding-top: 28px; min-height: 90px; align-items: start; }
+.shortlist-review__wordmark { position: fixed; inset: auto 0 0; z-index: 0; height: var(--brand-clearance); padding: 0; pointer-events: none; opacity: var(--wordmark-reveal, 0); }
+.shortlist-review__wordmark img { position: absolute; bottom: var(--brand-bottom); left: -5%; width: 110%; max-width: none; margin: 0; opacity: 1; }
+.shortlist-review :is(button,a,input):focus-visible { outline-color: #007a99; }
+.shortlist-role-nav button[aria-current="step"], .shortlist-talent__votes button:last-child[aria-pressed="true"] { background: var(--shortlist-accent); border-color: var(--shortlist-accent); color: var(--shortlist-accent-ink); }
+.shortlist-role-nav button[aria-current="step"] span { color: var(--shortlist-accent-ink); }
+.shortlist-talent:has(button:last-child[aria-pressed="true"]) .shortlist-talent__badge { background: var(--shortlist-accent); color: var(--shortlist-accent-ink); }
+.shortlist-talent__votes button:first-child[aria-pressed="true"] { background: #535353; border-color: #535353; }
+.shortlist-review__progress progress { accent-color: #00aacc; }
+.shortlist-review__progress progress::-webkit-progress-value { background: #00aacc; }
+.shortlist-review__progress progress::-moz-progress-bar { background: #00aacc; }
+.shortlist-primary:hover:not(:disabled) { background: #333; }
+.shortlist-success, .shortlist-summary { color: #007a99; }
+.shortlist-talent__links a, .shortlist-talent__links button, .shortlist-talent__other-roles button, .shortlist-role-nav button, .shortlist-final-role .shortlist-role__heading > button { color: #424242; }
+.shortlist-talent { display: grid; grid-template-rows: subgrid; grid-row: span 6; row-gap: 0; }
+.shortlist-talent__portrait { align-self: start; }
+.shortlist-talent__other-roles { min-height: 20px; margin: 6px 0; }
+.shortlist-talent__links { align-self: end; }
+.shortlist-talent__votes { align-self: end; }
+.shortlist-role-nav { scroll-margin-top: 140px; }
+.shortlist-sharing__avatar { position: relative; width: 64px; height: 64px; display: grid; place-items: center; padding: 0; border: 0; background: none; }
+.shortlist-sharing__avatar img, .shortlist-sharing__avatar > span { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; display: grid; place-items: center; background: #dededb; font-size: 22px; }
+.shortlist-sharing__avatar svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke-width: 1.5; transform: rotate(-90deg); }
+.shortlist-ring-track { stroke: #d6d6d3; }
+.shortlist-ring-progress { stroke: #00aacc; stroke-linecap: round; }
+#shortlist-share-info { inset: 110px clamp(22px, 3.3vw, 64px) auto auto; width: min(320px, calc(100vw - 40px)); padding: 24px; border: 1px solid #d9d9d5; border-radius: 12px; background: #fafbf7; color: #292a28; box-shadow: 0 16px 60px #20261b12; }
+#shortlist-share-info h2 { font-size: 15px; margin: 0 0 18px; }
+#shortlist-share-info p { font-size: 13px; line-height: 1.6; }
+@media(max-width: 600px) {
+  .shortlist-review { --brand-bottom: calc(24px + env(safe-area-inset-bottom)); --brand-clearance: calc(14.35vw + var(--brand-bottom) + 40px); }
+  .shortlist-review__header { min-height: 105px; }
+  .shortlist-sharing__avatar { width: 44px; height: 44px; }
+  .shortlist-sharing__avatar img, .shortlist-sharing__avatar > span { width: 34px; height: 34px; font-size: 16px; }
+  .shortlist-sharing__avatar svg { stroke-width: 2; }
+  #shortlist-share-info { top: 100px; }
+  .shortlist-role-nav { scroll-margin-top: 120px; }
+  .shortlist-review__footer { flex-wrap: wrap; gap: 16px; }
+  .shortlist-review__footer > span:last-child { max-width: none; margin-left: auto; }
+}
+@media(prefers-reduced-transparency:reduce) { .shortlist-review__header::before { background: #eeefeb; backdrop-filter: none; } }
+.shortlist-review__header .shortlist-sharing__avatar img { filter: none; }
+
+/* Compact header, linked review steps, and portrait-first cards. */
+.shortlist-review { --shortlist-gutter: clamp(22px, 3.3vw, 64px); }
+.shortlist-header-identity { flex: 1; min-width: 0; padding: 22px 0; }
+.shortlist-review .shortlist-header-identity h1 { font-size: clamp(28px, 3.4vw, 54px); line-height: 1.08; margin: 0 0 10px; letter-spacing: -.05em; }
+.shortlist-header-identity > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 5px; font-size: 13px; color: #626262; }
+.shortlist-header-identity strong { color: #292a28; font-weight: 500; }
+.shortlist-header-identity button { border: 0; background: none; padding: 8px; margin: -8px 0; color: #626262; text-decoration: underline; text-underline-offset: 3px; }
+.shortlist-ring-progress { stroke: #63865b; }
+.shortlist-stepbar { display: flex; align-items: center; gap: 24px; margin-inline: calc(-1 * var(--shortlist-gutter)); padding: 0 var(--shortlist-gutter); border-block: 1px solid #292a2810; scroll-margin-top: 140px; }
+.shortlist-steps { display: flex; align-items: center; flex: 1; min-width: 0; gap: 10px; overflow-x: auto; list-style: none; margin: 0 0 0 calc(-1 * var(--shortlist-gutter)); padding: 10px 0 10px var(--shortlist-gutter); scrollbar-width: none; scroll-padding-inline: var(--shortlist-gutter); }
+.shortlist-steps::-webkit-scrollbar { display: none; }
+.shortlist-steps li { display: flex; align-items: center; flex-shrink: 0; gap: 10px; }
+.shortlist-steps button { min-height: 44px; padding: 0; border: 0; background: transparent; color: #777; font-size: 14px; white-space: nowrap; }
+.shortlist-steps button[aria-current="step"] { color: #111; font-weight: 700; }
+.shortlist-steps svg { color: #aaa; }
+.shortlist-step-progress { flex-shrink: 0; font-size: 12px; color: #626262; white-space: nowrap; }
+.shortlist-step-select { display: none; }
+.shortlist-sender-note { font-size: 12px; color: #626262; margin-top: 16px; }
+.shortlist-sender-note summary { cursor: pointer; width: fit-content; padding: 5px 0; }
+.shortlist-sender-note p { margin: 8px 0 0; max-width: 640px; white-space: pre-wrap; }
+.shortlist-role { padding-top: 28px; }
+.shortlist-talent { grid-row: span 4; }
+.shortlist-talent__title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 12px; }
+.shortlist-talent__name { background: none; border: 0; padding: 0; text-align: left; color: inherit; min-width: 0; }
+.shortlist-talent__name h3 { margin: 0; }
+.shortlist-talent__instagram { display: grid; place-items: center; width: 36px; min-height: 44px; flex-shrink: 0; color: #535353; text-decoration: none; }
+.shortlist-talent__meta { margin: 0 0 16px; }
+@media(max-width:700px) {
+  .shortlist-stepbar { gap: 16px; padding-block: 10px; scroll-margin-top: 120px; }
+  .shortlist-steps { display: none; }
+  .shortlist-step-select { display: block; flex: 1; min-width: 0; min-height: 44px; border: 0; border-radius: 0; background: transparent; color: #111; font: inherit; font-size: 14px; font-weight: 600; padding-right: 8px; text-overflow: ellipsis; }
+  .shortlist-step-progress { font-size: 11px; }
+  .shortlist-header-identity > div { font-size: 12px; }
+  .shortlist-talent__title-row { gap: 4px; }
+  .shortlist-talent__instagram { width: 30px; }
+}
+
+/* Success feedback is green; the delivered screen fits the viewport naturally. */
+.shortlist-talent__votes button:last-child[aria-pressed="true"],
+.shortlist-talent:has(button:last-child[aria-pressed="true"]) .shortlist-talent__badge {
+  background: #487844;
+  border-color: #487844;
+  color: #fff;
+}
+.shortlist-success { color: #487844; border-color: #b8cdb5; }
+.shortlist-summary { color: #292a28; }
+.shortlist-review--delivered { --brand-clearance: calc(14.35vw + var(--brand-bottom) + 24px); }
+.shortlist-review--delivered .shortlist-review__main { min-height: 100svh; display: flex; flex-direction: column; }
+.shortlist-review--delivered .shortlist-review__header { min-height: 88px; position: relative; flex-shrink: 0; }
+.shortlist-review--delivered .shortlist-review__notice { min-height: 0; padding: 16px 0 24px; }
+.shortlist-review--delivered .shortlist-success { width: 44px; height: 44px; margin-bottom: 16px; }
+.shortlist-review--delivered h1 { font-size: clamp(36px, 4vw, 54px); margin: 12px 0 16px; }
+.shortlist-review--delivered .shortlist-review__notice p { margin: 8px 0; }
+.shortlist-review--delivered .shortlist-summary { margin-top: 18px; }
+.shortlist-review--delivered .shortlist-review__footer { margin-top: auto; min-height: 74px; padding: 20px 0 0; }
+.shortlist-review--delivered .shortlist-review__wordmark { opacity: 1; }

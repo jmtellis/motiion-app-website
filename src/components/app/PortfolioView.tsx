@@ -33,7 +33,7 @@ import type { PortfolioEditorDraft } from "@/lib/app/portfolio-editor";
 import type { PortfolioOwnerData } from "@/lib/app/portfolio-owner";
 import { ResumePaper, SizeSheetPaper } from "@/components/portfolio/PortfolioPaper";
 import { sizeSheetRows } from "@/components/portfolio/size-sheet";
-import type { ProfileHighlight, PublicTalentProfile } from "@/types/public";
+import type { PublicTalentProfile } from "@/types/public";
 
 type PanelKey = "public" | "headshots" | "highlights" | "visuals" | "resume" | "sizing";
 
@@ -76,7 +76,6 @@ export function PortfolioView({
 
   const displayName = editor.displayName || profile.full_name?.trim() || "Your portfolio";
   const headshot = owner.headshotUrls[0] ?? profile.headshot_url;
-  const highlights = profile.profile_highlights ?? [];
   const location = editor.workingLocations[0] || profile.location;
   const publicPath = `/profile/${profile.username?.trim() || profile.id}`;
 
@@ -281,17 +280,6 @@ export function PortfolioView({
             </div>
           </section>
 
-          {highlights.length > 0 ? (
-            <section className="portfolio-highlights" aria-label="Highlights">
-              <h2>Highlights</h2>
-              <div className="portfolio-highlights__row">
-                {highlights.map((item) => (
-                  <HighlightCard key={item.id} item={item} />
-                ))}
-              </div>
-            </section>
-          ) : null}
-
           <PortfolioProfileTabs editor={editor} agencies={agencies} />
         </div>
       </div>
@@ -354,14 +342,5 @@ function CompletionBanner({ completed, total, cta }: { completed: number; total:
       </div>
       <Link href="/profile/setup">{cta}</Link>
     </section>
-  );
-}
-
-function HighlightCard({ item }: { item: ProfileHighlight }) {
-  return (
-    <article className="portfolio-highlight">
-      <p>{item.title}</p>
-      {item.subtitle ? <p>{item.subtitle}</p> : null}
-    </article>
   );
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Megaphone } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import {
@@ -258,15 +258,19 @@ function ProjectView({
 
   return (
     <div className="opportunities-detail__stack">
-      {casting.coverImageURL ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img className="opportunities-cover" src={casting.coverImageURL} alt="" />
-      ) : null}
-      <div className="opportunities-stats">
-        {casting.production ? <span>{casting.production}</span> : null}
-        {casting.compensationSummary ? <span>{casting.compensationSummary}</span> : null}
-        {casting.location ? <span>{casting.location}</span> : null}
-      </div>
+      <header className="casting-identity">
+        {casting.clientLogoURL ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={casting.clientLogoURL} alt={casting.production || ""} />
+        ) : <span className="casting-identity__mark"><Megaphone size={32} aria-hidden /></span>}
+        <h1>{casting.title}</h1>
+        {casting.production ? <p>{casting.production}</p> : null}
+        <dl className="casting-identity__stats">
+          <div><dt>Est. Pay</dt><dd>{casting.compensationSummary || "To be confirmed"}</dd></div>
+          <div><dt>Location</dt><dd>{casting.location || "To be confirmed"}</dd></div>
+          <div><dt>Type</dt><dd>{casting.projectType || "Casting"}</dd></div>
+        </dl>
+      </header>
       {ribbon ? <p className="opportunities-outcome" data-outcome={ribbon.outcome}>{ribbon.label}</p> : null}
       {casting.organizerName?.trim() ? (
         <OrganizerRow name={casting.organizerName.trim()} headshotURL={casting.organizerHeadshotURL ?? null} />
@@ -285,7 +289,7 @@ function ProjectView({
             return (
               <li key={role.id}>
                 <button type="button" onClick={() => onOpenRole(role)}>
-                  <span>{index + 1}</span>
+                  <span aria-hidden>{index + 1}</span>
                   <strong>{role.title}</strong>
                   <em>{submission ? outcomeLabel(submission.outcome) : detail.inviteByRoleId[role.id] ? "Invited" : "View"}</em>
                 </button>

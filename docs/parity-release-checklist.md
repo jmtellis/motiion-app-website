@@ -1,6 +1,6 @@
 # Production release approval manifest
 
-Prepared 2 November 2026. This is the concrete release boundary, not authorization to deploy. Production inspection was read-only; the website and shared backend changes remain unreleased. The [domain matrix](parity-delivery.md), [browser acceptance](parity-browser-acceptance.md), [SQL review and rollback impact](parity-release-review.md), and [activity matrix](parity-activities.md), [continuation checkpoint](parity-continuation.md), and [live billing preflight](production-billing-preflight.md) contain supporting evidence.
+Prepared 2 November 2026 and released the same day after explicit approval of the full package; see [Production release result](#production-release-result). The tables below record the pre-release baseline used for recovery. The [domain matrix](parity-delivery.md), [browser acceptance](parity-browser-acceptance.md), [SQL review and rollback impact](parity-release-review.md), and [activity matrix](parity-activities.md), [continuation checkpoint](parity-continuation.md), and [live billing preflight](production-billing-preflight.md) contain supporting evidence.
 
 ## Target and current release
 
@@ -15,9 +15,23 @@ Prepared 2 November 2026. This is the concrete release boundary, not authorizati
 | Production Supabase | `pygdxcscmebeqjxhzzuq` / custom API host `api.motiion.app` |
 | Test Supabase, excluded from production configuration | `mvkvztpvakybrhyupown` |
 | Shared Edge source repository / baseline | `jmtellis/motiion-app-ios`, `main`, `604ccd28beeb0af5995ca12bd02dc196c0811a76` |
-| Release commit | Website `56301d2515b6167ebf748617f60eaa536a00e9d0` (plus this documentation-only SHA record); shared Edge `5e2bdf119078d31560b83bc9de7bc4530b41ae7f`. Local `main` only; not pushed or deployed. |
+| Release commit | Website `56301d2515b6167ebf748617f60eaa536a00e9d0` (plus this documentation-only SHA record); shared Edge `5e2bdf119078d31560b83bc9de7bc4530b41ae7f`. Both pushed to `main` and released 2 November 2026. |
 
 Vercel project/deployment metadata was retrieved through the connected integration. Secret metadata was inspected without exporting values. Presence of a protected variable is not proof of its correctness or environment.
+
+## Production release result
+
+Released 2 November 2026 under explicit approval of the whole package. Private pre-release snapshots: `.staging/production-db-definitions-before-release.sql`, `.staging/production-edge-release-snapshot.json`, `.staging/production-cancel-edge-snapshot.json`.
+
+- **Database:** each of the nine reviewed files was applied once, individually, to `pygdxcscmebeqjxhzzuq` (no `db push`). Hosted versions `20261102193606`, `…193717`, `…193733`, `…193743`, `…193746`, `…193825`, `…193828`, `…193854`, `…193911`, in manifest order. The stored statement MD5 matches each local file; `authorize_library_member_hydration` differs only by one trailing newline. Submission/profile counts were unchanged (18 / 105); no backfill.
+- **Shared Edge (iOS `5e2bdf1`):** `payments-create-checkout-session` v51, `payments-checkout-quote` v14, `web-guest-class-book` v22, `stripe-webhook` v52, `web-checkout-status` v17, `payments-reconcile-checkout` v40, `payments-reconcile-activity-checkouts` v15, `payments-student-cancel-class` v37. Existing authentication modes retained; `public-activity-detail` not redeployed.
+- **Stripe LIVE:** Industry price `price_1UXRF5Jefpu9FPzfjFqn9mXJ` (5999 USD/month) on `prod_UuVdL2R5anPBUQ`. Website endpoint `we_1TugdHJefpu9FPzfwLYfpVBr` now has 10 events, still enabled, same URL. New activity destination `we_1UXRJDJefpu9FPzfFxaxhLJ0` (`shared-activity-payments`, your account, snapshot, `2026-01-28.clover`) targets the shared `stripe-webhook` with exactly the eight activity events; its signing secret was stored as Supabase `STRIPE_ACTIVITY_WEBHOOK_SECRET` from the clipboard without display. The old disabled shared endpoint, the $200 price and the orphan subscription are unchanged. The restricted CLI key was not widened; the price/endpoint writes were made by the account owner's Dashboard session.
+- **Vercel production env:** `STRIPE_INDUSTRY_PRICE_ID` = new price; `STRIPE_INDUSTRY_LEGACY_PRICE_IDS=price_1TugcIJefpu9FPzfY38CjBmI`.
+- **Website:** `vercel deploy --prod --skip-domain` (no `--verify`) produced `dpl_9HrhenBnXGUTXbYvZQVEjYba3LTX` (Sentry release `ae5942b`). Its protected URL was verified through a temporary 23-hour share fetch (home, login, Industry pricing at $59.99), then promoted. Pushing `main` triggered a Git build of the same commit, `dpl_DdwMA5WUWMsCyyPVoPWZkeCGvvXE`, which now serves the domain and passed the same smoke checks.
+- **Production smoke (no charges, no messages):** home, login, `/pricing?audience=casting` ($59.99), `/community/classes` and two live `/class/{id}` pages return 200; an unknown class returns 404; `/auth/callback` without a code redirects to the link-error page; unsigned POSTs to the website Stripe webhook and the shared `stripe-webhook` return 400. The unused website RevenueCat route returns 503 (unconfigured, as before).
+- **Not established in production:** authenticated callback/approval, entitlement and workflow journeys with designated accounts, a live paid checkout/refund (not authorized), Apple consent, physical microphone, offline, cross-device and 200% zoom.
+
+Rollback: promote `dpl_GUd6HY4Y6AnXbXdax3FideKNihzX`, restore Vercel `STRIPE_INDUSTRY_PRICE_ID` to the legacy price, disable `we_1UXRJDJefpu9FPzfFxaxhLJ0`, and redeploy Edge bundles from the private snapshot. Schema rollback follows the per-change SQL review.
 
 ## Database changes requiring production approval
 

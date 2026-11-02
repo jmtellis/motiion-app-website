@@ -54,7 +54,7 @@ The domain matrices, not this short list, carry source references, authorization
 
 ## Environments, permissions and release decisions
 
-- User selected **main/production delivery**, with isolated staging test accounts. Production is not yet changed by this release.
+- User selected **main/production delivery**, with isolated staging test accounts. Production was released on 2 November 2026; see the manifest's production release result.
 - Supabase production `pygdxcscmebeqjxhzzuq` (`api.motiion.app`); test branch `mvkvztpvakybrhyupown`.
 - Vercel website project `prj_rgsXot0osCn7iH6MYpnxrPWqqArA`, team `team_GgBckfXeHQE2Qz77R6mLuog8`. Current production deployment `dpl_GUd6HY4Y6AnXbXdax3FideKNihzX`.
 - Vercel connected access and CLI access are verified (`npx --yes vercel whoami` returned the existing account). Official CLI 65.9.0 supports `deploy --prod --skip-domain`; do not use `--verify` casually because it can create a persistent protection bypass secret.
@@ -102,4 +102,4 @@ At the user's request, the active Codex agent checks the account usage tool at m
 
 ## Final handoff boundary
 
-Production is unchanged; no push or deployment has been made. Guest browser return, mobile activity-form reflow, the final optimized build and closing checks have passed. Remaining: commit only reviewed scoped files, obtain the exact production access/configuration approval, deploy without domains, verify, and promote. Port 3002 serves the final optimized build; port 3001 remains the dev server. Never use local staging configuration for production.
+Released to production on 2 November 2026 after explicit approval: nine migrations, eight shared Edge functions, the $59.99 Industry price, both webhook changes and the website deployment. Both repositories' `main` branches are pushed. Exact versions, smoke results and rollback are in the manifest's [Production release result](parity-release-checklist.md#production-release-result). Remaining: authenticated production journeys with designated accounts, and the coverage limits listed there. Port 3002 serves the final optimized build; port 3001 remains the dev server. Never use local staging configuration for production.

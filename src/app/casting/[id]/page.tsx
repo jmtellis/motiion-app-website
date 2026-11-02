@@ -1,5 +1,5 @@
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 import { getCastingAccess } from "@/app/casting/[id]/access";
 import CastingPageClient from "@/app/casting/[id]/casting-page-client";
@@ -18,10 +18,9 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.motiion.app").replace(/\/$/, "");
   const castingUrl = `${siteUrl}/casting/${encodeURIComponent(id)}`;
 
-  const { role: selectedRoleId } = await searchParams;
-  const selectedRole = casting?.roles.find((role) => role.id === selectedRoleId);
+  const selectedRole = casting?.roles.find((item) => item.id === (role ?? casting.selectedRoleId));
   const title = casting
-    ? selectedRole ? `Casting for ${casting.title} — ${selectedRole.title} · Motiion` : `Casting for ${casting.title} · Motiion`
+    ? `Casting for ${casting.title}${selectedRole ? ` — ${selectedRole.title}` : ""} · Motiion`
     : "Casting on Motiion";
   const previewImage = casting?.coverImageURL || `${siteUrl}/casting-share-logo-v2.png`;
   const description = casting
@@ -61,7 +60,7 @@ export default async function CastingPage({ params, searchParams }: PageProps) {
   if (!casting) {
     return <main className="mx-auto max-w-md px-6 py-24 text-center">
       <h1 className="text-2xl font-semibold">Casting unavailable</h1>
-      <p className="mt-4">This casting may require an invitation. Sign in with the account that received it, or ask the organizer for access.</p>
+      <p className="mt-4">This role may require an invitation. Sign in with the account that received it, or ask the organizer for access.</p>
       <a className="mt-6 inline-block underline" href={`/login?next=${encodeURIComponent(`/casting/${lookupId}`)}`}>Sign in</a>
     </main>;
   }

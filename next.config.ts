@@ -11,6 +11,8 @@ if (prepared.disconnected) {
 }
 
 const nextConfig: NextConfig = {
+  // Messages previews must receive metadata in the initial HTML head.
+  htmlLimitedBots: /.*/,
   env: {
     NEXT_PUBLIC_APP_ENV: appEnvironment,
     ...(prepared.disconnected ? previewPublicEnvOverrides(process.env) : {}),

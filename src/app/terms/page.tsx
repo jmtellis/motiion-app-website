@@ -38,6 +38,15 @@ const termsSections: LegalPageSection[] = [
     ],
   },
   {
+    title: "Prohibited Content and Conduct (Zero Tolerance)",
+    paragraphs: [
+      "You must not post or send objectionable content on Motiion, including harassment, bullying, threats, hate speech, sexual or nude content, violence, illegal content, spam, impersonation, or content that infringes others' rights.",
+      "Motiion has zero tolerance for objectionable content and abusive users.",
+      "You can report content and block users in the app. Motiion reviews reports within 24 hours and will remove offending content and suspend or terminate the accounts of users who post it.",
+      "Blocked users can no longer contact you, and their content is hidden from you.",
+    ],
+  },
+  {
     title: "Definitions and key terms",
     bullets: [
       "Company: Motiion Ventures Inc. (11120 Chandler Blvd Apt 4098, North Hollywood, CA 91601).",
@@ -179,7 +188,7 @@ export default function TermsPage() {
   return (
     <LegalPageShell
       title="Terms & Conditions"
-      updatedAt="Updated at August 15th, 2026"
+      updatedAt="Updated at October 9th, 2026"
       intro="These Terms & Conditions govern your use of Motiion services, including our website and related applications. By using the service, you agree to these terms."
       sections={termsSections}
       contactIntro="If you have questions about these Terms, contact us:"

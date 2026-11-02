@@ -4,7 +4,7 @@ import { clonePdfBytes } from "@/lib/messaging/resolve-attachment-data";
 
 const PREVIEW_MAX_EDGE = 440;
 
-async function loadPdfJs() {
+export async function loadPdfJs() {
   const pdfjs = await import("pdfjs-dist");
 
   if (!pdfjs.GlobalWorkerOptions.workerSrc) {
@@ -20,7 +20,8 @@ async function loadPdfJs() {
 export async function renderPdfFirstPageThumbnail(bytes: Uint8Array): Promise<string | null> {
   try {
     const pdfjs = await loadPdfJs();
-    const pdfDoc = await pdfjs.getDocument({ data: clonePdfBytes(bytes) }).promise;
+    const task = pdfjs.getDocument({ data: clonePdfBytes(bytes) });
+    const pdfDoc = await task.promise;
     const page = await pdfDoc.getPage(1);
     const viewport = page.getViewport({ scale: 1 });
     const longest = Math.max(viewport.width, viewport.height);
@@ -32,13 +33,15 @@ export async function renderPdfFirstPageThumbnail(bytes: Uint8Array): Promise<st
     canvas.height = Math.floor(scaled.height);
     const context = canvas.getContext("2d");
 
-    if (!context) return null;
+    if (!context) { await task.destroy(); return null; }
 
     context.fillStyle = "#ffffff";
     context.fillRect(0, 0, canvas.width, canvas.height);
     await page.render({ canvasContext: context, viewport: scaled, canvas }).promise;
 
-    return canvas.toDataURL("image/jpeg", 0.82);
+    const image = canvas.toDataURL("image/jpeg", 0.82);
+    await task.destroy();
+    return image;
   } catch {
     return null;
   }

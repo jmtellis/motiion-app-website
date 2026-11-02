@@ -161,9 +161,7 @@ function FocusViewMenu({
     return () => window.removeEventListener("mousedown", handlePointerDown);
   }, [disabled, open]);
 
-  useEffect(() => {
-    if (disabled) setOpen(false);
-  }, [disabled]);
+  if (disabled && open) setOpen(false);
 
   if (disabled) {
     return (
@@ -267,10 +265,8 @@ function FocusCardFooterActions({
     return () => window.removeEventListener("mousedown", handlePointerDown);
   }, [addMenuOpen, contactMenuOpen]);
 
-  useEffect(() => {
-    setAddMenuOpen(false);
-    setContactMenuOpen(false);
-  }, [talent?.id]);
+  const [menuTalentId, setMenuTalentId] = useState(talent?.id);
+  if (menuTalentId !== talent?.id) { setMenuTalentId(talent?.id); setAddMenuOpen(false); setContactMenuOpen(false); }
 
   const inputClass =
     "w-full rounded-full border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-white/30 focus:outline-none";
@@ -742,7 +738,11 @@ function EmptyState() {
   );
 }
 
-export function ActiveTalentPanel({
+export function ActiveTalentPanel(props: ActiveTalentPanelProps) {
+  return <ActiveTalentPanelContent key={`${props.talent?.id ?? "empty"}:${props.talent?.imageUrl ?? ""}`} {...props} />;
+}
+
+function ActiveTalentPanelContent({
   talent,
   open = false,
   saveOpen: saveOpenControlled,
@@ -772,23 +772,11 @@ export function ActiveTalentPanel({
   const saveOpen = saveOpenControlled ?? saveOpenInternal;
   const setSaveOpen = onSaveOpenChange ?? setSaveOpenInternal;
   const useCompactHeader = variant === "sidebar" || compact;
-  const [focusPreview, setFocusPreview] = useState<FocusMediaPreview | null>(null);
+  const [focusPreview, setFocusPreview] = useState<FocusMediaPreview | null>(() => talent ? primaryFocusPreview(talent) : null);
   const [projectDetailOpen, setProjectDetailOpen] = useState(false);
   const [profileTab, setProfileTab] = useState<ProfileTab>("about");
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
   const [talentUserId, setTalentUserId] = useState("");
-
-  useEffect(() => {
-    setSaveOpenInternal(false);
-  }, [talent?.id]);
-
-  useEffect(() => {
-    setFocusPreview(talent ? primaryFocusPreview(talent) : null);
-    setProjectDetailOpen(false);
-    setProfileTab("about");
-    setResumeUrl(null);
-    setTalentUserId("");
-  }, [talent?.id, talent?.imageUrl]);
 
   const activeFocusPreview =
     focusPreview ?? (talent ? primaryFocusPreview(talent) : null);

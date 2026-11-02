@@ -1,68 +1,32 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
-import { useId } from "react";
+import { useId, useRef } from "react";
 
-type UnderlineTabOption<T extends string> = {
-  value: T;
-  /** Short label shown when inactive. */
-  label: string;
-  /** Title-style label shown when active (falls back to `label`). */
-  activeLabel?: string;
-};
+type UnderlineTabOption<T extends string> = { value: T; label: string; activeLabel?: string; panelId?: string };
 
-export function UnderlineTabs<T extends string>({
-  options,
-  value,
-  onChange,
-  ariaLabel,
-}: {
-  options: UnderlineTabOption<T>[];
-  value: T;
-  onChange: (value: T) => void;
-  ariaLabel: string;
+export function UnderlineTabs<T extends string>({ options, value, onChange, ariaLabel }: {
+  options: UnderlineTabOption<T>[]; value: T; onChange: (value: T) => void; ariaLabel: string;
 }) {
   const groupId = useId();
-  const reducedMotion = useReducedMotion();
-
+  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   return (
-    <div
-      role="tablist"
-      aria-label={ariaLabel}
-      className="relative inline-flex flex-wrap items-end gap-0.5"
-    >
-      {options.map((option) => {
+    <div role="tablist" aria-label={ariaLabel} className="ui-tabs">
+      {options.map((option, index) => {
         const active = value === option.value;
-        const displayLabel = active ? (option.activeLabel ?? option.label) : option.label;
         return (
-          <button
-            key={option.value}
-            type="button"
-            role="tab"
-            aria-selected={active}
+          <button key={option.value} ref={(node) => { buttons.current[index] = node; }} id={`${groupId}-${option.value}`}
+            type="button" role="tab" aria-selected={active} aria-controls={option.panelId} tabIndex={active ? 0 : -1}
             onClick={() => onChange(option.value)}
-            className={`relative whitespace-nowrap px-2.5 pb-2 pt-1 text-[0.9375rem] font-medium tracking-[-0.01em] transition-[color,font-weight] duration-200 ease-out ${
-              active
-                ? "font-semibold text-white"
-                : "text-[var(--buyer-text-soft,rgb(255_255_255/0.55))] hover:text-[#eaeaea]"
-            }`}
-          >
-            {displayLabel}
-            {active ? (
-              reducedMotion ? (
-                <span
-                  className="absolute inset-x-2.5 bottom-0 h-0.5 rounded-full bg-[var(--accent)]"
-                  aria-hidden
-                />
-              ) : (
-                <motion.span
-                  layoutId={`${groupId}-underline`}
-                  className="absolute inset-x-2.5 bottom-0 h-0.5 rounded-full bg-[var(--accent)]"
-                  transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                  aria-hidden
-                />
-              )
-            ) : null}
+            onKeyDown={(event) => {
+              const next = event.key === "ArrowRight" ? (index + 1) % options.length
+                : event.key === "ArrowLeft" ? (index - 1 + options.length) % options.length
+                  : event.key === "Home" ? 0 : event.key === "End" ? options.length - 1 : -1;
+              if (next < 0) return;
+              event.preventDefault();
+              buttons.current[next]?.focus();
+              onChange(options[next].value);
+            }}>
+            {active ? (option.activeLabel ?? option.label) : option.label}
           </button>
         );
       })}

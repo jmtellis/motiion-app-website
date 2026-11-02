@@ -1,237 +1,55 @@
 "use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { BadgeCheck, Search, Trash2, UserPlus, X } from "lucide-react";
-
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
-import { hasActiveAbility } from "@/lib/talent-buyers/project-abilities";
-import {
-  importCollectionToProjectRoster,
-  removeFromProjectRoster,
-  type ProjectRosterMember,
-} from "@/lib/talent-buyers/project-roster";
+import { Modal } from "@/components/talent-buyers/dashboard/Modal";
+import { CollectionProfilePanel } from "@/components/talent-buyers/library/CollectionProfilePanel";
+import { importCollectionToProjectRoster, removeFromProjectRoster, updateProjectPeopleGroup, type ProjectPeopleGroup, type ProjectRosterMember } from "@/lib/talent-buyers/project-roster";
 import { labelFromSnake } from "@/lib/talent-buyers/dashboard-data";
-import { projectPath } from "@/lib/talent-buyers/project-routes";
-
 import { useProjectWorkspace } from "../ProjectWorkspaceContext";
 import { RosterStack } from "./RosterStackTile";
-import { rosterStackTransitionName } from "./view-transition";
-
 import "./composable-project.css";
 
 type CollectionOption = { id: string; name: string; talentCount: number };
-
-function TalentCardTile({
-  member,
-  onRemove,
-  removing,
-}: {
-  member: ProjectRosterMember;
-  onRemove: () => void;
-  removing: boolean;
-}) {
-  const card = member.card;
-  const meta = [card?.locationCity, card?.subtype ? labelFromSnake(card.subtype) : null]
-    .filter(Boolean)
-    .join(" · ");
-  const credits = card?.topCredits.length
-    ? card.topCredits.join(" · ")
-    : card?.creditCount
-      ? `${card.creditCount} credits`
-      : "No public credits yet";
-
-  const media = (
-    <span className="talent-tile__media">
-      {member.avatarUrl ? (
-        <Image src={member.avatarUrl} alt="" fill sizes="(max-width: 640px) 45vw, 200px" />
-      ) : (
-        <span className="talent-tile__initials" aria-hidden>
-          {member.name.slice(0, 1).toUpperCase()}
-        </span>
-      )}
-    </span>
-  );
-
-  return (
-    <li className="talent-tile">
-      {member.slug ? (
-        <Link href={`/talent/${member.slug}`} className="talent-tile__link" aria-label={`Open ${member.name}'s Talent Card`}>
-          {media}
-        </Link>
-      ) : (
-        media
-      )}
-      <button
-        type="button"
-        className="talent-tile__remove"
-        onClick={onRemove}
-        disabled={removing}
-        aria-label={`Remove ${member.name} from roster`}
-      >
-        <Trash2 aria-hidden />
-      </button>
-      <span className="talent-tile__label">
-        <strong>
-          <span className="talent-tile__name">{member.name}</span>
-          {card?.isVerified ? <BadgeCheck className="talent-tile__verified" aria-label="Verified" /> : null}
-        </strong>
-        <span>{meta || "\u00a0"}</span>
-        <span className="talent-tile__credits">{credits}</span>
-      </span>
-    </li>
-  );
-}
-
-export function ProjectRosterAbilityPage({
-  collections,
-  inviteOpen: initialInviteOpen,
-}: {
-  collections: CollectionOption[];
-  inviteOpen: boolean;
-}) {
-  const router = useRouter();
-  const { showToast } = useToast();
-  const { projectId, project, rosterMembers } = useProjectWorkspace();
-  const [inviteOpen, setInviteOpen] = useState(initialInviteOpen || rosterMembers.length === 0);
+export function ProjectRosterAbilityPage({ collections, inviteOpen: initialInviteOpen, groupData }: { collections: CollectionOption[]; inviteOpen: boolean; groupData: { groups: ProjectPeopleGroup[]; canManage: boolean; error?: string } }) {
+  const router = useRouter(); const searchParams = useSearchParams(); const { showToast } = useToast();
+  const { projectId, rosterMembers } = useProjectWorkspace();
+  const [inviteOpen, setInviteOpen] = useState(initialInviteOpen);
   const [collectionId, setCollectionId] = useState(collections[0]?.id ?? "");
-  const [pending, startTransition] = useTransition();
-  const [removingId, setRemovingId] = useState<string | null>(null);
-  const paused = project.composable ? !hasActiveAbility(project.composable.abilities, "roster") : false;
-  const findTalentHref = `/talent?projectId=${projectId}`;
-
-  function closeInvite() {
-    setInviteOpen(false);
-    router.replace(projectPath(projectId, "roster"), { scroll: false });
+  const [query, setQuery] = useState(""); const [groupId, setGroupId] = useState("");
+  const [groupEditor, setGroupEditor] = useState<string | null>(null); const [groupName, setGroupName] = useState("");
+  const [removeTarget, setRemoveTarget] = useState<ProjectRosterMember | null>(null);
+  const [error, setError] = useState<string | null>(null); const [pending, startTransition] = useTransition();
+  const selectedGroup = groupData.groups.find((group) => group.id === groupId);
+  const editingGroup = groupData.groups.find((group) => group.id === groupEditor);
+  const inspectedPerson = searchParams.get("person");
+  const inspectedMember = rosterMembers.find((member) => [member.slug, member.id, member.card?.userId].includes(inspectedPerson ?? ""));
+  const visible = rosterMembers.filter((person) => (!selectedGroup || selectedGroup.participantIds.includes(person.id)) && `${person.name} ${person.card?.locationCity ?? ""} ${person.card?.topCredits.join(" ") ?? ""}`.toLowerCase().includes(query.toLowerCase().trim()));
+  function profile(slug: string | null) {
+    if (!slug && window.history.state?.motiionProjectPerson === projectId) { window.history.back(); return; }
+    const url = new URL(window.location.href);
+    if (slug) url.searchParams.set("person", slug); else url.searchParams.delete("person");
+    const state = slug ? { motiionProjectPerson: projectId } : null;
+    if (!inspectedPerson && slug) window.history.pushState(state, "", url);
+    else window.history.replaceState(state, "", url);
   }
-
-  function importCollection() {
-    if (!collectionId) return;
-    startTransition(async () => {
-      const result = await importCollectionToProjectRoster({ projectId, collectionId });
-      if (!result.ok) {
-        showToast({ message: result.error ?? "Couldn't import that collection.", variant: "error" });
-        return;
-      }
-      showToast({
-        message: result.added ? `Added ${result.added} from collection` : "That collection is empty",
-        variant: result.added ? "success" : "default",
-      });
-      router.refresh();
-    });
+  function importCollection() { startTransition(async () => { const result = await importCollectionToProjectRoster({ projectId, collectionId }); if (!result.ok) showToast({ message: result.error!, variant: "error" }); else { showToast({ message: result.added ? `${result.added} people added to this project` : "That collection has no available talent profiles.", variant: result.added ? "success" : "default" }); router.refresh(); } }); }
+  function groupAction(action: "create" | "add" | "remove" | "archive", userId?: string) {
+    setError(null); startTransition(async () => { const result = await updateProjectPeopleGroup({ projectId, action, groupId: editingGroup?.id, userId, name: groupName }); if (!result.ok) { setError(result.error!); return; } if (action === "create" || action === "archive") { setGroupEditor(null); setGroupName(""); if (action === "archive") setGroupId(""); } router.refresh(); });
   }
-
-  function remove(member: ProjectRosterMember) {
-    setRemovingId(member.id);
-    startTransition(async () => {
-      const result = await removeFromProjectRoster(projectId, member.id);
-      setRemovingId(null);
-      if (!result.ok) {
-        showToast({ message: result.error ?? "Couldn't remove that dancer.", variant: "error" });
-        return;
-      }
-      showToast({ message: `${member.name} removed`, variant: "success" });
-      router.refresh();
-    });
-  }
-
-  return (
-    <div className="ability-page">
-      <header className="ability-page__header">
-        <RosterStack
-          people={rosterMembers.map((member) => ({ id: member.id, name: member.name, avatarUrl: member.avatarUrl }))}
-          transitionName={rosterStackTransitionName(projectId)}
-          size="lg"
-        />
-        <div className="ability-page__title">
-          <h2>Roster</h2>
-          <p>
-            {rosterMembers.length
-              ? `${rosterMembers.length} ${rosterMembers.length === 1 ? "dancer" : "dancers"} · invite-only`
-              : "Confirmed dancers, their Talent Cards, and contacts in one place."}
-          </p>
-        </div>
-        <div className="ability-page__actions">
-          <button type="button" className="bd-btn-secondary" onClick={() => setInviteOpen(true)}>
-            <UserPlus aria-hidden /> Invite dancers
-          </button>
-        </div>
-      </header>
-
-      {paused ? (
-        <p className="ability-page__notice">Roster is paused. Its dancers stay here; resume it from + Ability.</p>
-      ) : null}
-
-      {inviteOpen ? (
-        <section className="roster-invite" aria-labelledby="roster-invite-title">
-          <header>
-            <h3 id="roster-invite-title">Invite dancers</h3>
-            <button type="button" className="need-prompt__dismiss" onClick={closeInvite} aria-label="Close invite">
-              <X aria-hidden />
-            </button>
-          </header>
-          <div className="roster-invite__options">
-            <Link href={findTalentHref} className="roster-invite__option">
-              <Search aria-hidden />
-              <span>
-                <strong>Find talent on Motiion</strong>
-                <span>Search verified Talent Cards and add dancers to this roster.</span>
-              </span>
-            </Link>
-            <div className="roster-invite__option roster-invite__option--form">
-              <UserPlus aria-hidden />
-              <span>
-                <strong>Import from a collection</strong>
-                {collections.length ? (
-                  <span className="roster-invite__import">
-                    <select
-                      className="composable-input"
-                      value={collectionId}
-                      onChange={(event) => setCollectionId(event.target.value)}
-                      aria-label="Collection"
-                    >
-                      {collections.map((collection) => (
-                        <option key={collection.id} value={collection.id}>
-                          {collection.name} ({collection.talentCount})
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      className="bd-btn-secondary"
-                      onClick={importCollection}
-                      disabled={pending || !collectionId}
-                    >
-                      Import
-                    </button>
-                  </span>
-                ) : (
-                  <span>
-                    No collections yet. <Link href="/library">Create one in Library</Link>.
-                  </span>
-                )}
-              </span>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      {rosterMembers.length ? (
-        <ul className="talent-grid" aria-label="Roster">
-          {rosterMembers.map((member) => (
-            <TalentCardTile
-              key={member.id}
-              member={member}
-              onRemove={() => remove(member)}
-              removing={pending && removingId === member.id}
-            />
-          ))}
-        </ul>
-      ) : (
-        <p className="ability-page__empty">No dancers yet. Invite from Motiion or import a collection.</p>
-      )}
-    </div>
-  );
+  return <div className="ability-page">
+    <header className="ability-page__header"><RosterStack people={rosterMembers.map((member) => ({ id: member.id, name: member.name, avatarUrl: member.avatarUrl }))} size="lg" /><div className="ability-page__title"><h2>People</h2><p>{rosterMembers.length ? `${rosterMembers.length} ${rosterMembers.length === 1 ? "person" : "people"} in this project` : "Bring your project team together."} Membership does not confirm someone’s availability.</p></div>{groupData.canManage && <div className="ability-page__actions"><button className="bd-btn-secondary" onClick={() => setInviteOpen(!inviteOpen)}><UserPlus aria-hidden /> Add people</button><button className="bd-btn-secondary" onClick={() => { setGroupEditor("new"); setGroupName(""); setError(null); }}>New group</button></div>}</header>
+    {groupData.error && <p role="alert">{groupData.error} <button className="bd-text-link" onClick={() => router.refresh()}>Retry</button></p>}
+    {inviteOpen && groupData.canManage && <section className="roster-invite" aria-labelledby="roster-invite-title"><header><h3 id="roster-invite-title">Add people</h3><button className="need-prompt__dismiss" onClick={() => setInviteOpen(false)} aria-label="Close add people"><X aria-hidden /></button></header><div className="roster-invite__options"><Link href={`/talent?projectId=${projectId}`} className="roster-invite__option"><Search aria-hidden /><span><strong>Find talent on Motiion</strong><span>Add people to this project. This does not send a request.</span></span></Link><div className="roster-invite__option roster-invite__option--form"><UserPlus aria-hidden /><span><strong>Import a saved collection</strong>{collections.length ? <span className="roster-invite__import"><select className="composable-input" value={collectionId} onChange={(event) => setCollectionId(event.target.value)} aria-label="Collection">{collections.map((collection) => <option key={collection.id} value={collection.id}>{collection.name} ({collection.talentCount})</option>)}</select><button className="bd-btn-secondary" onClick={importCollection} disabled={pending || !collectionId}>{pending ? "Adding…" : "Add collection"}</button></span> : <span>No saved collections yet. <Link href="/library">Open Library</Link>.</span>}</span></div></div></section>}
+    <div className="flex flex-wrap items-center gap-3"><label className="min-w-0 flex-1"><span className="sr-only">Search project people</span><input type="search" className="composable-input" placeholder="Search names, location, or credits" value={query} onChange={(event) => setQuery(event.target.value)} /></label><select className="composable-input !w-auto" value={groupId} onChange={(event) => setGroupId(event.target.value)} aria-label="Filter by group"><option value="">All people</option>{groupData.groups.map((group) => <option key={group.id} value={group.id}>{group.name} ({group.participantIds.length})</option>)}</select>{selectedGroup && groupData.canManage && <button className="bd-btn-secondary" onClick={() => { setGroupEditor(selectedGroup.id); setError(null); }}>Manage group</button>}</div>
+    {visible.length ? <ul className="talent-grid" aria-label="Project people">{visible.map((member) => <li className="talent-tile" key={member.id}><button disabled={!member.card?.userId && !member.slug} onClick={() => profile(member.card?.userId || member.slug)} className="talent-tile__link" aria-label={`Open ${member.name} profile`}><span className="talent-tile__media">{member.avatarUrl ? <Image src={member.avatarUrl} alt="" fill sizes="(max-width: 640px) 45vw, 200px" /> : <span className="talent-tile__initials" aria-hidden>{member.name.slice(0, 1).toUpperCase()}</span>}</span></button>{groupData.canManage && <button className="talent-tile__remove" onClick={() => { setRemoveTarget(member); setError(null); }} aria-label={`Remove ${member.name} from project`}><Trash2 aria-hidden /></button>}<span className="talent-tile__label"><strong><span className="talent-tile__name">{member.name}</span>{member.card?.isVerified && <BadgeCheck className="talent-tile__verified" aria-label="Verified" />}</strong><span>{[member.card?.locationCity, member.card?.subtype && labelFromSnake(member.card.subtype)].filter(Boolean).join(" · ") || "Profile details unavailable"}</span><span className="talent-tile__credits">{member.card?.topCredits.join(" · ") || "No public credits yet"}</span>{member.source === "legacy" && <span>Saved to this project</span>}</span></li>)}</ul> : <p className="ability-page__empty">{rosterMembers.length ? "No people match these filters." : "No people yet. Add talent or finalize your casting selections to get started."}</p>}
+    <CollectionProfilePanel key={inspectedPerson} slug={inspectedPerson} userId={inspectedMember?.card?.userId ?? undefined} onClose={() => profile(null)} />
+    <Modal open={Boolean(removeTarget)} onClose={() => !pending && setRemoveTarget(null)} title="Remove from project?" description="This removes project membership and group membership. Casting history and coordination records remain. You can add this person again later." footer={<><button className="bd-btn-secondary" disabled={pending} onClick={() => setRemoveTarget(null)}>Keep person</button><button className="bd-btn-primary" disabled={pending} onClick={() => startTransition(async () => { if (!removeTarget) return; const result = await removeFromProjectRoster(projectId, removeTarget.id); if (!result.ok) { setError(result.error!); return; } setRemoveTarget(null); router.refresh(); showToast({ message: "Person removed from this project.", variant: "success" }); })}>{pending ? "Removing…" : "Remove person"}</button></>}>{removeTarget?.name}{error && <p role="alert">{error}</p>}</Modal>
+    <Modal open={groupEditor !== null} onClose={() => !pending && setGroupEditor(null)} title={editingGroup?.name || "New project group"} description="Organize project participants without changing casting selections or confirmations." placement="drawer" footer={editingGroup ? <button className="bd-btn-secondary" disabled={pending} onClick={() => { if (window.confirm("Archive this group? People stay in the project.")) groupAction("archive"); }}>Archive group</button> : <button className="bd-btn-primary" disabled={pending || !groupName.trim()} onClick={() => groupAction("create")}>{pending ? "Creating…" : "Create group"}</button>}>
+      {editingGroup ? <div className="space-y-3">{rosterMembers.filter((member) => member.source === "participant").map((member) => <label className="flex min-h-11 items-center gap-3" key={member.id}><input type="checkbox" checked={editingGroup.participantIds.includes(member.id)} disabled={pending || !member.card?.userId} onChange={(event) => groupAction(event.target.checked ? "add" : "remove", member.card?.userId ?? undefined)} />{member.name}</label>)}</div> : <label className="composable-field"><span>Group name</span><input autoFocus className="composable-input" maxLength={80} value={groupName} onChange={(event) => setGroupName(event.target.value)} /></label>}{error && <p role="alert">{error}</p>}
+    </Modal>
+  </div>;
 }

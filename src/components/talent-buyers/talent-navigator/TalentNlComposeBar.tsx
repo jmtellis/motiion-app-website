@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { ArrowUp, Check, Loader2, Mic, X } from "lucide-react";
 
 import { useTalentVoiceCapture } from "./use-talent-voice-capture";
@@ -21,24 +22,23 @@ export function TalentNlComposeBar({
   onInputKeyDown,
   inputRef,
   onVoiceUnavailable,
-  onVoiceEmpty,
 }: TalentNlComposeBarProps) {
   const voice = useTalentVoiceCapture();
+  const inputAtRecordStart = useRef(input);
+  const captureInProgress = voice.isRecording || voice.isCaptured || voice.isFinalizing || voice.isRequesting;
 
   async function handleMicClick(event: React.MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
     event.stopPropagation();
 
-    if (voice.isRecording || voice.isFinalizing || isPending) return;
+    if (captureInProgress || isPending) return;
     if (!voice.isSupported) {
       onVoiceUnavailable?.();
       return;
     }
 
-    const result = await voice.startCapture();
-    if (!result.ok) {
-      onVoiceUnavailable?.();
-    }
+    inputAtRecordStart.current = input;
+    await voice.startCapture();
   }
 
   async function handleVoiceConfirm(event: React.MouseEvent<HTMLButtonElement>) {
@@ -47,25 +47,27 @@ export function TalentNlComposeBar({
 
     const text = await voice.confirmCapture();
     if (text) {
-      onInputChange(input.trim() ? `${input.trim()} ${text}` : text);
+      onInputChange(inputAtRecordStart.current.trim() ? `${inputAtRecordStart.current.trim()} ${text}` : text);
       window.requestAnimationFrame(() => inputRef.current?.focus());
       return;
     }
 
-    onVoiceEmpty?.();
+    // The hook presents the specific capture/transcription error inline.
+    // Cancellation deliberately leaves the typed query unchanged.
   }
 
   return (
+    <div className="min-w-0">
     <div
       className={`talent-navigator__nl-compose-inner${
         voice.isRecording ? " talent-navigator__nl-compose-inner--recording" : ""
       }`}
     >
-      {voice.isRecording ? (
+      {captureInProgress ? (
         <>
           <div className="talent-navigator__nl-voice" aria-live="polite">
             <div className="talent-navigator__nl-voice-row">
-              <span className="talent-navigator__nl-voice-time">{voice.elapsedLabel}</span>
+              <span className="talent-navigator__nl-voice-time">{voice.isRequesting ? "Allow microphone access" : voice.isFinalizing ? "Processing…" : voice.isCaptured ? `Ready · ${voice.elapsedLabel}` : voice.elapsedLabel}</span>
               <div className="talent-navigator__nl-voice-wave" aria-hidden>
                 {voice.levels.map((level, index) => (
                 <span
@@ -76,13 +78,14 @@ export function TalentNlComposeBar({
                 ))}
               </div>
             </div>
+            {voice.transcript ? <p className="mt-2 line-clamp-2 text-sm">{voice.transcript}</p> : null}
+            <span className="sr-only">{voice.isRecording ? "Listening. Confirm when finished, or cancel." : voice.isCaptured ? "Recording is ready. Confirm or cancel." : "Voice input pending"}</span>
           </div>
           <div className="talent-navigator__nl-compose-actions">
             <button
               type="button"
               className="talent-navigator__nl-voice-btn talent-navigator__nl-voice-btn--cancel"
               onClick={voice.cancelCapture}
-              disabled={voice.isFinalizing}
               aria-label="Cancel voice input"
             >
               <X className="size-4" />
@@ -91,7 +94,7 @@ export function TalentNlComposeBar({
               type="button"
               className="talent-navigator__nl-voice-btn talent-navigator__nl-voice-btn--confirm"
               onClick={handleVoiceConfirm}
-              disabled={voice.isFinalizing}
+              disabled={voice.isFinalizing || voice.isRequesting}
               aria-label="Use voice input"
             >
               {voice.isFinalizing ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
@@ -124,13 +127,15 @@ export function TalentNlComposeBar({
               type="submit"
               disabled={isPending || !input.trim()}
               className="talent-navigator__nl-send"
-              aria-label="Send message"
+              aria-label="Search talent"
             >
               {isPending ? <Loader2 className="size-4 animate-spin" /> : <ArrowUp className="size-4" />}
             </button>
           </div>
         </>
       )}
+    </div>
+    {voice.error ? <p role="alert" className="px-3 pt-2 text-sm text-[var(--ds-muted)]">{voice.error}</p> : null}
     </div>
   );
 }

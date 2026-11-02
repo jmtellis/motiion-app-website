@@ -1,60 +1,33 @@
-# Composable projects (MOT-93)
+# Shared project contract
 
-Industry projects are a generic **shell** (name, optional cover/city/dates) that
-gains **abilities** — Casting, Roster, Classes — after create. Web and iOS share
-the same Supabase rows; this doc is the storage contract.
+Current iOS project behavior is authoritative. Projects use `projects.is_composable`, the `project_abilities` table, and trusted commands. Older website documentation described JSON fields as the shared contract; that assumption was stale. The web now reads canonical fields and writes through the current commands.
 
-**No migration.** Everything lives in existing `projects` columns.
+## Current storage and commands
 
-## `projects` row
-
-| Column | Composable value |
+| Purpose | Current shared contract |
 | --- | --- |
-| `title` | Project name (required). Owned by the shell — casting saves never overwrite it. |
-| `location`, `start_date`, `end_date`, `cover_image_url` | Optional shell fields. Casting may fill them only while empty. |
-| `project_type` | Stays `production` (column default). Soft label only; never drives routing. |
-| `visibility` | `private` at create. Only flips when the Casting ability publishes (talent casting detail still reads the project row). |
-| `is_active` | `true`. Shell is never a draft; archive uses `composable.archived_at`. |
-| `enabled_modules` | One boolean per ability: `{ "casting", "roster", "classes" }`, next to the legacy `activities` flag. |
-| `project_configuration.composable` | Marker + UI state (below). Presence with `version >= 1` = composable. |
-| `casting_configuration` | `{ schema_version: 7, composer_draft: true }` until a casting publishes. |
+| Create private project | `create_project_shell(p_title,p_location,p_start_date,p_end_date,p_request_id)` returns its UUID. Reuse the same request ID after an interrupted attempt. |
+| Name, city and dates | `update_project_shell`. `projects.title/location/start_date/end_date`; dates are calendar dates. |
+| Project identity | `projects.is_composable = true`. Generic `project_type` is not the workspace's source of truth. |
+| Active or archived container | `projects.is_active`; active composable containers may contain a draft casting. |
+| Enabled tools | `project_abilities(project_id,ability,settings)`; `enable_project_abilities`, `disable_project_ability`. Disabling retains underlying data. |
+| Notes | `project_abilities.ability = notes`, `settings.body`; `update_project_ability_settings`. |
+| Industry project list | iOS `list_my_projects` returns authorized owner/member summaries. Web uses owner plus explicit project membership and RLS-scoped detail reads. |
+| Casting | Child `castings`, `casting_roles`, bridged `roles`, submissions/candidates. Publication uses existing casting commands and current approval/identity gates. |
+| Roster | `talent_lists(kind=project_roster,project_id)` and members. Enabling roster creates the canonical collection. |
+| Classes | Project-linked `activities` and enrollments. Class billing is distinct from removed booking payments. |
+| Confirmations | Shared `bookings` domain and `project_abilities.booking` database names survive for selection, availability, holds and confirmation. Contract/payment UI does not. |
 
-```json
-{
-  "composable": {
-    "version": 1,
-    "paused": ["classes"],
-    "prompt_dismissed_at": "2026-09-29T17:00:00Z",
-    "archived_at": null,
-    "created_via": "web_thin_create"
-  }
-}
-```
+`src/lib/talent-buyers/project-contract.ts` adapts canonical fields to the existing web presentation model without changing database records. Canonical abilities take precedence over stale `enabled_modules`. Older web projects with `project_configuration.composable` continue to open; enabling a tool also marks the record canonical and calls the shared ability command. There is no automatic bulk production rewrite.
 
-- `paused` — enabled abilities the owner paused. Data stays; the ability is
-  dimmed and skipped by the smart primary CTA.
-- `prompt_dismissed_at` — "What do you need?" was dismissed. A zero-ability
-  project shows a soft banner again 24h after create.
-- `archived_at` — hides the project from the active hub list.
+The JSON `project_configuration.composable` remains **web presentation metadata** for prompt dismissal and explicit pause state. Pausing calls the canonical disable command and keeps the paused control accessible on web; re-enabling from either app clears the effective pause. Archiving updates canonical `is_active` as well as the web timestamp. Unknown JSON fields and attachments are retained.
 
-## Abilities → existing tables
+## Website behavior
 
-| Ability | Where the work lives | Publishes |
-| --- | --- | --- |
-| Casting | Child `castings` row (created as draft when enabled) + `roles`. Web reuses the casting workspace (`/projects/:id/workspace/*`) for composable projects with Casting on. | `castings.status/visibility` (open call) |
-| Roster | `talent_lists` (`kind = project_roster`, `project_id`) + `talent_list_members`. Talent Card data from `professional_profiles` + `talent_credits`. | Invite-only |
-| Classes | `activities` (`type = class`, `project_id`) — one row per dated session; capacity/waitlist/tiers/check-ins use existing activity columns and `enrollments` / `activity_check_ins` / `activity_ticket_options`. | `activities.is_private = false` (listed) |
+The hub is one card grid: Active (default), Drafts, Archived. Legacy Browse/Focus/list/view/layout/All Work preferences normalize safely. An active project container is listed in Active; its casting can still show Draft. Old event containers are hidden only when an actual hosted activity is available; legacy job containers remain reachable.
 
-Legacy (type-first) projects are untouched. The hub derives their ability icons
-from attached castings/roles, roster members, and class sessions.
+The create dialog stores an account-scoped session draft and request ID. Closing and reopening, refresh and a failed request retain the entered values; successful creation clears them. New accounts cannot inherit another account's draft. The shared RPC provides retry identity. Notes live on project home with a guarded editor and real shared persistence.
 
-## Web routes
+Coordination is accessible from legacy and composable projects. Finalizing selections and moving them into Confirmations are deliberately separate actions. The additive `20261102155048_atomic_casting_finalization.sql` command closes a role and updates People atomically. The existing `move_casting_final_selects_to_confirmations` command moves its exact saved selections; then the owner requests availability or confirmation.
 
-- `/projects?create=1` — thin create sheet (name required; city/dates optional).
-  `&intent=casting` pre-selects Casting on the new project's home.
-- `/projects?create=activity` — legacy alias for `?create=1` (MOT-95 removed the
-  standalone picker from Home; create always goes through a project).
-- `/projects/:id/overview` — project home for composable projects.
-- `/projects/:id/workspace/breakdown` — Casting ability (existing casting stages).
-- `/projects/:id/roster` — full roster page (`?invite=1` opens invite).
-- `/projects/:id/classes` — class series + sessions.
+See [projects parity and deployment ledger](parity-projects.md) for actual automated, database and browser evidence. The new atomic finalization RPC requires reviewed production deployment. Existing current iOS migrations were applied only to staging where missing; they must not be duplicated in production.

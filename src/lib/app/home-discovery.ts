@@ -6,6 +6,7 @@ export type FeaturedCollection = { id: string; eyebrow: string | null; headline:
 export type HomeEventPerson = LiveCastPerson;
 export type HomeEvent = {
   id: string;
+  creator_id?: string | null;
   title: string;
   activity_date: string | null;
   start_time: string | null;
@@ -47,7 +48,7 @@ async function fetchLocalHomeEvents(): Promise<{ sponsored: HomeEvent[]; cast: H
   if (!client) return { sponsored: [], cast: [] };
   const today = new Date().toISOString().slice(0, 10);
   const end = new Date(); end.setUTCFullYear(end.getUTCFullYear() + 1);
-  const select = "id,title,activity_date,start_time,cover_image_url,sponsored_by_motiion,show_in_meet_the_cast";
+  const select = "id,creator_id,title,activity_date,start_time,cover_image_url,sponsored_by_motiion,show_in_meet_the_cast";
   const base = () => client.from("activities").select(select).eq("type", "event").eq("status", "active").eq("is_private", false);
   const [pinned, upcoming] = await Promise.all([
     base().eq("show_in_meet_the_cast", true).eq("sponsored_by_motiion", false).order("activity_date", { ascending: false }).limit(50),

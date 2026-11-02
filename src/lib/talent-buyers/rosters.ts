@@ -17,6 +17,7 @@ export type RosterSummary = {
 export type RosterMember = {
   id: string;
   profileId: string;
+  userId?: string | null;
   addedAt: string;
   name: string;
   slug: string | null;

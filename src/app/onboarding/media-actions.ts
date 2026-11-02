@@ -5,12 +5,12 @@ import { extractResumeWithVision } from "@/lib/onboarding/resume-extract";
 import { mergeResumeIntoDraft } from "@/lib/onboarding/merge-resume-into-draft";
 import type { ExtractedResumeData } from "@/lib/onboarding/resume-types";
 import type { OnboardingDraft } from "@/types/onboarding";
+import { isOwnedResumePath, resumePagesError, resumeSourceError } from "@/lib/onboarding/resume-upload";
 
 const HEADSHOTS_BUCKET = "headshots";
 const RESUMES_BUCKET = "resumes";
 const MAX_HEADSHOTS = 4;
 const MAX_HEADSHOT_BYTES = 12 * 1024 * 1024;
-const MAX_RESUME_BYTES = 20 * 1024 * 1024;
 
 type UploadHeadshotsResult =
   | { ok: true; headshotUrls: string[]; headshotOriginalUrls: string[] }
@@ -115,66 +115,26 @@ export async function uploadOnboardingHeadshots(formData: FormData): Promise<Upl
 export async function processOnboardingResume(formData: FormData): Promise<ProcessResumeResult> {
   try {
     const { supabase, userId } = await requireUserId();
-    const sourceFile = formData.get("source");
+    const resumePath = formData.get("sourcePath");
     const pageEntries = formData
       .getAll("pages")
       .filter((item): item is File => item instanceof File);
 
-    if (!(sourceFile instanceof File)) {
+    if (!isOwnedResumePath(resumePath, userId)) {
       return { ok: false, error: "Choose a resume file to upload." };
     }
-
-    if (sourceFile.size > MAX_RESUME_BYTES) {
-      return { ok: false, error: "Resume must be under 20 MB." };
-    }
-
-    const allowedTypes = new Set([
-      "application/pdf",
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/webp",
-      "image/heic",
-      "image/heif",
-    ]);
-
-    if (!allowedTypes.has(sourceFile.type) && !sourceFile.name.match(/\.(pdf|jpe?g|png|webp|heic|heif)$/i)) {
-      return { ok: false, error: "Upload a PDF or image resume." };
-    }
-
-    const sourceBytes = Buffer.from(await sourceFile.arrayBuffer());
-    const isPdf = sourceFile.type === "application/pdf" || sourceFile.name.toLowerCase().endsWith(".pdf");
-    const timestamp = Math.floor(Date.now() / 1000);
-    const ext = isPdf ? "pdf" : getFileExtension(sourceFile, "jpg");
-    const contentType = isPdf ? "application/pdf" : sourceFile.type || "image/jpeg";
-    const resumePath = `${userId.toLowerCase()}/resume_${timestamp}.${ext}`;
-
-    const upload = await supabase.storage.from(RESUMES_BUCKET).upload(resumePath, sourceBytes, {
-      contentType,
-      upsert: true,
-    });
-
-    if (upload.error) {
-      return { ok: false, error: upload.error.message };
-    }
+    const pagesError = resumePagesError(pageEntries);
+    if (pagesError) return { ok: false, error: pagesError };
+    // Validate actual storage metadata, never the caller's claimed size/MIME.
+    const { data: source, error: sourceError } = await supabase.storage.from(RESUMES_BUCKET).info(resumePath);
+    if (sourceError || !source) return { ok: false, error: "Couldn’t find your uploaded resume. Please choose the file again." };
+    const validationError = resumeSourceError(source.size, source.contentType);
+    if (validationError) return { ok: false, error: validationError };
 
     const { data: publicUrl } = supabase.storage.from(RESUMES_BUCKET).getPublicUrl(resumePath);
     const resumeUrl = publicUrl.publicUrl;
 
-    let pageBuffers: Buffer[];
-
-    if (pageEntries.length) {
-      pageBuffers = await Promise.all(
-        pageEntries.map(async (page) => Buffer.from(await page.arrayBuffer())),
-      );
-    } else if (!isPdf) {
-      pageBuffers = [sourceBytes];
-    } else {
-      return {
-        ok: false,
-        error: "Could not read PDF pages in the browser. Try again or upload a photo of your resume.",
-      };
-    }
+    const pageBuffers = await Promise.all(pageEntries.map(async (page) => Buffer.from(await page.arrayBuffer())));
 
     const extracted = await extractResumeWithVision(pageBuffers);
     const draftPatch = mergeResumeIntoDraft(resumeUrl, extracted);

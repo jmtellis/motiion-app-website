@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { deleteProject, updateProject } from "@/app/(buyer-app)/(paid)/projects/actions";
@@ -72,9 +72,11 @@ export function EditCastingProjectModal({
   const casting = castingWorkflow?.primaryCasting ?? null;
   const hasCasting = Boolean(casting);
 
-  useEffect(() => {
-    if (!open) return;
-
+  const [previousOpen, setPreviousOpen] = useState(false);
+  if (previousOpen !== open) {
+    setPreviousOpen(open);
+  }
+  if (open && !previousOpen) {
     const roles = enrichRolesWithCounts(
       castingWorkflow?.roles ?? [],
       castingWorkflow?.candidates ?? [],
@@ -85,9 +87,8 @@ export function EditCastingProjectModal({
     setCoverStoragePath(null);
     setCoverError(null);
     setDeleteOpen(false);
-    // Seed only when the modal opens so live parent refreshes do not wipe in-progress edits.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional open-gated seed
-  }, [open]);
+    // Parent refreshes preserve unsaved edits until the next opening.
+  }
 
   function handleCastingChange(next: CastingComposerForm) {
     setCastingForm(next);

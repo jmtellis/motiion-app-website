@@ -20,27 +20,25 @@ export function loadTalentBuyerDraft(userId: string): TalentBuyerOnboardingDraft
     return null;
   }
 
-  const rawDraft = window.localStorage.getItem(getDraftKey(userId));
-  if (!rawDraft) return null;
-
   try {
+    const rawDraft = window.localStorage.getItem(getDraftKey(userId));
+    if (!rawDraft) return null;
     const parsed = JSON.parse(rawDraft) as Partial<TalentBuyerOnboardingDraft> & {
       version?: number;
     };
 
     if (parsed.version !== CURRENT_DRAFT_VERSION || parsed.userId !== userId) {
-      window.localStorage.removeItem(getDraftKey(userId));
+      try { window.localStorage.removeItem(getDraftKey(userId)); } catch { /* storage is optional */ }
       return null;
     }
 
     if (!isKnownStep(parsed.currentStep)) {
-      window.localStorage.removeItem(getDraftKey(userId));
+      try { window.localStorage.removeItem(getDraftKey(userId)); } catch { /* storage is optional */ }
       return null;
     }
 
     return parsed as TalentBuyerOnboardingDraft;
   } catch {
-    window.localStorage.removeItem(getDraftKey(userId));
     return null;
   }
 }
@@ -50,7 +48,7 @@ export function saveTalentBuyerDraft(draft: TalentBuyerOnboardingDraft) {
     return;
   }
 
-  window.localStorage.setItem(getDraftKey(draft.userId), JSON.stringify(draft));
+  try { window.localStorage.setItem(getDraftKey(draft.userId), JSON.stringify(draft)); } catch { /* keep the current draft in memory */ }
 }
 
 export function clearTalentBuyerDraft(userId: string) {
@@ -58,5 +56,5 @@ export function clearTalentBuyerDraft(userId: string) {
     return;
   }
 
-  window.localStorage.removeItem(getDraftKey(userId));
+  try { window.localStorage.removeItem(getDraftKey(userId)); } catch { /* storage is optional */ }
 }

@@ -89,7 +89,7 @@
   border: 1px solid #e2e2e2;
   border-radius: 999px;
   background: #fff;
-  color: #8a8a8a;
+  color: var(--ui-muted);
 }
 .ui-chip-group__search:focus-within { border-color: #9a9a9a; }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .ui-chip-group__search input.workspace-bare-input,
@@ -115,7 +115,7 @@
   color: #616161;
   cursor: pointer;
 }
-.ui-chip-group__empty { margin: 0; color: #8a8a8a; font-size: 13px; }
+.ui-chip-group__empty { margin: 0; color: var(--ui-muted); font-size: 13px; }
 
 @media (prefers-reduced-motion: reduce) {
   .ui-chip, .casting-wizard-pill, .home-browser__filters button, .ui-chip-group__more { transition: none; }

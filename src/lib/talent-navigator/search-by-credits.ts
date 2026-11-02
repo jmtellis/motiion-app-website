@@ -1,3 +1,5 @@
+import { currentBlockedUsers } from "@/lib/app/blocked-visibility";
+import { allowsUser } from "@/lib/app/blocked-visibility-model";
 import {
   talentMatchesAllEntities,
   talentMatchesAnyEntity,
@@ -205,6 +207,8 @@ export async function searchTalentByCredits(
   const input = TalentNavigatorSearchSchema.parse(rawInput);
   const client = await getCreditSearchClient();
   const warnings: CreditSearchWarning[] = [];
+  const blocked = await currentBlockedUsers();
+  if (blocked.error) return { talent: [], total: 0, warnings: [{ type: "partial", message: blocked.error }], resolutions: [], input, usingFallbackData: false, source: "unavailable" };
 
   let resolutions = options?.preResolved ?? [];
   if (!resolutions.length && hasCreditCriteria(input)) {
@@ -394,6 +398,7 @@ export async function searchTalentByCredits(
   const rows = (creditRows as CreditJoinRow[] | null) ?? [];
   const byTalent = new Map<string, CreditJoinRow[]>();
   for (const row of rows) {
+    if (!allowsUser(row.talent_id, blocked.ids)) continue;
     const list = byTalent.get(row.talent_id) ?? [];
     list.push(row);
     byTalent.set(row.talent_id, list);

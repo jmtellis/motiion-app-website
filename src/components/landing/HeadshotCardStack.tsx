@@ -42,9 +42,8 @@ function CardStack({ images, maxRotate = 5 }: CardStackProps) {
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    setCurrentIndex(0);
-  }, [images]);
+  const [previousImages, setPreviousImages] = useState(images);
+  if (previousImages !== images) { setPreviousImages(images); setCurrentIndex(0); }
 
   return (
     <ul className="headshot-card-stack" ref={ref}>

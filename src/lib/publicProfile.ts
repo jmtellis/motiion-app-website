@@ -1,4 +1,4 @@
-import { resolveBrandfetchLogoURL } from "@/lib/profile/brandfetch-logo";
+import { cache } from "react";
 import { buildProfileCredits } from "@/lib/profile/profile-credits";
 import {
   normalizeProfileExperiences,
@@ -21,7 +21,6 @@ const TALENT_SELECT = [
   "agency_logo_url",
   "gender",
   "ethnicity",
-  "date_of_birth",
   "height",
   "union_status",
   "eye_color",
@@ -57,6 +56,7 @@ function normalizeTalentRow(row: TalentRow): PublicTalentProfile {
 
   return {
     ...row,
+    date_of_birth: null, // This public page does not display birth dates.
     user_id: row.id,
     full_name: row.full_name?.trim() || null,
     username: row.username?.trim() || null,
@@ -75,7 +75,7 @@ function normalizeTalentRow(row: TalentRow): PublicTalentProfile {
   };
 }
 
-export async function fetchPublicTalentProfile(slug: string): Promise<PublicTalentProfile | null> {
+export const fetchPublicTalentProfile = cache(async (slug: string): Promise<PublicTalentProfile | null> => {
   const trimmed = decodeURIComponent(slug).trim();
   const isUuid = PROFILE_SLUG_UUID_RE.test(trimmed);
   const username = normalizeUsernameSlug(trimmed);
@@ -88,10 +88,12 @@ export async function fetchPublicTalentProfile(slug: string): Promise<PublicTale
 
   const rows = await supabaseRestGet<TalentRow[]>(
     `talent?${filter}&select=${TALENT_SELECT}&limit=1`,
-    { revalidate: 300 },
+    { revalidate: 0 },
   );
 
   if (rows?.length) return normalizeTalentRow(rows[0]);
   const live = await readLiveTalentRow<TalentRow>(filter, TALENT_SELECT);
-  return live ? normalizeTalentRow(live) : null;
-}
+  if (live) return normalizeTalentRow(live);
+  if (rows === null) throw new Error("Couldn’t load this profile. Please try again.");
+  return null;
+});

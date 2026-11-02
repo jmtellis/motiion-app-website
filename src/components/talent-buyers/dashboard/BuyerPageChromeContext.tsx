@@ -85,7 +85,7 @@ export function useBuyerPageChromeContext() {
 export function useRegisterBuyerChrome(config: BuyerPageChromeConfig) {
   const { setChrome, clearChrome } = useBuyerPageChromeContext();
   const configRef = useRef(config);
-  configRef.current = config;
+  useEffect(() => { configRef.current = config; });
   const breadcrumbsKey = JSON.stringify(config.breadcrumbs ?? []);
 
   useEffect(() => {

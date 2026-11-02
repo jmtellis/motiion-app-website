@@ -1,10 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { groupOpportunityProjects } from "../src/lib/app/opportunity-groups";
-import {
-  bookingSegment,
-  memoSegment,
-} from "../src/lib/booking/booking-inbox-rules";
 import { explicitWorkedWith } from "../src/lib/talent-navigator/credit-intent";
 import { filterSearchProfiles } from "../src/lib/search/talent-filter-logic";
 
@@ -27,28 +23,6 @@ test("unlinked roles stay separate rather than merging under an empty project", 
     ]).length,
     2,
   );
-});
-test("acceptance awaiting payment is confirmed; exited bookings move to past", () => {
-  assert.equal(bookingSegment("payment_pending"), "confirmed");
-  assert.equal(bookingSegment("booked"), "confirmed");
-  for (const status of [
-    "expired",
-    "cancelled",
-    "released",
-    "unavailable",
-    "completed",
-    "declined",
-  ])
-    assert.equal(bookingSegment(status), "past");
-  for (const status of [
-    "availability",
-    "on_hold",
-    "offer",
-    "contract",
-    "negotiating",
-    "offered",
-  ])
-    assert.equal(bookingSegment(status), "in-progress");
 });
 test("artist credit intent can be narrowed by location and talent type", () => {
   assert.equal(explicitWorkedWith("worked with Beyonce"), "Beyonce");
@@ -99,21 +73,6 @@ test("credit searches respect multi-select styles, skills, and physical filters"
   assert.deepEqual(
     filterCreditProfiles(matches, { location: "Los Angeles" }),
     [],
-  );
-});
-
-test("paid and accepted memos stay Confirmed; overdue payment moves to Past", () => {
-  assert.equal(
-    memoSegment({ status: "accepted", expires_at: null }),
-    "confirmed",
-  );
-  assert.equal(memoSegment({ status: "paid", expires_at: null }), "confirmed");
-  assert.equal(
-    memoSegment(
-      { status: "payment_pending", expires_at: "2026-10-01T00:00:00Z" },
-      Date.parse("2026-10-12T00:00:00Z"),
-    ),
-    "past",
   );
 });
 

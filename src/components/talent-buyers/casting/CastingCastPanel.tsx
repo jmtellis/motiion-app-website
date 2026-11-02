@@ -1,19 +1,17 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { isCastingFullyFinalized } from "@/lib/talent-buyers/casting/casting-completion";
+import { useMemo, useRef, useState, useTransition } from "react";
 
 import {
-  closeCastingFromWorkflow,
   createJobFromCasting,
   finalizeCastingRole,
-  reopenCastingFromWorkflow,
+  reopenFinalizedCastingRole,
   updateCastingCandidateStatus,
 } from "@/app/(buyer-app)/(paid)/projects/[id]/casting-workflow/actions";
 import {
   getCastingPanelHeader,
-  getCastingPrimaryAction,
-  deriveCastingWorkflowState,
 } from "@/lib/talent-buyers/casting/casting-navigation";
 import { roleMatchIds } from "@/lib/talent-buyers/casting/casting-filters";
 import { castingWorkspaceHref } from "@/lib/talent-buyers/casting/casting-routes";
@@ -35,6 +33,7 @@ import { useProjectWorkspace } from "@/components/talent-buyers/project/ProjectW
 
 import { CastingFinalSelectsRail } from "./CastingFinalSelectsRail";
 import { CastingPanelHeader } from "./CastingPanelHeader";
+import { useCastingClientResource } from "./useCastingClientResource";
 
 import "./casting-workspace.css";
 
@@ -86,11 +85,10 @@ function voteLabel(tally: ShortlistVoteTally | undefined) {
   return `${tally.yesCount} yes / ${tally.noCount} no`;
 }
 
-function replaceCastQuery(role: string) {
-  const next = new URLSearchParams();
-  next.set("role", role);
-  const query = next.toString();
-  window.history.replaceState(null, "", query ? `?${query}` : window.location.pathname);
+const EMPTY_TALLIES: Record<string, ShortlistVoteTally> = {};
+async function loadClientTallies(roleIds: string[]) {
+  const result = await fetchShortlistVoteTalliesForRoles(roleIds);
+  return { data: result.talliesBySubmissionId, error: result.error };
 }
 
 export function CastingCastPanel() {
@@ -98,15 +96,14 @@ export function CastingCastPanel() {
   const searchParams = useSearchParams();
   const { showToast } = useToast();
   const { requirePro } = useIndustryProOptional();
-  const { projectId, castingWorkflow } = useProjectWorkspace();
+  const { projectId, project, castingWorkflow } = useProjectWorkspace();
+  const canReviewCasting = project.canReviewCasting !== false;
   const [createJobOpen, setCreateJobOpen] = useState(false);
   const [finalizeOpen, setFinalizeOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [roleFilter, setRoleFilter] = useState(searchParams.get("role") ?? "all");
+  const requestedRole = searchParams.get("role") ?? "all";
+  const mutationBusy = useRef(false);
   const [statusOverrides, setStatusOverrides] = useState<Record<string, CastingCandidateStatus>>({});
-  const [talliesBySubmissionId, setTalliesBySubmissionId] = useState<
-    Record<string, ShortlistVoteTally>
-  >({});
 
   const workflow = castingWorkflow ?? {
     primaryCasting: null,
@@ -119,11 +116,10 @@ export function CastingCastPanel() {
   };
 
   const roles = workflow.roles;
+  const requestedRoleMatch = roles.find((role) => role.id === requestedRole || role.bridgedRoleId === requestedRole);
+  const roleFilter = requestedRoleMatch ? requestedRoleMatch.bridgedRoleId ?? requestedRoleMatch.id : "all";
   const header = getCastingPanelHeader("cast");
   const castingTitle = workflow.primaryCasting?.title?.trim() || "Casting";
-  const castingStatus = workflow.primaryCasting?.status ?? "none";
-  const workflowState = deriveCastingWorkflowState(workflow);
-  const closeReopenAction = getCastingPrimaryAction("cast", workflowState);
 
   const candidatesWithOverrides = useMemo(
     () =>
@@ -159,10 +155,7 @@ export function CastingCastPanel() {
     return selectedRole ? [selectedRole] : [];
   }, [roleFilter, roles, selectedRole]);
 
-  const selectionsLocked = useMemo(() => {
-    if (!scopedRoles.length) return false;
-    return scopedRoles.every((role) => !role.bridgedRoleId || isRoleFinalized(role));
-  }, [scopedRoles]);
+  const selectionsLocked = isCastingFullyFinalized(scopedRoles);
 
   const listRoleIds = useMemo(
     () =>
@@ -174,33 +167,44 @@ export function CastingCastPanel() {
     [roleFilter, roles, selectedRole],
   );
 
-  useEffect(() => {
+  const [previousCandidates, setPreviousCandidates] = useState(workflow.candidates);
+  if (previousCandidates !== workflow.candidates) {
+    setPreviousCandidates(workflow.candidates);
     setStatusOverrides({});
-  }, [workflow.candidates]);
+  }
 
-  useEffect(() => {
-    if (!listRoleIds.length) {
-      setTalliesBySubmissionId({});
-      return;
-    }
-    let cancelled = false;
-
-    async function loadTallies() {
-      const result = await fetchShortlistVoteTalliesForRoles(listRoleIds);
-      if (!cancelled) {
-        setTalliesBySubmissionId(result.talliesBySubmissionId);
-      }
-    }
-
-    void loadTallies();
-    return () => {
-      cancelled = true;
-    };
-  }, [listRoleIds.join("|")]);
+  const { data: talliesBySubmissionId, error: talliesError, loading: talliesLoading, hasLoaded: hasTallies, refresh: refreshTallies } =
+    useCastingClientResource(projectId, listRoleIds, EMPTY_TALLIES, loadClientTallies);
 
   function setRoleFilterValue(next: string) {
-    setRoleFilter(next);
-    replaceCastQuery(next);
+    const query = new URLSearchParams(searchParams.toString());
+    query.set("role", next);
+    window.history.replaceState(null, "", `${window.location.pathname}?${query}${window.location.hash}`);
+  }
+
+  function runMutation(action: () => Promise<void>, rollback?: () => void) {
+    if (mutationBusy.current || !canReviewCasting) return;
+    mutationBusy.current = true;
+    startTransition(async () => {
+      try {
+        await action();
+      } catch (error) {
+        rollback?.();
+        showToast({ message: error instanceof Error ? error.message : "Could not save. Check your connection and retry.", variant: "error" });
+      } finally {
+        mutationBusy.current = false;
+        // A multi-role finalization may partially succeed. Always reload authoritative locks/statuses.
+        router.refresh();
+      }
+    });
+  }
+
+  function rollbackStatus(candidateId: string) {
+    setStatusOverrides((current) => {
+      const next = { ...current };
+      delete next[candidateId];
+      return next;
+    });
   }
 
   function applyStatusOverride(candidateId: string, status: CastingCandidateStatus) {
@@ -208,69 +212,31 @@ export function CastingCastPanel() {
   }
 
   function toggleFinalSelect(candidate: CastingCandidate, checked: boolean) {
-    const matchedRole = roleForCandidate(candidate, roles);
-    if (isRoleFinalized(matchedRole)) return;
-
+    if (!canReviewCasting || mutationBusy.current || isRoleFinalized(roleForCandidate(candidate, roles))) return;
     const nextStatus: CastingCandidateStatus = checked ? "selected" : "shortlisted";
-    if (checked) {
-      if (!(candidate.status === "shortlisted" || candidate.status === "callback")) return;
-    } else if (!TOGGLEABLE_FINAL_SELECT.includes(candidate.status)) {
-      return;
-    }
-
+    if (checked ? !(candidate.status === "shortlisted" || candidate.status === "callback") : !TOGGLEABLE_FINAL_SELECT.includes(candidate.status)) return;
     applyStatusOverride(candidate.id, nextStatus);
-    startTransition(async () => {
-      const result = await updateCastingCandidateStatus({
-        projectId,
-        candidateId: candidate.id,
-        status: nextStatus,
-        notifyTalent: false,
-      });
-      if (!result.ok) {
-        setStatusOverrides((current) => {
-          const next = { ...current };
-          delete next[candidate.id];
-          return next;
-        });
-        showToast({ message: result.error ?? "Update failed", variant: "error" });
-        return;
-      }
-      router.refresh();
-    });
+    runMutation(async () => {
+      const result = await updateCastingCandidateStatus({ projectId, candidateId: candidate.id, status: nextStatus, notifyTalent: false });
+      if (!result.ok) throw new Error(result.error ?? "Could not update this selection.");
+    }, () => rollbackStatus(candidate.id));
   }
 
   function requestAvailability(candidate: CastingCandidate) {
-    if (isRoleFinalized(roleForCandidate(candidate, roles))) return;
+    if (!canReviewCasting || mutationBusy.current || isRoleFinalized(roleForCandidate(candidate, roles))) return;
     if (!requirePro("talent_outreach")) return;
     applyStatusOverride(candidate.id, "availability_requested");
-    startTransition(async () => {
-      const result = await updateCastingCandidateStatus({
-        projectId,
-        candidateId: candidate.id,
-        status: "availability_requested",
-        notifyTalent: true,
-      });
-      if (!result.ok) {
-        setStatusOverrides((current) => {
-          const next = { ...current };
-          delete next[candidate.id];
-          return next;
-        });
-        showToast({ message: result.error ?? "Update failed", variant: "error" });
-        return;
-      }
+    runMutation(async () => {
+      const result = await updateCastingCandidateStatus({ projectId, candidateId: candidate.id, status: "availability_requested", notifyTalent: true });
+      if (!result.ok) throw new Error(result.error ?? "Could not request availability.");
       showToast({ message: "Availability requested", variant: "success" });
-      router.refresh();
-    });
+    }, () => rollbackStatus(candidate.id));
   }
 
   function handleCreateJob() {
-    startTransition(async () => {
+    runMutation(async () => {
       const result = await createJobFromCasting(projectId);
-      if (!result.ok) {
-        showToast({ message: result.error ?? "Could not create job", variant: "error" });
-        return;
-      }
+      if (!result.ok) throw new Error(result.error ?? "Could not create job.");
       showToast({ message: "Job created", variant: "success" });
       setCreateJobOpen(false);
       if (result.jobId) router.push(`/jobs/${result.jobId}`);
@@ -278,29 +244,13 @@ export function CastingCastPanel() {
     });
   }
 
-  function handleCloseOrReopen() {
-    startTransition(async () => {
-      if (castingStatus === "closed") {
-        const result = await reopenCastingFromWorkflow(projectId);
-        if (!result.ok) {
-          showToast({ message: result.error ?? "Could not re-open casting", variant: "error" });
-          return;
-        }
-        showToast({ message: "Casting re-opened", variant: "success" });
-        router.refresh();
-        return;
+  function handleReopenSelections() {
+    runMutation(async () => {
+      for (const role of scopedRoles.filter((item) => item.bridgedRoleId && isRoleFinalized(item))) {
+        const result = await reopenFinalizedCastingRole({ projectId, bridgedRoleId: role.bridgedRoleId! });
+        if (!result.ok) throw new Error(result.error ?? "Could not reopen this role.");
       }
-
-      const result = await closeCastingFromWorkflow(projectId);
-      if (!result.ok) {
-        showToast({ message: result.error ?? "Could not close casting", variant: "error" });
-        return;
-      }
-      showToast({
-        message: "Casting closed. It is removed from open castings and submissions are disabled.",
-        variant: "success",
-      });
-      router.refresh();
+      showToast({ message: "Selections reopened. Existing final picks and coordination records are preserved.", variant: "success" });
     });
   }
 
@@ -325,42 +275,27 @@ export function CastingCastPanel() {
       return;
     }
 
-    startTransition(async () => {
+    runMutation(async () => {
       let total = 0;
+      let completedRoles = 0;
       for (const role of rolesToFinalize) {
         const bridgedRoleId = role.bridgedRoleId;
         if (!bridgedRoleId) continue;
         const result = await finalizeCastingRole({ projectId, bridgedRoleId });
         if (!result.ok) {
-          showToast({
-            message: result.error ?? `Could not finalize ${role.name}`,
-            variant: "error",
-          });
-          return;
+          throw new Error(`${completedRoles ? `${completedRoles} role(s) finalized. ` : ""}${result.error ?? `Could not finalize ${role.name}`}`);
         }
         total += result.finalizedCount ?? 0;
+        completedRoles += 1;
       }
-      showToast({
-        message: `Casting finalized. ${total} selected; other submitters will be notified.`,
-        variant: "success",
-      });
+      showToast({ message: `Casting finalized. ${total} selected; project people updated.`, variant: "success" });
       setFinalizeOpen(false);
-      router.refresh();
     });
   }
 
-  function handlePrimaryAction(actionId: string) {
-    if (actionId === "close-casting" || actionId === "reopen-casting") {
-      handleCloseOrReopen();
-      return;
-    }
-    if (actionId === "create-job") {
-      setCreateJobOpen(true);
-    }
-  }
 
   const confirmedCount = candidatesWithOverrides.filter((c) => c.status === "confirmed").length;
-  const canFinalize = finalSelectCandidates.length > 0 && !selectionsLocked;
+  const canFinalize = canReviewCasting && finalSelectCandidates.length > 0 && !selectionsLocked;
 
   const roleToggle = (
     <label className="casting-find-talent-role-pill">
@@ -403,10 +338,10 @@ export function CastingCastPanel() {
       <CastingPanelHeader
         title={header.title}
         center={roleToggle}
-        primaryAction={closeReopenAction}
-        onPrimaryAction={handlePrimaryAction}
         overflowActions={
-          confirmedCount > 0 ? (
+          <>
+          <button type="button" className="bd-btn-secondary text-sm" disabled={talliesLoading} onClick={refreshTallies}>{talliesLoading ? "Loading votes…" : "Refresh votes"}</button>
+          {canReviewCasting && confirmedCount > 0 ? (
             <button
               type="button"
               className="bd-btn-secondary text-sm"
@@ -415,11 +350,18 @@ export function CastingCastPanel() {
             >
               Create job
             </button>
-          ) : null
+          ) : null}
+          </>
         }
       />
 
       <div className="project-workspace__panel-body casting-cast">
+        {talliesError ? (
+          <div role="alert" className="mb-4 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3 text-sm text-[var(--ui-text)]">
+            <p>{talliesError}{hasTallies ? " Previously loaded votes are still shown." : " Client votes are unavailable."}</p>
+            <button type="button" className="bd-btn-secondary mt-2" disabled={talliesLoading} onClick={refreshTallies}>Retry votes</button>
+          </div>
+        ) : null}
         <div className="casting-review__layout casting-client-review__layout">
           <div className="casting-review__main casting-client-review__main">
             {poolCandidates.length === 0 ? (
@@ -450,7 +392,7 @@ export function CastingCastPanel() {
                       const checked = isFinalSelectCandidate(candidate);
                       const roleFinalized = isRoleFinalized(matchedRole);
                       const canToggle =
-                        !roleFinalized &&
+                        canReviewCasting && !roleFinalized &&
                         (candidate.status === "shortlisted" ||
                           candidate.status === "callback" ||
                           TOGGLEABLE_FINAL_SELECT.includes(candidate.status));
@@ -478,7 +420,7 @@ export function CastingCastPanel() {
                             </div>
                           </td>
                           {roleFilter === "all" ? <td>{matchedRole?.name ?? "—"}</td> : null}
-                          <td>{voteLabel(tally)}</td>
+                          <td>{!hasTallies ? (talliesError ? "Unavailable" : "Loading…") : voteLabel(tally)}</td>
                           <td>
                             <label className="casting-client-review__select-check">
                               <span className="sr-only">Final select {candidate.displayName}</span>
@@ -502,25 +444,28 @@ export function CastingCastPanel() {
           </div>
 
           <CastingFinalSelectsRail
+            projectId={projectId}
             candidates={finalSelectCandidates}
             roles={roles}
             castingTitle={castingTitle}
             isPending={isPending}
             onRequestAvailability={requestAvailability}
             onFinalize={() => setFinalizeOpen(true)}
+            onReopen={handleReopenSelections}
             canFinalize={canFinalize}
             selectionsLocked={selectionsLocked}
+            canEdit={canReviewCasting}
           />
         </div>
       </div>
 
       <Modal
         open={createJobOpen}
-        onClose={() => setCreateJobOpen(false)}
+        onClose={() => { if (!mutationBusy.current) setCreateJobOpen(false); }}
         title="Create job from casting"
         size="md"
       >
-        <p className="text-sm text-white/60 mb-4">
+        <p className="text-sm text-[var(--ui-muted)] mb-4">
           Creates a new Job project with confirmed talent, roles, and dates. Private evaluations and
           rejected candidates are not transferred.
         </p>
@@ -536,7 +481,7 @@ export function CastingCastPanel() {
 
       <Modal
         open={finalizeOpen}
-        onClose={() => setFinalizeOpen(false)}
+        onClose={() => { if (!mutationBusy.current) setFinalizeOpen(false); }}
         title={
           roleFilter === "all" && !selectedRole
             ? "Finalize casting"
@@ -544,11 +489,11 @@ export function CastingCastPanel() {
         }
         size="md"
       >
-        <p className="text-sm text-white/60 mb-4">
+        <p className="text-sm text-[var(--ui-muted)] mb-4">
           This will finalize casting
-          {roleFilter === "all" ? " for roles with Final Selects" : " for this role"} and notify all
-          submitters of the outcome. Selected and shortlisted talent with submissions will be marked
-          as selected; any unreviewed submissions will automatically be rejected.
+          {roleFilter === "all" ? " for roles with Final Selects" : " for this role"}.
+          Only the checked final selections are included. Selected Motiion talent will be added to
+          project people, and submissions will close. Shortlisted people are not selected automatically.
         </p>
         <button
           type="button"

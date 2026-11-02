@@ -6,5 +6,5 @@ import { redirect } from "next/navigation";
  * and routes industry into `/talent-buyers/onboarding`.
  */
 export default function TalentBuyerSignupPage() {
-  redirect("/signup");
+  redirect("/signup?account_type=lookingForTalent");
 }

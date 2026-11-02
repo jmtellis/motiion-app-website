@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Megaphone } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   loadTalentCastingDetail,
@@ -19,6 +19,8 @@ import {
 } from "@/components/casting/CastingSections";
 import { WorkspaceSidePanel } from "@/components/workspace/WorkspaceSidePanel";
 import { submitToCastingRole } from "@/lib/casting/submit";
+import { castingDetailLocation } from "@/lib/casting/detail-location";
+import { EMPTY_CASTING_SUBMISSION_DRAFT, castingSubmissionDraftStorage, clearCastingSubmissionDraft, normalizeCastingSubmissionMaterials, readCastingSubmissionDraft, writeCastingSubmissionDraft, type CastingSubmissionDraft } from "@/lib/casting/submission-materials";
 import { outcomeLabel, roleSubmitState } from "@/lib/app/talent-casting-state";
 import { formatCastingDeadline } from "@/lib/publicCasting";
 import type { PublicCastingRole } from "@/types/public";
@@ -37,6 +39,8 @@ export function CastingDetailPanel({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const localNavigationKey = useRef<string | null>(null);
+  const activeRequestKey = useRef<string | null>(null);
   const requestKey = open && roleId ? `${roleId}:${preferRole ? "role" : "project"}` : null;
   const [loaded, setLoaded] = useState<{
     key: string;
@@ -46,8 +50,8 @@ export function CastingDetailPanel({
   const [view, setView] = useState<"project" | "role">("project");
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
-  const [note, setNote] = useState("");
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [draft, setDraft] = useState<CastingSubmissionDraft>(EMPTY_CASTING_SUBMISSION_DRAFT);
+  const { note, answers } = draft;
   const [actionError, setActionError] = useState<string | null>(null);
   const [upgrade, setUpgrade] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -56,7 +60,12 @@ export function CastingDetailPanel({
   const error = loaded?.key === requestKey ? loaded.error : null;
 
   useEffect(() => {
+    activeRequestKey.current = requestKey;
     if (!requestKey || !roleId) return;
+    if (localNavigationKey.current === requestKey) {
+      localNavigationKey.current = null;
+      return () => { if (activeRequestKey.current === requestKey) activeRequestKey.current = null; };
+    }
     let cancelled = false;
     void loadTalentCastingDetail(roleId).then((result) => {
       if (cancelled) return;
@@ -67,16 +76,19 @@ export function CastingDetailPanel({
       setView(preferRole ? "role" : "project");
       setConfirming(false);
       setActionError(null);
-      setNote("");
-      setAnswers({});
+      setDraft(result.detail && match ? readCastingSubmissionDraft(castingSubmissionDraftStorage(), result.detail.userId, match) : EMPTY_CASTING_SUBMISSION_DRAFT);
+    }).catch(() => {
+      if (!cancelled) setLoaded({ key: requestKey, detail: null, error: "Could not reach casting details. Check your connection and try again." });
     });
     return () => {
       cancelled = true;
+      if (activeRequestKey.current === requestKey) activeRequestKey.current = null;
     };
   }, [preferRole, requestKey, roleId]);
 
   const casting = detail?.casting ?? null;
   const selectedRole = casting?.roles.find((role) => role.id === selectedRoleId) ?? null;
+  const materials = selectedRole ? detail?.materialsByRoleId[selectedRole.id] : undefined;
   const submission = selectedRole ? detail?.submissionsByRoleId[selectedRole.id] : undefined;
   const invited = Boolean(selectedRole && detail?.inviteByRoleId[selectedRole.id]);
   const submitState = selectedRole
@@ -84,7 +96,7 @@ export function CastingDetailPanel({
         alreadySubmitted: Boolean(submission),
         isActive: selectedRole.isActive,
         isCastingFinalized: selectedRole.isCastingFinalized,
-        deadlinePassed: detail?.deadlinePassed ?? false,
+        deadlinePassed: detail?.deadlinePassedByRoleId[selectedRole.id] ?? detail?.deadlinePassed ?? false,
         externalSubmissionUrl: casting?.externalSubmissionURL ?? null,
         invited,
         hasAgency: detail?.hasAgency ?? false,
@@ -97,56 +109,108 @@ export function CastingDetailPanel({
     (question) => question.required && !(answers[question.id] ?? "").trim(),
   );
 
+  function inspectRole(nextRoleId: string, nextView: "project" | "role") {
+    if (!detail || !detail.casting.roles.some((role) => role.id === nextRoleId)) return;
+    // All roles are already in this authorized response. Reuse it while changing
+    // the current deep link, so Back still closes to the underlying card grid.
+    localNavigationKey.current = `${nextRoleId}:${nextView}`;
+    setLoaded({ key: localNavigationKey.current, detail, error: null });
+    setSelectedRoleId(nextRoleId);
+    setView(nextView);
+    setConfirming(false);
+    setActionError(null);
+    setDraft(readCastingSubmissionDraft(castingSubmissionDraftStorage(), detail.userId, nextRoleId));
+    // Passing Next's internal history flags would bypass its search-param sync.
+    // Keep only our panel marker so browser Back still returns to the card grid.
+    window.history.replaceState(
+      { motiionCastingPanel: Boolean(window.history.state?.motiionCastingPanel) },
+      "",
+      castingDetailLocation(window.location.href, nextRoleId, nextView),
+    );
+  }
+
+  function updateDraft(patch: Partial<CastingSubmissionDraft>) {
+    const next = { ...draft, ...patch };
+    setDraft(next);
+    if (detail && selectedRole) writeCastingSubmissionDraft(castingSubmissionDraftStorage(), detail.userId, selectedRole.id, next);
+  }
+
   async function refresh() {
     if (!roleId || !requestKey) return;
-    const result = await loadTalentCastingDetail(roleId);
-    setLoaded({ key: requestKey, detail: result.detail, error: result.error });
-    router.refresh();
+    try {
+      const result = await loadTalentCastingDetail(roleId);
+      if (activeRequestKey.current !== requestKey) return;
+      if (!detail && result.detail) {
+        const match = result.detail.casting.roles.find((role) => role.id === roleId)?.id ?? result.detail.casting.selectedRoleId ?? result.detail.casting.roles[0]?.id ?? null;
+        setSelectedRoleId(match);
+        setView(preferRole ? "role" : "project");
+        setConfirming(false);
+        setActionError(null);
+        setDraft(match ? readCastingSubmissionDraft(castingSubmissionDraftStorage(), result.detail.userId, match) : EMPTY_CASTING_SUBMISSION_DRAFT);
+      }
+      setLoaded((current) => current && current.key !== requestKey ? current : {
+        key: requestKey, detail: result.error ? current?.detail ?? null : result.detail, error: result.error,
+      });
+      router.refresh();
+    } catch {
+      if (activeRequestKey.current !== requestKey) return;
+      setLoaded((current) => current && current.key !== requestKey ? current : {
+        key: requestKey, detail: current?.detail ?? null, error: "Could not refresh this casting. Check your connection and try again.",
+      });
+    }
   }
 
   async function submit() {
-    if (!selectedRole || requiredMissing) return;
+    if (!selectedRole || !detail || requiredMissing || busy) return;
+    const normalized = normalizeCastingSubmissionMaterials({ slate: draft.slate, links: draft.links, slateRequired: materials?.slateRequired ?? false, maxLinks: materials?.maxLinks ?? 0 });
+    if (!normalized.ok) { setActionError(normalized.error); return; }
     setBusy(true);
     setActionError(null);
     setUpgrade(false);
-    const result = await submitToCastingRole({
-      roleId: selectedRole.id,
-      note,
-      supplementalAnswers: answers,
-    });
-    if (!result.ok) {
-      setBusy(false);
-      setActionError(result.message);
-      setUpgrade(Boolean(result.upgrade));
-      return;
+    let submissionReceived = false;
+    try {
+      const result = await submitToCastingRole({ roleId: selectedRole.id, note, supplementalAnswers: answers, slateUrl: normalized.slate, submissionLinks: normalized.links });
+      if (!result.ok) { setActionError(result.message); setUpgrade(Boolean(result.upgrade)); return; }
+      submissionReceived = true;
+      clearCastingSubmissionDraft(castingSubmissionDraftStorage(), detail.userId, selectedRole.id);
+      const inviteId = detail.inviteByRoleId[selectedRole.id];
+      if (inviteId) {
+        const acknowledged = await respondToCastingRequest(inviteId, "primary");
+        if (!acknowledged.ok) setActionError("Submission received. The invitation status could not refresh; reopen this casting to check it.");
+      }
+      setConfirming(false);
+      await refresh();
+    } catch {
+      if (submissionReceived) {
+        setConfirming(false);
+        setActionError("Submission received. The latest invitation status could not load; reopen this casting to check it.");
+      } else setActionError("Could not finish submitting. Your draft is saved; check your connection and retry.");
     }
-    const inviteId = detail?.inviteByRoleId[selectedRole.id];
-    if (inviteId) await respondToCastingRequest(inviteId, "primary");
-    setConfirming(false);
-    setBusy(false);
-    await refresh();
+    finally { setBusy(false); }
   }
 
   async function passOrDecline() {
     if (!selectedRole || !detail) return;
     setBusy(true);
     setActionError(null);
-    const inviteId = detail.inviteByRoleId[selectedRole.id];
-    const result = inviteId
-      ? await respondToCastingRequest(inviteId, "negative")
-      : await passCastingRole(selectedRole.id);
-    setBusy(false);
-    if (!result.ok) {
-      setActionError(result.error ?? "Could not update this casting.");
-      return;
-    }
-    onClose();
-    router.refresh();
+    try {
+      const inviteId = detail.inviteByRoleId[selectedRole.id];
+      const result = inviteId
+        ? await respondToCastingRequest(inviteId, "negative")
+        : await passCastingRole(selectedRole.id);
+      if (!result.ok) {
+        setActionError(result.error ?? "Could not update this casting.");
+        return;
+      }
+      onClose();
+      router.refresh();
+    } catch { setActionError("Could not update this casting. Check your connection and retry."); }
+    finally { setBusy(false); }
   }
 
   const leading =
     view === "role" && casting ? (
-      <button type="button" className="opportunities-back" onClick={() => { setView("project"); setConfirming(false); }} aria-label="Back to casting">
+      <button type="button" className="opportunities-back" onClick={() => { if (selectedRole) inspectRole(selectedRole.id, "project"); }} aria-label="Back to casting">
         <ChevronLeft size={18} aria-hidden />
       </button>
     ) : null;
@@ -161,15 +225,11 @@ export function CastingDetailPanel({
     >
       <div className="opportunities-detail">
         {loading ? <p className="opportunities-detail__status">Loading casting…</p> : null}
-        {error ? <p className="opportunities-detail__status" role="alert">{error}</p> : null}
+        {error ? <div className="opportunities-detail__status" role="alert"><p>{error}</p><button type="button" className="ui-btn-secondary mt-3" onClick={() => void refresh()}>Try again</button></div> : null}
         {casting && view === "project" ? (
           <ProjectView
             detail={detail!}
-            onOpenRole={(role) => {
-              setSelectedRoleId(role.id);
-              setView("role");
-              setConfirming(false);
-            }}
+            onOpenRole={(role) => inspectRole(role.id, "role")}
           />
         ) : null}
         {casting && view === "role" && selectedRole ? (
@@ -200,14 +260,16 @@ export function CastingDetailPanel({
                       rows={3}
                       required={question.required}
                       value={answers[question.id] ?? ""}
-                      onChange={(event) => setAnswers((current) => ({ ...current, [question.id]: event.target.value }))}
+                      onChange={(event) => updateDraft({ answers: { ...answers, [question.id]: event.target.value } })}
                       disabled={busy}
                     />
                   </label>
                 ))}
+                {materials?.slateRequired ? <label><span>Slate video link *</span><input type="url" value={draft.slate} onChange={(event) => updateDraft({ slate: event.target.value })} placeholder="https://" required disabled={busy} /><small>Use a video link the casting team can open.</small></label> : null}
+                {materials && materials.maxLinks > 0 ? <label><span>Work links (optional, up to {materials.maxLinks})</span><textarea rows={3} value={draft.links} onChange={(event) => updateDraft({ links: event.target.value })} placeholder="One https:// link per line" disabled={busy} /></label> : null}
                 <label>
                   <span>Note (optional)</span>
-                  <textarea rows={3} value={note} onChange={(event) => setNote(event.target.value)} disabled={busy} />
+                  <textarea rows={3} value={note} maxLength={3000} onChange={(event) => updateDraft({ note: event.target.value })} disabled={busy} />
                 </label>
               </form>
             ) : null}

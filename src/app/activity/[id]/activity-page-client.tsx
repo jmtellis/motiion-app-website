@@ -1,13 +1,19 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
+import { Dialog } from "@/components/ui/Dialog";
+import { isActiveEnrollment } from "@/lib/app/activity-enrollment";
 
 import { CastingPublicShell } from "@/components/casting/CastingPublicShell";
+import { ActivityCancellation } from "@/components/product/ActivityCancellation";
 import { ClassGuestBookingForm } from "@/components/product/ClassGuestBookingForm";
-import { OpenInAppBar } from "@/components/product/OpenInAppBar";
+import { getIosAppStoreUrl } from "@/lib/referrals/app-store";
 import { SessionSignUpRequiredModal } from "@/components/product/SessionSignUpRequiredModal";
 import { PublicPageAnalytics } from "@/components/analytics/PublicPageAnalytics";
-import { requestSessionJoin } from "@/lib/app/activities";
+import { ActivityCalendarSave } from "@/components/app/ActivityCalendarSave";
+import { useRouter } from "next/navigation";
+import { requestSessionJoin, type activityViewerState } from "@/lib/app/activities";
 import {
   activityKindLabel,
   effectiveActivityKind,
@@ -21,15 +27,20 @@ type DetailRow = { label: string; value: string };
 
 export default function ActivityPageClient({
   activity,
+  viewer,
+  resumeRegistration = false,
   sharePath,
   ticketProviderName = null,
   ticketProviderLogoUrl = null,
 }: {
   activity: PublicActivity;
+  viewer?: Awaited<ReturnType<typeof activityViewerState>>;
   sharePath: string;
+  resumeRegistration?: boolean;
   ticketProviderName?: string | null;
   ticketProviderLogoUrl?: string | null;
 }) {
+  const router = useRouter();
   const kind = effectiveActivityKind(activity, sharePath);
   const dateLine = formatActivityDateTime(activity);
   const whenLine = formatActivityWhenLine(activity);
@@ -38,12 +49,17 @@ export default function ActivityPageClient({
     : "Free to attend";
   const soldOut = activity.spotsRemaining != null && activity.spotsRemaining <= 0;
 
-  const [enrolledTitle, setEnrolledTitle] = useState<string | null>(null);
-  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [localEnrolledTitle, setEnrolledTitle] = useState<string | null>(null);
+  const [cancellationMessage, setCancellationMessage] = useState<string | null>(null);
+  const enrolledTitle = cancellationMessage ? null : localEnrolledTitle ?? (isActiveEnrollment(viewer?.enrollmentStatus) ? activity.title : null);
+  const displayDateLine = enrolledTitle && kind === "event" && viewer?.admittedDays?.length
+    ? `Your admission: ${formatAdmissionDay(viewer.admittedDays[0])}${viewer.admittedDays.length > 1 ? ` · ${viewer.admittedDays.length} admitted dates (details below)` : ""}`
+    : dateLine;
+  const [showBookingModal, setShowBookingModal] = useState(resumeRegistration && Boolean(viewer?.signedIn) && !enrolledTitle);
   const [showSessionSignUpGate, setShowSessionSignUpGate] = useState(false);
   const [sessionJoinState, setSessionJoinState] = useState<
     { kind: "idle" } | { kind: "sent"; status: string } | { kind: "error"; message: string }
-  >({ kind: "idle" });
+  >(viewer?.sessionStatus && ["pending", "approved"].includes(viewer.sessionStatus) ? { kind: "sent", status: viewer.sessionStatus } : { kind: "idle" });
   const [isJoinPending, startJoinTransition] = useTransition();
 
   function handleSessionJoin() {
@@ -52,6 +68,7 @@ export default function ActivityPageClient({
       const result = await requestSessionJoin(activity.id);
       if (result.ok) {
         setSessionJoinState({ kind: "sent", status: result.status });
+        router.refresh();
         return;
       }
       if (result.reason === "unauthenticated") {
@@ -66,10 +83,11 @@ export default function ActivityPageClient({
   const isSession = kind === "session";
   const isEvent = kind === "event";
   const hasExternalTickets = Boolean(activity.externalTicketUrl?.trim());
-  const hasMotiionTickets = (activity.ticketOptions?.length ?? 0) > 0 || activity.requirePayment;
+  const hasMotiionTickets = (activity.ticketOptions?.length ?? 0) > 0 || activity.requirePayment || (isEvent && !hasExternalTickets);
   const canBookGuest =
     (isClass || isEvent) &&
     activity.isEligibleForBooking &&
+    !viewer?.error &&
     !enrolledTitle &&
     !soldOut &&
     (!isEvent || hasMotiionTickets);
@@ -124,19 +142,23 @@ export default function ActivityPageClient({
         <header className="casting-page-header">
           <p className="casting-section-title">{activityKindLabel(kind)}</p>
           <h1 className="casting-page-title">{activity.title}</h1>
+          {viewer ? <ActivityCalendarSave activityId={activity.id} viewer={viewer} /> : null}
         </header>
 
-        <div className="casting-page-hero">
+        {activity.coverImageURL ? <div className="casting-page-hero">
           {activity.coverImageURL ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={activity.coverImageURL} alt="" />
           ) : null}
           <div className="casting-page-hero-overlay" />
           <div className="casting-page-hero-meta">
-            <p className="casting-page-deadline">{dateLine}</p>
+            <p className="casting-page-deadline">{displayDateLine}</p>
             {activity.location ? <p className="casting-page-location">{activity.location}</p> : null}
           </div>
-        </div>
+        </div> : <section className="casting-glass-card" aria-label="Activity time and place">
+          <p className="casting-page-deadline">{displayDateLine}</p>
+          {activity.location ? <p className="casting-page-location">{activity.location}</p> : null}
+        </section>}
 
         {activity.organizerDisplayName?.trim() ? (
           <OrganizerRow
@@ -145,10 +167,29 @@ export default function ActivityPageClient({
           />
         ) : null}
 
+        {enrolledTitle ? (
+          <section className="casting-glass-card">
+            <h2 className="casting-section-title">You&apos;re registered</h2>
+            <p className="casting-body-copy">
+              Your place for <strong>{enrolledTitle}</strong> is confirmed. {viewer?.signedIn ? <Link href="/schedule">View your calendar</Link> : <Link href={`/login?next=${encodeURIComponent(`/activity/${activity.id}`)}`}>Sign in with the email you used to manage your account</Link>}.
+            </p>
+            {viewer?.ticketLabel ? <p className="casting-body-copy" style={{ marginTop: 12 }}><strong>Your ticket:</strong> {viewer.ticketLabel}</p> : null}
+            {viewer?.admittedDays?.length ? <div style={{ marginTop: 12 }}><h3 className="casting-section-title">Your admitted dates</h3><ul className="casting-body-copy" style={{ display: "grid", gap: 8, marginTop: 8 }}>
+              {viewer.admittedDays.map((day) => <li key={day.id}>{formatAdmissionDay(day)}{day.label ? ` · ${day.label}` : ""}</li>)}
+            </ul><p className="casting-body-copy" style={{ marginTop: 8 }}>Your ticket includes these dates. The full event program is shown below.</p></div> : null}
+            {viewer?.admissionError ? <p role="alert" className="casting-body-copy">{viewer.admissionError} <button type="button" className="casting-inline-link" onClick={() => router.refresh()}>Retry</button></p> : null}
+            {isEvent && (activity.eventDays?.length ?? 0) > 0 && viewer?.signedIn && !viewer.admissionError && !viewer.admittedDays?.length ? <p role="status" className="casting-body-copy">Your registration is confirmed, but no admitted days are available yet. Refresh or contact the organizer before attending.</p> : null}
+            {viewer?.signedIn ? <ActivityCancellation activityId={activity.id} paid={viewer.enrollmentStatus === "paid"} refundRequested={viewer.refundRequested} onCancelled={(message) => { setEnrolledTitle(null); setCancellationMessage(message); }} /> : null}
+          </section>
+        ) : null}
+        {cancellationMessage ? <section className="casting-glass-card" role="status"><p className="casting-body-copy">{cancellationMessage}</p></section> : null}
+        {!enrolledTitle && !cancellationMessage && ["cancelled", "refunded"].includes(viewer?.enrollmentStatus ?? "") ? <section className="casting-glass-card" role="status"><p className="casting-body-copy">{viewer?.enrollmentStatus === "refunded" ? "Your previous reservation was refunded." : "Your previous reservation is canceled."} You can reserve again if places are available.</p></section> : null}
+
+
         <section className="casting-glass-card">
           <dl className="casting-breakdown">
-            <BreakdownRow label="Admission" value={priceLine} />
-            {whenLine ? <BreakdownRow label="When" value={whenLine} /> : null}
+            <BreakdownRow label={enrolledTitle && isEvent ? "General admission price" : "Admission"} value={priceLine} />
+            {whenLine ? <BreakdownRow label={enrolledTitle && isEvent ? "Full event program" : "When"} value={whenLine} /> : null}
             {activity.location?.trim() ? <BreakdownRow label="Where" value={activity.location.trim()} /> : null}
             {activity.maxAttendees != null ? (
               <BreakdownRow label="Capacity" value={`${activity.maxAttendees} attendees`} />
@@ -393,30 +434,20 @@ export default function ActivityPageClient({
           </section>
         ) : null}
 
-        {enrolledTitle ? (
-          <section className="casting-glass-card">
-            <h2 className="casting-section-title">You&apos;re registered</h2>
-            <p className="casting-body-copy">
-              You&apos;re booked for <strong>{enrolledTitle}</strong>. Download the Motiion app to view your
-              schedule and get updates.
-            </p>
-          </section>
-        ) : null}
 
         {!activity.isEligibleForBooking ? (
           <section className="casting-glass-card">
             <p className="casting-body-copy">
-              This activity is no longer open for booking on the web. Open Motiion for the latest status.
+              {activity.privateAccess ? "This is a private activity. You can review and respond to invitations in your Inbox." : "Registration for this activity is closed. You can still view the details and save it to your calendar."}
             </p>
           </section>
         ) : null}
       </article>
 
-      <OpenInAppBar
-        href={sharePath}
-        label="Open in Motiion"
-        hint="Download Motiion for tickets, updates, and the full experience."
-      />
+      <nav aria-label="Activity navigation" className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-3 px-5 py-6">
+        <Link className="ui-button ui-button--secondary" href={viewer?.signedIn ? "/schedule" : "/classes"}>{viewer?.signedIn ? "View my calendar" : "Explore classes"}</Link>
+        <a className="ui-button ui-button--ghost" href={getIosAppStoreUrl()} target="_blank" rel="noreferrer">Motiion for iPhone</a>
+      </nav>
 
       {showExternalTicketBar ? (
         <div className="casting-submit-bar">
@@ -466,7 +497,7 @@ export default function ActivityPageClient({
             {soldOut
               ? "Session full"
               : sessionJoinState.kind === "sent"
-                ? sessionJoinState.status === "joined"
+                ? ["joined", "approved"].includes(sessionJoinState.status)
                   ? "You're in"
                   : "Request sent"
                 : isJoinPending
@@ -479,10 +510,13 @@ export default function ActivityPageClient({
       {showBookingModal ? (
         <BookingModal
           activity={activity}
+          signedIn={viewer?.signedIn ?? false}
           onClose={() => setShowBookingModal(false)}
           onEnrolled={(title) => {
             setEnrolledTitle(title);
+            setCancellationMessage(null);
             setShowBookingModal(false);
+            router.refresh();
           }}
         />
       ) : null}
@@ -560,20 +594,17 @@ function BookingModal({
   activity,
   onClose,
   onEnrolled,
+  signedIn,
 }: {
   activity: PublicActivity;
+  signedIn: boolean;
   onClose: () => void;
   onEnrolled: (title: string) => void;
 }) {
+  const [pending, setPending] = useState(false);
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="class-booking-title"
-      className="casting-modal-backdrop"
-      onClick={onClose}
-    >
-      <div className="casting-modal-card" onClick={(event) => event.stopPropagation()}>
+    <Dialog open labelledBy="class-booking-title" onClose={() => { if (!pending) onClose(); }}>
+      <div className="casting-modal-card activity-booking-card" onClick={(event) => event.stopPropagation()}>
         <h2 id="class-booking-title" className="casting-modal-title">
           {activity.kind === "event"
             ? "Get tickets"
@@ -581,12 +612,12 @@ function BookingModal({
               ? "Book this session"
               : "Book this class"}
         </h2>
-        <ClassGuestBookingForm activity={activity} onEnrolled={onEnrolled} variant="modal" />
-        <button type="button" onClick={onClose} className="casting-modal-dismiss">
+        <ClassGuestBookingForm activity={activity} signedIn={signedIn} onPendingChange={setPending} onEnrolled={onEnrolled} variant="modal" />
+        <button type="button" disabled={pending} onClick={onClose} className="casting-modal-dismiss">
           Cancel
         </button>
       </div>
-    </div>
+    </Dialog>
   );
 }
 
@@ -624,4 +655,10 @@ function buildDayOfRows(activity: PublicActivity, kind: PublicActivity["kind"]):
     ].filter((row) => row.value.length > 0);
   }
   return [];
+}
+
+function formatAdmissionDay(day: { date: string; startTime: string | null; endTime: string | null }): string {
+  const date = new Date(`${day.date}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+  const formatTime = (value: string) => new Date(`2000-01-01T${value}Z`).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "UTC" });
+  return `${date}${day.startTime ? ` · ${formatTime(day.startTime)}${day.endTime ? `–${formatTime(day.endTime)}` : ""}` : ""}`;
 }

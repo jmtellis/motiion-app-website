@@ -1,20 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { registerForActivity } from "@/lib/app/activities";
+import { normalizeActivityCheckoutSelection } from "@/lib/app/activity-enrollment";
+import { requireGuestReceiptStorage, saveGuestReceipt } from "@/lib/app/guest-receipt";
 
 import { trackClientEvent } from "@/lib/analytics/track-client";
 import { callSupabaseFunction } from "@/lib/supabaseRest";
 import { formatMoney } from "@/lib/publicActivity";
 import type { PublicActivity, PublicTicketOption } from "@/types/public";
 
-const SITE_HOME = "https://www.motiion.app";
 
 type BookResponse =
-  | { checkoutUrl: string; sessionId: string }
+  | { checkoutUrl: string; sessionId: string; receiptToken?: string }
   | { enrolled: true; activityId: string; activityTitle?: string };
 
 type Props = {
   activity: PublicActivity;
+  signedIn?: boolean;
+  onPendingChange?: (pending: boolean) => void;
   onEnrolled?: (title: string) => void;
   variant?: "inline" | "modal";
 };
@@ -23,32 +28,44 @@ function ticketLabel(activity: PublicActivity, ticket: PublicTicketOption) {
   return `${ticket.label} — ${formatMoney(ticket.amountCents, ticket.currency || activity.priceCurrency || "usd")}`;
 }
 
-export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline" }: Props) {
+export function ClassGuestBookingForm({ activity, signedIn = false, onPendingChange, onEnrolled, variant = "inline" }: Props) {
   const ticketOptions = activity.ticketOptions ?? [];
   const eventDays = activity.eventDays ?? [];
   const tiers = activity.pricingTiers ?? [];
   const isEvent = activity.kind === "event";
+  const draftKey = `motiion:activity-ticket:${activity.id}`;
+  const [draft] = useState(() => {
+    try { return normalizeActivityCheckoutSelection(JSON.parse(sessionStorage.getItem(draftKey) ?? "null")); }
+    catch { return normalizeActivityCheckoutSelection(null); }
+  });
+  const signInHref = `/login?next=${encodeURIComponent(`/activity/${activity.id}?register=1`)}`;
+  const busy = useRef(false);
+  const quoteRequest = useRef(0);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [ticketOptionId, setTicketOptionId] = useState<string | null>(() => {
+    if (draft.ticketOptionId && [...ticketOptions, ...tiers].some((ticket) => ticket.id === draft.ticketOptionId)) return draft.ticketOptionId;
     if (ticketOptions.length > 0) return ticketOptions[0].id;
     if (tiers.length > 0) return tiers[0].id;
     return null;
   });
-  const [selectedEventDayIds, setSelectedEventDayIds] = useState<string[]>([]);
-  const [promoCode, setPromoCode] = useState("");
+  const [selectedEventDayIds, setSelectedEventDayIds] = useState<string[]>((draft.selectedEventDayIds ?? []).filter((id) => eventDays.some((day) => day.id === id)));
+  const [promoCode, setPromoCode] = useState(draft.promoCode ?? "");
   const [quoteLabel, setQuoteLabel] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [accountExists, setAccountExists] = useState(false);
+  const [quoting, setQuoting] = useState(false);
+  useEffect(() => {
+    try { sessionStorage.setItem(draftKey, JSON.stringify({ ticketOptionId, selectedEventDayIds, promoCode })); } catch { /* Storage can be unavailable in a private browser. */ }
+  }, [draftKey, ticketOptionId, selectedEventDayIds, promoCode]);
+  useEffect(() => () => { quoteRequest.current += 1; }, []);
+  function invalidateQuote() { quoteRequest.current += 1; setQuoteLabel(null); setQuoting(false); }
 
-  const selectedTicket = useMemo(
-    () => ticketOptions.find((ticket) => ticket.id === ticketOptionId) ?? null,
-    [ticketOptions, ticketOptionId],
-  );
+  const selectedTicket = ticketOptions.find((ticket) => ticket.id === ticketOptionId) ?? null;
 
   const soldOut = activity.spotsRemaining != null && activity.spotsRemaining <= 0;
   const showTicketPicker =
@@ -58,16 +75,19 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
     activity.kind === "event" ? "event" : activity.kind === "session" ? "session" : "class";
 
   function toggleDay(dayId: string) {
+    invalidateQuote();
     setSelectedEventDayIds((current) =>
       current.includes(dayId) ? current.filter((id) => id !== dayId) : [...current, dayId],
     );
   }
 
-  async function refreshQuote() {
-    if (!activity.requirePayment || !promoCode.trim()) {
+  const refreshQuote = useCallback(async () => {
+    if (!activity.requirePayment) {
       setQuoteLabel(null);
       return;
     }
+    const request = ++quoteRequest.current;
+    setQuoting(true);
     try {
       const quote = await callSupabaseFunction<{
         totalAmountCents: number;
@@ -75,6 +95,7 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
         promoDiscountCents?: number;
         originalBaseAmountCents?: number;
         baseAmountCents: number;
+        serviceFeeCents: number;
       }>("payments-checkout-quote", {
         classId: activity.id,
         ...(ticketOptionId
@@ -83,26 +104,25 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
         ...(selectedEventDayIds.length ? { selectedEventDayIds } : {}),
         promoCode: promoCode.trim(),
       });
-      if (quote.promoDiscountCents && quote.promoDiscountCents > 0) {
-        setQuoteLabel(
-          `Promo applied — ticket ${formatMoney(quote.baseAmountCents, quote.currency)} (was ${formatMoney(
-            quote.originalBaseAmountCents ?? quote.baseAmountCents + quote.promoDiscountCents,
-            quote.currency,
-          )}), total ${formatMoney(quote.totalAmountCents, quote.currency)}`,
-        );
-        setError(null);
-      } else {
-        setQuoteLabel(null);
-      }
+      if (request !== quoteRequest.current) return;
+      if (![quote.baseAmountCents, quote.serviceFeeCents, quote.totalAmountCents].every(Number.isFinite)) throw new Error("The price could not be confirmed. Please retry.");
+      setQuoteLabel(`Ticket ${formatMoney(quote.baseAmountCents, quote.currency)} + service & processing fees ${formatMoney(quote.serviceFeeCents, quote.currency)} = ${formatMoney(quote.totalAmountCents, quote.currency)} total${quote.promoDiscountCents ? " · promo applied" : ""}`);
+      setError(null);
     } catch (err) {
+      if (request !== quoteRequest.current) return;
       setQuoteLabel(null);
       setError(err instanceof Error ? err.message : "Could not apply promo code.");
-    }
-  }
+    } finally { if (request === quoteRequest.current) setQuoting(false); }
+  }, [activity.id, activity.requirePayment, ticketOptionId, selectedEventDayIds, promoCode]);
+  useEffect(() => {
+    if (!activity.requirePayment) return;
+    const timer = setTimeout(() => void refreshQuote(), 200);
+    return () => { clearTimeout(timer); quoteRequest.current += 1; };
+  }, [activity.requirePayment, refreshQuote]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (soldOut) return;
+    if (soldOut || busy.current || (activity.requirePayment && (!quoteLabel || quoting))) return;
 
     if (activity.requirePayment && isEvent && ticketOptions.length > 0 && !ticketOptionId) {
       setError("Select a ticket type.");
@@ -118,7 +138,9 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
       }
     }
 
+    busy.current = true;
     setLoading(true);
+    onPendingChange?.(true);
     setError(null);
     setAccountExists(false);
 
@@ -129,7 +151,18 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
         activity_kind: activity.kind,
       });
 
-      const data = await callSupabaseFunction<BookResponse>("web-guest-class-book", {
+      let data: BookResponse;
+      if (signedIn) {
+        const result = await registerForActivity(activity.id, { ticketOptionId, selectedEventDayIds, promoCode });
+        if (!result.ok) {
+          setError(result.error);
+          if (result.signIn) setAccountExists(true);
+          return;
+        }
+        data = "enrolled" in result ? { enrolled: true, activityId: activity.id, activityTitle: result.activityTitle } : result;
+      } else {
+        if (activity.requirePayment) requireGuestReceiptStorage();
+        data = await callSupabaseFunction<BookResponse>("web-guest-class-book", {
         classId: activity.id,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
@@ -144,7 +177,10 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
         ...(promoCode.trim() ? { promoCode: promoCode.trim() } : {}),
       });
 
+      }
+
       if ("checkoutUrl" in data && data.checkoutUrl) {
+        if (!signedIn) saveGuestReceipt(data.sessionId, data.receiptToken ?? "");
         window.location.href = data.checkoutUrl;
         return;
       }
@@ -155,15 +191,8 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
           require_payment: false,
           activity_kind: activity.kind,
         });
+        try { sessionStorage.removeItem(draftKey); } catch { /* No persisted draft. */ }
         onEnrolled?.(data.activityTitle ?? activity.title);
-        const params = new URLSearchParams({
-          enrolled: "1",
-          kind: activity.kind,
-          activity_id: activity.id,
-          title: data.activityTitle ?? activity.title,
-          email: email.trim(),
-        });
-        window.location.href = `/payments/success?${params.toString()}`;
         return;
       }
 
@@ -178,9 +207,11 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
         setAccountExists(true);
         trackClientEvent("class_checkout_account_exists", { activity_id: activity.id });
       }
-      setError(message);
+      setError(accountExists || errorCode === "ACCOUNT_EXISTS" ? "This email already has an account. Sign in to continue with your ticket choices." : message);
     } finally {
+      busy.current = false;
       setLoading(false);
+      onPendingChange?.(false);
     }
   }
 
@@ -200,18 +231,20 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
             {activity.requirePayment ? `Get tickets` : `Book this ${noun}`}
           </h2>
           <p className="casting-body-copy" style={{ marginTop: 8 }}>
-            Enter your details to {activity.requirePayment ? "continue to payment" : "reserve your spot"}.
+            {signedIn ? "Confirm your choices to" : "Enter your details to"} {activity.requirePayment ? "continue to payment" : "reserve your spot"}.
             You must be 18 or older.
           </p>
         </div>
       ) : (
         <p className="casting-body-copy">
-          Enter your details to {activity.requirePayment ? "continue to payment" : "reserve your spot"}.
+          {signedIn ? "Confirm your choices to" : "Enter your details to"} {activity.requirePayment ? "continue to payment" : "reserve your spot"}.
           You must be 18 or older.
         </p>
       )}
 
+      {signedIn ? <p className="casting-body-copy">Your reservation will use your signed-in Motiion account.</p> : <p className="casting-body-copy">Already have an account? <Link href={signInHref}>Sign in to continue</Link>. Your ticket choices will be kept.</p>}
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
+        {!signedIn ? <>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <FormField label="First name">
             <input
@@ -254,12 +287,15 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
           />
         </FormField>
 
+        </> : null}
+
         {showTicketPicker ? (
           <FormField label="Ticket">
             <select
               className="public-review-select"
               value={ticketOptionId ?? ""}
               onChange={(e) => {
+                invalidateQuote();
                 setTicketOptionId(e.target.value);
                 setSelectedEventDayIds([]);
               }}
@@ -281,7 +317,7 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
         ) : null}
 
         {selectedTicket?.accessMode === "select_days" && eventDays.length > 0 ? (
-          <FormField
+          <FormField group
             label={`Select days (${selectedTicket.minDays ?? 1}–${selectedTicket.maxDays ?? selectedTicket.minDays ?? 1})`}
           >
             <div style={{ display: "grid", gap: 8 }}>
@@ -305,7 +341,7 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
                       onChange={() => toggleDay(day.id)}
                     />
                     <span>
-                      {day.label || day.dayDate}
+                      {day.label ? `${day.label} · ` : ""}{new Date(`${day.dayDate}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
                       {day.startTime ? ` · ${day.startTime.slice(0, 5)}` : ""}
                     </span>
                   </label>
@@ -327,12 +363,13 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
         ) : null}
 
         {activity.requirePayment ? (
-          <FormField label="Promo code">
+          <FormField label="Promo code" controlId={`activity-promo-${activity.id}`}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
               <input
                 className="public-review-field-input"
+                id={`activity-promo-${activity.id}`}
                 value={promoCode}
-                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                onChange={(e) => { invalidateQuote(); setPromoCode(e.target.value.toUpperCase()); }}
                 placeholder="Optional"
                 autoComplete="off"
               />
@@ -340,30 +377,30 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
                 type="button"
                 className="casting-page-cta casting-page-cta--secondary"
                 onClick={() => void refreshQuote()}
-                disabled={!promoCode.trim()}
+                disabled={!promoCode.trim() || quoting || loading}
               >
-                Apply
+                {quoting ? "Checking…" : "Apply"}
               </button>
             </div>
-            {quoteLabel ? (
-              <p className="casting-body-copy" style={{ marginTop: 8 }}>
-                {quoteLabel}
-              </p>
-            ) : null}
+
           </FormField>
         ) : null}
 
-        {error ? <p className="public-review-error">{error}</p> : null}
+        {activity.requirePayment ? <div className="casting-glass-card" aria-live="polite">
+          <p className="casting-body-copy">{quoting ? "Checking current ticket price and fees…" : quoteLabel ?? "Confirm your ticket choices to see the total before payment."}</p>
+          {!quoting && !quoteLabel ? <button type="button" className="casting-modal-dismiss" disabled={loading} onClick={() => void refreshQuote()}>Retry price</button> : null}
+        </div> : null}
+        {error ? <p className="public-review-error" role="alert">{error}</p> : null}
 
         {accountExists ? (
-          <a href={SITE_HOME} className="casting-btn-primary" style={{ textAlign: "center" }}>
-            Open Motiion app
-          </a>
+          <Link href={signInHref} className="casting-btn-primary" style={{ textAlign: "center" }}>
+            Sign in and continue
+          </Link>
         ) : (
           <button
             type="submit"
             className="casting-submit-button"
-            disabled={loading || soldOut}
+            disabled={loading || soldOut || (activity.requirePayment && (quoting || !quoteLabel))}
             style={{ pointerEvents: "auto" }}
           >
             {submitLabel}
@@ -374,11 +411,8 @@ export function ClassGuestBookingForm({ activity, onEnrolled, variant = "inline"
   );
 }
 
-function FormField({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label style={{ display: "grid", gap: 6 }}>
-      <span className="public-review-field-label">{label}</span>
-      {children}
-    </label>
-  );
+function FormField({ label, children, group = false, controlId }: { label: string; children: React.ReactNode; group?: boolean; controlId?: string }) {
+  if (group) return <fieldset style={{ border: 0, padding: 0, margin: 0, display: "grid", gap: 6 }}><legend className="public-review-field-label" style={{ marginBottom: 6 }}>{label}</legend>{children}</fieldset>;
+  if (controlId) return <div style={{ display: "grid", gap: 6 }}><label htmlFor={controlId} className="public-review-field-label">{label}</label>{children}</div>;
+  return <label style={{ display: "grid", gap: 6 }}><span className="public-review-field-label">{label}</span>{children}</label>;
 }

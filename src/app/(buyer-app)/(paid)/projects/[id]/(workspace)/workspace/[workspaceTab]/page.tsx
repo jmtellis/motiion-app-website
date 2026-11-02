@@ -7,7 +7,7 @@ import {
   resolveWorkspaceProjectType,
 } from "@/lib/talent-buyers/project-abilities";
 import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
-import { fetchProjectRecord } from "@/lib/talent-buyers/projects";
+import { fetchAccessibleProjectRecord } from "@/lib/talent-buyers/projects";
 import {
   isValidWorkspaceRoute,
   projectHomePath,
@@ -36,7 +36,7 @@ export default async function ProjectWorkspaceTabPage({
   const profile = await requireHiringAccount();
   const { id, workspaceTab: rawWorkspaceTab } = await params;
   const query = await searchParams;
-  const projectRecord = await fetchProjectRecord(id, profile.id);
+  const projectRecord = await fetchAccessibleProjectRecord(id, profile.id);
 
   if (!projectRecord) {
     redirect(projectLandingPath(id, null));

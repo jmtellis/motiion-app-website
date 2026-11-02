@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
-import { createPortal } from "react-dom";
+import { Dialog } from "@/components/ui/Dialog";
+
+import { useId, useState } from "react";
 import { DollarSign, X } from "lucide-react";
 
 import {
@@ -125,7 +126,6 @@ export function CastingCompensationStep({
   const isUnion = form.isUnion === true;
   const activeStructure = paidStructureFromForm(form);
 
-  const [mounted, setMounted] = useState(false);
   const [editorId, setEditorId] = useState<RailEditorId | null>(null);
   const [draftRates, setDraftRates] = useState<RateDetails>(form.rateDetails);
   const [draftNotes, setDraftNotes] = useState(form.configuration.compensation_amount_notes ?? "");
@@ -137,18 +137,8 @@ export function CastingCompensationStep({
   const selection: SagAftraScaleSelection = { agreement, groupSize, employmentUnit };
   const scaleTitle = sagAftraSelectionTitle(selection);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
-  useEffect(() => {
-    if (!editorId) return;
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") closeEditor();
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [editorId]);
+
 
   function openEditor(id: RailEditorId) {
     setDraftRates({ ...form.rateDetails });
@@ -222,22 +212,9 @@ export function CastingCompensationStep({
           }
         : null;
 
-  const rail =
-    mounted && editorId && editingMeta ? (
-      createPortal(
-        <div className="casting-schedule-rail" role="presentation">
-          <button
-            type="button"
-            className="casting-schedule-rail__backdrop"
-            aria-label="Close payment editor"
-            onClick={closeEditor}
-          />
-          <aside
-            className="casting-schedule-rail__panel"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-          >
+  const rail = editorId && editingMeta ? (
+        <Dialog open onClose={closeEditor} labelledBy={titleId} className="casting-role-dialog">
+          <aside className="casting-schedule-rail__panel">
             <header className="casting-schedule-rail__header">
               <div>
                 <h3 id={titleId} className="casting-schedule-rail__title">
@@ -458,9 +435,7 @@ export function CastingCompensationStep({
               </button>
             </footer>
           </aside>
-        </div>,
-        document.body,
-      )
+        </Dialog>
     ) : null;
 
   return (

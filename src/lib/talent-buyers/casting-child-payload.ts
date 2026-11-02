@@ -68,13 +68,13 @@ function parseOptionalInt(value: string | null | undefined) {
 function castingPasswordHash(form: ParsedCastingComposerForm) {
   if (form.visibility !== "private") return null;
   const trimmed = form.password.trim();
-  return trimmed ? digestCastingPassword(trimmed) : null;
+  return trimmed ? digestCastingPassword(trimmed) : (form.castingId ? undefined : null);
 }
 
 function rolePasswordHash(role: CastingRoleForm) {
   if (role.visibility !== "private") return null;
   const trimmed = role.password.trim();
-  return trimmed ? digestCastingPassword(trimmed) : null;
+  return trimmed ? digestCastingPassword(trimmed) : (role.id ? undefined : null);
 }
 
 function buildComposerMeta(form: ParsedCastingComposerForm): ComposerMeta {
@@ -154,6 +154,10 @@ export function buildBridgedRoleRow(
 ) {
   const publicationSnapshot = snapshot ?? buildRolePublicationSnapshot(role, form);
   const specialSkills = roleSpecialSkillsForMatching(role, publicationSnapshot);
+  const castingVisibility = mapProjectVisibilityColumn(form.visibility, form.configuration.visibility_presentation_raw);
+  // Editing a public parent must not widen an existing private/link-only role.
+  const visibility = role.visibility === "private" || castingVisibility === "private" ? "private"
+    : role.visibility === "unlisted" || castingVisibility === "unlisted" ? "unlisted" : "public";
 
   return {
     poster_id: posterId,
@@ -169,15 +173,15 @@ export function buildBridgedRoleRow(
     special_skills: specialSkills.length ? specialSkills : null,
     card_color_preset: role.cardColorPreset,
     cover_image_url: nullableTrim(role.coverImageUrl) ?? nullableTrim(form.coverImageUrl),
-    // Casting-level privacy always wins so private/invite posts never bridge as public roles.
-    visibility: mapProjectVisibilityColumn(
-      form.visibility,
-      form.configuration.visibility_presentation_raw,
-    ),
+    visibility,
     password_hash: rolePasswordHash(role),
     height_min: nullableTrim(role.heightMin),
     height_max: nullableTrim(role.heightMax),
     agency_required: role.agencyRequired,
+    slate_required: role.slateRequired,
+    max_submission_links: role.maxSubmissionLinks,
+    submission_limit: role.submissionLimit,
+    talent_pays_travel: role.talentPaysTravel,
     union_status: nullableTrim(role.unionStatus),
     people_needed: parseOptionalInt(role.peopleNeeded) ?? 1,
     client_match_filters: publicationSnapshot,
@@ -212,6 +216,10 @@ export function childCastingToComposerForm(
     card_color_preset?: string | null;
     cover_image_url?: string | null;
     agency_required?: boolean | null;
+    slate_required?: boolean | null;
+    max_submission_links?: number | null;
+    submission_limit?: number | null;
+    talent_pays_travel?: boolean | null;
     height_min?: string | null;
     height_max?: string | null;
   }> = [],
@@ -272,6 +280,10 @@ export function childCastingToComposerForm(
           heightMin: bridged?.height_min ?? (role.height_min_cm != null ? String(role.height_min_cm) : ""),
           heightMax: bridged?.height_max ?? (role.height_max_cm != null ? String(role.height_max_cm) : ""),
           agencyRequired: bridged?.agency_required ?? false,
+          slateRequired: bridged?.slate_required ?? false,
+          maxSubmissionLinks: bridged?.max_submission_links ?? 0,
+          submissionLimit: bridged?.submission_limit ?? 0,
+          talentPaysTravel: bridged?.talent_pays_travel ?? false,
           unionStatus: role.union_status ?? "",
           peopleNeeded: String(role.people_needed ?? 1),
           visibility: (bridged?.visibility as CastingComposerForm["roles"][0]["visibility"]) ?? "public",

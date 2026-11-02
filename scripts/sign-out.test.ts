@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {signOutLocally}from'../src/lib/auth/sign-out';
+test('sign out leaves the protected document only after local session revocation',async()=>{const order:string[]=[];await signOutLocally({signOut:async options=>{assert.deepEqual(options,{scope:'local'});order.push('revoked');return{error:null};}},()=>order.push('navigate'));assert.deepEqual(order,['revoked','navigate']);});
+test('provider failure and network rejection preserve current page for recovery',async()=>{for(const auth of[{signOut:async()=>({error:new Error('offline')})},{signOut:async()=>{throw new Error('network');}}]){let navigated=false;await assert.rejects(signOutLocally(auth,()=>{navigated=true;}));assert.equal(navigated,false);}});

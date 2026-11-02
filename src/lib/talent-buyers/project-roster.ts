@@ -1,399 +1,153 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-
+import { z } from "zod";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { readPagedRows } from "@/lib/supabase/read-pages";
+import { fetchAccessibleProjectRecord } from "./projects";
+import { requireIndustryApproval } from "./require-industry-approval";
+import { mergeProjectPeople } from "./project-roster-model";
+import { resolveTalentProfileAccess } from "./casting/talent-profile-access";
 
-const PROJECT_ROSTER_KIND = "project_roster";
-const PROJECT_ROSTER_NAME = "Project Roster";
+export type ProjectRosterTalentCard = { userId: string | null; isVerified: boolean; locationCity: string | null; subtype: string | null; creditCount: number; topCredits: string[] };
+export type ProjectRosterMember = { id: string; profileId: string; name: string; slug: string | null; avatarUrl: string | null; notes: string | null; addedAt: string; source?: "participant" | "legacy"; card?: ProjectRosterTalentCard };
+export type ProjectPeopleGroup = { id: string; name: string; participantIds: string[] };
 
-export type ProjectRosterMember = {
-  id: string;
-  profileId: string;
-  name: string;
-  slug: string | null;
-  avatarUrl: string | null;
-  notes: string | null;
-  addedAt: string;
-  /** Motiion Talent Card summary (identity, credits, verification). */
-  card?: ProjectRosterTalentCard;
-};
+async function context(projectId: string, mutate = false) {
+  if (!z.string().uuid().safeParse(projectId).success) throw new Error("Project not found.");
+  const db = await createServerSupabaseClient();
+  if (!db) throw new Error("Connection unavailable.");
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) throw new Error("Sign in again to continue.");
+  const project = await fetchAccessibleProjectRecord(projectId, user.id);
+  if (!project) throw new Error("Project not found or access has been removed.");
+  if (mutate) {
+    const approval = await requireIndustryApproval(user.id);
+    if (!approval.ok) throw new Error(approval.error);
+    const operator = await db.rpc("is_project_operator", { p_project_id: projectId, p_user_id: user.id });
+    if (operator.error || !operator.data) throw new Error("Only the project owner or an approved admin can manage people.");
+  }
+  return { db, user, project };
+}
+function message(error: unknown) { return error instanceof Error ? error.message : "Could not update project people. Please retry."; }
+function refresh(projectId: string) { revalidatePath(`/projects/${projectId}`, "layout"); revalidatePath("/projects"); revalidatePath("/library"); }
 
-export type ProjectRosterTalentCard = {
-  userId: string | null;
-  isVerified: boolean;
-  locationCity: string | null;
-  subtype: string | null;
-  creditCount: number;
-  topCredits: string[];
-};
-
-type RosterProfileJoin = {
-  slug?: string | null;
-  location_city?: string | null;
-  is_verified?: boolean | null;
-  subtype?: string | null;
-  user_id?: string | null;
-  media_assets?: { url: string; kind: string; position: number }[];
-};
-
-const TOP_CREDITS_PER_MEMBER = 2;
-
-async function loadRosterCredits(
-  admin: NonNullable<ReturnType<typeof createAdminSupabaseClient>>,
-  userIds: string[],
-): Promise<Map<string, { count: number; top: string[] }>> {
-  const byUser = new Map<string, { count: number; top: string[] }>();
-  if (!userIds.length) return byUser;
-
-  const { data } = await admin
-    .from("talent_credits")
-    .select(
-      "talent_id, role, production_name_fallback, credit_year, production:industry_entities!talent_credits_production_entity_id_fkey(canonical_name), artist:industry_entities!talent_credits_artist_entity_id_fkey(canonical_name)",
-    )
-    .in("talent_id", userIds)
-    .eq("is_public", true)
-    .neq("verification_status", "ai_extracted")
-    .order("credit_year", { ascending: false, nullsFirst: false });
-
-  for (const row of (data ?? []) as Record<string, unknown>[]) {
-    const talentId = row.talent_id as string;
-    const entry = byUser.get(talentId) ?? { count: 0, top: [] };
-    entry.count += 1;
-    if (entry.top.length < TOP_CREDITS_PER_MEMBER) {
-      const entityName = (value: unknown) => {
-        const entity = Array.isArray(value) ? value[0] : value;
-        return entity && typeof entity === "object"
-          ? ((entity as { canonical_name?: string | null }).canonical_name ?? null)
-          : null;
-      };
-      const label =
-        entityName(row.production) ??
-        entityName(row.artist) ??
-        (row.production_name_fallback as string | null) ??
-        null;
-      if (label) entry.top.push(label);
+export async function listProjectRosterMembers(projectId: string): Promise<{ listId: string | null; members: ProjectRosterMember[]; error?: string }> {
+  try {
+    const { db, project } = await context(projectId);
+    const [participants, list] = await Promise.all([
+      readPagedRows((from, to) => db.from("project_participants").select("id,user_id,added_at,removed_at").eq("project_id", projectId).order("id").range(from, to)),
+      db.from("talent_lists").select("id").eq("owner_id", project.poster_id).eq("project_id", projectId).eq("kind", "project_roster").maybeSingle(),
+    ]);
+    if (participants.error || list.error) throw new Error("Could not load project people. Please retry.");
+    const legacy = list.data ? await readPagedRows((from, to) => db.from("talent_list_members").select("id,profile_id,notes,added_at,professional_profiles(user_id)").eq("list_id", list.data!.id).order("id").range(from, to)) : { data: [], error: null };
+    if (legacy.error) throw new Error("Could not load saved project people. Please retry.");
+    const userIds = [...new Set([...participants.data!.map((row) => row.user_id as string), ...legacy.data!.flatMap((row) => { const profile = Array.isArray(row.professional_profiles) ? row.professional_profiles[0] : row.professional_profiles; return profile?.user_id ? [profile.user_id as string] : []; })])];
+    // Project membership is not permission to disclose an arbitrary private
+    // profile. Reuse the same self/public/actual-submission guard as Library.
+    const access = await resolveTalentProfileAccess(db, userIds);
+    const visibleIds = userIds.filter((id) => access.allowed.has(id));
+    const reader = createAdminSupabaseClient() ?? db;
+    async function hydrate(ids: string[]) { return Promise.all([
+      reader.from("profiles").select("user_id,display_name,first_name,last_name,headshot_urls").in("user_id", ids),
+      reader.from("professional_profiles").select("id,user_id,slug,location_city,is_verified,subtype,media_assets(url,kind,position)").in("user_id", ids),
+      readPagedRows((from, to) => reader.from("talent_credits").select("id,talent_id,production_name_fallback,production:industry_entities!talent_credits_production_entity_id_fkey(canonical_name)").in("talent_id", ids).eq("is_public", true).neq("verification_status", "ai_extracted").order("credit_year", { ascending: false, nullsFirst: false }).order("id").range(from, to)),
+    ]); }
+    const batches: Awaited<ReturnType<typeof hydrate>>[] = [];
+    for (let start = 0; start < visibleIds.length; start += 200) batches.push(await hydrate(visibleIds.slice(start, start + 200)));
+    if (batches.some((batch) => batch.some((result) => result.error))) throw new Error("People were found, but their profiles could not load. Please retry.");
+    const accounts = { data: batches.flatMap((batch) => batch[0].data ?? []) };
+    const profiles = { data: batches.flatMap((batch) => batch[1].data ?? []) };
+    const credits = { data: batches.flatMap((batch) => batch[2].data ?? []) };
+    function person(userId: string | null, fallbackProfileId = "") {
+      const account = accounts.data?.find((row) => row.user_id === userId);
+      const profile = profiles.data?.find((row) => row.user_id === userId);
+      const publicCredits = credits.data?.filter((row) => row.talent_id === userId) ?? [];
+      return { userId, profileId: profile?.id ?? fallbackProfileId, name: account?.display_name || [account?.first_name, account?.last_name].filter(Boolean).join(" ") || profile?.slug?.replaceAll("-", " ") || "Unavailable profile", slug: profile?.slug ?? null, avatarUrl: profile?.media_assets?.find((asset) => asset.kind === "headshot")?.url || account?.headshot_urls?.[0] || null, card: { userId: account ? userId : null, isVerified: profile?.is_verified === true, locationCity: profile?.location_city ?? null, subtype: profile?.subtype ?? null, creditCount: publicCredits.length, topCredits: publicCredits.slice(0, 2).flatMap((row) => { const production = Array.isArray(row.production) ? row.production[0] : row.production; return production?.canonical_name || row.production_name_fallback ? [production?.canonical_name || row.production_name_fallback] : []; }) } };
     }
-    byUser.set(talentId, entry);
-  }
-  return byUser;
+    const canonical = participants.data!.map((row) => ({ ...person(row.user_id, row.user_id), id: `participant:${row.id}`, notes: null, addedAt: row.added_at, removed: Boolean(row.removed_at), source: "participant" as const }));
+    const saved = legacy.data!.map((row) => { const profile = Array.isArray(row.professional_profiles) ? row.professional_profiles[0] : row.professional_profiles; return { ...person(profile?.user_id ?? null, row.profile_id), id: row.id as string, notes: row.notes as string | null, addedAt: row.added_at as string, source: "legacy" as const }; });
+    return { listId: list.data?.id ?? null, members: mergeProjectPeople<ProjectRosterMember & { userId: string | null }>(canonical, saved).sort((a, b) => a.name.localeCompare(b.name)) };
+  } catch (error) { return { listId: null, members: [], error: message(error) }; }
 }
 
-async function getOrCreateProjectRosterList(
-  supabase: NonNullable<Awaited<ReturnType<typeof createServerSupabaseClient>>>,
-  ownerId: string,
-  projectId: string,
-): Promise<{ listId: string } | { error: string }> {
-  const { data: existing } = await supabase
-    .from("talent_lists")
-    .select("id")
-    .eq("owner_id", ownerId)
-    .eq("project_id", projectId)
-    .eq("kind", PROJECT_ROSTER_KIND)
-    .maybeSingle<{ id: string }>();
-
-  if (existing?.id) return { listId: existing.id };
-
-  const { data: created, error } = await supabase
-    .from("talent_lists")
-    .insert({
-      owner_id: ownerId,
-      project_id: projectId,
-      name: PROJECT_ROSTER_NAME,
-      kind: PROJECT_ROSTER_KIND,
-    })
-    .select("id")
-    .single();
-
-  if (error || !created) return { error: error?.message ?? "Could not create project roster." };
-  return { listId: created.id as string };
+export async function addToProjectRoster(input: { projectId: string; profileId: string }): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { db } = await context(input.projectId, true);
+    const profile = await db.from("professional_profiles").select("user_id").eq("id", input.profileId).maybeSingle();
+    if (profile.error || !profile.data?.user_id) throw new Error("This talent profile is no longer available.");
+    const result = await db.rpc("add_project_participant", { p_project_id: input.projectId, p_user_id: profile.data.user_id });
+    if (result.error) throw new Error(result.error.message);
+    refresh(input.projectId); return { ok: true };
+  } catch (error) { return { ok: false, error: message(error) }; }
 }
 
-export async function listProjectRosterMembers(projectId: string): Promise<{
-  listId: string | null;
-  members: ProjectRosterMember[];
-  error?: string;
-}> {
-  const supabase = await createServerSupabaseClient();
-  if (!supabase) return { listId: null, members: [], error: "Supabase is not configured." };
+export async function importCollectionToProjectRoster(input: { projectId: string; collectionId: string }): Promise<{ ok: boolean; added?: number; error?: string }> {
+  try {
+    const { db, user } = await context(input.projectId, true);
+    const collection = await db.from("talent_lists").select("id").eq("id", input.collectionId).eq("owner_id", user.id).maybeSingle();
+    if (collection.error || !collection.data) throw new Error("Collection not found.");
+    const collectionId = collection.data.id;
+    const members = await readPagedRows((from, to) => db.from("talent_list_members").select("id,professional_profiles(user_id)").eq("list_id", collectionId).order("id").range(from, to));
+    if (members.error) throw new Error(members.error.message);
+    const ids = [...new Set(members.data!.flatMap((row) => { const profile = Array.isArray(row.professional_profiles) ? row.professional_profiles[0] : row.professional_profiles; return profile?.user_id ? [profile.user_id] : []; }))];
+    let added = 0;
+    for (const id of ids) { const result = await db.rpc("add_project_participant", { p_project_id: input.projectId, p_user_id: id }); if (result.error) { refresh(input.projectId); throw new Error(`${added} people imported before an error. Retry safely to finish; people will not be duplicated.`); } added++; }
+    refresh(input.projectId); return { ok: true, added };
+  } catch (error) { return { ok: false, error: message(error) }; }
+}
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { listId: null, members: [], error: "You must be signed in." };
-
-  const { data: list } = await supabase
-    .from("talent_lists")
-    .select("id")
-    .eq("owner_id", user.id)
-    .eq("project_id", projectId)
-    .eq("kind", PROJECT_ROSTER_KIND)
-    .maybeSingle<{ id: string }>();
-
-  if (!list) return { listId: null, members: [] };
-
-  const { data: rows, error } = await supabase
-    .from("talent_list_members")
-    .select(
-      "id, profile_id, notes, added_at, professional_profiles(slug, location_city, is_verified, subtype, user_id, media_assets(url, kind, position))",
-    )
-    .eq("list_id", list.id)
-    .order("added_at", { ascending: false });
-
-  if (error) return { listId: list.id, members: [], error: error.message };
-
-  const admin = createAdminSupabaseClient();
-
-  const members: ProjectRosterMember[] = (rows ?? []).map((row) => {
-    const joined = Array.isArray(row.professional_profiles)
-      ? row.professional_profiles[0]
-      : row.professional_profiles;
-    const profile = joined && typeof joined === "object" ? (joined as RosterProfileJoin) : null;
-    const media = profile?.media_assets ?? [];
-    const headshot = media.find((asset) => asset.kind === "headshot") ?? media[0];
-
-    return {
-      id: row.id as string,
-      profileId: row.profile_id as string,
-      name: profile?.slug?.replace(/-/g, " ") ?? "Talent",
-      slug: profile?.slug ?? null,
-      avatarUrl: headshot?.url ?? null,
-      notes: (row.notes as string | null) ?? null,
-      addedAt: row.added_at as string,
-      card: {
-        userId: profile?.user_id ?? null,
-        isVerified: profile?.is_verified === true,
-        locationCity: profile?.location_city ?? null,
-        subtype: profile?.subtype ?? null,
-        creditCount: 0,
-        topCredits: [],
-      },
-    };
-  });
-
-  if (admin && members.length) {
-    const profileIds = members.map((member) => member.profileId);
-    const { data: profiles } = await admin
-      .from("professional_profiles")
-      .select("id, user_id")
-      .in("id", profileIds);
-
-    const userIds = (profiles ?? []).map((profile) => profile.user_id as string);
-    if (userIds.length) {
-      const [{ data: names }, creditsByUser] = await Promise.all([
-        admin
-          .from("profiles")
-          .select("user_id, display_name, first_name, last_name, headshot_urls")
-          .in("user_id", userIds),
-        loadRosterCredits(admin, userIds),
-      ]);
-
-      const accountByUserId = new Map(
-        (names ?? []).map((profile) => [profile.user_id as string, profile]),
-      );
-
-      const userIdByProfileId = new Map(
-        (profiles ?? []).map((profile) => [profile.id as string, profile.user_id as string]),
-      );
-
-      for (const member of members) {
-        const userId = userIdByProfileId.get(member.profileId);
-        if (!userId) continue;
-        const account = accountByUserId.get(userId);
-        if (account) {
-          const name =
-            (account.display_name as string | null) ||
-            [account.first_name, account.last_name].filter(Boolean).join(" ");
-          if (name) member.name = name;
-          if (!member.avatarUrl && Array.isArray(account.headshot_urls)) {
-            const headshot = (account.headshot_urls as unknown[]).find(
-              (url): url is string => typeof url === "string" && url.length > 0,
-            );
-            if (headshot) member.avatarUrl = headshot;
-          }
-        }
-        const credits = creditsByUser.get(userId);
-        if (member.card) {
-          member.card.userId = userId;
-          member.card.creditCount = credits?.count ?? 0;
-          member.card.topCredits = credits?.top ?? [];
-        }
-      }
+export async function removeFromProjectRoster(projectId: string, memberId: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { db, project } = await context(projectId, true);
+    if (memberId.startsWith("participant:")) {
+      const person = await db.from("project_participants").select("user_id").eq("project_id", projectId).eq("id", memberId.slice(12)).maybeSingle();
+      if (person.error || !person.data) throw new Error("Person no longer found in this project.");
+      const result = await db.rpc("remove_project_participant", { p_project_id: projectId, p_user_id: person.data.user_id });
+      if (result.error) throw new Error(result.error.message);
+    } else {
+      const list = await db.from("talent_lists").select("id").eq("owner_id", project.poster_id).eq("project_id", projectId).eq("kind", "project_roster").maybeSingle();
+      if (list.error || !list.data) throw new Error("Saved project list not found.");
+      const result = await db.from("talent_list_members").delete().eq("id", memberId).eq("list_id", list.data.id);
+      if (result.error) throw new Error(result.error.message);
     }
-  }
-
-  return { listId: list.id, members };
+    refresh(projectId); return { ok: true };
+  } catch (error) { return { ok: false, error: message(error) }; }
 }
 
-export async function addToProjectRoster(input: {
-  projectId: string;
-  profileId: string;
-  notes?: string;
-}): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await createServerSupabaseClient();
-  if (!supabase) return { ok: false, error: "Supabase is not configured." };
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "You must be signed in." };
-
-  const roster = await getOrCreateProjectRosterList(supabase, user.id, input.projectId);
-  if ("error" in roster) return { ok: false, error: roster.error };
-
-  const { error } = await supabase.from("talent_list_members").upsert(
-    {
-      list_id: roster.listId,
-      profile_id: input.profileId,
-      notes: input.notes?.trim() || null,
-    },
-    { onConflict: "list_id,profile_id" },
-  );
-
-  if (error) return { ok: false, error: error.message };
-
-  revalidatePath(`/projects/${input.projectId}`);
-  revalidatePath("/library");
-  return { ok: true };
+export async function addSubmissionToProjectRoster(projectId: string, submissionId: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { db } = await context(projectId, true);
+    const submission = await db.from("submissions").select("id,talent_id,roles!inner(project_id)").eq("id", submissionId).eq("roles.project_id", projectId).maybeSingle();
+    if (submission.error || !submission.data?.talent_id) throw new Error("Only a signed-in Motiion applicant from this project can be added to People.");
+    const result = await db.rpc("add_project_participant", { p_project_id: projectId, p_user_id: submission.data.talent_id });
+    if (result.error) throw new Error(result.error.message);
+    refresh(projectId); return { ok: true };
+  } catch (error) { return { ok: false, error: message(error) }; }
 }
 
-/** Copy every member of one of the owner's library collections into the project roster. */
-export async function importCollectionToProjectRoster(input: {
-  projectId: string;
-  collectionId: string;
-}): Promise<{ ok: boolean; added?: number; error?: string }> {
-  const supabase = await createServerSupabaseClient();
-  if (!supabase) return { ok: false, error: "Supabase is not configured." };
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "You must be signed in." };
-
-  const { data: project } = await supabase
-    .from("projects")
-    .select("id")
-    .eq("id", input.projectId)
-    .eq("poster_id", user.id)
-    .maybeSingle<{ id: string }>();
-  if (!project) return { ok: false, error: "Project not found." };
-
-  const { data: collection } = await supabase
-    .from("talent_lists")
-    .select("id")
-    .eq("id", input.collectionId)
-    .eq("owner_id", user.id)
-    .maybeSingle<{ id: string }>();
-  if (!collection) return { ok: false, error: "Collection not found." };
-
-  const { data: members, error: membersError } = await supabase
-    .from("talent_list_members")
-    .select("profile_id")
-    .eq("list_id", collection.id);
-  if (membersError) return { ok: false, error: membersError.message };
-
-  const profileIds = [...new Set((members ?? []).map((row) => row.profile_id as string))];
-  if (!profileIds.length) return { ok: true, added: 0 };
-
-  const roster = await getOrCreateProjectRosterList(supabase, user.id, input.projectId);
-  if ("error" in roster) return { ok: false, error: roster.error };
-
-  const { error } = await supabase.from("talent_list_members").upsert(
-    profileIds.map((profileId) => ({ list_id: roster.listId, profile_id: profileId })),
-    { onConflict: "list_id,profile_id", ignoreDuplicates: true },
-  );
-  if (error) return { ok: false, error: error.message };
-
-  revalidatePath(`/projects/${input.projectId}`, "layout");
-  revalidatePath("/library");
-  return { ok: true, added: profileIds.length };
+export async function listProjectPeopleGroups(projectId: string): Promise<{ groups: ProjectPeopleGroup[]; canManage: boolean; error?: string }> {
+  try {
+    const { db, user } = await context(projectId);
+    const [groups, operator] = await Promise.all([db.from("project_groups").select("id,name,project_group_members(participant_id)").eq("project_id", projectId).is("archived_at", null).order("name"), db.rpc("is_project_operator", { p_project_id: projectId, p_user_id: user.id })]);
+    if (groups.error || operator.error) throw new Error("Could not load project groups. Please retry.");
+    return { groups: groups.data.map((group) => ({ id: group.id, name: group.name, participantIds: group.project_group_members.map((row) => `participant:${row.participant_id}`) })), canManage: Boolean(operator.data) };
+  } catch (error) { return { groups: [], canManage: false, error: message(error) }; }
 }
-
-export async function removeFromProjectRoster(
-  projectId: string,
-  memberId: string,
-): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await createServerSupabaseClient();
-  if (!supabase) return { ok: false, error: "Supabase is not configured." };
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "You must be signed in." };
-
-  const { data: list } = await supabase
-    .from("talent_lists")
-    .select("id")
-    .eq("owner_id", user.id)
-    .eq("project_id", projectId)
-    .eq("kind", PROJECT_ROSTER_KIND)
-    .maybeSingle<{ id: string }>();
-
-  if (!list) return { ok: false, error: "Project roster not found." };
-
-  const { error } = await supabase
-    .from("talent_list_members")
-    .delete()
-    .eq("id", memberId)
-    .eq("list_id", list.id);
-
-  if (error) return { ok: false, error: error.message };
-
-  revalidatePath(`/projects/${projectId}`);
-  revalidatePath("/library");
-  return { ok: true };
-}
-
-/** Resolve submission talent to professional_profiles id and add to project roster. */
-export async function addSubmissionToProjectRoster(
-  projectId: string,
-  submissionId: string,
-): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await createServerSupabaseClient();
-  if (!supabase) return { ok: false, error: "Supabase is not configured." };
-
-  const { data: submission } = await supabase
-    .from("submissions")
-    .select("id, talent_id, email")
-    .eq("id", submissionId)
-    .maybeSingle<{ id: string; talent_id: string | null; email: string | null }>();
-
-  if (!submission) return { ok: false, error: "Submission not found." };
-
-  let profileId: string | null = null;
-
-  if (submission.talent_id) {
-    const { data: profile } = await supabase
-      .from("professional_profiles")
-      .select("id")
-      .eq("user_id", submission.talent_id)
-      .maybeSingle<{ id: string }>();
-    profileId = profile?.id ?? null;
-  }
-
-  if (!profileId && submission.email) {
-    const admin = createAdminSupabaseClient();
-    if (admin) {
-      const { data: userProfile } = await admin
-        .from("profiles")
-        .select("user_id")
-        .ilike("email", submission.email)
-        .maybeSingle<{ user_id: string }>();
-      if (userProfile?.user_id) {
-        const { data: pro } = await supabase
-          .from("professional_profiles")
-          .select("id")
-          .eq("user_id", userProfile.user_id)
-          .maybeSingle<{ id: string }>();
-        profileId = pro?.id ?? null;
-      }
+export async function updateProjectPeopleGroup(input: { projectId: string; action: "create" | "add" | "remove" | "archive"; groupId?: string; userId?: string; name?: string }) {
+  try {
+    const { db } = await context(input.projectId, true);
+    if (input.action === "create") {
+      const name = z.string().trim().min(1).max(80).parse(input.name);
+      const result = await db.rpc("create_project_group", { p_project_id: input.projectId, p_name: name });
+      if (result.error) throw new Error(result.error.message);
+      refresh(input.projectId); return { ok: true, id: result.data as string };
     }
-  }
-
-  if (!profileId) {
-    return { ok: false, error: "Could not match this applicant to a roster profile." };
-  }
-
-  return addToProjectRoster({ projectId, profileId });
+    const group = await db.from("project_groups").select("id").eq("id", input.groupId).eq("project_id", input.projectId).is("archived_at", null).maybeSingle();
+    if (group.error || !group.data) throw new Error("Group not found in this project.");
+    const result = input.action === "archive" ? await db.rpc("archive_project_people_group", { p_project_id: input.projectId, p_group_id: group.data.id }) : await db.rpc(input.action === "add" ? "add_project_group_member" : "remove_project_group_member", { p_group_id: group.data.id, p_user_id: z.string().uuid().parse(input.userId) });
+    if (result.error) throw new Error(result.error.message);
+    refresh(input.projectId); return { ok: true };
+  } catch (error) { return { ok: false, error: message(error) }; }
 }

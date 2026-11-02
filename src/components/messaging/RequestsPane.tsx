@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -10,7 +10,12 @@ import {
   respondToMessageRequest,
   respondToPendingRequest,
 } from "@/lib/app/conversations";
+import { BLOCKED_USERS_CHANGED_EVENT } from "@/lib/app/blocked-visibility-model";
+import { notifyInboxChanged } from "@/lib/messaging/reliability";
 import { mapPendingRequestsToChatRows } from "@/lib/messaging/inbox-partition";
+import { pendingRequestActions, pendingRequestKey } from "@/lib/messaging/request-actions";
+import { Modal } from "@/components/talent-buyers/dashboard/Modal";
+import { RequestResponsePanel } from "./RequestResponsePanel";
 import type { HomePendingRequest, MessageRequest } from "@/types/app";
 
 const REPORT_REASONS = ["Spam", "Harassment", "Other"] as const;
@@ -20,8 +25,10 @@ export function RequestsPane({
   messageRequests,
   variant = "default",
   onAccepted,
+  loadFailed = false,
 }: {
   pendingRequests: HomePendingRequest[];
+  loadFailed?: boolean;
   messageRequests: MessageRequest[];
   variant?: "default" | "dashboard";
   onAccepted: (conversationId: string) => void;
@@ -31,6 +38,7 @@ export function RequestsPane({
   const isDashboard = variant === "dashboard";
   const [hiddenPending, setHiddenPending] = useState<string[]>([]);
   const [hiddenMessages, setHiddenMessages] = useState<string[]>([]);
+  const [response, setResponse] = useState<{ request: HomePendingRequest; action: "primary" | "negative" } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<
     | { kind: "pending"; id: string; requestKind: string; title: string }
@@ -39,7 +47,7 @@ export function RequestsPane({
     | null
   >(null);
 
-  const visiblePending = pendingRows.filter((row) => !hiddenPending.includes(row.id));
+  const visiblePending = pendingRows.filter((row) => !hiddenPending.includes(`${row.kind}:${row.id}:${pendingRequests.find((item) => item.id === row.id && item.request_kind === row.kind)?.sort_key}`));
   const visibleMessages = messageRequests.filter((row) => !hiddenMessages.includes(row.id));
 
   if (!visiblePending.length && !visibleMessages.length) {
@@ -47,15 +55,15 @@ export function RequestsPane({
       <div
         className={`rounded-[var(--ds-radius-card)] border border-dashed px-6 py-14 text-center ${
           isDashboard
-            ? "border-white/15 bg-white/3"
-            : "border-[var(--ds-border)] bg-[var(--ds-surface)]"
+            ? "border-[var(--ui-border)] bg-[var(--ui-surface-soft)]"
+            : "border-[var(--ui-border)] bg-[var(--ui-surface)]"
         }`}
       >
-        <h2 className={`text-base font-semibold ${isDashboard ? "text-white/90" : "text-[var(--ds-text-default)]"}`}>
-          No requests
+        <h2 className={`text-base font-semibold ${"text-[var(--ui-text)]"}`}>
+          {loadFailed ? "Requests unavailable" : "No requests"}
         </h2>
-        <p className={`mx-auto mt-2 max-w-sm text-sm ${isDashboard ? "text-white/50" : "text-[var(--ds-muted)]"}`}>
-          Invites, join requests, and message requests will show up here.
+        <p className={`mx-auto mt-2 max-w-sm text-sm ${"text-[var(--ui-muted)]"}`}>
+          {loadFailed ? "Use Retry inbox above to load your requests." : "Invites, join requests, and message requests will show up here."}
         </p>
       </div>
     );
@@ -63,55 +71,46 @@ export function RequestsPane({
 
   return (
     <div className="min-h-0 flex-1 space-y-6 overflow-y-auto">
-      {error ? <p className="text-sm text-amber-500">{error}</p> : null}
+      {error ? <p className="text-sm text-[var(--ui-danger)]">{error}</p> : null}
 
       {visiblePending.length ? (
         <section className="space-y-2">
-          <h2 className={`text-xs font-medium tracking-[0.08em] uppercase ${isDashboard ? "text-white/45" : "text-[var(--ds-muted)]"}`}>
+          <h2 className={`text-xs font-medium tracking-[0.08em] uppercase ${"text-[var(--ui-muted)]"}`}>
             Needs a response
           </h2>
-          <ul className={`divide-y overflow-hidden rounded-[var(--ds-radius-card)] border ${isDashboard ? "divide-white/8 border-white/8 bg-white/3" : "divide-[var(--ds-border)] border-[var(--ds-border)] bg-[var(--ds-surface)]"}`}>
+          <ul className={`divide-y overflow-hidden rounded-[var(--ds-radius-card)] border ${isDashboard ? "divide-[var(--ui-border)] border-[var(--ui-border)] bg-[var(--ui-surface-soft)]" : "divide-[var(--ui-border)] border-[var(--ui-border)] bg-[var(--ui-surface)]"}`}>
             {visiblePending.map((row) => {
-              const source = pendingRequests.find((item) => item.id === row.id);
+              const source = pendingRequests.find((item) => item.id === row.id && item.request_kind === row.kind);
+              const actions = pendingRequestActions(row.kind);
               return (
-                <li key={row.id} className="px-4 py-3.5">
+                <li key={source ? pendingRequestKey(source) : row.id} className="px-4 py-3.5">
                   <div className="flex items-center gap-3">
                     <Avatar url={row.coverUrl} name={row.title} />
                     <div className="min-w-0 flex-1">
                       {row.href ? (
-                        <Link href={row.href} className={`truncate text-sm font-medium hover:underline ${isDashboard ? "text-white/90" : "text-[var(--ds-text-default)]"}`}>
+                        <Link href={row.href} className={`truncate text-sm font-medium hover:underline ${"text-[var(--ui-text)]"}`}>
                           {row.title}
                         </Link>
                       ) : (
-                        <p className={`truncate text-sm font-medium ${isDashboard ? "text-white/90" : "text-[var(--ds-text-default)]"}`}>{row.title}</p>
+                        <p className={`truncate text-sm font-medium ${"text-[var(--ui-text)]"}`}>{row.title}</p>
                       )}
-                      <p className={`mt-0.5 truncate text-xs ${isDashboard ? "text-white/50" : "text-[var(--ds-muted)]"}`}>{row.detail}</p>
+                      <p className={`mt-0.5 truncate text-xs ${"text-[var(--ui-muted)]"}`}>{row.detail}</p>
                     </div>
                   </div>
                   {source ? (
                     <div className="mt-3 flex gap-2">
-                      <ActionButton
-                        label="Accept"
-                        busyLabel="Accepting…"
-                        onClick={() =>
+                      {actions.view && row.href ? <Link href={row.href} className="ui-button">{actions.primary}</Link> : <ActionButton
+                        label={actions.primary}
+                        busyLabel="Sending…"
+                        onClick={() => actions.review ? setResponse({ request: source, action: "primary" }) :
                           runPending(source, "primary", () => {
-                            setHiddenPending((current) => [...current, source.id]);
-                            router.refresh();
-                          }, setError)
-                        }
-                      />
-                      <ActionButton
-                        label="Decline"
-                        tone="secondary"
-                        onClick={() =>
-                          setConfirm({
-                            kind: "pending",
-                            id: source.id,
-                            requestKind: source.request_kind,
-                            title: row.title,
-                          })
-                        }
-                      />
+                            setHiddenPending((current) => [...current, pendingRequestKey(source)]);
+                            notifyInboxChanged(); router.refresh();
+                          }, setError)}
+                      />}
+                      <ActionButton label={actions.negative} tone="secondary" onClick={() => actions.review ? setResponse({ request: source, action: "negative" }) : setConfirm({
+                        kind: "pending", id: source.id, requestKind: source.request_kind, title: row.title,
+                      })} />
                     </div>
                   ) : null}
                 </li>
@@ -123,22 +122,22 @@ export function RequestsPane({
 
       {visibleMessages.length ? (
         <section className="space-y-2">
-          <h2 className={`text-xs font-medium tracking-[0.08em] uppercase ${isDashboard ? "text-white/45" : "text-[var(--ds-muted)]"}`}>
+          <h2 className={`text-xs font-medium tracking-[0.08em] uppercase ${"text-[var(--ui-muted)]"}`}>
             Message requests
           </h2>
-          <ul className={`divide-y overflow-hidden rounded-[var(--ds-radius-card)] border ${isDashboard ? "divide-white/8 border-white/8 bg-white/3" : "divide-[var(--ds-border)] border-[var(--ds-border)] bg-[var(--ds-surface)]"}`}>
+          <ul className={`divide-y overflow-hidden rounded-[var(--ds-radius-card)] border ${isDashboard ? "divide-[var(--ui-border)] border-[var(--ui-border)] bg-[var(--ui-surface-soft)]" : "divide-[var(--ui-border)] border-[var(--ui-border)] bg-[var(--ui-surface)]"}`}>
             {visibleMessages.map((request) => (
               <li key={request.id} className="px-4 py-3.5">
                 <div className="flex items-start gap-3">
                   <Avatar url={request.sender_avatar_url} name={request.sender_name} />
                   <div className="min-w-0 flex-1">
-                    <p className={`truncate text-sm font-medium ${isDashboard ? "text-white/90" : "text-[var(--ds-text-default)]"}`}>
+                    <p className={`truncate text-sm font-medium ${"text-[var(--ui-text)]"}`}>
                       {request.sender_name}
                     </p>
                     {request.context_title ? (
-                      <p className="mt-0.5 truncate text-[11px] text-[var(--ds-accent)]/80">{request.context_title}</p>
+                      <p className="mt-0.5 truncate text-[11px] text-[var(--ui-accent)]/80">{request.context_title}</p>
                     ) : null}
-                    <p className={`mt-1 line-clamp-3 text-sm ${isDashboard ? "text-white/70" : "text-[var(--ds-on-surface)]"}`}>
+                    <p className={`mt-1 line-clamp-3 text-sm ${"text-[var(--ui-text)]"}`}>
                       {request.initial_message}
                     </p>
                   </div>
@@ -156,7 +155,8 @@ export function RequestsPane({
                       }
                       setHiddenMessages((current) => [...current, request.id]);
                       onAccepted(result.conversationId);
-                      router.refresh();
+                      notifyInboxChanged();
+            router.refresh();
                     }}
                   />
                   <ActionButton
@@ -176,6 +176,10 @@ export function RequestsPane({
         </section>
       ) : null}
 
+      {response ? <RequestResponsePanel request={response.request} action={response.action} onClose={() => setResponse(null)} onDone={() => {
+        setHiddenPending((current) => [...current, pendingRequestKey(response.request)]);
+        setResponse(null); notifyInboxChanged(); router.refresh();
+      }} /> : null}
       {confirm ? (
         <ConfirmDialog
           confirm={confirm}
@@ -183,11 +187,13 @@ export function RequestsPane({
           onDone={(id, conversationId) => {
             setConfirm(null);
             if (confirm.kind === "pending") {
-              setHiddenPending((current) => [...current, id]);
+              const source = pendingRequests.find((item) => item.id === id && item.request_kind === confirm.requestKind);
+              if (source) setHiddenPending((current) => [...current, pendingRequestKey(source)]);
             } else {
               setHiddenMessages((current) => [...current, id]);
             }
             if (conversationId) onAccepted(conversationId);
+            notifyInboxChanged();
             router.refresh();
           }}
           onError={setError}
@@ -224,22 +230,25 @@ function ActionButton({
   onClick: () => void | Promise<void>;
 }) {
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const busy = useRef(false);
   return (
-    <button
+    <span><button
       type="button"
       disabled={pending}
       onClick={() => {
-        setPending(true);
-        void Promise.resolve(onClick()).finally(() => setPending(false));
+        if (busy.current) return;
+        busy.current = true; setPending(true); setError(null);
+        void Promise.resolve().then(onClick).catch(() => setError("Could not confirm that action. Please retry.")).finally(() => { busy.current = false; setPending(false); });
       }}
       className={`rounded-full px-3.5 py-1.5 text-xs font-medium disabled:opacity-50 ${
         tone === "primary"
-          ? "bg-[#fafafa] text-[#0a0a0a]"
-          : "border border-current/20 text-[var(--ds-muted)]"
+          ? "bg-[var(--ui-accent)] text-[var(--ui-on-accent)]"
+          : "border border-current/20 text-[var(--ui-muted)]"
       }`}
     >
       {pending ? (busyLabel ?? `${label}…`) : label}
-    </button>
+    </button>{error ? <span role="alert" className="mt-1 block text-xs text-[var(--ui-danger)]">{error}</span> : null}</span>
   );
 }
 
@@ -260,6 +269,7 @@ function ConfirmDialog({
   const [reason, setReason] = useState<(typeof REPORT_REASONS)[number]>("Spam");
   const [details, setDetails] = useState("");
   const [pending, setPending] = useState(false);
+  const busy = useRef(false);
 
   const title =
     confirm.kind === "pending"
@@ -271,7 +281,8 @@ function ConfirmDialog({
           : "Report or block";
 
   function submit(action: "decline" | "block" | "report" | "negative") {
-    setPending(true);
+    if (busy.current) return;
+    busy.current = true; setPending(true);
     void (async () => {
       if (confirm.kind === "pending") {
         const result = await respondToPendingRequest(confirm.requestKind, confirm.id, "negative");
@@ -305,50 +316,49 @@ function ConfirmDialog({
         onClose();
         return;
       }
+      if (action === "block") window.dispatchEvent(new Event(BLOCKED_USERS_CHANGED_EVENT));
       onDone(confirm.request.id);
-    })().finally(() => setPending(false));
+    })().catch(() => { onError("Could not confirm that action. Please retry."); onClose(); }).finally(() => { busy.current = false; setPending(false); });
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="presentation">
-      <div role="dialog" aria-modal="true" aria-labelledby="request-confirm-title" className="w-full max-w-md rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-surface)] p-5 text-[var(--ds-text-default)] shadow-xl">
-        <h2 id="request-confirm-title" className="text-base font-semibold">{title}</h2>
+    <Modal open title={title} onClose={() => { if (!busy.current) onClose(); }}><div className="text-[var(--ui-text)]">
         {confirm.kind === "report" ? (
           <div className="mt-3 space-y-3">
-            <p className="text-sm text-[var(--ds-muted)]">
+            <p className="text-sm text-[var(--ui-muted)]">
               Report {confirm.request.sender_name}, or block them so they can&apos;t message you.
             </p>
-            <label className="block text-xs text-[var(--ds-muted)]">
+            <label className="block text-xs text-[var(--ui-muted)]">
               Reason
               <select
                 value={reason}
                 onChange={(event) => setReason(event.target.value as (typeof REPORT_REASONS)[number])}
-                className="mt-1 w-full rounded-lg border border-[var(--ds-border)] bg-[var(--ds-background)] px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2 text-sm"
               >
                 {REPORT_REASONS.map((option) => (
                   <option key={option} value={option}>{option}</option>
                 ))}
               </select>
             </label>
-            <label className="block text-xs text-[var(--ds-muted)]">
+            <label className="block text-xs text-[var(--ui-muted)]">
               Details
               <textarea
                 value={details}
                 onChange={(event) => setDetails(event.target.value)}
                 rows={3}
-                className="mt-1 w-full rounded-lg border border-[var(--ds-border)] bg-[var(--ds-background)] px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2 text-sm"
               />
             </label>
           </div>
         ) : (
-          <p className="mt-2 text-sm text-[var(--ds-muted)]">
+          <p className="mt-2 text-sm text-[var(--ui-muted)]">
             {confirm.kind === "block"
               ? `Block ${confirm.request.sender_name}? They won't be able to message you.`
               : "This removes the request from your inbox."}
           </p>
         )}
         <div className="mt-5 flex flex-wrap justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-full px-3.5 py-1.5 text-sm text-[var(--ds-muted)]">
+          <button type="button" disabled={pending} onClick={onClose} className="rounded-full px-3.5 py-1.5 text-sm text-[var(--ui-muted)]">
             Cancel
           </button>
           {confirm.kind === "report" ? (
@@ -372,7 +382,7 @@ function ConfirmDialog({
           )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -394,7 +404,7 @@ function Avatar({ url, name }: { url: string | null; name: string }) {
   }
 
   return (
-    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--ds-accent)_18%,black)] text-xs font-semibold text-[var(--ds-accent)]">
+    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--ui-accent)_18%,black)] text-xs font-semibold text-[var(--ui-accent)]">
       {initials || "?"}
     </span>
   );

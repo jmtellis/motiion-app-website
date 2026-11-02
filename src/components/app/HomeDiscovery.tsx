@@ -1,3 +1,5 @@
+import { currentBlockedUsers } from "@/lib/app/blocked-visibility";
+import { allowsUser } from "@/lib/app/blocked-visibility-model";
 import type { ReactNode } from "react";
 import {
   fetchHomeCollections,
@@ -17,11 +19,16 @@ export async function HomeDiscovery({
   navigatorHref?: string;
   upcomingSlot?: ReactNode;
 } = {}) {
-  const [collections, events, campaigns] = await Promise.all([
+  const [rawCollections, rawEvents, campaigns, blocked] = await Promise.all([
     fetchHomeCollections(),
     fetchHomeEvents(),
     fetchHomeCampaigns(),
+    currentBlockedUsers(),
   ]);
+  if (blocked.error) return <div className="ui-notice" data-tone="error" role="alert">{blocked.error}</div>;
+  const collections = rawCollections.map(row => ({ ...row, talent_ids: row.talent_ids.filter(id => allowsUser(id, blocked.ids)), image_url: row.talent_ids.some(id => !allowsUser(id, blocked.ids)) ? null : row.image_url })).filter(row => row.talent_ids.length);
+  const visibleEvents = (rows: typeof rawEvents.cast) => rows.filter(row => allowsUser(row.creator_id, blocked.ids)).map(row => ({ ...row, people: row.people.filter(person => allowsUser(person.userId, blocked.ids)) }));
+  const events = { sponsored: visibleEvents(rawEvents.sponsored), cast: visibleEvents(rawEvents.cast) };
   const cards: HomeCommunityCard[] = collections.length
     ? collections.map((row) => ({
         id: row.id,

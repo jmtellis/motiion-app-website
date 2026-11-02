@@ -1,4 +1,5 @@
 import { createClientSupabaseClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type CastingSubmissionResult =
   | { ok: true; submissionId?: string }
@@ -37,15 +38,25 @@ function mapSubmissionError(result: CreateCastingSubmissionRpcResult): string {
   return result.message?.trim() || "Could not submit. Please try again.";
 }
 
-export async function submitToCastingRole(input: {
+export type CastingSubmissionInput = {
   roleId: string;
   note?: string;
   supplementalAnswers?: Record<string, string>;
-}): Promise<CastingSubmissionResult> {
+  slateUrl?: string | null;
+  submissionLinks?: string[];
+};
+
+export async function submitToCastingRole(input: CastingSubmissionInput): Promise<CastingSubmissionResult> {
   const supabase = createClientSupabaseClient();
   if (!supabase) {
     return { ok: false, message: "Submission is unavailable right now." };
   }
+  return submitCastingRoleWithClient(supabase, input);
+}
+
+/** Shared by the browser and real-session integration checks; all authorization
+ * and material requirements remain enforced by the canonical RPC. */
+export async function submitCastingRoleWithClient(supabase: SupabaseClient, input: CastingSubmissionInput): Promise<CastingSubmissionResult> {
 
   const {
     data: { user },
@@ -55,7 +66,7 @@ export async function submitToCastingRole(input: {
     return { ok: false, message: ERROR_MESSAGES.not_authenticated };
   }
 
-  const params: Record<string, string | Record<string, string>> = {
+  const params: Record<string, string | string[] | Record<string, string>> = {
     p_role_id: input.roleId,
     p_application_source: "native",
     p_talent_id: user.id,
@@ -74,6 +85,11 @@ export async function submitToCastingRole(input: {
   if (Object.keys(answers).length) {
     params.p_supplemental_answers = answers;
   }
+  if (input.slateUrl?.trim()) {
+    params.p_slate_url = input.slateUrl.trim();
+    params.p_slate_source = "link";
+  }
+  if (input.submissionLinks?.length) params.p_submission_links = input.submissionLinks;
 
   const { data, error } = await supabase.rpc("create_casting_submission", params);
 
@@ -83,6 +99,12 @@ export async function submitToCastingRole(input: {
 
   const result = (data ?? {}) as CreateCastingSubmissionRpcResult;
   if (!result.ok) {
+    // A lost success response must not force a second submission or discard a
+    // saved draft. Confirm the existing row belongs to this exact actor/role.
+    if (result.code === "duplicate_submission") {
+      const existing = await supabase.from("submissions").select("id").eq("role_id", input.roleId).eq("talent_id", user.id).maybeSingle();
+      if (!existing.error && existing.data?.id) return { ok: true, submissionId: existing.data.id };
+    }
     return {
       ok: false,
       message: mapSubmissionError(result),

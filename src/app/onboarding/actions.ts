@@ -1,11 +1,13 @@
 "use server";
+import { checkAccountDeletionBilling } from "@/lib/billing/account-deletion";
 
 import { getBirthDateAge } from "@/lib/onboarding/birth-date";
 
+import { consumeAuthReturn } from "@/lib/auth/pending-return";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { buildAuthDisplayNameMetadata, isHiringAccount, isMissingShellRpc } from "@/lib/auth/profile";
+import { buildAuthDisplayNameMetadata, isCommunityAccount, isHiringAccount, isMissingShellRpc, isTalentAccount } from "@/lib/auth/profile";
 import { getProfileDestination } from "@/lib/auth/session";
 import { trackServerEvent } from "@/lib/analytics/track-server";
 import { upsertProfessionalProfileDraft, type ProfessionalProfileDraftInput } from "@/lib/professional-profile/actions";
@@ -282,17 +284,31 @@ export async function completeOnboarding(
     return { ok: false, error: "You must be signed in to finish onboarding." };
   }
 
-  const { data: existingProfile } = await supabase
+  const { data: existingProfile, error: profileLookupError } = await supabase
     .from("profiles")
     .select("account_type, onboarding_completed_at")
     .eq("user_id", user.id)
     .maybeSingle<{ account_type: string | null; onboarding_completed_at: string | null }>();
+  if (profileLookupError) return { ok: false, error: "Couldn’t load your account. Your draft is saved; please try again." };
+  // Replayed submissions must not overwrite a completed profile or rewrite its timestamp.
+  if (existingProfile?.onboarding_completed_at && (isTalentAccount(existingProfile.account_type) || isCommunityAccount(existingProfile.account_type))) {
+    // A previous attempt can persist the profile and then lose the RPC response.
+    // Retry shell activation without overwriting any completed profile fields.
+    if (existingProfile.account_type === "talent") {
+      const { error } = await supabase.rpc("enable_profile_shell", { p_shell: "talent" });
+      if (error && !isMissingShellRpc(error.message)) return { ok: false, error: error.message };
+    }
+    return { ok: true, redirectTo: await consumeAuthReturn(user.id, "/home") };
+  }
   const addingTalentShell =
     isHiringAccount(existingProfile?.account_type) && Boolean(existingProfile?.onboarding_completed_at);
+  if (addingTalentShell && data.role !== "talent") {
+    return { ok: false, error: "Choose a talent profile to add to your existing industry account." };
+  }
 
   const accountType = data.role === "community" ? "community" : "talent";
   const talentTypes = data.role === "talent" ? data.talentTypes : [];
-  const completedAt = new Date().toISOString();
+  const completedAt = existingProfile?.onboarding_completed_at ?? new Date().toISOString();
   const resolvedUsername = await resolveAvailableUsername(supabase, data.username);
 
   if (!resolvedUsername) {
@@ -305,11 +321,12 @@ export async function completeOnboarding(
   const { error: profileError } = await supabase.from("profiles").upsert(
     compactObject({
       user_id: user.id,
-      email: data.email,
+      email: user.email ?? data.email,
       first_name: data.firstName,
       last_name: data.lastName,
       display_name: data.displayName,
-      account_type: accountType,
+      account_type: addingTalentShell ? existingProfile!.account_type : accountType,
+      ...(accountType === "community" ? { active_shell: "community", enabled_shells: ["community"] } : {}),
       date_of_birth: data.dateOfBirth,
       notifications_enabled: data.notificationsEnabled,
       resume_url: data.resumeUrl || null,
@@ -356,6 +373,7 @@ export async function completeOnboarding(
   await supabase.auth.updateUser({
     data: {
       has_completed_onboarding: true,
+      ...(!addingTalentShell ? { account_type: accountType } : {}),
       ...buildAuthDisplayNameMetadata({
         firstName: data.firstName,
         lastName: data.lastName,
@@ -399,7 +417,7 @@ export async function completeOnboarding(
     redirectTo:
       accountType === "talent" && data.openProfileSetupAfterComplete
         ? "/profile/setup"
-        : defaultDestination,
+        : await consumeAuthReturn(user.id, defaultDestination),
   };
 }
 
@@ -432,6 +450,8 @@ export async function cancelIncompleteSignup(): Promise<CancelOnboardingResult> 
     return { ok: false, error: "Your profile is already complete." };
   }
 
+  const billing = await checkAccountDeletionBilling(user.id);
+  if (!billing.ok) return billing;
   const { error: deleteError } = await supabase.rpc("delete_my_account");
 
   if (deleteError) {
@@ -443,5 +463,47 @@ export async function cancelIncompleteSignup(): Promise<CancelOnboardingResult> 
   revalidatePath("/onboarding");
   revalidatePath("/signup");
 
+  return { ok: true };
+}
+
+/** Save account essentials between steps; this never completes onboarding or grants a shell. */
+export async function saveOnboardingEssentials(raw: {
+  firstName: string; lastName: string; dateOfBirth: string; displayName: string;
+  username: string; headshotUrls: string[]; headshotOriginalUrls: string[];
+  acquisitionSource: string; acquisitionSourceDetail: string;
+  role: "talent" | "industry" | "community" | null; talentTypes: string[];
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const parsed = z.object({
+    firstName: z.string().trim().max(200), lastName: z.string().trim().max(200), displayName: z.string().trim().max(200),
+    dateOfBirth: z.string().max(10), username: z.string().max(30),
+    headshotUrls: z.array(z.string().url().max(2000)).max(4), headshotOriginalUrls: z.array(z.string().url().max(2000)).max(4),
+    acquisitionSource: z.string().max(50), acquisitionSourceDetail: z.string().max(2000),
+    role: z.enum(["talent", "industry", "community"]).nullable(), talentTypes: z.array(z.enum(["dancer", "choreographer", "instructor"])).max(3),
+  }).safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Check your account details and try again." };
+  const input = parsed.data;
+  const db = await createServerSupabaseClient();
+  if (!db) return { ok: false, error: "Couldn’t save your progress. Please try again." };
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return { ok: false, error: "Sign in again to continue. Your draft is saved on this device." };
+  const { data: profile, error: lookupError } = await db.from("profiles").select("onboarding_completed_at").eq("user_id", user.id).single();
+  if (lookupError) return { ok: false, error: "Couldn’t load your account. Please try again." };
+  // Adding a talent shell must not overwrite an existing professional's identity here.
+  if (profile.onboarding_completed_at) return { ok: true };
+  const update: Record<string, unknown> = {};
+  if (input.role === "talent" && input.talentTypes.length) { update.account_type = "talent"; update.talent_types = input.talentTypes; }
+  if (input.role === "community") { update.account_type = "community"; update.talent_types = []; }
+  if (input.firstName.trim() && input.lastName.trim()) { update.first_name = input.firstName.trim().slice(0, 200); update.last_name = input.lastName.trim().slice(0, 200); }
+  if (input.displayName.trim()) update.display_name = input.displayName.trim().slice(0, 200);
+  if (input.dateOfBirth && getBirthDateAge(input.dateOfBirth) >= 18) update.date_of_birth = input.dateOfBirth;
+  if (usernameRegex.test(input.username)) update.username = input.username;
+  // Only persist this account's own uploaded media; the upload storage policy remains authoritative.
+  const ownHeadshot = (url: string) => { try { const value = new URL(url); return value.protocol === "https:" && value.pathname.startsWith(`/storage/v1/object/public/headshots/${user.id}/`); } catch { return false; } };
+  if (input.headshotUrls.length && input.headshotUrls.length <= 4 && input.headshotUrls.every(ownHeadshot)) update.headshot_urls = input.headshotUrls;
+  if (input.headshotOriginalUrls.length && input.headshotOriginalUrls.length <= 4 && input.headshotOriginalUrls.every(ownHeadshot)) update.headshot_original_urls = input.headshotOriginalUrls;
+  if (["instagram", "friend_or_referral", "motiion_founder", "event", "other"].includes(input.acquisitionSource)) { update.acquisition_source = input.acquisitionSource; update.acquisition_source_detail = input.acquisitionSourceDetail.slice(0, 2000); }
+  if (!Object.keys(update).length) return { ok: true };
+  const { error } = await db.from("profiles").update(update).eq("user_id", user.id).is("onboarding_completed_at", null);
+  if (error) return { ok: false, error: formatProfileWriteError(error.message) };
   return { ok: true };
 }

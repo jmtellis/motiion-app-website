@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
+import { useDebouncedSearch } from "@/hooks/use-debounced-search";
 
 import { SetupFieldBlock } from "@/components/auth/SetupFieldBlock";
 import { setupPill } from "@/lib/setup-flow/form-styles";
@@ -101,12 +102,13 @@ export function MarketPlacesSelector({
   maxPlaces?: number;
 }) {
   const [query, setQuery] = useState("");
-  const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [resolvingChip, setResolvingChip] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [selectionError, setError] = useState<string | null>(null);
+  const { data, loading, error: searchError } = useDebouncedSearch(query, open && query.trim().length >= MIN_SEARCH_LENGTH, fetchPredictions, SEARCH_DEBOUNCE_MS);
+  const predictions = data ?? [];
+  const error = selectionError ?? searchError;
   const containerRef = useRef<HTMLDivElement>(null);
 
   const customPlaces = useMemo(
@@ -128,33 +130,6 @@ export function MarketPlacesSelector({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  useEffect(() => {
-    if (!open || query.trim().length < MIN_SEARCH_LENGTH) {
-      setPredictions([]);
-      return;
-    }
-
-    const controller = new AbortController();
-    const timeout = window.setTimeout(async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const next = await fetchPredictions(query, controller.signal);
-        setPredictions(next);
-      } catch (fetchError) {
-        if (controller.signal.aborted) return;
-        setError(fetchError instanceof Error ? fetchError.message : "Location search failed.");
-        setPredictions([]);
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
-      }
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => {
-      controller.abort();
-      window.clearTimeout(timeout);
-    };
-  }, [open, query]);
 
   function addPlace(place: TalentBuyerMarketPlace) {
     if (places.some((item) => item.placeId === place.placeId)) {
@@ -169,7 +144,6 @@ export function MarketPlacesSelector({
       onChange([...places, place]);
     }
     setQuery("");
-    setPredictions([]);
     setOpen(false);
     setError(null);
   }
@@ -230,6 +204,7 @@ export function MarketPlacesSelector({
               value={query}
               onChange={(event) => {
                 setQuery(event.target.value);
+                setError(null);
                 setOpen(true);
               }}
               onFocus={() => setOpen(true)}
@@ -290,7 +265,7 @@ export function MarketPlacesSelector({
                 onClick={() => {
                   void selectSuggestedMarket(market);
                 }}
-                disabled={resolvingChip === market}
+                disabled={resolving || resolvingChip !== null}
                 className={setupPill(selected)}
                 aria-pressed={selected}
               >

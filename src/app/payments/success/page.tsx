@@ -1,5 +1,8 @@
 import { BookingSuccessClient } from "@/components/booking/BookingSuccessClient";
+import { activityViewerState } from "@/lib/app/activities";
+import { isActiveEnrollment } from "@/lib/app/activity-enrollment";
 import type { PublicActivityKind } from "@/types/public";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -24,18 +27,18 @@ export default async function PaymentSuccessPage({ searchParams }: PageProps) {
   const stripeSessionId = readParam(params, "session_id");
   const activityId = readParam(params, "activity_id") ?? readParam(params, "class_id");
   const kind = parseKind(readParam(params, "kind"));
-  const enrolled = readParam(params, "enrolled") === "1";
-  const title = readParam(params, "title");
-  const email = readParam(params, "email");
+  const viewer = activityId && /^[\da-f-]{36}$/i.test(activityId) ? await activityViewerState(activityId) : null;
+  // Older receipt links contain only a Checkout session ID. They still need to
+  // recognize the signed-in owner after returning from the login flow.
+  const signedIn = viewer?.signedIn ?? Boolean((await (await createServerSupabaseClient())?.auth.getUser())?.data.user);
 
   return (
     <BookingSuccessClient
       stripeSessionId={stripeSessionId}
       activityId={activityId}
       kind={kind}
-      enrolled={enrolled}
-      title={title}
-      email={email}
+      verifiedEnrollment={isActiveEnrollment(viewer?.enrollmentStatus)}
+      signedIn={signedIn}
     />
   );
 }

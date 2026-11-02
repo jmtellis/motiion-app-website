@@ -58,6 +58,7 @@ export function PortfolioView({
   agencies,
   completion,
   underReview,
+  initialPanel,
 }: {
   profile: PublicTalentProfile;
   owner: PortfolioOwnerData;
@@ -65,10 +66,11 @@ export function PortfolioView({
   agencies: TalentAgency[];
   completion: { completed: number; total: number; cta: string } | null;
   underReview: boolean;
+  initialPanel?: string;
 }) {
   const router = useRouter();
   const notifications = useNotificationsPanel();
-  const [active, setActive] = useState<PanelKey | null>(null);
+  const [active, setActive] = useState<PanelKey | null>(() => initialPanel && ["headshots", "highlights", "visuals", "resume", "sizing"].includes(initialPanel) ? initialPanel as PanelKey : null);
   const [actionsHost, setActionsHost] = useState<HTMLDivElement | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -81,23 +83,41 @@ export function PortfolioView({
 
   const confirmDiscard = useCallback(() => !dirtyRef.current || window.confirm("Discard unsaved changes?"), []);
 
+  const setPanel = useCallback((key: PanelKey | null, replace = false) => {
+    setActive(key);
+    const url = new URL(window.location.href);
+    if (key) url.searchParams.set("panel", key); else url.searchParams.delete("panel");
+    window.history[replace ? "replaceState" : "pushState"](null, "", `${url.pathname}${url.search}${url.hash}`);
+  }, []);
+
+  useEffect(() => {
+    function handleBack() {
+      if (!confirmDiscard()) { setPanel(active, true); return; }
+      const key = new URLSearchParams(window.location.search).get("panel");
+      dirtyRef.current = false;
+      setActive(key && ["headshots", "highlights", "visuals", "resume", "sizing"].includes(key) ? key as PanelKey : null);
+    }
+    window.addEventListener("popstate", handleBack);
+    return () => window.removeEventListener("popstate", handleBack);
+  }, [active, confirmDiscard, setPanel]);
+
   const openPanel = useCallback(
     (key: PanelKey) => {
       if (active === key) {
-        if (confirmDiscard()) setActive(null);
+        if (confirmDiscard()) setPanel(null);
         return;
       }
       if (!confirmDiscard()) return;
       dirtyRef.current = false;
       notifications.setOpen(false);
-      setActive(key);
+      setPanel(key);
     },
-    [active, confirmDiscard, notifications],
+    [active, confirmDiscard, notifications, setPanel],
   );
 
   const closePanel = useCallback(() => {
-    if (confirmDiscard()) setActive(null);
-  }, [confirmDiscard]);
+    if (confirmDiscard()) setPanel(null);
+  }, [confirmDiscard, setPanel]);
 
   useEffect(() => {
     if (!toast) return;

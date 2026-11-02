@@ -59,30 +59,28 @@ type HighlightRailItem = {
   imageUrl: string | null;
 };
 
-export function BrowseFocusProfileSections({
+export function BrowseFocusProfileSections(props: BrowseFocusProfileSectionsProps) {
+  return <BrowseFocusProfileSectionsContent key={props.slugOrId} {...props} />;
+}
+
+function BrowseFocusProfileSectionsContent({
   slugOrId,
   selectedMediaId = null,
   primaryPreview = null,
   onSelectMedia,
   onProjectDetailOpenChange,
   tab: tabControlled,
-  onTabChange,
   onProfileMeta,
 }: BrowseFocusProfileSectionsProps) {
   const [profile, setProfile] = useState<PublicTalentProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [tabInternal, setTabInternal] = useState<ProfileTab>("about");
+  const [loading, setLoading] = useState(Boolean(slugOrId.trim()));
+  const [error, setError] = useState<string | null>(() => slugOrId.trim() ? null : "Missing profile.");
   const [activeProject, setActiveProject] = useState<ResumeExperienceItem | null>(null);
-  const tab = tabControlled ?? tabInternal;
+  const tab = tabControlled ?? "about";
 
-  function setTab(next: ProfileTab) {
-    if (onTabChange) onTabChange(next);
-    else setTabInternal(next);
-  }
-
+  const [previousTab, setPreviousTab] = useState(tab);
+  if (previousTab !== tab) { setPreviousTab(tab); setActiveProject(null); }
   useEffect(() => {
-    setActiveProject(null);
     onProjectDetailOpenChange?.(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- clear nested project when view changes
   }, [tab]);
@@ -90,17 +88,7 @@ export function BrowseFocusProfileSections({
   useEffect(() => {
     let cancelled = false;
     const key = slugOrId.trim();
-    if (!key) {
-      setProfile(null);
-      setLoading(false);
-      setError("Missing profile.");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setTab("about");
-    setActiveProject(null);
+    if (!key) return;
     onProjectDetailOpenChange?.(false);
     void fetchReviewTalentProfile(key).then((result) => {
       if (cancelled) return;
@@ -116,7 +104,7 @@ export function BrowseFocusProfileSections({
         });
       }
       setLoading(false);
-    });
+    }).catch(() => { if (!cancelled) { setError("Could not load profile. Please retry."); setLoading(false); } });
 
     return () => {
       cancelled = true;

@@ -1,5 +1,7 @@
 "use server";
 
+import { reviewedIndustryIdentity } from "@/lib/talent-buyers/profile-edit";
+import { consumeAuthReturn } from "@/lib/auth/pending-return";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -462,6 +464,29 @@ export async function completeTalentBuyerOnboarding(
 
   return {
     ok: true,
-    redirectTo: primaryAction.href,
+    redirectTo: await consumeAuthReturn(user.id, primaryAction.href),
   };
+}
+
+/** Current applicant flow: reviewed details are reused atomically, without repeating a questionnaire. */
+export async function completeApprovedIndustrySetup(username?: string): Promise<{ ok: true; redirectTo: string } | { ok: false; error: string }> {
+  const db = await createServerSupabaseClient();
+  if (!db) return { ok: false, error: "Your workspace is temporarily unavailable. Please try again." };
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return { ok: false, error: "Sign in again to finish setup." };
+  const [application, profile] = await Promise.all([
+    db.from("industry_applications").select("full_name,status").eq("user_id", user.id).single(),
+    db.from("profiles").select("onboarding_completed_at").eq("user_id", user.id).single(),
+  ]);
+  if (application.error || profile.error) return { ok: false, error: "Couldn’t load your approved details. Please try again." };
+  if (application.data.status !== "approved") return { ok: false, error: "Industry approval is required. Check your application status." };
+  const identity = reviewedIndustryIdentity(application.data.full_name, profile.data.onboarding_completed_at);
+  if (identity) {
+    const { error } = await db.from("profiles").update(identity).eq("user_id", user.id).is("onboarding_completed_at", null);
+    if (error) return { ok: false, error: "Couldn’t save your reviewed name. Your approval is safe; please try again." };
+  }
+  const { error } = await db.rpc("complete_industry_approved_setup", { p_username: username?.trim().toLowerCase() || null });
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/", "layout");
+  return { ok: true, redirectTo: await consumeAuthReturn(user.id, "/dashboard") };
 }

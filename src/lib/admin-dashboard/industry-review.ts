@@ -7,6 +7,8 @@ export type IndustryReviewProfile = {
   imageUrls: string[];
   acquisitionSource: string;
   acquisitionDetail: string;
+  username?: string;
+  dateOfBirth?: string;
 };
 export function industryReviewProfile(userId: string, source?: Source): IndustryReviewProfile {
   const profile = !source?.error && userId ? source?.rows.find(row => text(row.user_id) === userId) : undefined;
@@ -14,6 +16,8 @@ export function industryReviewProfile(userId: string, source?: Source): Industry
   const raw = text(profile?.acquisition_source).trim();
   return {
     status,
+    ...(text(profile?.username) ? { username: text(profile?.username) } : {}),
+    ...(text(profile?.date_of_birth) ? { dateOfBirth: text(profile?.date_of_birth).slice(0, 10) } : {}),
     imageUrls: profile ? personImageCandidates(profile, true) : [],
     acquisitionSource: acquisitionSourceOptions.find(option => option.value === raw)?.label || raw.replaceAll('_', ' ') || 'Not recorded',
     acquisitionDetail: text(profile?.acquisition_source_detail).trim() || 'Not provided',

@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useVisibleActiveTab } from "@/hooks/use-visible-active-tab";
+import { isCastingFullyFinalized } from "@/lib/talent-buyers/casting/casting-completion";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Plus } from "lucide-react";
@@ -39,7 +41,7 @@ import "../project-workspace.css";
 import "./composable-project.css";
 
 type ComposableTab = {
-  id: "home" | ProjectAbilityId | "files";
+  id: "home" | ProjectAbilityId | "files" | "coordination";
   label: string;
   href: string;
   active: boolean;
@@ -69,6 +71,7 @@ export function useComposableAbilityCounts(): ProjectAbilityCounts {
 
 function ComposableProjectTabs({ composable }: { composable: ComposableWorkspaceMeta }) {
   const pathname = usePathname();
+  const tabScroller = useVisibleActiveTab<HTMLElement>(pathname);
   const { projectId, attachments } = useProjectWorkspace();
   const castingRoute = isCastingRoute(pathname, projectId);
 
@@ -79,7 +82,7 @@ function ComposableProjectTabs({ composable }: { composable: ComposableWorkspace
       href: projectHomePath(projectId),
       active: pathname === projectHomePath(projectId),
     },
-    ...composable.abilities.map((ability) => ({
+    ...composable.abilities.filter((ability) => ability.id !== "roster").map((ability) => ({
       id: ability.id,
       label: PROJECT_ABILITIES[ability.id].label,
       href: projectAbilityPath(projectId, ability.id),
@@ -89,6 +92,8 @@ function ComposableProjectTabs({ composable }: { composable: ComposableWorkspace
           : pathname.startsWith(projectPath(projectId, ability.id)),
       paused: ability.status === "paused",
     })),
+    { id: "roster", label: "People", href: projectPath(projectId, "roster"), active: pathname.startsWith(projectPath(projectId, "roster")) },
+    { id: "coordination", label: "Coordination", href: projectPath(projectId, "coordination"), active: pathname.startsWith(projectPath(projectId, "coordination")) },
     {
       id: "files",
       label: "Files",
@@ -100,9 +105,9 @@ function ComposableProjectTabs({ composable }: { composable: ComposableWorkspace
 
   return (
     <>
-      <nav className="composable-tabs" aria-label="Project sections">
+      <nav ref={tabScroller} className="composable-tabs" aria-label="Project sections">
         {tabs.map((tab) => {
-          const Icon = tab.id === "home" || tab.id === "files" ? null : PROJECT_ABILITIES[tab.id].icon;
+          const Icon = tab.id === "home" || tab.id === "files" || tab.id === "coordination" ? null : PROJECT_ABILITIES[tab.id].icon;
           return (
             <Link
               key={tab.id}
@@ -139,17 +144,21 @@ function ComposableChromeEnd({
   castingRoute,
   projectId,
   castingStatus,
+  castingFinalized,
   counts,
   onOpenAbilities,
   onEditCasting,
+  isOwner,
 }: {
   composable: ComposableWorkspaceMeta;
   castingRoute: boolean;
   projectId: string;
   castingStatus: CastingProjectStatus | null | undefined;
+  castingFinalized: boolean;
   counts: ProjectAbilityCounts;
   onOpenAbilities: () => void;
   onEditCasting: () => void;
+  isOwner: boolean;
 }) {
   // Rendered in the dashboard chrome, outside ProjectWorkspaceProvider.
   const status = composable.archivedAt ? "archived" : projectShellStatus(composable.endDate);
@@ -166,12 +175,12 @@ function ComposableChromeEnd({
         {status === "archived" ? "Archived" : status === "ended" ? "Ended" : "Active"} · Private
       </span>
       <AbilityIconRow abilities={composable.abilities} size="md" className="composable-chrome__abilities" />
-      {castingRoute ? (
+      {!isOwner ? <span className="text-sm text-[var(--ink-soft)]">Shared project</span> : castingRoute ? (
         <>
           <button type="button" className="buyer-chrome-bar__edit-link" onClick={onEditCasting}>
             Casting details
           </button>
-          <CastingStatusActionButton projectId={projectId} status={castingStatus} />
+          <CastingStatusActionButton projectId={projectId} status={castingStatus} finalized={castingFinalized} />
         </>
       ) : smart.kind === "ability-step" ? (
         <>
@@ -209,6 +218,7 @@ export function ComposableProjectShell({
   const castingRoute = isCastingRoute(pathname, projectId);
   const counts = useComposableAbilityCounts();
   const castingStatus = castingWorkflow?.primaryCasting?.status;
+  const castingFinalized = isCastingFullyFinalized(castingWorkflow?.roles ?? []);
   const projectTitle = project.title || "Untitled project";
   const subtitle = projectShellSubtitle({
     location: project.location,
@@ -221,9 +231,9 @@ export function ComposableProjectShell({
   }, [pathname]);
 
   const openAbilityManager = useCallback((preselect: ProjectAbilityId[] = []) => {
-    setAbilityManager({ open: true, preselect });
-  }, []);
-  const openShellEditor = useCallback(() => setShellEditorOpen(true), []);
+    if (project.isOwner !== false) setAbilityManager({ open: true, preselect });
+  }, [project.isOwner]);
+  const openShellEditor = useCallback(() => { if (project.isOwner !== false) setShellEditorOpen(true); }, [project.isOwner]);
   const ui = useMemo<ComposableProjectUi>(
     () => ({ openAbilityManager, openShellEditor }),
     [openAbilityManager, openShellEditor],
@@ -242,14 +252,16 @@ export function ComposableProjectShell({
         castingRoute={castingRoute}
         projectId={projectId}
         castingStatus={castingStatus}
+        castingFinalized={castingFinalized}
         counts={counts}
+        isOwner={project.isOwner !== false}
         onOpenAbilities={() => openAbilityManager()}
         onEditCasting={() => setCastingEditorOpen(true)}
       />
     ),
     revision: `${projectId}:${projectTitle}:${subtitle}:${abilitySignature}:${castingRoute}:${
       castingStatus ?? ""
-    }:${castingWorkflow?.roles.length ?? 0}:${composable.archivedAt ?? ""}:${counts.castingCount}:${
+    }:${castingFinalized}:${castingWorkflow?.roles.length ?? 0}:${composable.archivedAt ?? ""}:${counts.castingCount}:${
       counts.castingRoleCount
     }:${counts.rosterCount}:${counts.classSessionCount}`,
   });

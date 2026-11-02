@@ -1023,7 +1023,7 @@ export function Dashboard({
               </strong>
             </div>
             <div className="launch-review-line">
-              <span>Booking payments failed · current</span>
+              <span>Legacy booking payments · failed</span>
               <strong>
                 {fmt(
                   count(
@@ -1034,7 +1034,7 @@ export function Dashboard({
               </strong>
             </div>
             <div className="launch-review-line">
-              <span>Booking payments disputed · current</span>
+              <span>Legacy booking payments · disputed</span>
               <strong>
                 {fmt(
                   count(
@@ -1052,7 +1052,7 @@ export function Dashboard({
         </div>
         <section className="launch-card">
           {linkTitle(
-            "One-time payments & marketplace flows",
+            "One-time payments & historical records",
             `Selected ${data.days} days · authoritative stored payment fields where available`,
           )}
           <div className="launch-revenue-row">
@@ -1076,8 +1076,8 @@ export function Dashboard({
           </div>
           <div className="launch-revenue-row">
             <div>
-              <h3>Booking deal memos</h3>
-              <p>Paid charge volume and contractual platform fees</p>
+              <h3>Legacy booking agreements</h3>
+              <p>Historical paid charge volume and recorded fees · retired product scope</p>
             </div>
             <div>
               <strong>

@@ -1,4 +1,5 @@
 "use client";
+import { rememberLoginReturnPath } from "@/app/login/actions";
 import { ButtonProgress } from "./ButtonProgress";
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -7,7 +8,7 @@ import { useEffect, useState } from "react";
 
 import { SignupSplitDivider, SignupSplitOAuth } from "@/components/auth/SignupSplitOAuth";
 import { trackClientEvent } from "@/lib/analytics/track-client";
-import { buildOAuthRedirectUrl, buildSignupUserMetadata } from "@/lib/auth/oauth-shared";
+import { buildOAuthRedirectUrl, buildSignupUserMetadata, parseAccountTypeParam, oauthErrorMessage } from "@/lib/auth/oauth-shared";
 import { storePendingFeaturedTalentInviteToken } from "@/lib/publicFeaturedTalentInvite";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 
@@ -18,7 +19,9 @@ function isValidEmail(value: string) {
 export function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const accountType = parseAccountTypeParam(searchParams.get("account_type")) ?? "talent";
   const [email, setEmail] = useState("");
+  const callbackError = oauthErrorMessage(searchParams.get("error"));
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [confirmationTouched, setConfirmationTouched] = useState(false);
@@ -28,6 +31,11 @@ export function SignupForm() {
   const [showPassword, setShowPassword] = useState(false);
   const canSubmit = isValidEmail(email.trim()) && password.length >= 8 && password === confirmPassword;
 
+  useEffect(() => {
+    // Restore only after hydration so the server and first client render agree.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    try { setEmail(window.sessionStorage.getItem("motiion:signup-email") ?? ""); } catch { /* storage is optional */ }
+  }, []);
   useEffect(() => {
     const featured = searchParams.get("featured");
     if (featured) {
@@ -70,15 +78,17 @@ export function SignupForm() {
     setLoading(true);
     setError(null);
 
+    try {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: nextEmail,
       password: nextPassword,
       options: {
         emailRedirectTo: buildOAuthRedirectUrl({
           flow: "signup",
-          accountType: "talent",
+          returnTo: searchParams.get("next") ?? undefined,
+          accountType,
         }),
-        data: buildSignupUserMetadata("talent"),
+        data: buildSignupUserMetadata(accountType, searchParams.get("next")),
       },
     });
 
@@ -95,21 +105,22 @@ export function SignupForm() {
     }
 
     if (!data.session) {
-      router.push(`/signup/check-email?email=${encodeURIComponent(nextEmail)}`);
+      try { window.localStorage.setItem(`motiion:confirmation-sent:${nextEmail.toLowerCase()}`, String(Date.now())); } catch { /* optional cooldown persistence */ }
+      router.push(`${accountType === "lookingForTalent" ? "/talent-buyers" : ""}/signup/check-email?email=${encodeURIComponent(nextEmail)}`);
       return;
     }
 
     const { error: profileError } = await supabase.from("profiles").upsert({
       user_id: data.user.id,
       email: nextEmail,
-      account_type: "talent",
+      account_type: accountType,
       talent_types: [],
       working_locations: [],
       skills: [],
       experiences: [],
       training: [],
       headshot_urls: [],
-    });
+    }, { onConflict: "user_id", ignoreDuplicates: true });
 
     if (profileError) {
       setError(profileError.message);
@@ -118,11 +129,15 @@ export function SignupForm() {
     }
 
     trackClientEvent("user_signed_up", {
-      account_type: "talent",
+      account_type: accountType,
     });
 
-    router.push("/onboarding");
+    const requestedDestination = searchParams.get("next");
+    if (requestedDestination) await rememberLoginReturnPath(requestedDestination);
+    router.push(accountType === "lookingForTalent" ? "/talent-buyers/application" : "/onboarding");
     router.refresh();
+    } catch { setError("Couldn’t finish creating your account. Check your connection, then try again or log in if your confirmation email arrived."); }
+    finally { setLoading(false); }
   }
 
   return (
@@ -139,7 +154,7 @@ export function SignupForm() {
             required
             autoComplete="email"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => { setEmail(event.target.value); try { window.sessionStorage.setItem("motiion:signup-email", event.target.value); } catch { /* storage is optional */ } }}
           />
         </label>
 
@@ -204,6 +219,7 @@ export function SignupForm() {
         {passwordStep && confirmationTouched && password !== confirmPassword ? (
           <p id="password-mismatch" className="signup-split-error" role="status">Passwords don’t match.</p>
         ) : null}
+        {callbackError && <div className="signup-split-error" role="alert">{callbackError}</div>}
         {error ? <div className="signup-split-error" role="alert">{error}</div> : null}
 
         <button type="submit" className="signup-split-submit" disabled={loading || (passwordStep ? !canSubmit : !isValidEmail(email.trim()))}>
@@ -215,7 +231,7 @@ export function SignupForm() {
         <button type="button" className="signup-split-text-btn w-full" disabled={loading} onClick={() => changeStep("email")}>Back to email</button>
       ) : <>
         <SignupSplitDivider />
-        <SignupSplitOAuth flow="signup" signupPath="talent" disabled={loading} />
+        <SignupSplitOAuth flow="signup" signupPath={accountType === "lookingForTalent" ? "hiring" : "talent"} disabled={loading} />
       </>}
 
 

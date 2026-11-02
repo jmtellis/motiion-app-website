@@ -50,7 +50,7 @@ export const CASTING_WORKSPACE_NAV: CastingNavItem[] = [
     id: "cast",
     label: "Cast",
     icon: CheckCircle2,
-    description: "Review client votes, pick Final Selects, book talent, and finalize casting.",
+    description: "Review client votes, finalize selections, then coordinate with selected talent.",
   },
 ];
 

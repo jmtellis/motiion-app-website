@@ -1,286 +1,167 @@
 ---
 version: alpha
-name: Motiion
-description: A dark, editorial, keyboard-first design system for professional creative software serving the dance industry.
+name: Motiion Web
+description: Clear, calm workspaces for talent and industry professionals.
 colors:
-  background: "#0A0A0A"
-  surface: "#151515"
-  surface-raised: "#1E1E1E"
-  overlay: "#000000"
-  border: "#262626"
-  border-strong: "#3A3A3A"
-  primary: "#FAFAFA"
-  on-primary: "#0A0A0A"
-  accent: "#2DD4BF"
-  on-accent: "#04231E"
-  accent-soft: "#0C2A26"
-  on-background: "#FAFAFA"
-  on-surface: "#EAEAEA"
-  muted: "#8A8A8A"
-  subtle: "#5A5A5A"
-  success: "#3FB950"
-  warning: "#E3A008"
-  error: "#F04438"
-  info: "#4A9EFF"
-  on-success: "#0A0A0A"
-  on-warning: "#0A0A0A"
-  on-error: "#0A0A0A"
-  on-info: "#0A0A0A"
+  canvas: "#f5f6f5"
+  surface: "#ffffff"
+  surface-soft: "#eef2f1"
+  surface-hover: "#e7eeec"
+  text: "#1c292a"
+  muted: "#536366"
+  subtle: "#667679"
+  border: "#d4dedc"
+  control-border: "#7d9091"
+  accent: "#006b75"
+  accent-hover: "#00535d"
+  accent-soft: "#def3f1"
+  on-accent: "#ffffff"
+  focus: "#007b87"
+  success: "#19643a"
+  success-soft: "#e2f4e8"
+  warning: "#78500b"
+  warning-soft: "#fff3d6"
+  danger: "#ad243e"
+  danger-soft: "#ffedf0"
+  info: "#205f91"
+  info-soft: "#eaf3fc"
+  disabled: "#6c7779"
 typography:
-  display:
+  page:
     fontFamily: Geist
-    fontSize: 3.5rem
+    fontSize: 32px
     fontWeight: 600
-    lineHeight: 1.05
-    letterSpacing: -0.03em
-  h1:
+    lineHeight: 1.2
+  section:
     fontFamily: Geist
-    fontSize: 2.5rem
+    fontSize: 24px
     fontWeight: 600
-    lineHeight: 1.1
-    letterSpacing: -0.02em
-  h2:
+    lineHeight: 1.3
+  card:
     fontFamily: Geist
-    fontSize: 1.75rem
+    fontSize: 18px
     fontWeight: 600
-    lineHeight: 1.15
-    letterSpacing: -0.02em
-  h3:
-    fontFamily: Geist
-    fontSize: 1.25rem
-    fontWeight: 500
-    lineHeight: 1.25
-    letterSpacing: -0.01em
-  body-lg:
-    fontFamily: Geist
-    fontSize: 1.125rem
-    fontWeight: 400
-    lineHeight: 1.5
+    lineHeight: 1.4
   body:
     fontFamily: Geist
-    fontSize: 1rem
+    fontSize: 16px
     fontWeight: 400
     lineHeight: 1.5
-  body-sm:
+  control:
     fontFamily: Geist
-    fontSize: 0.875rem
-    fontWeight: 400
-    lineHeight: 1.5
-  caption:
+    fontSize: 14px
+    fontWeight: 600
+    lineHeight: 1.4
+  metadata:
     fontFamily: Geist
-    fontSize: 0.75rem
-    fontWeight: 500
-    lineHeight: 1.4
-  mono-label:
-    fontFamily: Geist Mono
-    fontSize: 0.75rem
-    fontWeight: 500
-    lineHeight: 1.4
-    letterSpacing: 0.08em
-  mono:
-    fontFamily: Geist Mono
-    fontSize: 0.875rem
+    fontSize: 13px
     fontWeight: 400
     lineHeight: 1.5
 rounded:
-  none: 0px
-  sm: 6px
-  md: 8px
-  lg: 14px
-  xl: 20px
-  full: 9999px
+  control: 10px
+  card: 16px
+  panel: 20px
+  pill: 999px
 spacing:
-  0: 0px
-  1: 4px
-  2: 8px
-  3: 12px
-  4: 16px
-  5: 24px
-  6: 32px
-  7: 48px
-  8: 64px
-  9: 96px
+  step-1: 4px
+  step-2: 8px
+  step-3: 12px
+  step-4: 16px
+  step-5: 20px
+  step-6: 24px
+  step-8: 32px
+  step-12: 48px
 components:
-  button-primary:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.on-primary}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.md}"
-    padding: 12px 20px
-    height: 40px
-  button-primary-hover:
-    backgroundColor: "#E6E6E6"
-    textColor: "{colors.on-primary}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.md}"
-    padding: 12px 20px
-    height: 40px
-  button-secondary:
-    backgroundColor: "{colors.surface-raised}"
-    textColor: "{colors.on-surface}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.md}"
-    padding: 12px 20px
-    height: 40px
-  button-secondary-hover:
-    backgroundColor: "#2A2A2A"
-    textColor: "{colors.on-background}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.md}"
-    padding: 12px 20px
-    height: 40px
-  button-ghost:
-    backgroundColor: "transparent"
-    textColor: "{colors.muted}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.md}"
-    padding: 12px 16px
-    height: 40px
-  button-ghost-hover:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.on-surface}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.md}"
-    padding: 12px 16px
-    height: 40px
-  button-accent:
+  primary-button:
     backgroundColor: "{colors.accent}"
     textColor: "{colors.on-accent}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.md}"
-    padding: 12px 20px
-    height: 40px
-  button-disabled:
+    typography: "{typography.control}"
+    rounded: "{rounded.control}"
+    height: 44px
+  secondary-button:
     backgroundColor: "{colors.surface}"
-    textColor: "{colors.subtle}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.md}"
-    padding: 12px 20px
-    height: 40px
-  input:
+    textColor: "{colors.text}"
+    typography: "{typography.control}"
+    rounded: "{rounded.control}"
+    height: 44px
+  destructive-button:
+    backgroundColor: "{colors.danger}"
+    textColor: "{colors.on-accent}"
+    typography: "{typography.control}"
+    rounded: "{rounded.control}"
+    height: 44px
+  field:
     backgroundColor: "{colors.surface}"
-    textColor: "{colors.on-surface}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.md}"
-    padding: 10px 14px
-    height: 40px
-  input-focus:
-    backgroundColor: "{colors.surface-raised}"
-    textColor: "{colors.on-surface}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.md}"
-    padding: 10px 14px
-    height: 40px
-  chip:
-    backgroundColor: "{colors.surface-raised}"
-    textColor: "{colors.muted}"
-    typography: "{typography.caption}"
-    rounded: "{rounded.full}"
-    padding: 6px 12px
-    height: 28px
-  chip-active:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.on-primary}"
-    typography: "{typography.caption}"
-    rounded: "{rounded.full}"
-    padding: 6px 12px
-    height: 28px
-  badge-verified:
-    backgroundColor: "{colors.accent-soft}"
-    textColor: "{colors.accent}"
-    typography: "{typography.mono-label}"
-    rounded: "{rounded.full}"
-    padding: 4px 10px
-  badge-meta:
-    backgroundColor: "transparent"
-    textColor: "{colors.muted}"
-    typography: "{typography.mono-label}"
-    rounded: "{rounded.sm}"
-    padding: 2px 6px
-  card-talent:
+    textColor: "{colors.text}"
+    rounded: "{rounded.control}"
+    height: 44px
+  card:
     backgroundColor: "{colors.surface}"
-    textColor: "{colors.on-surface}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.lg}"
-    padding: "{spacing.4}"
-  card-project:
+    textColor: "{colors.text}"
+    rounded: "{rounded.card}"
+    padding: "{spacing.step-6}"
+  dialog:
     backgroundColor: "{colors.surface}"
-    textColor: "{colors.on-surface}"
-    typography: "{typography.body}"
-    rounded: "{rounded.lg}"
-    padding: "{spacing.5}"
-  nav-tab:
-    backgroundColor: "transparent"
-    textColor: "{colors.muted}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.md}"
-    padding: 8px 12px
-  nav-tab-active:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.on-background}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.md}"
-    padding: 8px 12px
-  modal:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.on-surface}"
-    typography: "{typography.body}"
-    rounded: "{rounded.xl}"
-    padding: "{spacing.6}"
-  kbd:
-    backgroundColor: "{colors.surface-raised}"
-    textColor: "{colors.muted}"
-    typography: "{typography.mono-label}"
-    rounded: "{rounded.sm}"
-    padding: 2px 6px
+    textColor: "{colors.text}"
+    rounded: "{rounded.panel}"
+    padding: "{spacing.step-6}"
 ---
 
-> Industry website workspaces use the light admin foundations documented in [industry-ui.md](industry-ui.md). The dark palette below remains the baseline for other surfaces.
-
-# Motiion Design System
+# Motiion web design system
 
 ## Overview
 
-Motiion is the operating system for the professional dance industry — a web app (sharing one backend with an iOS app) used by dancers and choreographers to manage their careers and by casting/creative professionals to discover, hire, and organize talent. The interface should feel like **professional creative software** — Linear, Figma, Raycast — not a recruiting marketplace. Emotionally: **confident, premium, and quiet**, a calm dark canvas that lets talent media and data be the color. The system is dark-first and keyboard-first. Two anti-patterns to hold the line on above all: it must never look like a **job board / listing site**, and it must never get **loud** — no heavy shadows, glossy gradients, or emoji-and-color clutter competing with the work.
+Motiion is a working environment for dancers, choreographers and industry teams. The product uses a quiet light canvas, clear surfaces, readable Geist typography and deep teal actions. Media carries personality; interface decoration stays restrained. Public marketing may retain its darker editorial brand, while authenticated workspaces share the same practical rules.
+
+This replaces the old dark-only reference. Current rendered product screens and the user's workflow requirements informed the system; no interaction-reference attachments were available in this session. Runtime tokens live in `src/components/ui/system.css`. This document and `design.html` mirror those values; the existing `/admin/design-system` gallery renders actual React components and their states. Legacy `--ds-*`, `--buyer-*` and `--industry-*` names are compatibility aliases in `workspace-controls.css`, not a second system.
 
 ## Colors
 
-The palette is a near-black neutral spine with a single warm accent. `background` (`#0A0A0A`) is the canvas; `surface` (`#151515`) and `surface-raised` (`#1E1E1E`) are cards and inputs, separated from the canvas by **hairline borders** (`border` `#262626`, `border-strong` `#3A3A3A`) rather than shadow. Text runs `on-background`/`on-surface` (near-white) for primary, `muted` (`#8A8A8A`) for secondary, and `subtle` (`#5A5A5A`) for de-emphasized metadata — a three-step contrast ladder that carries most of the hierarchy. Interactive emphasis is **white**: `primary` (`#FAFAFA`) on `on-primary` (`#0A0A0A`) is the main CTA, borrowed straight from the references. The brand `accent` (`#2DD4BF`, cool teal) is used sparingly — ambient glows, the verified badge, focus rings, and rare high-intent moments — never as a default button fill. Its cool, technical character reinforces the "professional creative software" feel and sits calmly against the neutral dark canvas. `accent-soft` (`#0C2A26`) is a teal-tinted dark surface for the verified badge background. Semantic colors (`success`, `warning`, `error`, `info`) are reserved strictly for status; `success` green and the teal `accent` are kept perceptually distinct (accent skews cyan, success skews leaf-green) so brand emphasis never reads as a status. All body text pairings meet WCAG AA on the dark canvas (`muted` on `background` ≈ 5.4:1); reserve `subtle` for large or non-essential text only.
+Use `text` for content, `muted` for secondary content and `subtle` for supporting metadata. Teal identifies an action or selection; it is not a success indicator. Status always includes text or an icon, never color alone. Surface boundaries use `border`; fields use the stronger `control-border`. State text colors pair with their corresponding `*-soft` backgrounds. Text pairs are intended to meet WCAG AA; verify new pairs rather than using arbitrary opacity. Media may use a dark viewer with white controls.
 
 ## Typography
 
-Two families do all the work. **Geist** (a modern grotesque in the Inter/Neue-Montreal lineage) carries display through caption — tight negative tracking on large sizes (`-0.02` to `-0.03em`) for the editorial, confident headline feel seen in the references, and neutral, comfortable settings for body. **Geist Mono** is a *functional* accent, not decoration: it labels the technical metadata dance hiring runs on — union status, height and attributes, IDs, availability — and renders keyboard shortcuts. `mono-label` is small, medium-weight, and letter-spaced (`0.08em`) for uppercase-style micro-labels; `mono` is for inline data and IDs. The scale steps `display → h1 → h2 → h3 → body-lg → body → body-sm → caption`, each with a clear job: `display`/`h1` for hero and page titles, `h2`/`h3` for section and card headings, `body` as the default, `body-sm` as the dense-UI default (tables, filters, cards), `caption` for chips and helper text. Never introduce a serif or a third sans.
+Geist is the product family, with the system sans fallback. Page headings are 32px desktop and 26px on compact screens, sections 24px, cards 18px, body 16px, controls 14px and metadata 13px. Use weight 600 for hierarchy; avoid very light type and long uppercase labels. Inputs reach 16px on small screens to avoid mobile browser zoom. Long names wrap or truncate with an accessible full label. Never clip essential status or error text.
 
 ## Layout
 
-Spacing follows a strict **4px base** scale (`4, 8, 12, 16, 24, 32, 48, 64, 96`) so rhythm stays consistent and predictable — a requirement for keyboard-driven, information-dense screens. Density is **contextual**: marketing surfaces breathe (generous `48–96px` section rhythm, wide margins, lots of black), while the app is **comfortable-to-tight** (`8–24px`) because it's a professional tool where scanning speed matters. Use a 12-column max-width container (~1200–1280px) for marketing and a full-width, panelized layout (filter rail + results + detail panel) for the app's power surfaces like the talent navigator. Keep gutters consistent within a context; don't improvise one-off spacing.
+Use the 4px spacing scale. Default page gutters are 24–32px desktop and 16px mobile; content width is 1280px, reading/forms 680px. Cards adapt to available width without horizontal page scroll. Project work uses Active, Drafts and Archived in a card grid. Filters belong beside the content they affect. Keep only one sticky context/action region per scroll container and account for safe areas. A loaded list stays mounted during profile inspection; mobile inspection becomes a full-height dialog. Do not reset selection, query or list scroll when closing a profile.
 
 ## Elevation & Depth
 
-Depth is expressed through **contrast and hairline borders, not shadows**. Layers read as background → surface → surface-raised, each a step lighter, each optionally outlined by a `border`/`border-strong` hairline. The only "glow" in the system is a soft, low-opacity **radial wash of `accent`** used behind hero moments (as in the references) — ambient light, never a drop shadow on a component. Modals and popovers sit on a near-opaque `overlay` scrim over the canvas and use `surface` with a hairline border. Avoid material-style elevation entirely: no soft grey box-shadows, no glossy layering. Flatness plus precise borders is the premium signal here.
+Cards use a fine border and the small `--ui-shadow-card`; overlays use `--ui-shadow-overlay`. Surface color and borders establish hierarchy before shadows. Native dialogs enter the browser top layer, contain focus and make the background inert. Shared overlay code owns scroll locking and focus restoration. Desktop inspection panels allow interaction with the list; mobile panels are modal. Avoid nested drawers—use a compact action dialog or a distinct media viewer.
 
 ## Shapes
 
-Corner radius is calm and consistent: **`md` (8px)** for buttons and inputs, **`lg` (14px)** for cards and panels, **`xl` (20px)** for modals and large containers, and **`full`** for chips, pills, badges, and avatars. Sharp `none` (0px) is reserved for full-bleed dividers and data tables where crisp edges aid scanning. The mix — softly rounded containers with fully-rounded interactive pills — reads modern and approachable without ever becoming bubbly. Don't round buttons more than their containers; the pill treatment belongs to chips and badges, not primary actions.
+Controls use 10px radii, cards 16px and panels 20px. Fully rounded shapes are reserved for avatars, badges and compact status chips. Do not make every button a pill or infer shape using broad class-substring selectors. Icons are 18–20px beside labels and 20–24px for main navigation; icon-only controls need an accessible name and a 44px touch target.
 
 ## Components
 
-Buttons come in four intents: `button-primary` (white, the main CTA), `button-secondary` (raised surface, for secondary actions), `button-ghost` (transparent, muted text that brightens on hover — the workhorse for toolbars and dense UI), and `button-accent` (amber, reserved for rare high-intent moments). Each has explicit hover and disabled states (`button-primary-hover`, `button-secondary-hover`, `button-ghost-hover`, `button-disabled`); hover lightens the surface one step, disabled drops text to `subtle`. `input` uses `surface` with a hairline border; on focus (`input-focus`) it raises to `surface-raised` and gains an `accent` focus ring — focus must always be unmistakable because the product is keyboard-first. `chip` is a fully-rounded filter/tag pill in muted text; `chip-active` flips to the white `primary` fill to signal selection. `badge-verified` uses `mono-label` in `accent` on `accent-soft` — the trust marker on talent profiles; `badge-meta` renders inline metadata (union, height, availability) in muted mono. `card-talent` and `card-project` are `lg`-radius surfaces with hairline borders, differing only in padding density. `nav-tab`/`nav-tab-active` drive the tabbed app shell. `modal` is an `xl`-radius surface on the overlay scrim. `kbd` renders keyboard-shortcut keys in `mono-label` — surface shortcut hints throughout, since power users navigate by keyboard.
+| Pattern | Implementation | Behavior |
+|---|---|---|
+| Buttons and links | `.ui-button`, `.ui-button--secondary`, `.ui-button--danger`, `.ui-icon-button` | One primary action per group, pending label, disabled duplicate submits, 44px minimum target. Links navigate; buttons mutate/open. |
+| Forms | `ui/Field.tsx` | Label, hint and validation are associated; errors use `aria-invalid` and alert feedback. Preserve entered values after failures. |
+| Tabs | `dashboard/UnderlineTabs.tsx` | Roving tab stop, arrows/Home/End, selected state. Route-backed filters preserve browser navigation. |
+| Dialogs | `ui/Dialog.tsx`, dashboard `Modal`, talent `ResponsiveModal` | Native focus containment, Escape, backdrop, focus restoration and counted body-scroll lock. Caller blocks close during pending writes and confirms discarding meaningful drafts. |
+| Inspection | `workspace/WorkspaceSidePanel.tsx`, `CollectionProfilePanel` | Desktop context retained; mobile full height, deep-link query and browser-back close for roster profiles. |
+| Empty/error | `ui/EmptyState.tsx`, `.ui-notice` | Empty explains next action. Failure offers retry and preserves existing content. Permission failures never pretend to be empty. |
+| Avatar/media | `ui/Avatar.tsx`, `ProfileOverlays` | Stable dimensions, initials on failed images, lazy list images. Media viewer has named controls and keyboard navigation. |
+| Profile | shared talent profile sheet, professional identity sections | Same surfaces/spacing, role-specific fields. Explicit visibility and editing feedback. |
+| Menus/search | roster menus, shared search/voice control | Named controls, Escape closes, keyboard access; listening/processing/cancel/retry states and editable typed alternative. |
+| Notifications | existing ToastProvider, inline notices | Success follows confirmed writes; failures retain drafts. Announce status without moving focus. |
+| Loading | page skeletons, button pending, retained data refresh | Skeleton matches geometry. Initial, refresh, empty and failed states are distinct. Never add a minimum spinner duration. |
+
+Motion is limited to 160ms opacity/short entry transitions. Hover and pressed states use surface changes, never a large positional jump. Every interactive control exposes a visible 2px focus ring with offset. `prefers-reduced-motion` disables nonessential transitions and animation. Disabled states retain readable labels; focus remains on an available next action after completion.
 
 ## Do's and Don'ts
 
-**Do**
-- Let the dark canvas and the talent's own media carry the color; keep chrome neutral.
-- Use white (`primary`) for the main action on a screen; reserve `accent` teal for glows, the verified badge, and focus.
-- Express depth with hairline borders and one-step-lighter surfaces, not shadows.
-- Use `Geist Mono` for technical metadata (union, height, IDs, availability) and keyboard shortcuts — it signals a pro tool.
-- Make focus states unmistakable (accent ring) — the product is keyboard-first.
-- Keep to the 4px spacing scale and the defined radius steps.
-
-**Don't**
-- Don't let it look like a job board or listing site — no dense rows of generic listings, no marketplace badges.
-- Don't use soft grey drop-shadows, glossy gradients, or material-style elevation.
-- Don't flood the UI with color, emoji, or multiple accents — one warm accent, used sparingly.
-- Don't introduce a serif, a third sans, or bump body copy below `body-sm` for essential text.
-- Don't fill primary buttons with `accent` by default; teal is an emphasis, not the default action color.
-- Don't improvise off-scale spacing or radii to fix a one-off layout.
+- Do preserve context, drafts, selected talent and meaningful browser-back behavior.
+- Do use semantic tokens and shared components for shared behavior.
+- Do show recovery where the error occurred and distinguish authorization from unavailable data.
+- Do keep account email confirmation, industry approval, identity verification and paid plans distinct.
+- Do inspect desktop, tablet and phone rendering, keyboard access and long content.
+- Don't encode errors or selection in color alone.
+- Don't overlay competing sticky headers or nest full drawers.
+- Don't hide failed network requests behind empty states or fake successful feedback.
+- Don't reintroduce booking contracts or payments through legacy labels or links.
+- Don't normalize different workflows into identical layouts or animate routine work unnecessarily.

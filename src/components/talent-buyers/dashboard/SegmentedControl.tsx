@@ -2,7 +2,8 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
-import { useEffect, useId, useState } from "react";
+import { useId } from "react";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 type SegmentedOption<T extends string> = {
   value: T;
@@ -33,8 +34,7 @@ export function SegmentedControl<T extends string>({
 }) {
   const groupId = useId();
   const reducedMotion = useReducedMotion();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useHydrated();
   const animate = mounted && !reducedMotion;
   const indicatorClass =
     activeTone === "white"
@@ -57,6 +57,12 @@ export function SegmentedControl<T extends string>({
             key={option.value}
             type="button"
             onClick={() => onChange(option.value)}
+            onKeyDown={event => {
+              const index = options.findIndex(item => item.value === value);
+              const next = event.key === "ArrowRight" ? (index + 1) % options.length : event.key === "ArrowLeft" ? (index - 1 + options.length) % options.length : event.key === "Home" ? 0 : event.key === "End" ? options.length - 1 : -1;
+              if (next < 0) return; event.preventDefault(); onChange(options[next].value);
+              event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>("button")[next]?.focus();
+            }}
             className={`relative z-[1] whitespace-nowrap rounded-full text-center font-medium transition-colors ${
               equalWidth ? "min-w-[5.5rem]" : "shrink-0"
             } ${hug ? "px-2.5 py-1 text-xs" : "px-4 py-1.5 text-sm"} ${

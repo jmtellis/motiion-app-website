@@ -14,7 +14,7 @@ type MessageAttachmentBubbleProps = {
   variant?: "default" | "dashboard";
 };
 
-export function MessageAttachmentBubble({ payload, isMine, variant = "default" }: MessageAttachmentBubbleProps) {
+export function MessageAttachmentBubble({ payload, isMine }: MessageAttachmentBubbleProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(true);
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -23,7 +23,6 @@ export function MessageAttachmentBubble({ payload, isMine, variant = "default" }
   const [viewerError, setViewerError] = useState<string | null>(null);
   const pdfBytesRef = useRef<Uint8Array | null>(null);
   const viewerUrlRef = useRef<string | null>(null);
-  const isDashboard = variant === "dashboard";
 
   useEffect(() => {
     let cancelled = false;
@@ -139,13 +138,11 @@ export function MessageAttachmentBubble({ payload, isMine, variant = "default" }
         onClick={() => void openViewer()}
         className={`w-[220px] max-w-full overflow-hidden rounded-2xl border text-left transition hover:brightness-110 ${
           isMine
-            ? "border-[#fafafa]/20 bg-[#fafafa] text-[#0a0a0a]"
-            : isDashboard
-              ? "border-white/10 bg-white/8 text-white/90"
-              : "border-[#2a2a2a] bg-[#1e1e1e] text-[#eaeaea]"
+            ? "border-[var(--ui-accent)] bg-[var(--ui-accent)] text-[var(--ui-on-accent)]"
+            : "border-[var(--ui-border)] bg-[var(--ui-surface-soft)] text-[var(--ui-text)]"
         }`}
       >
-        <div className="relative h-[280px] w-full overflow-hidden bg-white/[0.04]">
+        <div className="relative h-[280px] w-full overflow-hidden bg-[var(--ui-surface-soft)]">
           {isLoadingPreview ? (
             <div className="flex h-full items-center justify-center text-xs opacity-60">Loading preview…</div>
           ) : previewUrl ? (
@@ -160,7 +157,7 @@ export function MessageAttachmentBubble({ payload, isMine, variant = "default" }
         </div>
         <div className="px-3 py-2.5">
           <p className="truncate text-sm font-semibold">{payload.title}</p>
-          <p className={`mt-0.5 text-xs ${isMine ? "text-black/50" : isDashboard ? "text-white/45" : "text-[var(--ink-soft)]"}`}>
+          <p className={`mt-0.5 text-xs ${isMine ? "text-[var(--ui-on-accent)]/80" : "text-[var(--ui-muted)]"}`}>
             Tap to view full sheet
           </p>
         </div>

@@ -79,3 +79,8 @@ export function useIndustryProOptional(): IndustryProContextValue {
     }
   );
 }
+
+/** Presentation only; server actions independently authorize every mutation. */
+export function useIsIndustryWorkspace(): boolean {
+  return useContext(IndustryProContext) !== null;
+}

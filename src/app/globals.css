@@ -1,10 +1,11 @@
 @import "tailwindcss";
+@import "../components/ui/system.css";
 @import "../components/landing/marketing-atmosphere.css";
 @import "../components/landing/marketing-system.css";
 
-/* Product design tokens — dark values mirror MotiionColor / MotiionSpacing / MotiionRadius (iOS).
-   Source of truth: motiion-app-ios/Motiion/DesignSystem/Colors.swift (+ Spacing.swift, Radius.swift).
-   Marketing light tokens (--paper, --ink, …) stay separate below. */
+/* Legacy appearance aliases retained for marketing and remaining native-inspired
+   surfaces. Web product foundations live in components/ui/system.css; workspace
+   and product-theme scopes map these aliases to that semantic system. */
 :root {
   /* MotiionColor — dark appearance */
   --ds-background-default: #003d4d;
@@ -114,7 +115,7 @@
   --ds-space-8: 64px;
   --ds-control-height: 44px;
   --ds-control-height-compact: 40px;
-  --ds-font-product: var(--font-montserrat), var(--font-geist-sans), system-ui, sans-serif;
+  --ds-font-product: var(--font-geist-sans), system-ui, sans-serif;
 }
 
 /* Signed-in talent / industry product shell */
@@ -1597,5 +1598,6 @@ html.is-scrolling::-webkit-scrollbar-thumb,
 }
 
 :where(input, textarea, select):focus-visible {
-  outline: none;
+  outline: 2px solid var(--ui-focus, #007b87);
+  outline-offset: 2px;
 }

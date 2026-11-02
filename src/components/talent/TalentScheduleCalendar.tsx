@@ -2,7 +2,7 @@
 
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { ActivityCreateWizard } from "@/components/talent-buyers/activities/ActivityCreateWizard";
 import { EventsCalendar } from "@/components/talent-buyers/dashboard/calendar/EventsCalendar";
@@ -21,8 +21,7 @@ const FILTERS: { value: TalentScheduleFilter; label: string }[] = [
 ];
 
 function talentEventHref(event: CalendarEvent) {
-  if (event.eventType === "event") return `/event/${event.id}`;
-  return `/activity/${event.id}`;
+  return event.href ?? `/activity/${event.activityId ?? event.id}`;
 }
 
 function matchesFilter(event: CalendarEvent, filter: TalentScheduleFilter) {
@@ -34,13 +33,28 @@ function matchesFilter(event: CalendarEvent, filter: TalentScheduleFilter) {
 
 export function TalentScheduleCalendar({
   events,
+  error = null,
   filter: initialFilter,
 }: {
   events: CalendarEvent[];
+  error?: string | null;
   filter: TalentScheduleFilter;
 }) {
   const router = useRouter();
   const notifications = useNotificationsPanel();
+  const [refreshing, startRefresh] = useTransition();
+  const [lastGoodEvents, setLastGoodEvents] = useState(events);
+  if (!error && lastGoodEvents !== events) setLastGoodEvents(events);
+  const displayedEvents = error && !events.length ? lastGoodEvents : events;
+  useEffect(() => {
+    const refresh = () => { if (document.visibilityState === "visible") router.refresh(); };
+    window.addEventListener("online", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      window.removeEventListener("online", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [router]);
   const [filter, setFilterState] = useState(initialFilter);
   const [syncedFilter, setSyncedFilter] = useState(initialFilter);
   const [createOpen, setCreateOpen] = useState(false);
@@ -52,8 +66,8 @@ export function TalentScheduleCalendar({
   }
 
   const visible = useMemo(
-    () => events.filter((event) => matchesFilter(event, filter)),
-    [events, filter],
+    () => displayedEvents.filter((event) => matchesFilter(event, filter)),
+    [displayedEvents, filter],
   );
 
   function setFilter(next: TalentScheduleFilter) {
@@ -85,6 +99,13 @@ export function TalentScheduleCalendar({
         </button>
       </header>
 
+      {error ? (
+        <div role="status" className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
+          <p>{error}</p>
+          <button type="button" className="mt-2 underline underline-offset-4" disabled={refreshing}
+            onClick={() => startRefresh(() => router.refresh())}>{refreshing ? "Refreshing…" : "Retry calendar"}</button>
+        </div>
+      ) : null}
       <EventsCalendar
         events={visible}
         embedded

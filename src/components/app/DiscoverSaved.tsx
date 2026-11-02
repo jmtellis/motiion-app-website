@@ -3,6 +3,8 @@
 import { Bell, ChevronLeft, ChevronRight, Heart, Pencil, Plus, Trash2, Users, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
+import { SharedRostersSection } from "@/components/talent-buyers/library/SharedRostersSection";
+import { RosterAccessButton } from "@/components/talent-buyers/library/RosterAccessButton";
 import { TalentProfileSheet, type TalentProfileChrome } from "@/components/app/talent-profile/TalentProfileSheet";
 import { useIndustryProOptional } from "@/components/talent-buyers/billing/IndustryProContext";
 import { useNotificationsPanel } from "@/components/workspace/WorkspaceNotifications";
@@ -51,9 +53,9 @@ function peopleCount(count: number) {
 
 function libraryPerson(person: LibraryTalent): Talent {
   return {
-    id: person.profileId,
+    id: person.userId ?? person.profileId,
     professionalProfileId: person.profileId,
-    slug: person.slug || person.profileId,
+    slug: person.userId || person.slug || person.profileId,
     name: person.name,
     location: person.location ?? undefined,
     styles: person.styles,
@@ -79,6 +81,9 @@ export function DiscoverSaved({
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [draftName, setDraftName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const mutation = useRef(false);
+  const request = useRef(0);
   const [open, setOpen] = useState<SavedCollection | null>(null);
 
   const loadHome = useCallback(async () => {
@@ -103,7 +108,7 @@ export function DiscoverSaved({
           })),
           error: rosterResult.error,
         },
-        sharedResult: { lists: [] as ReferrerListSummary[], error: null },
+        sharedResult: null,
       };
     }
     const [favoriteResult, notifyResult, listResult, sharedResult] = await Promise.all([
@@ -116,45 +121,52 @@ export function DiscoverSaved({
   }, [rosters]);
 
   const refresh = useCallback(async () => {
-    const { favoriteResult, notifyResult, listResult, sharedResult } = await loadHome();
-    setFavorites(favoriteResult.talent);
-    setNotifying(notifyResult.talent);
-    setLists(listResult.lists);
-    setShared(sharedResult.lists);
-    setError(favoriteResult.error ?? notifyResult.error ?? listResult.error ?? sharedResult.error);
-    setLoading(false);
+    const generation = ++request.current;
+    try {
+      const { favoriteResult, notifyResult, listResult, sharedResult } = await loadHome();
+      if (generation !== request.current) return;
+      if (!favoriteResult.error) setFavorites(favoriteResult.talent);
+      if (!notifyResult.error) setNotifying(notifyResult.talent);
+      if (!listResult.error) setLists(listResult.lists);
+      if (sharedResult && !sharedResult.error) setShared(sharedResult.lists);
+      setError(favoriteResult.error ?? notifyResult.error ?? listResult.error ?? sharedResult?.error ?? null);
+    } catch {
+      if (generation === request.current) setError("Could not refresh saved people. Check your connection and retry.");
+    } finally { if (generation === request.current) setLoading(false); }
   }, [loadHome]);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = request;
+    const generation = ++controller.current;
     void loadHome().then(({ favoriteResult, notifyResult, listResult, sharedResult }) => {
-      if (cancelled) return;
-      setFavorites(favoriteResult.talent);
-      setNotifying(notifyResult.talent);
-      setLists(listResult.lists);
-      setShared(sharedResult.lists);
-      setError(favoriteResult.error ?? notifyResult.error ?? listResult.error ?? sharedResult.error);
-      setLoading(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [loadHome]);
+      if (generation !== controller.current) return;
+      if (!favoriteResult.error) setFavorites(favoriteResult.talent);
+      if (!notifyResult.error) setNotifying(notifyResult.talent);
+      if (!listResult.error) setLists(listResult.lists);
+      if (sharedResult && !sharedResult.error) setShared(sharedResult.lists);
+      setError(favoriteResult.error ?? notifyResult.error ?? listResult.error ?? sharedResult?.error ?? null);
+    }).catch(() => { if (generation === controller.current) setError("Could not load saved people. Please retry."); })
+      .finally(() => { if (generation === controller.current) setLoading(false); });
+    const reconnect = () => { if (document.visibilityState === "visible") void refresh(); };
+    window.addEventListener("online", reconnect);
+    document.addEventListener("visibilitychange", reconnect);
+    return () => { controller.current++; window.removeEventListener("online", reconnect); document.removeEventListener("visibilitychange", reconnect); };
+  }, [loadHome, refresh]);
 
   async function createList() {
     const trimmed = draftName.trim();
-    if (!trimmed) return;
+    if (!trimmed || mutation.current) return;
     if (rosters && !requirePro("roster_write")) return;
-    const result = rosters
-      ? await createCollection({ name: trimmed })
-      : await createDiscoverList(trimmed);
-    setError(result.error ?? null);
-    if (!result.id) return;
-    setDraftName("");
-    setCreating(false);
-    setTab("mine");
-    await refresh();
-    setOpen({ kind: "list", id: result.id, name: trimmed, owned: true });
+    mutation.current = true; setSaving(true); setError(null);
+    try {
+      const result = rosters ? await createCollection({ name: trimmed }) : await createDiscoverList(trimmed);
+      setError(result.error ?? null);
+      if (!result.id) return;
+      setDraftName(""); setCreating(false); setTab("mine");
+      await refresh();
+      setOpen({ kind: "list", id: result.id, name: trimmed, owned: true });
+    } catch { setError("Could not create this collection. Your name has been kept; please retry."); }
+    finally { mutation.current = false; setSaving(false); }
   }
 
   const visibleLists = tab === "mine" ? lists : shared;
@@ -193,14 +205,14 @@ export function DiscoverSaved({
             className="workspace-bare-input"
             autoFocus
           />
-          <button type="submit" className="discover-saved__create-submit" disabled={!draftName.trim()}>Create</button>
+          <button type="submit" className="discover-saved__create-submit" disabled={saving || !draftName.trim()}>{saving ? "Creating…" : "Create"}</button>
           <button type="button" className="discover-saved__icon" aria-label="Cancel" onClick={() => setCreating(false)}>
             <X size={16} aria-hidden />
           </button>
         </form>
       ) : null}
 
-      {error ? <p className="discover-saved__error">{error}</p> : null}
+      {error ? <p role="alert" className="discover-saved__error">{error} <button type="button" className="underline" onClick={() => void refresh()}>Retry</button></p> : null}
 
       {loading ? (
         <div className="discover-saved__grid" aria-hidden>
@@ -238,7 +250,7 @@ export function DiscoverSaved({
               onClick={() => setOpen({ kind: "list", id: list.id, name: list.name, owned: !list.shared })}
             />
           ))}
-          {tab === "shared" && shared.length === 0 ? (
+          {tab === "shared" && !rosters && shared.length === 0 ? (
             <div className="discover-saved__empty">
               <Users size={20} aria-hidden />
               <p>{rosters ? "Rosters shared with you will show up here." : "Lists shared with you will show up here."}</p>
@@ -246,6 +258,8 @@ export function DiscoverSaved({
           ) : null}
         </div>
       )}
+
+      {tab === "shared" ? <SharedRostersSection /> : null}
 
       <SavedCollectionPanel
         key={open ? (open.kind === "list" ? open.id : open.kind) : "none"}
@@ -323,6 +337,10 @@ function SavedCollectionPanel({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [returned, setReturned] = useState(false);
   const bodyTop = useRef<HTMLSpanElement>(null);
+  const scrollPosition = useRef(0);
+  const [busy, setBusy] = useState(false);
+  const mutation = useRef(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!collection) return;
@@ -341,17 +359,19 @@ function SavedCollectionPanel({
           : fetchReferrerDiscoverListMembers(collection.id);
     void request.then((result) => {
       if (cancelled) return;
-      setMembers(result.talent);
+      if (!result.error) setMembers(result.talent);
       setError(result.error);
-    });
+    }).catch(() => { if (!cancelled) setError("Could not load these people. Check your connection and retry."); });
     return () => {
       cancelled = true;
     };
-  }, [collection, rosters]);
+  }, [collection, rosters, attempt]);
 
   const handleChrome = useCallback((next: TalentProfileChrome) => {
     setChrome((current) => (current?.title === next.title && current?.pop === next.pop ? current : next));
   }, []);
+
+  useEffect(() => { if (!profile) bodyTop.current?.closest(".workspace-side-panel__body")?.scrollTo({ top: scrollPosition.current }); }, [profile]);
 
   if (!collection) {
     return <WorkspaceSidePanel id={PANEL_ID} open={false} title="Saved" onClose={onClose}>{null}</WorkspaceSidePanel>;
@@ -368,41 +388,43 @@ function SavedCollectionPanel({
     setProfile(null);
     setChrome(null);
     setReturned(true);
-    bodyTop.current?.closest(".workspace-side-panel__body")?.scrollTo({ top: 0 });
+
   }
 
+  async function mutate(action: () => Promise<void>) {
+    if (mutation.current) return;
+    mutation.current = true; setBusy(true); setError(null);
+    try { await action(); }
+    catch { setError("Could not confirm this change. Your edits have been kept; please retry."); }
+    finally { mutation.current = false; setBusy(false); }
+  }
   async function saveName() {
     if (collection?.kind !== "list" || renaming === null) return;
     const next = renaming.trim();
-    setRenaming(null);
-    if (!next || next === collection.name) return;
-    const result = rosters
-      ? await updateCollection({ collectionId: collection.id, name: next })
-      : await renameDiscoverList(collection.id, next);
-    setError(result.error ?? null);
-    if (result.error) return;
-    onRenamed(next);
-    await onChanged();
+    if (!next) return;
+    if (next === collection.name) { setRenaming(null); return; }
+    await mutate(async () => {
+      const result = rosters ? await updateCollection({ collectionId: collection.id, name: next }) : await renameDiscoverList(collection.id, next);
+      if (result.error) { setError(result.error); return; }
+      setRenaming(null); onRenamed(next); await onChanged();
+    });
   }
-
   async function removeList() {
     if (collection?.kind !== "list") return;
-    const result = rosters ? await deleteCollection(collection.id) : await deleteDiscoverList(collection.id);
-    setError(result.error ?? null);
-    if (result.error) return;
-    onClose();
-    await onChanged();
+    await mutate(async () => {
+      const result = rosters ? await deleteCollection(collection.id) : await deleteDiscoverList(collection.id);
+      if (result.error) { setError(result.error); return; }
+      onClose(); await onChanged();
+    });
   }
-
   async function removeMember(talentId: string) {
     if (collection?.kind !== "list") return;
-    const result = rosters
-      ? await removeTalentFromCollection({ collectionId: collection.id, profileIds: [talentId] })
-      : await removeFromDiscoverList(collection.id, talentId);
-    setError(result.error ?? null);
-    if (result.error) return;
-    setMembers((current) => current?.filter((person) => person.id !== talentId) ?? null);
-    await onChanged();
+    await mutate(async () => {
+      const result = rosters ? await removeTalentFromCollection({ collectionId: collection.id, profileIds: [talentId] }) : await removeFromDiscoverList(collection.id, talentId);
+      if (result.error) { setError(result.error); return; }
+      setMembers(current => current?.filter(person => (rosters ? person.professionalProfileId || person.id : person.id) !== talentId) ?? null);
+      await onChanged();
+    });
   }
 
   return (
@@ -410,7 +432,7 @@ function SavedCollectionPanel({
       id={PANEL_ID}
       open={!notifications.open}
       title={title}
-      onClose={onClose}
+      onClose={() => { if (!mutation.current) onClose(); }}
       leading={profile ? (
         <button type="button" className="workspace-notifications__close" aria-label="Back" onClick={back}>
           <ChevronLeft size={18} aria-hidden />
@@ -442,13 +464,14 @@ function SavedCollectionPanel({
                 className="workspace-bare-input"
                 autoFocus
               />
-              <button type="submit" className="discover-saved__create-submit" disabled={!renaming.trim()}>Save</button>
+              <button type="submit" className="discover-saved__create-submit" disabled={busy || !renaming.trim()}>{busy ? "Saving…" : "Save"}</button>
               <button type="button" className="discover-saved__icon" aria-label="Cancel rename" onClick={() => setRenaming(null)}>
                 <X size={16} aria-hidden />
               </button>
             </form>
           ) : null}
-          {error ? <p className="discover-saved__error">{error}</p> : null}
+          {error ? <p role="alert" className="discover-saved__error">{error} <button type="button" className="underline" onClick={() => setAttempt(value => value + 1)}>Retry loading</button></p> : null}
+          {owned && rosters ? <RosterAccessButton listId={collection.id} listName={collection.name} /> : null}
           <p className="discover-saved-panel__count">{members === null ? "Loading…" : peopleCount(members.length)}</p>
           {members !== null && members.length === 0 ? (
             <div className="discover-saved__empty">
@@ -460,7 +483,7 @@ function SavedCollectionPanel({
             <ul className="home-profile__menu discover-saved-panel__members">
               {members.map((person) => (
                 <li key={person.id} className="discover-saved-member">
-                  <button type="button" className="home-profile-row" onClick={() => setProfile(person)}>
+                  <button type="button" className="home-profile-row" onClick={() => { scrollPosition.current = bodyTop.current?.closest(".workspace-side-panel__body")?.scrollTop ?? 0; setProfile(person); }}>
                     {person.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img className="home-profile-row__thumb" src={person.imageUrl} alt="" />
@@ -477,8 +500,9 @@ function SavedCollectionPanel({
                     <button
                       type="button"
                       className="discover-saved__icon"
+                      disabled={busy}
                       aria-label={`Remove ${person.name} from ${noun}`}
-                      onClick={() => void removeMember(person.id)}
+                      onClick={() => void removeMember(rosters ? person.professionalProfileId || person.id : person.id)}
                     >
                       <X size={15} aria-hidden />
                     </button>
@@ -490,9 +514,9 @@ function SavedCollectionPanel({
           {owned ? (
             confirmDelete ? (
               <div className="discover-saved-panel__confirm">
-                <p>Delete this {noun}? People on it stay in Favorites.</p>
+                <p>Delete this {noun}? Its membership and shared access will be removed. Individual profiles are kept.</p>
                 <div>
-                  <button type="button" className="discover-saved__danger" onClick={() => void removeList()}>Delete {noun}</button>
+                  <button type="button" className="discover-saved__danger" disabled={busy} onClick={() => void removeList()}>Delete {noun}</button>
                   <button type="button" className="discover-saved__quiet" onClick={() => setConfirmDelete(false)}>Cancel</button>
                 </div>
               </div>

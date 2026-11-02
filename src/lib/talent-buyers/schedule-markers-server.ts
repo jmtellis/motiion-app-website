@@ -73,8 +73,8 @@ function isHiddenLegacyContainer(row: ProjectRow) {
 async function fetchProductionJobs(
   supabase: NonNullable<Awaited<ReturnType<typeof createServerSupabaseClient>>>,
   ownerId: string,
-): Promise<JobRow[]> {
-  const { data: organized } = await supabase.from("job_organizers").select("job_id").eq("user_id", ownerId);
+): Promise<{ jobs: JobRow[]; error: boolean }> {
+  const { data: organized, error: organizerError } = await supabase.from("job_organizers").select("job_id").eq("user_id", ownerId);
   const organizedIds = (organized ?? []).map((row) => row.job_id as string);
 
   let query = supabase
@@ -89,28 +89,29 @@ async function fetchProductionJobs(
   const { data, error } = await query;
   if (error) {
     console.debug("fetchScheduleMarkers jobs:", error.message);
-    return [];
+    return { jobs: [], error: true };
   }
-  return ((data ?? []) as JobRow[]).filter((job) => {
+  return { error: Boolean(organizerError), jobs: ((data ?? []) as JobRow[]).filter((job) => {
     const status = (job.status ?? "").toLowerCase();
     return status !== "cancelled";
-  });
+  }) };
 }
 
 /** Every dated beat across the signed-in owner's projects, activities, and jobs. */
-export async function fetchScheduleMarkers(ownerId: string): Promise<ScheduleMarker[]> {
+export async function fetchScheduleBundle(ownerId: string): Promise<{ markers: ScheduleMarker[]; error: string | null }> {
   const supabase = await createServerSupabaseClient();
-  if (!supabase) return [];
+  if (!supabase) return { markers: [], error: "Calendar is temporarily unavailable. Please try again." };
 
-  const [{ data: projectRows, error: projectError }, { data: activityRows, error: activityError }, jobs] =
+  const { data: memberships, error: membershipError } = await supabase.from("project_members")
+    .select("project_id").eq("user_id", ownerId);
+  const memberIds = [...new Set((memberships ?? []).map((row) => row.project_id as string))];
+  let projectQuery = supabase.from("projects").select(
+    "id, title, is_active, project_type, enabled_modules, project_configuration, casting_configuration, start_date, end_date, location",
+  ).limit(500);
+  projectQuery = memberIds.length ? projectQuery.or(`poster_id.eq.${ownerId},id.in.(${memberIds.join(",")})`) : projectQuery.eq("poster_id", ownerId);
+  const [{ data: projectRows, error: projectError }, { data: activityRows, error: activityError }, jobResult] =
     await Promise.all([
-      supabase
-        .from("projects")
-        .select(
-          "id, title, is_active, project_type, enabled_modules, project_configuration, casting_configuration, start_date, end_date, location",
-        )
-        .eq("poster_id", ownerId)
-        .limit(500),
+      projectQuery,
       supabase
         .from("activities")
         .select("id, title, type, project_id, location, activity_date, start_time, end_time")
@@ -127,15 +128,17 @@ export async function fetchScheduleMarkers(ownerId: string): Promise<ScheduleMar
   const projectById = new Map(projects.map((project) => [project.id, project]));
   const activities = (activityRows ?? []) as ActivityRow[];
 
+  let dayError = false;
   const eventDaysByActivity = new Map<string, EventDayRow[]>();
   if (activities.length) {
-    const { data: dayRows } = await supabase
+    const { data: dayRows, error: loadDaysError } = await supabase
       .from("activity_event_days")
       .select("activity_id, day_date, start_time, end_time, label")
       .in(
         "activity_id",
         activities.map((activity) => activity.id),
       );
+    dayError = Boolean(loadDaysError);
     for (const row of (dayRows ?? []) as EventDayRow[]) {
       const list = eventDaysByActivity.get(row.activity_id) ?? [];
       list.push(row);
@@ -190,7 +193,7 @@ export async function fetchScheduleMarkers(ownerId: string): Promise<ScheduleMar
     );
   }
 
-  for (const job of jobs) {
+  for (const job of jobResult.jobs) {
     markers.push(
       ...buildJobScheduleMarkers({
         id: job.id,
@@ -202,7 +205,12 @@ export async function fetchScheduleMarkers(ownerId: string): Promise<ScheduleMar
     );
   }
 
-  return sortScheduleMarkers(markers);
+  return { markers: sortScheduleMarkers(markers), error: projectError || activityError || membershipError || jobResult.error || dayError
+    ? "Some project dates couldn't be loaded. Retry to see your complete schedule." : null };
+}
+
+export async function fetchScheduleMarkers(ownerId: string): Promise<ScheduleMarker[]> {
+  return (await fetchScheduleBundle(ownerId)).markers;
 }
 
 /**

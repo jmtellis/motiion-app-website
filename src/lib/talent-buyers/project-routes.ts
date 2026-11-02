@@ -76,7 +76,8 @@ export function classSessionCreatePath(projectId: string) {
 
 /** Routes under `(workspace)` for project workspace views. */
 const PROJECT_WORKSPACE_PATH_SEGMENTS = new Set([
-  "bookings",
+  "bookings", // retained for old workspace links
+  "coordination",
   "overview",
   "files",
   "workspace",

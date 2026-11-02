@@ -1,5 +1,7 @@
 "use client";
 
+import { ProjectNotesPanel } from "./ProjectNotesPanel";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type ReactNode } from "react";
@@ -12,6 +14,7 @@ import {
 } from "@/app/(buyer-app)/(paid)/projects/composable-actions";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
 import type { ProjectClassSeriesSummary } from "@/lib/talent-buyers/project-classes";
+import { castingOverviewState } from "@/lib/talent-buyers/casting/casting-completion";
 import {
   PROJECT_ABILITIES,
   PROJECT_ABILITY_ORDER,
@@ -193,6 +196,8 @@ function AbilitySection({
   const router = useRouter();
   const { showToast } = useToast();
   const [pending, startTransition] = useTransition();
+  const { project } = useProjectWorkspace();
+  const isOwner = project.isOwner !== false;
   const definition = PROJECT_ABILITIES[ability.id];
   const Icon = definition.icon;
   const paused = ability.status === "paused";
@@ -221,7 +226,7 @@ function AbilitySection({
         </Link>
       </header>
       <div className="ability-section__body">{children}</div>
-      <footer className="ability-section__footer">
+      {isOwner && <footer className="ability-section__footer">
         {paused ? (
           <button type="button" className="bd-btn-secondary" onClick={resume} disabled={pending}>
             Resume {definition.label.toLowerCase()}
@@ -231,7 +236,7 @@ function AbilitySection({
             {action.label}
           </Link>
         )}
-      </footer>
+      </footer>}
     </section>
   );
 }
@@ -243,13 +248,6 @@ function Stat({ label, value }: { label: string; value: ReactNode }) {
       <dd>{value}</dd>
     </div>
   );
-}
-
-function castingStatusLabel(status: string | null | undefined) {
-  if (status === "published" || status === "open") return "Open";
-  if (status === "paused") return "Paused";
-  if (status === "closed") return "Closed";
-  return "Draft";
 }
 
 function formatSessionWhen(date: string | null, time: string | null) {
@@ -290,12 +288,17 @@ export function ComposableProjectHome({
   const dates = formatProjectDateRange(composable.startDate, composable.endDate);
   const primaryCasting = castingWorkflow?.primaryCasting ?? null;
   const castingStatus = primaryCasting?.status ?? castings[0]?.status ?? null;
+  const castingOverview = castingOverviewState({
+    roles: castingWorkflow?.roles ?? [],
+    status: castingStatus,
+    visibility: primaryCasting?.visibility ?? castings[0]?.visibility,
+  });
   const applicantCount = castingWorkflow ? castingWorkflow.candidates.length : null;
 
   return (
     <div className="project-home">
       <div className="project-home__main">
-        {showPrompt ? <WhatDoYouNeed projectId={projectId} suggest={suggest} /> : null}
+        {showPrompt && project.isOwner !== false ? <WhatDoYouNeed projectId={projectId} suggest={suggest} /> : null}
 
         {!showPrompt && abilities.length === 0 ? (
           <section className={`project-home__empty${showBanner ? " project-home__empty--banner" : ""}`}>
@@ -303,9 +306,9 @@ export function ComposableProjectHome({
               <h2>{showBanner ? "Ready to put this project to work?" : "No abilities yet"}</h2>
               <p>Add casting, a roster, or classes when you need them. Nothing is published until you do.</p>
             </div>
-            <button type="button" className="buyer-chrome-bar__cta" onClick={() => openAbilityManager()}>
+            {project.isOwner !== false && <button type="button" className="buyer-chrome-bar__cta" onClick={() => openAbilityManager()}>
               <Plus aria-hidden /> Ability
-            </button>
+            </button>}
           </section>
         ) : null}
 
@@ -321,18 +324,18 @@ export function ComposableProjectHome({
                     action={
                       counts.castingRoleCount === 0
                         ? { label: "Add first role", href: projectAbilityFirstStepPath(projectId, "casting") }
-                        : { label: "Review applicants", href: projectWorkspacePath(projectId, "review") }
+                        : castingOverview.finalized
+                          ? { label: "View cast", href: projectWorkspacePath(projectId, "cast") }
+                          : { label: "Review applicants", href: projectWorkspacePath(projectId, "review") }
                     }
                   >
                     <dl className="ability-stats">
-                      <Stat label="Status" value={castingStatusLabel(castingStatus)} />
+                      <Stat label="Status" value={castingOverview.label} />
                       <Stat label="Roles" value={counts.castingRoleCount} />
                       <Stat label="Applicants" value={applicantCount ?? "—"} />
                     </dl>
                     <p className="ability-section__note">
-                      {castingStatus === "published" || castingStatus === "open"
-                        ? "Your open call is live for talent."
-                        : "Private until you publish the casting."}
+                      {castingOverview.description}
                     </p>
                   </AbilitySection>
                 );
@@ -404,15 +407,16 @@ export function ComposableProjectHome({
             })}
           </div>
         ) : null}
+        <ProjectNotesPanel key={projectId} projectId={projectId} body={project.notes ?? ""} canEdit={project.isOwner !== false} />
       </div>
 
       <aside className="project-home__aside" aria-label="Project details">
         <section className="project-home__details">
           <header>
             <h3>Details</h3>
-            <button type="button" className="ability-section__open" onClick={openShellEditor}>
+            {project.isOwner !== false && <button type="button" className="ability-section__open" onClick={openShellEditor}>
               Edit
-            </button>
+            </button>}
           </header>
           <dl>
             <div>

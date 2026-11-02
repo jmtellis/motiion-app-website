@@ -25,7 +25,7 @@ export function castingConfigurationToComposerForm(
     rateType: (meta?.rate_type as CastingComposerForm["rateType"]) ?? "fixed",
     rateDetails: (meta?.rate_details as CastingComposerForm["rateDetails"]) ?? {},
     isUnion: Boolean(meta?.is_union),
-    visibility: (casting.visibility as CastingComposerForm["visibility"]) ?? "public",
+    visibility: casting.visibility === "public" || casting.visibility === "unlisted" ? casting.visibility : "private",
     password: "",
     coverImageUrl: "",
     coverThumbnailAlignment: "top",

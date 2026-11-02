@@ -1,40 +1,12 @@
 "use client";
 
-const SITE_HOME = "https://www.motiion.app";
+import Link from "next/link";
+import { Modal } from "@/components/talent-buyers/dashboard/Modal";
+import { safeAuthReturnPath } from "@/lib/auth/redirects";
 
-export function SessionSignUpRequiredModal({
-  sharePath,
-  onClose,
-}: {
-  sharePath: string;
-  onClose: () => void;
-}) {
-  const appHref = `${SITE_HOME}${sharePath.startsWith("/") ? sharePath : `/${sharePath}`}`;
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="session-signup-title"
-      className="casting-modal-backdrop"
-      onClick={onClose}
-    >
-      <div className="casting-modal-card" onClick={(event) => event.stopPropagation()}>
-        <h2 id="session-signup-title" className="casting-modal-title">
-          Account required
-        </h2>
-        <p className="casting-body-copy">
-          To request to join this session, download the Motiion app, create an account, then open this link again.
-        </p>
-        <div className="casting-modal-actions">
-          <a href={appHref} className="casting-modal-primary">
-            Get the app
-          </a>
-          <button type="button" onClick={onClose} className="casting-modal-dismiss">
-            Got it
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+export function SessionSignUpRequiredModal({ sharePath, onClose }: { sharePath: string; onClose: () => void }) {
+  const next = encodeURIComponent(safeAuthReturnPath(sharePath) ?? "/home");
+  return <Modal open onClose={onClose} title="Join with your Motiion account" description="Sign in or create a free talent account, then return here to request a place.">
+    <div className="flex flex-wrap gap-3"><Link className="ui-button" href={`/login?next=${next}`}>Sign in</Link><Link className="ui-button ui-button--secondary" href={`/signup?account_type=talent&next=${next}`}>Create account</Link></div>
+  </Modal>;
 }

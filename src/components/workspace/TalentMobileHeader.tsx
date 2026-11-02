@@ -20,16 +20,14 @@ export function TalentMobileHeader({
   const pathname = usePathname();
   const menuId = useId();
   const rootRef = useRef<HTMLElement>(null);
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
+  const [openPath, setOpenPath] = useState<string | null>(null);
+  const open = openPath === pathname;
+  const setOpen = (next: boolean) => setOpenPath(next ? pathname : null);
 
   useEffect(() => {
     const query = window.matchMedia("(min-width: 1024px)");
     const closeOnDesktop = () => {
-      if (query.matches) setOpen(false);
+      if (query.matches) setOpenPath(null);
     };
     query.addEventListener("change", closeOnDesktop);
     return () => query.removeEventListener("change", closeOnDesktop);
@@ -39,10 +37,10 @@ export function TalentMobileHeader({
     if (!open) return;
 
     function onPointerDown(event: globalThis.MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      if (!rootRef.current?.contains(event.target as Node)) setOpenPath(null);
     }
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") setOpenPath(null);
     }
 
     document.addEventListener("mousedown", onPointerDown);
@@ -68,7 +66,7 @@ export function TalentMobileHeader({
           className="talent-mobile-header__toggle"
           aria-expanded={open}
           aria-controls={menuId}
-          onClick={() => setOpen((current) => !current)}
+          onClick={() => setOpen(!open)}
         >
           {open ? <X aria-hidden /> : <Menu aria-hidden />}
           <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>

@@ -50,17 +50,17 @@ type BuyerTalentProfileViewProps = {
   defaultTab?: ProfileTab;
 };
 
-export function BuyerTalentProfileView({
+export function BuyerTalentProfileView(props: BuyerTalentProfileViewProps) {
+  return <BuyerTalentProfileContent key={`${props.profile.id}:${props.defaultTab ?? "about"}`} {...props} />;
+}
+
+function BuyerTalentProfileContent({
   profile,
   hideActions = false,
   defaultTab = "about",
 }: BuyerTalentProfileViewProps) {
   const [tab, setTab] = useState<ProfileTab>(defaultTab);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setTab(defaultTab);
-  }, [defaultTab, profile.id]);
 
   useEffect(() => {
     scrollContainerRef.current?.scrollTo({ top: 0 });
@@ -73,7 +73,7 @@ export function BuyerTalentProfileView({
     [profile.styles, profile.talent_types],
   );
   const highlights = profile.profile_highlights ?? [];
-  const attributeStrip = useMemo(() => buildAttributeStrip(profile), [profile]);
+  const attributeStrip = buildAttributeStrip(profile);
 
   const initials =
     displayName
@@ -567,18 +567,10 @@ function HighlightCard({
 
 function ResumeTab({ experiences }: { experiences: ProfileExperience[] }) {
   const categories = useMemo(() => visibleResumeCategories(experiences), [experiences]);
-  const [selectedCategory, setSelectedCategory] = useState<ResumeExperienceCategory | null>(null);
-  const [expandedGroupIds, setExpandedGroupIds] = useState<Set<string>>(() => new Set());
-
-  useEffect(() => {
-    if (categories.length === 0) {
-      setSelectedCategory(null);
-      return;
-    }
-    setSelectedCategory((current) =>
-      current && categories.some(({ key }) => key === current) ? current : categories[0]!.key,
-    );
-  }, [categories]);
+  const [preferredCategory, setSelectedCategory] = useState<ResumeExperienceCategory | null>(null);
+  const selectedCategory = categories.some(({ key }) => key === preferredCategory) ? preferredCategory : categories[0]?.key ?? null;
+  const [expandedGroups, setExpandedGroups] = useState<{ category: ResumeExperienceCategory | null; ids: Set<string> }>({ category: null, ids: new Set() });
+  const expandedGroupIds = expandedGroups.category === selectedCategory ? expandedGroups.ids : new Set<string>();
 
   const groupedItems = useMemo(() => {
     if (!selectedCategory) return [];
@@ -586,21 +578,17 @@ function ResumeTab({ experiences }: { experiences: ProfileExperience[] }) {
     return groupResumeExperienceItems(items);
   }, [experiences, selectedCategory]);
 
-  useEffect(() => {
-    setExpandedGroupIds(new Set());
-  }, [selectedCategory]);
-
   if (categories.length === 0) {
     return <EmptyPanel message="Resume credits will appear here when added in Motiion." />;
   }
 
   function toggleGroup(group: GroupedResumeExperience) {
     if (group.children.length <= 1) return;
-    setExpandedGroupIds((current) => {
-      const next = new Set(current);
+    setExpandedGroups((current) => {
+      const next = new Set(current.category === selectedCategory ? current.ids : []);
       if (next.has(group.id)) next.delete(group.id);
       else next.add(group.id);
-      return next;
+      return { category: selectedCategory, ids: next };
     });
   }
 
@@ -618,9 +606,10 @@ function ResumeTab({ experiences }: { experiences: ProfileExperience[] }) {
                 id="resume-category"
                 className="buyer-talent-profile__category-select"
                 value={selectedCategory}
-                onChange={(event) =>
-                  setSelectedCategory(event.target.value as ResumeExperienceCategory)
-                }
+                onChange={(event) => {
+                  setSelectedCategory(event.target.value as ResumeExperienceCategory);
+                  setExpandedGroups({ category: null, ids: new Set() });
+                }}
               >
                 {categories.map(({ key, label }) => (
                   <option key={key} value={key}>

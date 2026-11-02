@@ -78,10 +78,10 @@ export async function loadDiscoverCanvas(
     result = await searchCuratedTalent(collection.talent_ids);
     initialData = buildNavigatorInitialData(result);
   } else {
-    const [navigator, browse] = await Promise.all([
-      searchTalentProfiles(filters),
-      searchBrowseTalent({ ...filters, navigator: false }),
-    ]);
+    // Browse needs one counted page. Load the larger canvas only when Explore is requested.
+    const explore = ["discover", "explore"].includes(single(params, "view"));
+    const browse = await searchBrowseTalent({ ...filters, navigator: false });
+    const navigator = explore ? await searchTalentProfiles(filters) : browse;
     const lastPage = Math.max(1, Math.ceil(browse.total / browse.pageSize));
     if (browse.page > lastPage) {
       const next = new URLSearchParams();

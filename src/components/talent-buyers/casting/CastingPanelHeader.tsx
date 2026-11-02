@@ -13,14 +13,22 @@ type CastingPanelHeaderProps = {
   overflowActions?: ReactNode;
 };
 
-export function CastingPanelHeader({ center }: CastingPanelHeaderProps) {
-  // The tab itself is the page title. Casting-level actions live in the top chrome;
-  // section-specific controls live inside their respective content sections.
-  if (!center) return null;
+export function CastingPanelHeader({ center, primaryAction, onPrimaryAction, overflowActions }: CastingPanelHeaderProps) {
+  // The tab supplies the title; this toolbar retains each section's real controls.
+  if (!center && !primaryAction && !overflowActions) return null;
 
   return (
     <div className="project-workspace__panel-header project-workspace__panel-header--controls">
-      <div className="project-workspace__panel-header-center">{center}</div>
+      {center ? <div className="project-workspace__panel-header-center">{center}</div> : null}
+      <div className="project-workspace__panel-actions ml-auto">
+        {overflowActions}
+        {primaryAction ? (
+          <button type="button" className="bd-btn-accent text-sm" disabled={primaryAction.disabled || !onPrimaryAction}
+            onClick={() => onPrimaryAction?.(primaryAction.actionId)}>
+            {primaryAction.label}
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

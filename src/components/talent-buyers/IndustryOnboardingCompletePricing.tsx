@@ -1,4 +1,5 @@
 "use client";
+import { INDUSTRY_OFFER } from "@/lib/billing/industry-offer";
 
 import { Check } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
@@ -17,8 +18,8 @@ const freePlan: PricingPlan = {
 
 const proPlan: PricingPlan = {
   ...industryPricingContent.pro,
-  description: "60 days free, then $200/month. Card required — cancel anytime.",
-  cta: { label: "Start 60-day free trial", href: "#" },
+  description: INDUSTRY_OFFER.description,
+  cta: { label: INDUSTRY_OFFER.cta, href: "#" },
 };
 
 function PlanCard({
@@ -75,15 +76,15 @@ export function IndustryOnboardingCompletePricing({
   pending,
   pendingMode,
   onContinueFree,
-  onStartTrial,
+  onUpgrade,
 }: {
   title: string;
   subtitle?: string;
   error?: string | null;
   pending: boolean;
-  pendingMode: "free" | "trial" | null;
+  pendingMode: "free" | "upgrade" | null;
   onContinueFree: () => void;
-  onStartTrial: () => void;
+  onUpgrade: () => void;
 }) {
   const reduceMotion = useReducedMotion();
 
@@ -127,8 +128,8 @@ export function IndustryOnboardingCompletePricing({
         />
         <PlanCard
           plan={proPlan}
-          onSelect={onStartTrial}
-          pending={pending && pendingMode === "trial"}
+          onSelect={onUpgrade}
+          pending={pending && pendingMode === "upgrade"}
           pendingLabel="Redirecting…"
         />
       </motion.div>

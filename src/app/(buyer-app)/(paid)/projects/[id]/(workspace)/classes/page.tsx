@@ -9,12 +9,12 @@ import {
 } from "@/lib/talent-buyers/project-abilities";
 import { listProjectClassSessions, summarizeClassSeries } from "@/lib/talent-buyers/project-classes";
 import { projectHomePath } from "@/lib/talent-buyers/project-routes";
-import { fetchProjectRecord } from "@/lib/talent-buyers/projects";
+import { fetchAccessibleProjectRecord } from "@/lib/talent-buyers/projects";
 
 export default async function ProjectClassesPage({ params }: { params: Promise<{ id: string }> }) {
   const profile = await requireHiringAccount();
   const { id } = await params;
-  const project = await fetchProjectRecord(id, profile.id);
+  const project = await fetchAccessibleProjectRecord(id, profile.id);
 
   if (!project || !isComposableProject(project)) {
     redirect(projectHomePath(id));

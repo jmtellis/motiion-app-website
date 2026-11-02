@@ -1420,3 +1420,20 @@ button.event-program-cta-glass {
 .casting-application-help a { text-decoration: underline; }
 .casting-application .casting-submit-error { color: #b42318; }
 .casting-application button:disabled { opacity: 0.55; cursor: default; }
+
+/* Public activity pages retain their dark appearance inside the shared dialog. */
+.casting-modal-card.activity-booking-card {
+  color: var(--text-default, var(--ds-text-default, #fafafa));
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.activity-booking-card fieldset label {
+  min-height: 44px;
+}
+.activity-booking-card input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--ui-accent);
+}

@@ -9,6 +9,7 @@ import { IndustryPageHeader, IndustryEmptyState } from "./IndustryUI";
 import { BuyerEmptyIntro } from "@/components/talent-buyers/dashboard/BuyerEmptyIntro";
 import { NotificationAvatar, useNotificationActors } from "@/components/workspace/NotificationAvatar";
 import { useBuyerNotifications } from "@/hooks/use-buyer-notifications";
+import { coordinationNotificationHref, type NotificationViewerRole } from "@/lib/app/notification-inbox";
 import { castingNotificationHref } from "@/lib/app/talent-casting-state";
 import { dealMemoNotificationHref } from "@/lib/booking/deal-memo-routes";
 import { formatBuyerRelativeDate } from "@/lib/talent-buyers/dashboard-data";
@@ -31,9 +32,11 @@ function GhostNotificationRow() {
 export function NotificationsPageView({
   userId,
   linkCastings = false,
+  viewerRole = "industry",
 }: {
   userId: string;
   linkCastings?: boolean;
+  viewerRole?: NotificationViewerRole;
 }) {
   const router = useRouter();
   const {
@@ -132,7 +135,7 @@ export function NotificationsPageView({
       <ul className="buyer-notifications__list">
         {visible.map((row) => {
           const unread = !row.read_at;
-          const href = dealMemoNotificationHref(row) ?? (linkCastings ? castingNotificationHref(row) : null);
+          const href = coordinationNotificationHref(row, viewerRole) ?? dealMemoNotificationHref(row) ?? (linkCastings ? castingNotificationHref(row) : null);
           const title = row.title ?? row.type.replace(/_/g, " ");
           return (
             <li

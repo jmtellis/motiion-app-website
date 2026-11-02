@@ -41,13 +41,16 @@ export function OAuthButtons({
     setError(null);
 
     const redirectTo = buildOAuthRedirectUrl({
+      provider,
       flow,
+      returnTo: new URLSearchParams(window.location.search).get("next") ?? undefined,
       accountType: signupPath === "talent" ? "talent" : "lookingForTalent",
       talentSubtype: signupPath === "talent" ? talentSubtype : undefined,
       nonTalentType: signupPath === "hiring" ? nonTalentType : undefined,
       companyName: signupPath === "hiring" ? companyName : undefined,
     });
 
+    try {
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -64,6 +67,10 @@ export function OAuthButtons({
 
     if (oauthError) {
       setError(oauthError.message);
+      setLoadingProvider(null);
+    }
+    } catch {
+      setError("Couldn’t connect to sign-in. Check your connection and try again.");
       setLoadingProvider(null);
     }
   }

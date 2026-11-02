@@ -10,7 +10,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
-import { createPortal } from "react-dom";
+import { Dialog } from "@/components/ui/Dialog";
 
 import { CARD_ASPECT, loadImage, renderCrop, type CropRect } from "./media";
 
@@ -206,13 +206,7 @@ export function CropDialog({ src, title, onCancel, onApply }: { src: string; tit
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") onCancel();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onCancel]);
+
 
   const base = image && frame.width ? Math.max(frame.width / image.naturalWidth, frame.height / image.naturalHeight) : 1;
   const scale = base * zoom;
@@ -237,8 +231,8 @@ export function CropDialog({ src, title, onCancel, onApply }: { src: string; tit
     }
   }
 
-  return createPortal(
-    <div className="portfolio-dialog" data-portfolio-dialog role="dialog" aria-modal="true" aria-label={title}>
+  return (
+    <Dialog open onClose={onCancel} label={title} className="portfolio-dialog">
       <div className="portfolio-dialog__card">
         <header>
           <h2>{title}</h2>
@@ -290,7 +284,6 @@ export function CropDialog({ src, title, onCancel, onApply }: { src: string; tit
           </button>
         </footer>
       </div>
-    </div>,
-    document.body,
+    </Dialog>
   );
 }

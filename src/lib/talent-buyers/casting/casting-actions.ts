@@ -20,8 +20,6 @@ export const CANDIDATE_ROW_ACTIONS: CastingActionDescriptor[] = [
 
 export const CAST_ROW_ACTIONS: CastingActionDescriptor[] = [
   { id: "send-availability", label: "Send availability request", notifyTalentOption: true },
-  { id: "send-offer", label: "Send offer", variant: "primary", notifyTalentOption: true },
-  { id: "confirm-booking", label: "Confirm booking", variant: "primary" },
   { id: "mark-declined", label: "Mark declined" },
   { id: "replace", label: "Replace" },
   { id: "promote-alternate", label: "Promote alternate" },

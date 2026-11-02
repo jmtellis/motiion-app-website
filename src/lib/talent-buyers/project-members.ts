@@ -28,42 +28,21 @@ export async function listProjectMembers(projectId: string): Promise<{
 
   if (error) return { members: [], error: error.message };
 
-  const admin = createAdminSupabaseClient();
-  const members: ProjectMemberRow[] = [];
-
-  for (const row of data ?? []) {
-    let displayName = "Collaborator";
-    let email: string | null = null;
-
-    if (admin) {
-      const { data: profile } = await admin
-        .from("profiles")
-        .select("display_name, first_name, last_name, email")
-        .eq("user_id", row.user_id)
-        .maybeSingle<{
-          display_name: string | null;
-          first_name: string | null;
-          last_name: string | null;
-          email: string | null;
-        }>();
-      if (profile) {
-        email = profile.email;
-        displayName =
-          profile.display_name ||
-          [profile.first_name, profile.last_name].filter(Boolean).join(" ") ||
-          profile.email ||
-          displayName;
-      }
-    }
-
-    members.push({
-      id: row.id as string,
-      userId: row.user_id as string,
-      role: row.role as string,
-      displayName,
-      email,
-    });
-  }
+  const profileClient = createAdminSupabaseClient() ?? supabase;
+  const userIds = [...new Set((data ?? []).map((row) => row.user_id as string))];
+  const { data: profiles, error: profileError } = userIds.length
+    ? await profileClient.from("profiles").select("user_id, display_name, first_name, last_name, email").in("user_id", userIds)
+    : { data: [], error: null };
+  const byUser = new Map((profiles ?? []).map((profile) => [profile.user_id, profile]));
+  const members: ProjectMemberRow[] = (data ?? []).map((row) => {
+    const profile = byUser.get(row.user_id);
+    return {
+      id: row.id as string, userId: row.user_id as string, role: row.role as string,
+      displayName: profile?.display_name || [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || "Collaborator",
+      email: profile?.email ?? null,
+    };
+  });
+  if (profileError) return { members, error: "Some collaborator details could not be loaded. Please refresh to try again." };
 
   return { members };
 }
@@ -80,6 +59,9 @@ export async function addProjectMemberByEmail(input: {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "You must be signed in." };
+  const { data: canManage, error: accessError } = await supabase.rpc("is_project_operator", { p_project_id: input.projectId, p_user_id: user.id });
+  if (accessError || !canManage) return { ok: false, error: "Only the project owner or an approved admin can manage collaborators." };
+
 
   const admin = createAdminSupabaseClient();
   if (!admin) return { ok: false, error: "Admin client not configured." };
@@ -120,7 +102,11 @@ export async function removeProjectMember(memberId: string, projectId: string): 
   const supabase = await createServerSupabaseClient();
   if (!supabase) return { ok: false, error: "Supabase is not configured." };
 
-  const { error } = await supabase.from("project_members").delete().eq("id", memberId);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "You must be signed in." };
+  const { data: canManage, error: accessError } = await supabase.rpc("is_project_operator", { p_project_id: projectId, p_user_id: user.id });
+  if (accessError || !canManage) return { ok: false, error: "Only the project owner or an approved admin can manage collaborators." };
+  const { error } = await supabase.from("project_members").delete().eq("id", memberId).eq("project_id", projectId);
 
   if (error) return { ok: false, error: error.message };
 

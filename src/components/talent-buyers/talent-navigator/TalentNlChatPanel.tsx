@@ -246,6 +246,14 @@ export function TalentNlChatPanel({
   const listRef = useRef<HTMLDivElement>(null);
   const columnRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const requestVersion = useRef(0);
+  const filterSignature = JSON.stringify(filters);
+  const currentFilterSignature = useRef(filterSignature);
+  useEffect(() => {
+    currentFilterSignature.current = filterSignature;
+    requestVersion.current += 1;
+    return () => { requestVersion.current += 1; };
+  }, [filterSignature]);
   const roleMenuRef = useRef<HTMLDivElement>(null);
   const workedWithMenuRef = useRef<HTMLDivElement>(null);
 
@@ -265,7 +273,7 @@ export function TalentNlChatPanel({
   const dismissLabel = hasSearchResults ? "Browse results" : "Close chat";
 
   useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   }, [messages, isPending, activeIntent]);
 
   useEffect(() => {
@@ -312,6 +320,11 @@ export function TalentNlChatPanel({
   function applyResult(
     result: Awaited<ReturnType<typeof parseNlTalentQuery>>,
   ) {
+    if (result.data.source === "unavailable" && !result.blockingClarification) {
+      setMessages((current) => [...current, { id: `error-${crypto.randomUUID()}`, role: "assistant",
+        content: result.error || "Talent search is temporarily unavailable. Your previous results are still here; retry your search." }]);
+      return;
+    }
     onFiltersChange(result.filters, true);
     if (!result.blockingClarification) {
       onTalentPoolChange?.(result.data.talent);
@@ -341,7 +354,7 @@ export function TalentNlChatPanel({
     setMessages((current) => [
       ...current,
       {
-        id: `assistant-${Date.now()}`,
+        id: `assistant-${crypto.randomUUID()}`,
         role: "assistant",
         content: result.reasoning.prose,
         intent: result.intent,
@@ -362,46 +375,34 @@ export function TalentNlChatPanel({
     ]);
   }
 
-  function submitPrompt(event?: React.FormEvent, overridePrompt?: string) {
-    event?.preventDefault();
-    const prompt = (overridePrompt ?? input).trim();
-    if (!prompt || isPending) return;
-
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: prompt,
-    };
-    setMessages((current) => [...current, userMessage]);
-    if (!overridePrompt) setInput("");
-    setDismissedClarifications([]);
-
+  function runRefinement(request: () => Promise<Awaited<ReturnType<typeof parseNlTalentQuery>>>) {
+    if (isPending) return;
+    const requestId = ++requestVersion.current;
+    const requestedFilters = filterSignature;
     startTransition(async () => {
       try {
-        const result = await parseNlTalentQuery(prompt, filters);
+        const result = await request();
+        if (requestId !== requestVersion.current || requestedFilters !== currentFilterSignature.current) return;
         if (result.error && !result.intent) {
-          setMessages((current) => [
-            ...current,
-            {
-              id: `err-${Date.now()}`,
-              role: "assistant",
-              content: result.error ?? "Could not refine search.",
-            },
-          ]);
+          setMessages((current) => [...current, { id: `error-${crypto.randomUUID()}`, role: "assistant", content: result.error ?? "Could not refine search." }]);
           return;
         }
         applyResult(result);
       } catch {
-        setMessages((current) => [
-          ...current,
-          {
-            id: `err-${Date.now()}`,
-            role: "assistant",
-            content: "Search assistant unavailable. Try again in a moment.",
-          },
-        ]);
+        if (requestId !== requestVersion.current || requestedFilters !== currentFilterSignature.current) return;
+        setMessages((current) => [...current, { id: `error-${crypto.randomUUID()}`, role: "assistant", content: "Search assistant unavailable. Your previous results are still here. Try again in a moment." }]);
       }
     });
+  }
+
+  function submitPrompt(event?: React.FormEvent, overridePrompt?: string) {
+    event?.preventDefault();
+    const prompt = (overridePrompt ?? input).trim();
+    if (!prompt || isPending) return;
+    setMessages((current) => [...current, { id: `user-${crypto.randomUUID()}`, role: "user", content: prompt }]);
+    if (!overridePrompt) setInput("");
+    setDismissedClarifications([]);
+    runRefinement(() => parseNlTalentQuery(prompt, filters));
   }
 
   function selectWorkedWith(name: string, role: "artist" | "choreographer") {
@@ -418,41 +419,32 @@ export function TalentNlChatPanel({
     entityId: string;
     entityName: string;
   }) {
-    startTransition(async () => {
-      const result = await resolveCreditEntityChoice({
+    runRefinement(() => resolveCreditEntityChoice({
         priorFilters: filters,
         role: choice.role,
         entityId: choice.entityId,
         entityName: choice.entityName,
-      });
-      applyResult(result);
-    });
+    }));
   }
 
   function chooseProfile(profileId: string, profileName: string) {
     if (!activeIntent) return;
-    startTransition(async () => {
-      const result = await resolveReferenceProfileChoice({
+    runRefinement(() => resolveReferenceProfileChoice({
         priorFilters: filters,
         intent: activeIntent,
         profileId,
         profileName,
-      });
-      applyResult(result);
-    });
+    }));
   }
 
   function handleClarificationAnswer(questionId: string, optionIds: string[]) {
     if (!activeIntent) return;
-    startTransition(async () => {
-      const result = await applyNavigatorClarification({
+    runRefinement(() => applyNavigatorClarification({
         priorFilters: filters,
         intent: activeIntent,
         questionId,
         optionIds,
-      });
-      applyResult(result);
-    });
+    }));
   }
 
   function handleClarificationSkip(questionId: string) {
@@ -461,29 +453,23 @@ export function TalentNlChatPanel({
 
   function handleRemoveToken(tokenId: string) {
     if (!activeIntent) return;
-    startTransition(async () => {
-      const result = await removeNavigatorBriefToken({
+    runRefinement(() => removeNavigatorBriefToken({
         priorFilters: filters,
         intent: activeIntent,
         tokenId,
-      });
-      applyResult(result);
-    });
+    }));
   }
 
   function handleRelaxation(relaxationId: string) {
-    startTransition(async () => {
-      const result = await applyNavigatorRelaxation({
+    runRefinement(() => applyNavigatorRelaxation({
         priorFilters: filters,
         intent: activeIntent ?? undefined,
         relaxationId,
-      });
-      applyResult(result);
-    });
+    }));
   }
 
   function handleInputKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault();
       submitPrompt();
     }

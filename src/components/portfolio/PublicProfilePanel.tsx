@@ -25,11 +25,15 @@ export function ProfilePreviewFrame({ path, note }: { path: string; note?: strin
 
 export function PublicProfilePanel({ path, actionsHost }: { path: string; actionsHost: HTMLElement | null }) {
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function copy() {
-    await navigator.clipboard.writeText(`${window.location.origin}${path}`);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 2000);
+    setError(null);
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}${path}`);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch { setError("Couldn’t copy the link. Open your public profile and copy its address from the browser."); }
   }
 
   return (
@@ -42,6 +46,7 @@ export function PublicProfilePanel({ path, actionsHost }: { path: string; action
           <ExternalLink size={16} aria-hidden />
         </a>
       </PanelActions>
+      {error ? <p role="alert" className="ui-notice" data-tone="error">{error}</p> : null}
       <ProfilePreviewFrame path={path} note="This is what casting teams see. Saved changes appear here automatically." />
     </>
   );

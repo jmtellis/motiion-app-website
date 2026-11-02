@@ -1,4 +1,5 @@
 "use client";
+import { INDUSTRY_OFFER } from "@/lib/billing/industry-offer";
 
 import { useEffect, useState, useTransition } from "react";
 
@@ -16,7 +17,9 @@ export function PaywallCard({ feature }: { feature: string }) {
   function upgrade() {
     setError(null);
     startTransition(async () => {
-      const result = await startIndustryCheckout();
+      let result: { url: string | null; error?: string };
+      try { result = await startIndustryCheckout(); }
+      catch { setError("Could not connect to billing. Please retry."); return; }
       if (result.url) {
         window.location.href = result.url;
         return;
@@ -27,11 +30,10 @@ export function PaywallCard({ feature }: { feature: string }) {
 
   return (
     <div className="mx-auto flex min-h-[50vh] w-full max-w-lg flex-col items-center justify-center gap-4 p-8 text-center">
-      <p className="text-xs font-semibold tracking-[0.2em] text-white/42 uppercase">Industry Pro</p>
-      <h1 className="text-2xl font-semibold text-white/92">Start your free trial</h1>
-      <p className="text-sm leading-relaxed text-white/55">
-        {feature} requires Industry Pro. Get 60 days free, then $200/month. Enter a card to start —
-        you won’t be charged until the trial ends. Have a founder code? Enter it at checkout.
+      <p className="text-xs font-semibold tracking-[0.2em] text-[var(--ui-muted)] uppercase">Industry Pro</p>
+      <h1 className="text-2xl font-semibold text-[var(--ui-text)]">Upgrade to Industry Pro</h1>
+      <p className="text-sm leading-relaxed text-[var(--ui-muted)]">
+        {feature} requires Industry Pro. {INDUSTRY_OFFER.description} Eligible promotion codes can be entered at checkout.
       </p>
       <button
         type="button"
@@ -39,10 +41,10 @@ export function PaywallCard({ feature }: { feature: string }) {
         onClick={upgrade}
         className="bd-btn-primary mt-2 px-6 py-2.5 disabled:opacity-50"
       >
-        {isPending ? "Redirecting…" : "Start 60-day free trial"}
+        {isPending ? "Redirecting…" : INDUSTRY_OFFER.cta}
       </button>
-      <p className="text-xs text-white/40">Cancel anytime from Settings → Billing.</p>
-      {error ? <p className="text-sm text-amber-300">{error}</p> : null}
+      <p className="text-xs text-[var(--ui-muted)]">Cancel anytime from Settings → Billing.</p>
+      {error ? <p className="text-sm text-[var(--ui-danger)]">{error}</p> : null}
     </div>
   );
 }

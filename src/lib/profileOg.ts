@@ -54,7 +54,7 @@ export async function fetchPublicTalentName(slug: string): Promise<string | null
         apikey: anon,
         Authorization: `Bearer ${anon}`,
       },
-      next: { revalidate: 3600 },
+      cache: "no-store",
     });
     if (!res.ok) return null;
     const rows = (await res.json()) as { full_name: string | null }[];

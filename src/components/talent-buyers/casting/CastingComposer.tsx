@@ -1199,7 +1199,7 @@ export function CastingComposer({
               </div>
 
               <AuthMuted>
-                Publishing uses the Motiion casting RPC and requires Choreographer Pro. Drafts can be saved without publishing.
+                Review the role requirements and visibility before publishing. You can save a draft and return to it later.
               </AuthMuted>
             </div>
           ) : null}

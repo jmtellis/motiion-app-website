@@ -42,10 +42,12 @@ export function ProjectCoverAvatar({
 export function ProjectWorkspaceChromeEnd({
   project,
   castingStatus,
+  castingFinalized,
   onEditProject,
 }: {
   project: ProjectWorkspaceMeta;
   castingStatus?: CastingProjectStatus | null;
+  castingFinalized?: boolean;
   onEditProject?: () => void;
 }) {
   const isCastingProject = project.projectType === "casting";
@@ -55,6 +57,7 @@ export function ProjectWorkspaceChromeEnd({
       <CastingProjectChromeActions
         projectId={project.id}
         status={castingStatus}
+        finalized={castingFinalized}
         onEditProject={onEditProject ?? (() => {})}
       />
     );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import {
   Bookmark,
   CalendarClock,
@@ -21,6 +21,8 @@ import {
   type CastingInviteTarget,
 } from "@/app/(buyer-app)/(paid)/talent/actions";
 import type { PublicTalentProfile } from "@/types/public";
+
+import { Field } from "@/components/ui/Field";
 
 import { Modal } from "./dashboard/Modal";
 import { useToast } from "./dashboard/ToastProvider";
@@ -48,6 +50,7 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
 
   const [inviteTargets, setInviteTargets] = useState<CastingInviteTarget[]>([]);
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
 
   const [availabilityTitle, setAvailabilityTitle] = useState("Availability check");
   const [availabilityMessage, setAvailabilityMessage] = useState("");
@@ -61,47 +64,52 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
   const displayName = profile.full_name?.trim() || "Talent";
   const resumeUrl = profile.resume_url?.trim() || null;
 
-  useEffect(() => {
-    if (!inviteModalOpen) return;
-    setInviteLoading(true);
-    void listBuyerCastingTargets().then((result) => {
-      setInviteTargets(result.targets);
-      setInviteLoading(false);
-      if (result.error) showToast({ message: result.error, variant: "error" });
-    });
-  }, [inviteModalOpen, showToast]);
+  const inviteRequest = useRef(0);
 
-  function runAction(action: () => Promise<{ ok: boolean; error?: string }>, success: string) {
+  async function openInvite() {
+    if (!requirePro("talent_outreach")) return;
+    const request = ++inviteRequest.current;
+    setInviteModalOpen(true);
+    setInviteLoading(true);
+    setInviteError(null);
+    try {
+      const result = await listBuyerCastingTargets();
+      if (request !== inviteRequest.current) return;
+      setInviteTargets(result.targets);
+      if (result.error) setInviteError(result.error);
+    } catch {
+      if (request === inviteRequest.current) setInviteError("Could not load projects. Please try again.");
+    } finally {
+      if (request === inviteRequest.current) setInviteLoading(false);
+    }
+  }
+
+  function runAction(action: () => Promise<{ ok: boolean; error?: string }>, success: string, onSuccess?: () => void) {
     startTransition(async () => {
-      const result = await action();
-      if (result.ok) {
-        showToast({ message: success, variant: "success" });
-      } else {
-        showToast({ message: result.error ?? "Something went wrong.", variant: "error" });
+      try {
+        const result = await action();
+        showToast({ message: result.ok ? success : result.error ?? "Something went wrong.", variant: result.ok ? "success" : "error" });
+        if (result.ok) onSuccess?.();
+      } catch {
+        showToast({ message: "Could not complete this action. Please try again.", variant: "error" });
       }
     });
   }
 
   function handleInvite(target: CastingInviteTarget) {
     if (!requirePro("talent_outreach")) return;
-    startTransition(async () => {
-      const result = await inviteTalentFromNavigator(talentSlug, {
-        projectId: target.projectId,
-        castingId: target.castingId,
-      });
-      if (result.ok) {
-        showToast({ message: `Invite sent to ${displayName}`, variant: "success" });
-        setInviteModalOpen(false);
-      } else {
-        showToast({ message: result.error ?? "Could not send invite.", variant: "error" });
-      }
-    });
+    runAction(
+      () => inviteTalentFromNavigator(talentSlug, { projectId: target.projectId, castingId: target.castingId }),
+      `Invite sent to ${displayName}`,
+      () => setInviteModalOpen(false),
+    );
   }
 
   function handleContact() {
     if (!requirePro("talent_outreach")) return;
     runWithIdentity(() => {
       startTransition(async () => {
+        try {
         const result = await contactTalentUser(talentUserId);
         if (result.ok && result.conversationId) {
           router.push(`/messages?conversation=${result.conversationId}`);
@@ -119,6 +127,9 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
           return;
         }
         showToast({ message: result.error ?? "Could not start a conversation.", variant: "error" });
+        } catch {
+          showToast({ message: "Could not start a conversation. Please try again.", variant: "error" });
+        }
       });
     });
   }
@@ -134,8 +145,8 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
           projectName: availabilityProject,
         }),
       `Availability request sent to ${displayName}`,
+      () => setAvailabilityModalOpen(false),
     );
-    setAvailabilityModalOpen(false);
   }
 
   function handleSizeSheetSubmit() {
@@ -143,8 +154,8 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
     runAction(
       () => requestTalentSizeSheet({ talentUserId, message: sizeSheetMessage }),
       `Size sheet request sent to ${displayName}`,
+      () => setSizeSheetModalOpen(false),
     );
-    setSizeSheetModalOpen(false);
   }
 
   function openOutreach(setter: (value: boolean) => void) {
@@ -155,11 +166,6 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
   function openSave() {
     setSaveOpen((value) => !value);
   }
-
-  const inputClass =
-    "w-full rounded-full border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-white/30 focus:outline-none";
-  const textareaClass =
-    "w-full rounded-[var(--radius-field)] border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-white/30 focus:outline-none";
 
   return (
     <>
@@ -190,7 +196,7 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
                 type="button"
                 className="btp-action-btn btp-action-btn--block"
                 disabled={isPending}
-                onClick={() => openOutreach(setInviteModalOpen)}
+                onClick={() => void openInvite()}
               >
                 <CalendarPlus className="size-3.5" aria-hidden />
                 <ProLockHint />
@@ -200,7 +206,7 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
                 type="button"
                 className="btp-action-btn btp-action-btn--block"
                 disabled={isPending}
-                onClick={() => openOutreach(setInviteModalOpen)}
+                onClick={() => void openInvite()}
               >
                 <Send className="size-3.5" aria-hidden />
                 <ProLockHint />
@@ -270,27 +276,29 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
         description="Choose a casting or project."
       >
         {inviteLoading ? (
-          <p className="text-sm text-white/45">Loading your castings…</p>
+          <p className="text-sm text-[var(--ink-soft)]">Loading your castings…</p>
+        ) : inviteError ? (
+          <div role="alert" className="space-y-3 text-sm text-[var(--ink)]"><p>{inviteError}</p><button type="button" className="ui-button" onClick={() => void openInvite()}>Try again</button></div>
         ) : inviteTargets.length ? (
           <ul className="max-h-64 space-y-2 overflow-y-auto">
             {inviteTargets.map((target) => (
               <li key={`${target.projectId}-${target.castingId ?? "project"}`}>
                 <button
                   type="button"
-                  className="w-full rounded-xl border border-white/10 bg-white/4 px-4 py-3 text-left text-sm font-medium text-white/85 transition hover:border-[color-mix(in_oklab,var(--accent)_30%,transparent)] hover:bg-white/8"
+                  className="w-full rounded-xl border border-[var(--line)] bg-[var(--surface-card)] px-4 py-3 text-left text-sm font-medium text-[var(--ink)] transition hover:border-[color-mix(in_oklab,var(--accent)_30%,transparent)] hover:bg-[var(--tone)]"
                   disabled={isPending}
                   onClick={() => handleInvite(target)}
                 >
                   {target.title}
                   {target.castingId ? null : (
-                    <span className="ml-2 text-xs font-normal text-white/45">project invite</span>
+                    <span className="ml-2 text-xs font-normal text-[var(--ink-soft)]">project invite</span>
                   )}
                 </button>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-white/50">Create a project or casting first to send invites.</p>
+          <p className="text-sm text-[var(--ink-soft)]">Create a project or casting first to send invites.</p>
         )}
       </Modal>
 
@@ -301,31 +309,34 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
         description={`Send an availability check to ${displayName}.`}
         footer={
           <button type="button" className="bd-btn-accent" disabled={isPending} onClick={handleAvailabilitySubmit}>
-            Send request
+            {isPending ? "Sending…" : "Send request"}
           </button>
         }
       >
         <div className="space-y-3">
-          <input
+          <Field label="Request title"><input
             type="text"
-            className={inputClass}
             value={availabilityTitle}
             onChange={(event) => setAvailabilityTitle(event.target.value)}
+            aria-label="Request title"
+            disabled={isPending}
             placeholder="Request title"
-          />
-          <input
+          /></Field>
+          <Field label="Project name (optional)"><input
             type="text"
-            className={inputClass}
             value={availabilityProject}
             onChange={(event) => setAvailabilityProject(event.target.value)}
+            aria-label="Project name (optional)"
+            disabled={isPending}
             placeholder="Project name (optional)"
-          />
-          <textarea
-            className={`${textareaClass} min-h-24 resize-y`}
+          /></Field>
+          <Field label="Dates, notes, or context (optional)"><textarea
             value={availabilityMessage}
             onChange={(event) => setAvailabilityMessage(event.target.value)}
+            aria-label="Dates, notes, or context (optional)"
+            disabled={isPending}
             placeholder="Dates, notes, or context (optional)"
-          />
+          /></Field>
         </div>
       </Modal>
 
@@ -336,16 +347,17 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
         description={`Ask ${displayName} to share their measurements.`}
         footer={
           <button type="button" className="bd-btn-accent" disabled={isPending} onClick={handleSizeSheetSubmit}>
-            Send request
+            {isPending ? "Sending…" : "Send request"}
           </button>
         }
       >
-        <textarea
-          className={`${textareaClass} min-h-24 resize-y`}
+        <Field label="Note (optional)"><textarea
           value={sizeSheetMessage}
           onChange={(event) => setSizeSheetMessage(event.target.value)}
+          aria-label="Optional note for the talent"
+          disabled={isPending}
           placeholder="Optional note for the talent"
-        />
+        /></Field>
       </Modal>
       {gate}
     </>

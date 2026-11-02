@@ -1,13 +1,16 @@
 "use client";
 import { ButtonProgress } from "./ButtonProgress";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
+import { rememberLoginReturnPath } from "@/app/login/actions";
 import { useMemo, useState } from "react";
 
 import { SignupSplitDivider, SignupSplitOAuth } from "@/components/auth/SignupSplitOAuth";
 import { resolveClientLoginDestination } from "@/lib/auth/login-redirect";
 import { oauthErrorMessage } from "@/lib/auth/oauth-shared";
+import { safeAuthReturnPath } from "@/lib/auth/redirects";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 
 function isValidEmail(value: string) {
@@ -15,9 +18,8 @@ function isValidEmail(value: string) {
 }
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -47,6 +49,7 @@ export function LoginForm() {
     setLoading(true);
     setError(null);
 
+    try {
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: nextEmail,
       password: nextPassword,
@@ -58,12 +61,12 @@ export function LoginForm() {
       return;
     }
 
-    const nextParam = searchParams.get("next");
-    let destination = nextParam?.startsWith("/")
-      ? nextParam
-      : await resolveClientLoginDestination(supabase);
+    const nextParam = safeAuthReturnPath(searchParams.get("next"));
+    const accountDestination = await resolveClientLoginDestination(supabase);
+    if (nextParam && accountDestination.includes("onboarding")) await rememberLoginReturnPath(nextParam);
+    let destination = accountDestination.includes("onboarding") ? accountDestination : nextParam ?? accountDestination;
 
-    if (!nextParam?.startsWith("/")) {
+    if (!nextParam && !accountDestination.includes("onboarding")) {
       try {
         const featured = window.localStorage.getItem(
           "motiion.pending_featured_talent_invite_token",
@@ -76,8 +79,10 @@ export function LoginForm() {
       }
     }
 
-    router.push(destination);
-    router.refresh();
+    // A fresh document discards any previous account's protected router cache.
+    window.location.replace(destination);
+    } catch { setError("Couldn’t finish signing in. Your account is safe; check your connection and try again."); }
+    finally { setLoading(false); }
   }
 
   return (
@@ -121,14 +126,15 @@ export function LoginForm() {
           </div>
         </label>
 
-        {error ? <div className="signup-split-error">{error}</div> : null}
-        {callbackError ? <div className="signup-split-error">{callbackError}</div> : null}
+        {error ? <div className="signup-split-error" role="alert">{error}</div> : null}
+        {callbackError ? <div className="signup-split-error" role="alert">{callbackError}</div> : null}
 
         <button type="submit" className="signup-split-submit" disabled={loading || !canSubmit}>
           <ButtonProgress loading={loading}>{"Log in"}</ButtonProgress>
         </button>
       </form>
 
+      <Link href="/forgot-password" className="signup-split-text-btn block text-center">Forgot your password?</Link>
       <SignupSplitDivider />
       <SignupSplitOAuth flow="login" disabled={loading} />
 

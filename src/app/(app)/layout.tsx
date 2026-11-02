@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/app/AppShell";
+import { AccountSessionBoundary } from "@/components/auth/AccountSessionBoundary";
 import { getActiveShell, getProfileDestination } from "@/lib/auth/profile";
 import { requireCompleteProfile } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
@@ -9,5 +10,5 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (shell === "lookingForTalent" || (shell !== "talent" && shell !== "community")) {
     redirect(getProfileDestination(profile));
   }
-  return <AppShell profile={profile}>{children}</AppShell>;
+  return <AccountSessionBoundary userId={profile.id}><AppShell profile={profile}>{children}</AppShell></AccountSessionBoundary>;
 }

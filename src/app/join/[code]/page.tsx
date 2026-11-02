@@ -25,8 +25,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     ? `${referrer.displayName} invited you to Motiion`
     : "Join Motiion";
   const description = referrer
-    ? `${referrer.displayName} wants you on Motiion. Download the iOS app and use referral code ${code}.`
-    : `Download Motiion and use referral code ${code || rawCode} when you sign up.`;
+    ? `${referrer.displayName} wants you on Motiion. Join in the browser or iOS app with referral code ${code}.`
+    : `Join Motiion and use referral code ${code || rawCode} when you sign up.`;
   const appStoreId = getIosAppStoreId();
 
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.motiion.app").replace(/\/$/, "");

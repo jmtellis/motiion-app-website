@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
+import { Dialog } from "@/components/ui/Dialog";
+
+import { useId, useMemo, useState } from "react";
 import { Calendar, Mic, Plus, Timer, Trash2, X } from "lucide-react";
 
 import { ProjectDatePickerField } from "@/components/talent-buyers/project/ProjectDateRangePicker";
@@ -279,11 +280,7 @@ export function CastingScheduleStep({
   const [customTitleDraft, setCustomTitleDraft] = useState("");
   const [deadlineDraft, setDeadlineDraft] = useState<DateTimeDraft>({ date: "", time: "" });
   const [auditionDraft, setAuditionDraft] = useState<CastingAuditionSessionCodable[]>([]);
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const editingType = useMemo(
     () => SCHEDULE_DATE_TYPES.find((type) => type.id === editingTypeId) ?? null,
@@ -500,33 +497,11 @@ export function CastingScheduleStep({
     closeEditor();
   }
 
-  useEffect(() => {
-    if (!editingTypeId) return;
 
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") closeEditor();
-    }
 
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [editingTypeId]);
-
-  const rail =
-    mounted && editingType ? (
-      createPortal(
-        <div className="casting-schedule-rail" role="presentation">
-          <button
-            type="button"
-            className="casting-schedule-rail__backdrop"
-            aria-label="Close date editor"
-            onClick={closeEditor}
-          />
-          <aside
-            className="casting-schedule-rail__panel"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-          >
+  const rail = editingType ? (
+        <Dialog open onClose={closeEditor} labelledBy={titleId} className="casting-role-dialog">
+          <aside className="casting-schedule-rail__panel">
             <header className="casting-schedule-rail__header">
               <div>
                 <h3 id={titleId} className="casting-schedule-rail__title">
@@ -712,9 +687,7 @@ export function CastingScheduleStep({
               </button>
             </footer>
           </aside>
-        </div>,
-        document.body,
-      )
+        </Dialog>
     ) : null;
 
   return (

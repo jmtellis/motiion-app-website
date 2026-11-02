@@ -10,13 +10,12 @@ export type FooterColumn = {
 
 export const CONTACT_HREF = "mailto:hello@motiion.com";
 
-/** Placeholder `#` links can be replaced when pages ship. */
 export const footerColumns: FooterColumn[] = [
   {
     title: "Platform",
     links: [
-      { label: "Auditions", href: "#" },
-      { label: "Agency", href: "#" },
+      { label: "Casting opportunities", href: "/open-calls" },
+      { label: "Join Motiion", href: "/signup" },
       { label: "Login", href: "/login" },
       { label: "Download App", href: "https://apps.apple.com/app/id6759847766" },
     ],
@@ -53,9 +52,5 @@ export type FooterSocialLink = {
   icon: "instagram" | "linkedin" | "tiktok" | "youtube";
 };
 
-export const footerSocialLinks: FooterSocialLink[] = [
-  { label: "Instagram", href: "#", icon: "instagram" },
-  { label: "LinkedIn", href: "#", icon: "linkedin" },
-  { label: "TikTok", href: "#", icon: "tiktok" },
-  { label: "YouTube", href: "#", icon: "youtube" },
-];
+// Publish social links only when their official destination has been established.
+export const footerSocialLinks: FooterSocialLink[] = [];

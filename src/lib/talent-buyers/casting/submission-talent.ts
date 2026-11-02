@@ -1,5 +1,6 @@
 import type { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { resolveTalentProfileAccess } from "./talent-profile-access";
 
 type SupabaseClient = NonNullable<Awaited<ReturnType<typeof createServerSupabaseClient>>>;
 
@@ -75,19 +76,23 @@ export async function fetchTalentProfileBundles(
 ): Promise<Map<string, TalentProfileBundle>> {
   const uniqueIds = [...new Set(talentIds.filter(Boolean))];
   if (!uniqueIds.length) return new Map();
+  const access = await resolveTalentProfileAccess(supabase, uniqueIds);
+  const allowedIds = uniqueIds.filter((id) => access.allowed.has(id));
+  if (!allowedIds.length) return new Map();
 
   const client = createAdminSupabaseClient() ?? supabase;
 
-  const [{ data: profiles }, { data: professionalProfiles }] = await Promise.all([
+  const [{ data: profiles, error: profileError }, { data: professionalProfiles, error: professionalError }] = await Promise.all([
     client
       .from("profiles")
       .select("user_id, display_name, first_name, last_name, username, email, representation, agent, headshot_urls, resume_url")
-      .in("user_id", uniqueIds),
+      .in("user_id", allowedIds),
     client
       .from("professional_profiles")
       .select("id, user_id, slug, media_assets(url, kind, position)")
-      .in("user_id", uniqueIds),
+      .in("user_id", allowedIds),
   ]);
+  if (profileError || professionalError) throw new Error("Could not load the permitted talent profiles. Please retry.");
 
   const proByUserId = new Map(
     (professionalProfiles ?? []).map((row) => [row.user_id as string, row]),
@@ -106,11 +111,11 @@ export async function fetchTalentProfileBundles(
     bundles.set(userId, {
       userId,
       fullName: formatProfileDisplayName(row),
-      email: (row.email as string | null) ?? null,
+      email: access.contact.has(userId) ? (row.email as string | null) ?? null : null,
       agency,
       headshotUrl:
         firstHeadshotUrl(row.headshot_urls) ?? headshotFromMediaAssets(pro?.media_assets) ?? null,
-      resumeUrl: (row.resume_url as string | null)?.trim() || null,
+      resumeUrl: access.contact.has(userId) ? (row.resume_url as string | null)?.trim() || null : null,
       professionalProfileId: (pro?.id as string | null) ?? null,
       slug: (pro?.slug as string | null) ?? null,
     });

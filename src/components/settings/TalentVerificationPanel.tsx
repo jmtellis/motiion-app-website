@@ -15,7 +15,7 @@ import {
   type CreditAttributionItem,
   type CreditClaimItem,
 } from "@/app/settings/work-actions";
-import { renderPdfPagesToJpegBlobs } from "@/lib/onboarding/client-media";
+import { prepareResumeUpload } from "@/lib/onboarding/client-media";
 
 function identityLabel(status: string) {
   switch (status) {
@@ -72,13 +72,7 @@ export function TalentVerificationPanel({
     setMessage(null);
     startTransition(async () => {
       try {
-        const formData = new FormData();
-        formData.append("source", file);
-        const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-        if (isPdf) {
-          const pages = await renderPdfPagesToJpegBlobs(file);
-          pages.forEach((page, index) => formData.append("pages", page, `resume_page_${index + 1}.jpg`));
-        }
+        const formData = await prepareResumeUpload(file);
         const processed = await processOnboardingResume(formData);
         if (!processed.ok) {
           setError(processed.error);

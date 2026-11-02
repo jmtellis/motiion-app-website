@@ -1,4 +1,4 @@
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 import { prepareBuildEnvironment, previewPublicEnvOverrides } from "./src/lib/environment";
 
@@ -11,6 +11,8 @@ if (prepared.disconnected) {
 }
 
 const nextConfig: NextConfig = {
+  devIndicators: false,
+  allowedDevOrigins: ["127.0.0.1"],
   // Messages previews must receive metadata in the initial HTML head.
   htmlLimitedBots: /.*/,
   env: {
@@ -40,6 +42,16 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "*.supabase.co",
         pathname: "/storage/v1/object/public/**",
+      },
+      {
+        protocol: "https",
+        hostname: "api.motiion.app",
+        pathname: "/storage/v1/object/public/**",
+      },
+      {
+        protocol: "https",
+        hostname: "ui-avatars.com",
+        pathname: "/api/**",
       },
       {
         protocol: "https",

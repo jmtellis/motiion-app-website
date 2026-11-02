@@ -2,7 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 
+import { validateVoiceAudio, voiceAudioExtension, voiceTranscriptionResult } from "@/lib/talent-navigator/voice-capture";
 import { trackServerEvent } from "@/lib/analytics/track-server";
+import { readPagedRows } from "@/lib/supabase/read-pages";
+import { requireIndustryApproval } from "@/lib/talent-buyers/require-industry-approval";
 import { requireCastingOutreachAllowance } from "@/lib/billing/casting-outreach-limit";
 import { requireIndustryProFeature } from "@/lib/billing/gate";
 import { sendNotificationEmail } from "@/lib/email/send";
@@ -255,23 +258,35 @@ export async function listBuyerOpenRoles(): Promise<{
 export async function transcribeNavigatorVoiceAudio(
   formData: FormData,
 ): Promise<{ text: string; error?: string }> {
+  const supabase = await createServerSupabaseClient();
+  if (!supabase) return { text: "", error: "Voice input is temporarily unavailable. Type your search instead." };
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { text: "", error: "Sign in again to use voice input. Your typed query is still available." };
+  const [{ data: profile }, approval] = await Promise.all([
+    supabase.from("profiles").select("account_type,enabled_shells").eq("user_id", user.id).maybeSingle(),
+    supabase.rpc("has_industry_approval"),
+  ]);
+  const talentAccount = profile?.account_type === "talent" || profile?.account_type === "community" || profile?.enabled_shells?.includes("talent");
+  if (!talentAccount && (approval.error || approval.data !== true)) return { text: "", error: "Complete your account setup to use voice search. You can still type your query." };
   const file = formData.get("audio");
-  if (!(file instanceof Blob) || file.size === 0) {
-    return { text: "", error: "No audio was captured." };
-  }
+  if (!(file instanceof Blob)) return { text: "", error: "No audio was captured." };
+  const invalid = validateVoiceAudio(file.size, file.type);
+  if (invalid) return { text: "", error: invalid };
 
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
-    return { text: "", error: "Voice transcription is not configured." };
+    return { text: "", error: "Voice transcription is temporarily unavailable. You can type your search instead." };
   }
 
   try {
     const body = new FormData();
-    body.append("file", file, "voice.webm");
+    body.append("file", file, `voice.${voiceAudioExtension(file.type)}`);
     body.append("model", "whisper-1");
     body.append("language", "en");
+    body.append("response_format", "verbose_json");
 
     const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+      signal: AbortSignal.timeout(30_000),
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -283,8 +298,7 @@ export async function transcribeNavigatorVoiceAudio(
       return { text: "", error: "Could not transcribe audio." };
     }
 
-    const payload = (await response.json()) as { text?: string };
-    return { text: payload.text?.trim() ?? "" };
+    return voiceTranscriptionResult(await response.json());
   } catch {
     return { text: "", error: "Could not transcribe audio." };
   }
@@ -1050,55 +1064,27 @@ export async function bulkInviteRosterToCasting(input: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, invited: 0, error: "You must be signed in." };
 
-  const { data: members, error } = await supabase
-    .from("talent_list_members")
-    .select("profile_id")
-    .eq("list_id", input.rosterId);
-
-  if (error) return { ok: false, invited: 0, error: error.message };
-
-  const castingId = await resolveCastingIdFromRoleId(supabase, input.roleId);
-  if (!castingId) {
-    return { ok: false, invited: 0, error: "Publish the casting before inviting talent." };
-  }
-
-  const { data: casting } = await supabase
-    .from("castings")
-    .select("status")
-    .eq("id", castingId)
-    .maybeSingle<{ status: string | null }>();
-
-  if (!castingAcceptsOutreach(casting?.status)) {
-    return { ok: false, invited: 0, error: "Publish the casting before inviting talent." };
-  }
-
+  const approval = await requireIndustryApproval(user.id);
+  if (!approval.ok) return { ok: false, invited: 0, error: approval.error };
+  const roster = await supabase.from("talent_lists").select("id").eq("id", input.rosterId).eq("owner_id", user.id).maybeSingle();
+  if (roster.error || !roster.data) return { ok: false, invited: 0, error: "This roster is unavailable or you do not own it." };
+  const members = await readPagedRows((from, to) => supabase.from("talent_list_members").select("profile_id").eq("list_id", input.rosterId).order("id").range(from, to));
+  if (members.error) return { ok: false, invited: 0, error: "Could not load roster members. Please retry." };
+  const role = input.roleId ? await supabase.from("roles").select("casting_id,project_id").eq("id", input.roleId).eq("project_id", input.projectId).maybeSingle() : null;
+  const castingId = role?.data?.casting_id as string | undefined;
+  if (!castingId) return { ok: false, invited: 0, error: "Choose a published role in this project." };
+  const { data: casting } = await supabase.from("castings").select("status").eq("id", castingId).maybeSingle<{ status: string | null }>();
+  if (!castingAcceptsOutreach(casting?.status)) return { ok: false, invited: 0, error: "Publish the casting before inviting talent." };
   let invited = 0;
-  for (const member of members ?? []) {
-    const { error: inviteError } = await supabase.from("invitations").insert({
-      project_id: input.projectId,
-      casting_id: castingId,
-      role_id: input.roleId,
-      invited_profile_id: member.profile_id,
-      invited_by: user.id,
-      kind: "casting",
-      status: "sent",
-    });
-    if (!inviteError || inviteError.code === "23505") {
-      await bridgeWebInviteToMobile(supabase, {
-        invitedProfileId: member.profile_id as string,
-        roleId: input.roleId,
-        castingId,
-      });
-      invited += 1;
-    }
+  let failed = 0;
+  for (const member of members.data ?? []) {
+    const result = await deliverNavigatorCastingInvite(supabase, { userId: user.id, profileId: member.profile_id, projectId: input.projectId, roleId: input.roleId!, castingId });
+    if (result.ok) invited++; else failed++;
   }
-
-  revalidatePath("/projects");
-  revalidatePath(`/projects/${input.projectId}`);
-  return { ok: true, invited };
+  revalidatePath("/projects"); revalidatePath(`/projects/${input.projectId}`);
+  return failed ? { ok: false, invited, error: `${invited} invitations delivered; ${failed} could not be completed. Retry to finish the pending invitations.` } : { ok: true, invited };
 }
 
-const DEFAULT_ROSTER_NAME = "Saved Talent";
 
 type ResolveClient = NonNullable<Awaited<ReturnType<typeof createServerSupabaseClient>>>;
 
@@ -1123,38 +1109,6 @@ async function resolveProfessionalProfileId(
     if (!error && data) return data as string;
   }
 
-  // Fallback for environments where the RPC isn't migrated yet.
-  const admin = createAdminSupabaseClient();
-  const clients = [admin, supabase].filter(Boolean) as ResolveClient[];
-  const isUuid = (key: string) =>
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key);
-
-  for (const key of keys) {
-    for (const client of clients) {
-      if (isUuid(key)) {
-        const { data: byId } = await client
-          .from("professional_profiles")
-          .select("id")
-          .eq("id", key)
-          .maybeSingle<{ id: string }>();
-        if (byId?.id) return byId.id;
-
-        const { data: byUserId } = await client
-          .from("professional_profiles")
-          .select("id")
-          .eq("user_id", key)
-          .maybeSingle<{ id: string }>();
-        if (byUserId?.id) return byUserId.id;
-      }
-
-      const { data: bySlug } = await client
-        .from("professional_profiles")
-        .select("id")
-        .eq("slug", key)
-        .maybeSingle<{ id: string }>();
-      if (bySlug?.id) return bySlug.id;
-    }
-  }
 
   return null;
 }
@@ -1175,35 +1129,13 @@ export async function saveTalentForBuyer(
     return { ok: false, error: "Couldn't find this profile to save. Try opening their profile and saving from there." };
   }
 
-  const { data: existing } = await supabase
-    .from("talent_lists")
-    .select("id")
-    .eq("owner_id", user.id)
-    .eq("kind", "favorites")
-    .maybeSingle<{ id: string }>();
-
-  let listId = existing?.id;
-  if (!listId) {
-    const { data: byName } = await supabase
-      .from("talent_lists")
-      .select("id")
-      .eq("owner_id", user.id)
-      .eq("name", DEFAULT_ROSTER_NAME)
-      .maybeSingle<{ id: string }>();
-    listId = byName?.id;
-    if (listId) {
-      await supabase.from("talent_lists").update({ kind: "favorites" }).eq("id", listId);
-    }
-  }
-  if (!listId) {
-    const { data: created, error: createError } = await supabase
-      .from("talent_lists")
-      .insert({ owner_id: user.id, name: DEFAULT_ROSTER_NAME, kind: "favorites" })
-      .select("id")
-      .single();
-    if (createError) return { ok: false, error: createError.message };
-    listId = created.id;
-  }
+  const { requireIndustryApproval } = await import("@/lib/talent-buyers/require-industry-approval");
+  const approval = await requireIndustryApproval(user.id);
+  if (!approval.ok) return { ok: false, error: approval.error };
+  const { getOrCreateSavedTalentListId } = await import("@/lib/talent-buyers/library");
+  const saved = await getOrCreateSavedTalentListId(supabase, user.id);
+  if (!saved.id) return { ok: false, error: saved.error ?? "Could not load Saved Talent" };
+  const listId = saved.id;
 
   const { error: memberError } = await supabase
     .from("talent_list_members")
@@ -1320,40 +1252,52 @@ export async function inviteTalentFromNavigator(
     return { ok: false, error: "Publish the casting before inviting talent." };
   }
 
-  const allowance = await requireCastingOutreachAllowance(user.id, castingId, 1);
-  if (!allowance.ok) return { ok: false, error: allowance.error };
-
-  const { error } = await supabase.from("invitations").insert({
-    project_id: target.projectId,
-    casting_id: castingId,
-    role_id: target.castingId,
-    invited_profile_id: profileId,
-    invited_by: user.id,
-    kind: "casting",
-    status: "sent",
-  });
-
-  if (error) {
-    if (error.code === "23505") return { ok: true };
-    return { ok: false, error: error.message };
+  const approval = await requireIndustryApproval(user.id);
+  if (!approval.ok) return { ok: false, error: approval.error };
+  const role = await supabase.from("roles").select("id").eq("id", target.castingId!).eq("project_id", target.projectId).maybeSingle();
+  if (role.error || !role.data) return { ok: false, error: "Choose a role in this project." };
+  const delivery = await deliverNavigatorCastingInvite(supabase, { userId: user.id, profileId, projectId: target.projectId, roleId: target.castingId!, castingId });
+  if (!delivery.ok) return delivery;
+  if (delivery.deliveredNow) {
+    await trackServerEvent("casting_invitation_sent", { project_id: target.projectId, casting_id: castingId, profile_id: profileId });
+    await emailInvitedTalent(profileId);
   }
-
-  await bridgeWebInviteToMobile(supabase, {
-    invitedProfileId: profileId,
-    roleId: target.castingId,
-    castingId,
-  });
-
-  await trackServerEvent("booking_request_sent", {
-    project_id: target.projectId,
-    casting_id: target.castingId,
-    profile_id: profileId,
-  });
-
-  await emailInvitedTalent(profileId);
-
-  revalidatePath("/projects");
+  revalidatePath("/projects"); revalidatePath(`/projects/${target.projectId}`); revalidatePath("/messages");
   return { ok: true };
+}
+
+/** Keep web intent retryable until the actor-authorized native invite has succeeded. */
+async function deliverNavigatorCastingInvite(supabase: ResolveClient, input: { userId: string; profileId: string; projectId: string; roleId: string; castingId: string }): Promise<{ ok: boolean; deliveredNow?: boolean; error?: string }> {
+  const read = () => supabase.from("invitations").select("id,status,sent_at").eq("casting_id", input.castingId).eq("invited_profile_id", input.profileId).maybeSingle();
+  let current = await read();
+  if (current.error) return { ok: false, error: "Could not check the existing invitation. Please retry." };
+  if (!current.data) {
+    const allowance = await requireCastingOutreachAllowance(input.userId, input.castingId, 1);
+    if (!allowance.ok) return { ok: false, error: allowance.error };
+    const inserted = await supabase.from("invitations").insert({ project_id: input.projectId, casting_id: input.castingId, role_id: input.roleId, invited_profile_id: input.profileId, invited_by: input.userId, kind: "casting", status: "pending" }).select("id,status,sent_at").single();
+    if (inserted.error && inserted.error.code !== "23505") return { ok: false, error: inserted.error.message };
+    current = inserted.error ? await read() : inserted;
+  }
+  if (current.error || !current.data) return { ok: false, error: "Could not confirm the invitation. Please retry." };
+  if (["declined", "withdrawn"].includes(current.data.status)) {
+    const allowance = await requireCastingOutreachAllowance(input.userId, input.castingId, current.data.status === "withdrawn" ? 1 : 0);
+    if (!allowance.ok) return { ok: false, error: allowance.error };
+    const reopened = await supabase.from("invitations").update({ status: "pending", responded_at: null, sent_at: null }).eq("id", current.data.id).eq("status", current.data.status).select("id,status,sent_at").maybeSingle();
+    if (reopened.error || !reopened.data) return { ok: false, error: "This invitation changed. Refresh before retrying." };
+    current = reopened;
+  }
+  const invitation = current.data!;
+  const bridge = await bridgeWebInviteToMobile(supabase, { invitedProfileId: input.profileId, roleId: input.roleId, castingId: input.castingId });
+  if (bridge.errors.length || bridge.bridged === 0) {
+    return { ok: false, error: "The invitation has not reached the talent's inbox. It is saved for retry; check your casting permissions and try again." };
+  }
+  let deliveredNow = false;
+  if (invitation.status === "pending") {
+    const saved = await supabase.from("invitations").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", invitation.id).eq("status", "pending").select("id");
+    if (saved.error) return { ok: false, error: "The inbox invitation was delivered, but its status could not be saved. Retry to reconcile it." };
+    deliveredNow = Boolean(saved.data?.length);
+  }
+  return { ok: true, deliveredNow };
 }
 
 export async function askTalentAvailability(input: {

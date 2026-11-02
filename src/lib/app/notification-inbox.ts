@@ -102,3 +102,35 @@ export function notificationActorName(data: unknown) {
   }
   return null;
 }
+
+export type NotificationViewerRole = "talent" | "industry" | "community";
+
+const COORDINATION_NOTIFICATION_TYPES = new Set([
+  "request_resolved_availability", "request_resolved_booking_confirm", "request_resolved_size_sheet",
+  "booking_status_changed", "booking_handoff", "booking_hold_placed", "booking_hold_released",
+]);
+
+export function isCoordinationNotification(row: { type: string }) {
+  return COORDINATION_NOTIFICATION_TYPES.has(row.type);
+}
+
+/** Older handoff/hold payloads omit recipient_role; use the authenticated workspace. */
+export function coordinationNotificationHref(
+  row: { type: string; data?: unknown },
+  viewerRole?: NotificationViewerRole,
+) {
+  if (!isCoordinationNotification(row)) return null;
+  const data = payload(row.data);
+  const recipientRole = textValue(data?.recipient_role)?.toLowerCase();
+  const role = viewerRole ?? recipientRole;
+  if (role === "community") return "/inbox?filter=requests";
+  if (role === "talent") {
+    const bookingId = textValue(data?.booking_id ?? data?.bookingId);
+    const query = new URLSearchParams({ tab: "confirmations" });
+    if (bookingId && UUID_PATTERN.test(bookingId)) query.set("booking", bookingId);
+    return `/opportunities?${query}`;
+  }
+  const projectId = textValue(data?.project_id ?? data?.projectId);
+  if (projectId && UUID_PATTERN.test(projectId)) return `/projects/${projectId}/coordination`;
+  return "/messages";
+}

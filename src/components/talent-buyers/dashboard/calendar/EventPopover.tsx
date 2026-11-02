@@ -26,17 +26,19 @@ export function EventPopover({
   event,
   anchorRect,
   onClose,
-  href = `/calendar/${event.id}`,
+  href = event.href ?? `/calendar/${event.activityId ?? event.id}`,
   actionLabel = "Manage",
 }: EventPopoverProps) {
   const ref = useRef<HTMLDivElement>(null);
   const colors = eventTypeColor(event.eventType);
 
   useEffect(() => {
-    void recordBuyerContentView("event", event.id);
-  }, [event.id]);
+    if (!event.id.startsWith("confirmation:")) void recordBuyerContentView("event", event.activityId ?? event.id);
+  }, [event.id, event.activityId]);
 
   useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    ref.current?.querySelector<HTMLButtonElement>("button")?.focus();
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
@@ -48,6 +50,7 @@ export function EventPopover({
     return () => {
       document.removeEventListener("keydown", handleKey);
       document.removeEventListener("mousedown", handleClick);
+      if (previouslyFocused?.isConnected) previouslyFocused.focus();
     };
   }, [onClose]);
 
@@ -59,11 +62,11 @@ export function EventPopover({
   });
 
   const popoverWidth = 280;
-  const left = Math.min(
+  const left = Math.max(16, Math.min(
     anchorRect.left,
     window.innerWidth - popoverWidth - 16,
-  );
-  const top = anchorRect.bottom + 8;
+  ));
+  const top = Math.max(16, Math.min(anchorRect.bottom + 8, window.innerHeight - 290));
 
   return (
     <div
@@ -91,17 +94,17 @@ export function EventPopover({
       </div>
       <h4 className="bd-cal-popover__title">{event.title}</h4>
       <p className="bd-cal-popover__time">
-        {dateLabel} · {formatTimeRange(event.startTime, event.endTime)}
+        {dateLabel} · {event.allDay ? "All day" : formatTimeRange(event.startTime, event.endTime)}{event.timeZone ? ` (${event.timeZone})` : ""}
       </p>
       <p className="bd-cal-popover__meta">
         <MapPin className="size-3.5 shrink-0" aria-hidden />
         {event.location}
       </p>
-      <p className="bd-cal-popover__meta">
+      {event.attendeeCount !== undefined ? <p className="bd-cal-popover__meta">
         <Users className="size-3.5 shrink-0" aria-hidden />
         {event.attendeeCount}{" "}
         {event.attendeeCount === 1 ? "attendee" : "attendees"}
-      </p>
+      </p> : null}
       <Link href={href} className="bd-btn-accent mt-3 w-full justify-center">
         {actionLabel}
       </Link>

@@ -13,6 +13,9 @@ export type SignedInCastingRole = {
   isActive: boolean;
   isCastingFinalized: boolean;
   finalSelectIds: string[];
+  slateRequired: boolean;
+  maxSubmissionLinks: number;
+  deadlinePassed: boolean;
 };
 
 export type SignedInCasting = {
@@ -26,14 +29,15 @@ export async function fetchSignedInCasting(roleId: string): Promise<SignedInCast
   const supabase = await createServerSupabaseClient();
   if (!supabase) return null;
 
-  const { data: lead } = await supabase
+  const { data: lead, error: leadError } = await supabase
     .from("roles")
     .select("id, project_id")
     .eq("id", roleId)
     .maybeSingle<{ id: string; project_id: string | null }>();
+  if (leadError) throw new Error("Could not load this casting. Please retry.");
   if (!lead?.project_id) return null;
 
-  const [{ data: project }, { data: roles }] = await Promise.all([
+  const [{ data: project, error: projectError }, { data: roles, error: rolesError }] = await Promise.all([
     supabase
       .from("projects")
       .select("id, title, project_type, description, production_company, production_company_logo_url, cover_image_url, location, poster_id, is_union, rate_type, rate_details, casting_configuration")
@@ -41,19 +45,21 @@ export async function fetchSignedInCasting(roleId: string): Promise<SignedInCast
       .maybeSingle(),
     supabase
       .from("roles")
-      .select("id, title, description, cover_image_url, is_active, is_casting_finalized, final_select_ids, age_range_min, age_range_max, talent_pays_travel, submission_limit, submission_deadline, submissions(count), gender, ethnicity_preferences, special_skills, height_min, height_max, union_status, people_needed, agency_required, casting:castings(submission_deadline)")
+      .select("id, title, description, cover_image_url, is_active, is_casting_finalized, final_select_ids, age_range_min, age_range_max, talent_pays_travel, submission_limit, submission_deadline, submissions(count), gender, ethnicity_preferences, special_skills, height_min, height_max, union_status, people_needed, agency_required, slate_required, max_submission_links, casting:castings(submission_deadline)")
       .eq("project_id", lead.project_id)
       .order("created_at", { ascending: true }),
   ]);
 
+  if (projectError || rolesError) throw new Error("Casting details could not be loaded. Please retry.");
   const projectRow = asRecord(project);
   const roleRows = (roles ?? []).map(asRecord).filter((row): row is Record<string, unknown> => Boolean(row));
   if (!projectRow || !roleRows.length) return null;
 
   const configuration = asRecord(projectRow.casting_configuration);
   const confidential = configuration?.confidential_project_client === true;
+  const selectedRoleRow = roleRows.find((role) => role.id === roleId);
   const deadline =
-    roleRows.map((role) => text(one(role.casting)?.submission_deadline)).find(Boolean) ??
+    text(selectedRoleRow?.submission_deadline) ?? text(one(selectedRoleRow?.casting)?.submission_deadline) ??
     text(configuration?.submission_deadline_iso8601);
   const externalSubmissionURL = text(configuration?.external_submission_link_url_string);
   const posterId = text(projectRow.poster_id);
@@ -95,6 +101,9 @@ export async function fetchSignedInCasting(roleId: string): Promise<SignedInCast
         isActive: role.is_active !== false,
         isCastingFinalized: role.is_casting_finalized === true,
         finalSelectIds: stringList(role.final_select_ids),
+        slateRequired: role.slate_required === true,
+        maxSubmissionLinks: Math.max(0, Math.min(10, numberOr(role.max_submission_links, 0))),
+        deadlinePassed: Boolean(text(role.submission_deadline) ?? text(one(role.casting)?.submission_deadline) ?? deadline) && Date.parse(text(role.submission_deadline) ?? text(one(role.casting)?.submission_deadline) ?? deadline ?? "") < Date.now(),
       }];
     }),
   };
@@ -119,7 +128,7 @@ function mapRole(role: Record<string, unknown>, deadline: string | null, externa
   const max = numberOr(role.age_range_max, 65);
   const active = role.is_active !== false;
   const finalized = role.is_casting_finalized === true;
-  const roleDeadline = text(role.submission_deadline) ?? deadline;
+  const roleDeadline = text(role.submission_deadline) ?? text(one(role.casting)?.submission_deadline) ?? deadline;
   const deadlinePassed = Boolean(roleDeadline) && new Date(roleDeadline ?? "").getTime() < Date.now();
   const limit = numberOr(role.submission_limit, 0);
   const count = numberOr(one(role.submissions)?.count, 0);

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { buildProfessionalProfilesQueryPath } from "../src/lib/search/search-profiles";
+import { buildProfessionalProfilesQueryPath } from "../src/lib/search/professional-profile-query";
 import {
   filterSearchProfiles,
   isTalentSearchProfile,

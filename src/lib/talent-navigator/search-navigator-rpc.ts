@@ -1,3 +1,5 @@
+import { currentBlockedUsers } from "@/lib/app/blocked-visibility";
+import { allowsUser } from "@/lib/app/blocked-visibility-model";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { SearchProfileRecord, SearchResult } from "@/types/search";
 
@@ -107,8 +109,8 @@ export async function searchTalentByCredit(creditQuery: string): Promise<CreditN
     typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
       : `${Date.now()}`;
-  const supabase = await createServerSupabaseClient();
-  if (!supabase || !credit) {
+  const [supabase, blocked] = await Promise.all([createServerSupabaseClient(), currentBlockedUsers()]);
+  if (!supabase || !credit || blocked.error) {
     return {
       result: emptyResult(),
       initial: { talent: [], usingFallbackData: false, source: "unavailable", shuffleSalt },
@@ -129,7 +131,7 @@ export async function searchTalentByCredit(creditQuery: string): Promise<CreditN
     };
   }
 
-  const rows = data as NavigatorRpcRow[];
+  const rows = (data as NavigatorRpcRow[]).filter(row => allowsUser(typeof row.profile?.id === "string" ? row.profile.id : null, blocked.ids));
   const items = rows.map((row, index) => profileRecord(row.profile ?? {}, index));
   const talent = items.map((item, index) =>
     withMatchReasons(searchProfileToTalent(item, index), rows[index]?.match_signals),

@@ -9,21 +9,30 @@ export default async function IndustryApplicationPage() {
   const profile = await requireAuth();
   if (isCommunityAccount(profile.accountType)) redirect("/home");
   const db = await createServerSupabaseClient();
-  const result = db ? await db.from("industry_applications").select("*").eq("user_id", profile.id).maybeSingle<IndustryApplication>() : null;
-  if (!result || result.error) return <main className="mx-auto max-w-xl p-8"><h1>Applications are temporarily unavailable</h1><p>Your account is safe. Please try again shortly.</p><Link href="/talent-buyers/application">Try again</Link></main>;
-  const access = await db!.rpc("has_industry_approval");
-  if (access.error) return <main className="mx-auto max-w-xl p-8"><h1>Applications are temporarily unavailable</h1><p>Please try again shortly.</p></main>;
+  if (!db) return <ApplicationUnavailable />;
+  const [result, access, identity] = await Promise.all([
+    db.from("industry_applications").select("*").eq("user_id", profile.id).maybeSingle<IndustryApplication>(),
+    db.rpc("has_industry_approval"),
+    db.from("profiles").select("username,date_of_birth,industry_avatar_url,acquisition_source,acquisition_source_detail").eq("user_id", profile.id).single(),
+  ]);
+  if (result.error || access.error || identity.error) return <ApplicationUnavailable />;
   const application = result.data;
   if (access.data === true) {
     const adding = hasEnabledShell(profile, "talent") && !hasEnabledShell(profile, "lookingForTalent");
     redirect(adding ? "/talent-buyers/onboarding?addShell=industry" : profile.buyerOnboardingCompleted ? "/dashboard" : "/talent-buyers/onboarding");
   }
-  return <main className="theme-dark theme-product min-h-screen bg-[#0a0a0a] text-white"><IndustryApplicationForm key={`${application?.version ?? 0}:${application?.status ?? "new"}`} application={application} returnHref={hasEnabledShell(profile, "talent") ? "/home" : "/onboarding"} initial={{
+  return <IndustryApplicationForm key={`${profile.id}:${application?.version ?? 0}:${application?.status ?? "new"}`} userId={profile.id} application={application} returnHref={hasEnabledShell(profile, "talent") ? "/home" : "/onboarding"} initial={{
     full_name: application?.full_name ?? (profile.fullName === "Motiion User" ? "" : profile.fullName ?? ""),
     professional_role: application?.professional_role ?? profile.customRole ?? profile.buyerRole ?? "",
     organization: application?.organization ?? profile.organizationName ?? "",
     contact_email: application?.contact_email ?? profile.email ?? "",
     work_url: application?.work_url ?? profile.organizationWebsite ?? "",
     hiring_projects: application?.hiring_projects ?? "",
-  }} /></main>;
+    username: identity.data.username ?? "", date_of_birth: identity.data.date_of_birth?.slice(0, 10) ?? "",
+    avatar_url: identity.data.industry_avatar_url ?? "", acquisition_source: identity.data.acquisition_source ?? "",
+    acquisition_source_detail: identity.data.acquisition_source_detail ?? "",
+  }} />;
+}
+function ApplicationUnavailable() {
+  return <main className="theme-product mx-auto max-w-xl space-y-4 p-8"><h1 className="text-2xl font-semibold">Applications are temporarily unavailable</h1><p>Your account and any saved application are safe. Please try again shortly.</p><Link className="btn-primary" href="/talent-buyers/application">Try again</Link><Link className="block underline" href="/settings">Account settings</Link></main>;
 }

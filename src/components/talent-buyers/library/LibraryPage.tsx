@@ -1,7 +1,7 @@
 "use client";
 
 import { IndustryPageHeader } from "@/components/talent-buyers/dashboard/IndustryUI";
-import { useEffect, useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
@@ -20,6 +20,7 @@ import {
 import { CollectionCard } from "./CollectionCard";
 import { CollectionFormModal } from "./CollectionFormModal";
 import { LibraryEmptyState } from "./LibraryEmptyState";
+import { SharedRostersSection } from "./SharedRostersSection";
 
 import "./library.css";
 
@@ -38,11 +39,14 @@ export function LibraryPage({
   const [editTarget, setEditTarget] = useState<LibraryCollectionSummary | null>(null);
   const [editMode, setEditMode] = useState<"rename" | "description">("rename");
   const [deleteTarget, setDeleteTarget] = useState<LibraryCollectionSummary | null>(null);
-  const [, startTransition] = useTransition();
+  const [pending, startTransition] = useTransition();
+  const mutation = useRef(false);
 
-  useEffect(() => {
+  const [lastSnapshot, setLastSnapshot] = useState(initialCollections);
+  if (lastSnapshot !== initialCollections) {
+    setLastSnapshot(initialCollections);
     setCollections(initialCollections);
-  }, [initialCollections]);
+  }
 
   function refresh() {
     router.refresh();
@@ -53,78 +57,57 @@ export function LibraryPage({
     setCreateOpen(true);
   }
 
-  function handleCreate(input: { name: string; description: string }) {
-    return new Promise<void>((resolve, reject) => {
-      startTransition(async () => {
-        const result = await createCollection(input);
-        if (!result.ok || !result.id) {
-          reject(new Error(result.error ?? "Could not create roster"));
-          return;
-        }
-        showToast({ message: "Roster created", variant: "success" });
-        router.push(`/library/${result.id}`);
-        resolve();
-      });
-    });
-  }
-
-  function handleUpdate(input: { name: string; description: string }) {
-    if (!editTarget) return;
-    return new Promise<void>((resolve, reject) => {
-      startTransition(async () => {
-        const result = await updateCollection({
-          collectionId: editTarget.id,
-          name: input.name,
-          description: input.description,
-        });
-        if (!result.ok) {
-          reject(new Error(result.error ?? "Could not update roster"));
-          return;
-        }
-        setCollections((current) =>
-          current.map((collection) =>
-            collection.id === editTarget.id
-              ? { ...collection, name: input.name, description: input.description || null }
-              : collection,
-          ),
-        );
-        showToast({ message: "Roster updated", variant: "success" });
-        setEditTarget(null);
-        refresh();
-        resolve();
-      });
-    });
-  }
-
-  function handleDuplicate(collection: LibraryCollectionSummary) {
-    startTransition(async () => {
-      const result = await duplicateCollection(collection.id);
-      if (!result.ok || !result.id) {
-        showToast({ message: result.error ?? "Could not duplicate roster", variant: "error" });
-        return;
-      }
-      showToast({ message: "Roster duplicated", variant: "success" });
+  async function handleCreate(input: { name: string; description: string }) {
+    if (mutation.current) throw new Error("Another change is still saving.");
+    mutation.current = true;
+    try {
+      const result = await createCollection(input);
+      if (!result.ok || !result.id) throw new Error(result.error ?? "Could not create roster");
+      showToast({ message: "Roster created", variant: "success" });
       router.push(`/library/${result.id}`);
+    } finally { mutation.current = false; }
+  }
+  async function handleUpdate(input: { name: string; description: string }) {
+    if (!editTarget) return;
+    if (mutation.current) throw new Error("Another change is still saving.");
+    mutation.current = true;
+    try {
+      const result = await updateCollection({ collectionId: editTarget.id, ...input });
+      if (!result.ok) throw new Error(result.error ?? "Could not update roster");
+      setCollections(current => current.map(collection => collection.id === editTarget.id ? { ...collection, name: input.name, description: input.description || null } : collection));
+      showToast({ message: "Roster updated", variant: "success" });
+      setEditTarget(null); refresh();
+    } finally { mutation.current = false; }
+  }
+  function handleDuplicate(collection: LibraryCollectionSummary) {
+    if (mutation.current) return;
+    mutation.current = true;
+    startTransition(async () => {
+      try {
+        const result = await duplicateCollection(collection.id);
+        if (!result.ok || !result.id) throw new Error(result.error ?? "Could not duplicate roster");
+        showToast({ message: "Roster duplicated", variant: "success" });
+        router.push(`/library/${result.id}`);
+      } catch (error) { showToast({ message: error instanceof Error ? error.message : "The connection was interrupted. Please retry.", variant: "error" }); }
+      finally { mutation.current = false; }
     });
   }
-
   function handleDelete() {
-    if (!deleteTarget) return;
+    if (!deleteTarget || mutation.current) return;
+    mutation.current = true;
     startTransition(async () => {
-      const result = await deleteCollection(deleteTarget.id);
-      if (!result.ok) {
-        showToast({ message: result.error ?? "Could not delete roster", variant: "error" });
-        return;
-      }
-      setCollections((current) => current.filter((collection) => collection.id !== deleteTarget.id));
-      setDeleteTarget(null);
-      showToast({ message: "Roster deleted", variant: "success" });
-      refresh();
+      try {
+        const result = await deleteCollection(deleteTarget.id);
+        if (!result.ok) throw new Error(result.error ?? "Could not delete roster");
+        setCollections(current => current.filter(collection => collection.id !== deleteTarget.id));
+        setDeleteTarget(null); showToast({ message: "Roster deleted", variant: "success" }); refresh();
+      } catch (error) { showToast({ message: error instanceof Error ? error.message : "The connection was interrupted. Please retry.", variant: "error" }); }
+      finally { mutation.current = false; }
     });
   }
 
   const createButton = (
-    <button type="button" className="buyer-chrome-bar__cta" onClick={openCreate}>
+    <button type="button" className="buyer-chrome-bar__cta" disabled={pending} onClick={openCreate}>
       <ProLockHint />
       Create roster
     </button>
@@ -151,16 +134,16 @@ export function LibraryPage({
 
           {!hasIndustryPro ? (
             <div className="library-pro-callout">
-              <p className="library-pro-callout__title">Rosters are an Industry Pro feature</p>
+              <p className="library-pro-callout__title">More with Industry Pro</p>
               <p className="library-pro-callout__copy">
-                Save talent for free from Discover. Upgrade to create named rosters, organize
-                collections, and share lists with collaborators.{" "}
+                Free includes Saved Talent and three custom rosters. Upgrade for unlimited rosters
+                and sharing with collaborators.{" "}
                 <button
                   type="button"
                   className="text-[color-mix(in_oklab,var(--accent)_85%,white)] underline-offset-2 hover:underline"
                   onClick={() => openUpgrade("roster_write")}
                 >
-                  Start free trial
+                  Explore Industry Pro
                 </button>
               </p>
             </div>
@@ -196,6 +179,7 @@ export function LibraryPage({
               secondaryOnClick={openCreate}
             />
           )}
+          <SharedRostersSection />
         </div>
       </div>
 
@@ -228,7 +212,7 @@ export function LibraryPage({
             <button type="button" className="bd-btn-secondary" onClick={() => setDeleteTarget(null)}>
               Cancel
             </button>
-            <button type="button" className="buyer-chrome-bar__cta" onClick={handleDelete}>
+            <button type="button" className="buyer-chrome-bar__cta" disabled={pending} onClick={handleDelete}>
               Delete roster
             </button>
           </div>

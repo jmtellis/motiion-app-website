@@ -3,6 +3,9 @@ import type { Metadata } from "next";
 import ShortlistReviewClient from "@/app/shortlist/[token]/shortlist-review-client";
 import { fetchPublicShortlist } from "@/lib/publicShortlist";
 
+// Share revocation and expiry must be checked on every visit, including metadata.
+export const dynamic = "force-dynamic";
+
 type PageProps = {
   params: Promise<{ token: string }>;
 };

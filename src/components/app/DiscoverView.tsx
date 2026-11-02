@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { VoiceSearchControl } from "./VoiceSearchControl";
 import { BadgeCheck, ChevronDown, ChevronLeft, ChevronRight, MapPin, Search, SlidersHorizontal, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
@@ -141,6 +142,8 @@ function FilterPopover({
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const requestVersion = useRef(0);
 
   useEffect(() => {
     if (!open) return;
@@ -297,6 +300,8 @@ export function DiscoverView({
 }) {
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const requestVersion = useRef(0);
   const [pending, startTransition] = useTransition();
   const { openTalent, lookupTalent } = useDiscoverTalent();
   const totalPages = Math.max(1, Math.ceil(result.total / Math.max(result.pageSize, 1)));
@@ -320,22 +325,29 @@ export function DiscoverView({
     page: result.page,
   };
   const queryKey = buildHref(basePath, current, credit);
+  const [draft, setDraft] = useState<{ key: string; value: string } | null>(null);
+  const searchValue = draft?.key === queryKey ? draft.value : current.keyword;
+  function updateSearch(value: string) { requestVersion.current += 1; setDraft({ key: queryKey, value }); }
+  useEffect(() => () => { requestVersion.current += 1; }, [queryKey]);
 
   useEffect(() => {
-    rootRef.current?.closest(".talent-discovery-results")?.scrollTo({ top: 0, behavior: "smooth" });
+    rootRef.current?.closest(".talent-discovery-results")?.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   }, [result.page]);
 
   function go(next: Partial<BrowseQuery>, keepCredit = true) {
+    requestVersion.current += 1;
     const href = buildHref(basePath, { ...current, page: 1, ...next }, keepCredit ? credit : "");
     startTransition(() => router.push(href, { scroll: false }));
   }
 
   async function onSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const requestId = ++requestVersion.current;
     const form = new FormData(event.currentTarget);
     const keyword = String(form.get("keyword") ?? "").trim();
     const explicit = explicitWorkedWith(keyword);
-    const names = !explicit && keyword.length >= 2 ? await suggestCreditCollaborators(keyword) : [];
+    const names = !explicit && keyword.length >= 2 ? await suggestCreditCollaborators(keyword).catch(() => []) : [];
+    if (requestId !== requestVersion.current) return;
     const creditName = explicit ?? pickCreditRewrite(keyword, names);
     const href = buildHref(basePath, { ...current, keyword: creditName ? "" : keyword, page: 1 }, creditName ?? "");
     startTransition(() => router.push(href, { scroll: false }));
@@ -359,14 +371,17 @@ export function DiscoverView({
             <Search size={15} aria-hidden />
             <input
               name="keyword"
-              defaultValue={current.keyword}
+              ref={searchInputRef}
+              value={searchValue}
+              onChange={(event) => updateSearch(event.target.value)}
               placeholder="Name, style, skill"
               aria-label="Search by name, style, or skill"
               className="workspace-bare-input"
               enterKeyHint="search"
             />
           </label>
-          <button type="submit" className="sr-only">Search</button>
+          <VoiceSearchControl onTranscript={(text) => { updateSearch(text); searchInputRef.current?.focus(); }} />
+          <button type="submit" className="ui-button" disabled={pending}>Search</button>
           <select className="discover-browse__type-select" aria-label="Talent type" value={current.subtype} onChange={(event) => go({ subtype: event.target.value })}>
             <option value="">All talent</option>
             {talentSubtypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -383,7 +398,7 @@ export function DiscoverView({
             ? totalPages > 1
               ? `${start.toLocaleString()}–${end.toLocaleString()} of ${result.total.toLocaleString()} profiles`
               : `${result.total.toLocaleString()} ${result.total === 1 ? "profile" : "profiles"}`
-            : "No matches"}
+            : result.source === "unavailable" ? "Search unavailable" : "No matches"}
         </p>
         {hasFilters ? (
           <button type="button" className="discover-browse__reset" onClick={() => startTransition(() => router.push(basePath, { scroll: false }))}>
@@ -393,9 +408,7 @@ export function DiscoverView({
         ) : null}
       </div>
 
-      {result.usingFallbackData ? (
-        <p className="discover-browse__notice">Showing sample profiles until live Supabase search is connected.</p>
-      ) : null}
+      {result.source === "unavailable" ? <div role="alert" className="ui-notice" data-tone="error">Search could not load. Your filters are preserved. <button type="button" className="underline" onClick={() => router.refresh()}>Retry</button></div> : null}
 
       <div className="discover-browse__results" data-pending={pending || undefined} aria-busy={pending}>
         {result.items.length ? (
@@ -408,13 +421,13 @@ export function DiscoverView({
               />
             ))}
           </div>
-        ) : (
+        ) : result.source !== "unavailable" ? (
           <div key={queryKey} className="discover-browse__empty ui-swap">
             <h2>No matches for this search</h2>
             <p>{credit ? `No talent found who worked with ${credit}.` : "Try broadening location or removing a filter."}</p>
             <Link href={basePath}>Clear filters</Link>
           </div>
-        )}
+        ) : null}
       </div>
 
       {totalPages > 1 ? (

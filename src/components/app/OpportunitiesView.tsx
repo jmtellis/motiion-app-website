@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { TalentConfirmations } from "./TalentConfirmations";
+import type { TalentConfirmationData } from "@/lib/app/talent-confirmations";
+import { useSearchParams } from "next/navigation";
 import { ArrowRight, Megaphone } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -15,34 +17,31 @@ import type {
   TalentSubmissionCard,
 } from "@/lib/app/talent-castings";
 
-type Tab = "open" | "invited" | "submitted";
+type Tab = "open" | "invited" | "submitted" | "confirmations";
 type Roster = "active" | "closed";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "open", label: "Open calls" },
   { id: "invited", label: "Invited" },
   { id: "submitted", label: "Submitted" },
+  { id: "confirmations", label: "Confirmations" },
 ];
 
 export function OpportunitiesView({
   opportunities,
-  initialTab = "open",
-  initialCasting = null,
-  initialPreferRole = false,
+  confirmations,
 }: {
   opportunities: TalentOpportunities;
-  initialTab?: Tab;
-  initialCasting?: string | null;
-  initialPreferRole?: boolean;
+  confirmations: TalentConfirmationData;
 }) {
-  const router = useRouter();
+  const searchParams = useSearchParams();
   const notifications = useNotificationsPanel();
-  const [tab, setTab] = useState<Tab>(initialTab);
+  const requestedTab = searchParams.get("tab");
+  const tab: Tab = requestedTab === "invited" || requestedTab === "submitted" || requestedTab === "confirmations" ? requestedTab : "open";
   const [roster, setRoster] = useState<Roster>("active");
-  const [castingRoleId, setCastingRoleId] = useState<string | null>(
-    initialCasting,
-  );
-  const [preferRole, setPreferRole] = useState(initialPreferRole);
+  const castingRoleId = searchParams.get("casting")?.trim() || null;
+  const initialBooking = searchParams.get("booking");
+  const preferRole = searchParams.get("view") === "role" || (searchParams.get("view") !== "project" && tab !== "open");
 
   const submitted = useMemo(
     () =>
@@ -55,28 +54,31 @@ export function OpportunitiesView({
     open: projectGroups(opportunities.openCalls).length,
     invited: projectGroups(opportunities.invited).length,
     submitted: projectGroups(opportunities.submitted).length,
+    confirmations: confirmations.records.length,
   };
 
   function openCasting(roleId: string, roleView: boolean) {
     notifications.setOpen(false);
-    setPreferRole(roleView);
-    setCastingRoleId(roleId);
-    writeUrl(tab, roleId);
+    writeUrl(tab, roleId, roleView, "push");
   }
 
   function selectTab(next: Tab) {
-    setTab(next);
-    writeUrl(next, castingRoleId);
+    writeUrl(next, null, false, "push");
   }
 
-  function writeUrl(nextTab: Tab, roleId: string | null) {
+  function writeUrl(nextTab: Tab, roleId: string | null, roleView = false, mode: "push" | "replace" = "replace") {
     const params = new URLSearchParams();
     if (nextTab !== "open") params.set("tab", nextTab);
-    if (roleId) params.set("casting", roleId);
+    if (roleId) {
+      params.set("casting", roleId);
+      params.set("view", roleView ? "role" : "project");
+    }
     const query = params.toString();
-    router.replace(query ? `/opportunities?${query}` : "/opportunities", {
-      scroll: false,
-    });
+    // These are views of already-loaded data. Avoid refetching the entire page
+    // on inspection and keep Back/Forward tied to the visible panel.
+    window.history[mode === "push" ? "pushState" : "replaceState"](
+      { motiionCastingPanel: Boolean(roleId) }, "", query ? `/opportunities?${query}` : "/opportunities",
+    );
   }
 
   return (
@@ -106,6 +108,7 @@ export function OpportunitiesView({
       </div>
 
       <div key={tab} className="opportunities-page__lens ui-swap">
+        {tab === "confirmations" && <TalentConfirmations key={initialBooking ?? "all"} data={confirmations} initialBooking={initialBooking} />}
         {tab === "open" ? (
           <CardGrid
             cards={opportunities.openCalls}
@@ -198,8 +201,8 @@ export function OpportunitiesView({
         open={Boolean(castingRoleId) && !notifications.open}
         preferRole={preferRole}
         onClose={() => {
-          setCastingRoleId(null);
-          writeUrl(tab, null);
+          if (window.history.state?.motiionCastingPanel) window.history.back();
+          else writeUrl(tab, null);
         }}
       />
     </div>

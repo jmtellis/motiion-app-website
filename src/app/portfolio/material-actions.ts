@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
 import { requireTalentAccount } from "@/lib/auth/session";
-import { parseResumeExperienceCategory } from "@/lib/profile/resume-experience";
+import { mergePortfolioCredits } from "@/lib/profile/merge-portfolio-credits";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type Result = { ok: true } | { ok: false; error: string };
@@ -77,17 +77,18 @@ export async function savePortfolioHeadshots(input: unknown): Promise<Result> {
   if (!ctx) return { ok: false, error: "Unable to connect. Try again." };
   const { client, userId } = ctx;
 
-  const { data: before } = await client
+  const { data: before, error: readError } = await client
     .from("profiles")
     .select("headshot_urls, headshot_original_urls")
     .eq("user_id", userId)
     .maybeSingle<{ headshot_urls: unknown; headshot_original_urls: unknown }>();
 
+  if (readError || !before) return { ok: false, error: "Could not load your current headshots. Try again." };
   const { urls, originals, labels } = parsed.data;
   const { error } = await client
     .from("profiles")
     .update({ headshot_urls: urls, headshot_original_urls: originals, headshot_labels: labels, updated_at: new Date().toISOString() })
-    .eq("user_id", userId);
+    .eq("user_id", userId).select("user_id").single();
   if (error) return { ok: false, error: friendly(error.message, "Could not save your headshots. Try again.") };
 
   const kept = new Set([...urls, ...originals]);
@@ -132,7 +133,7 @@ export async function savePortfolioHighlights(input: unknown): Promise<Result> {
   const { error } = await client
     .from("profiles")
     .update({ profile_highlights: items, updated_at: new Date().toISOString() })
-    .eq("user_id", userId);
+    .eq("user_id", userId).select("user_id").single();
   if (error) return { ok: false, error: friendly(error.message, "Could not save your highlights. Try again.") };
   refresh();
   return { ok: true };
@@ -180,7 +181,7 @@ export async function savePortfolioVisuals(input: unknown): Promise<Result> {
   const { error } = await client
     .from("profiles")
     .update({ profile_visuals: items, updated_at: new Date().toISOString() })
-    .eq("user_id", userId);
+    .eq("user_id", userId).select("user_id").single();
   if (error) return { ok: false, error: friendly(error.message, "Could not save your visuals. Try again.") };
 
   const kept = new Set(items.map((item) => String(item.url)));
@@ -203,7 +204,7 @@ export async function savePortfolioExperiences(input: unknown): Promise<Result> 
   const { error } = await ctx.client
     .from("profiles")
     .update({ experiences: parsed.data, updated_at: new Date().toISOString() })
-    .eq("user_id", ctx.userId);
+    .eq("user_id", ctx.userId).select("user_id").single();
   if (error) return { ok: false, error: "Could not save your resume. Try again." };
   refresh();
   return { ok: true };
@@ -235,35 +236,23 @@ export async function importPortfolioResume(
   if (!ctx) return { ok: false, error: "Unable to connect. Try again." };
   const { client, userId } = ctx;
 
-  const { data } = await client
+  const { data, error: readError } = await client
     .from("profiles")
     .select("experiences")
     .eq("user_id", userId)
     .maybeSingle<{ experiences: unknown }>();
-  const current = records(data?.experiences);
-  const seen = new Set(current.map((row) => `${String(row.title ?? "").trim().toLowerCase()}|${String(row.role ?? "").trim().toLowerCase()}`));
-
-  const added = parsed.data.experiences
-    .filter((item) => !seen.has(`${item.title.toLowerCase()}|${(item.role ?? "").toLowerCase()}`))
-    .map((item) => ({
-      ...item,
-      id: crypto.randomUUID(),
-      category: parseResumeExperienceCategory(item.category) ?? "televisionFilm",
-      roles: item.role ? [item.role] : undefined,
-      source: "resume_import",
-      source_document_url: parsed.data.resumeUrl,
-    }));
-
-  const experiences = [...current, ...added];
+  if (readError || !data) return { ok: false, error: "Could not load your existing credits. Nothing was replaced. Try again." };
+  const { experiences, added } = mergePortfolioCredits(records(data.experiences), parsed.data.experiences, parsed.data.resumeUrl);
+  if (experiences.length > 400) return { ok: false, error: "Your portfolio can hold up to 400 credits. Remove unused credits before importing more." };
   const { error } = await client
     .from("profiles")
     .update({ experiences, resume_url: parsed.data.resumeUrl, updated_at: new Date().toISOString() })
-    .eq("user_id", userId);
+    .eq("user_id", userId).select("user_id").single();
   if (error) return { ok: false, error: "Could not add the imported credits. Try again." };
   refresh();
   return {
     ok: true,
-    added: added.length,
+    added,
     experiences: experiences.flatMap((row) => {
       const title = typeof row.title === "string" ? row.title.trim() : "";
       if (!title) return [];
@@ -285,7 +274,7 @@ export async function savePortfolioSizing(input: unknown): Promise<Result> {
   const { error } = await ctx.client
     .from("profiles")
     .update({ sizing: parsed.data.sizing || null, height: parsed.data.height || null, updated_at: new Date().toISOString() })
-    .eq("user_id", ctx.userId);
+    .eq("user_id", ctx.userId).select("user_id").single();
   if (error) return { ok: false, error: "Could not save your size sheet. Try again." };
   refresh();
   return { ok: true };

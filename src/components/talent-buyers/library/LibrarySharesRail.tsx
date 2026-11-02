@@ -1,7 +1,7 @@
 "use client";
 
 import { Copy, Link2, Plus } from "lucide-react";
-import { useEffect, useState, useTransition } from "react";
+import { useState } from "react";
 
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
 import { deactivateCollectionShare } from "@/lib/talent-buyers/collection-shares";
@@ -22,20 +22,24 @@ export function LibrarySharesRail({
 }) {
   const { showToast } = useToast();
   const [shares, setShares] = useState(initialShares);
-  const [, startTransition] = useTransition();
+  const [revokingId, setRevokingId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [lastSnapshot, setLastSnapshot] = useState(initialShares);
+  if (lastSnapshot !== initialShares) {
+    setLastSnapshot(initialShares);
     setShares(initialShares);
-  }, [initialShares]);
+  }
 
   function copyLink(url: string) {
     void navigator.clipboard.writeText(url).then(() => {
       showToast({ message: "Link copied", variant: "success" });
-    });
+    }).catch(() => { showToast({ message: "Could not copy. Open the link and copy its address.", variant: "error" }); });
   }
 
-  function revoke(shareId: string) {
-    startTransition(async () => {
+  async function revoke(shareId: string) {
+    if (revokingId) return;
+    setRevokingId(shareId);
+    try {
       const result = await deactivateCollectionShare(shareId);
       if (!result.ok) {
         showToast({ message: result.error ?? "Could not revoke share", variant: "error" });
@@ -43,7 +47,9 @@ export function LibrarySharesRail({
       }
       setShares((current) => current.filter((share) => share.id !== shareId));
       showToast({ message: "Share link revoked", variant: "success" });
-    });
+    } catch {
+      showToast({ message: "Could not revoke this link. Please try again.", variant: "error" });
+    } finally { setRevokingId(null); }
   }
 
   return (
@@ -107,8 +113,8 @@ export function LibrarySharesRail({
                   <a href={share.publicUrl} target="_blank" rel="noreferrer">
                     Open
                   </a>
-                  <button type="button" className="library-share-card__revoke" onClick={() => revoke(share.id)}>
-                    Revoke
+                  <button type="button" className="library-share-card__revoke" disabled={Boolean(revokingId)} onClick={() => void revoke(share.id)}>
+                    {revokingId === share.id ? "Revoking…" : "Revoke"}
                   </button>
                 </div>
               </article>

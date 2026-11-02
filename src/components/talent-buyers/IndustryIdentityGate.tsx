@@ -24,6 +24,7 @@ export function IndustryIdentityGate({
   onVerified,
   reason = "publish",
 }: IndustryIdentityGateProps) {
+  const [providerOpen, setProviderOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -75,7 +76,10 @@ export function IndustryIdentityGate({
         return;
       }
 
+      // Stripe owns its hosted dialog. Remove our focus trap while it is open.
+      setProviderOpen(true);
       const { error: stripeError } = await stripe.verifyIdentity(started.clientSecret);
+      setProviderOpen(false);
       if (stripeError) {
         setError(stripeError.message ?? "Identity verification was not completed.");
       }
@@ -85,15 +89,18 @@ export function IndustryIdentityGate({
         onVerified();
         onClose();
       }
+    } catch {
+      setError("Could not complete verification. Your progress is saved; check status or try again.");
     } finally {
+      setProviderOpen(false);
       setBusy(false);
     }
   }
 
   return (
     <Modal
-      open={open}
-      onClose={onClose}
+      open={open && !providerOpen}
+      onClose={() => !busy && onClose()}
       title="Hire with confidence."
       description="Verify your identity to contact talent and publish opportunities. This helps keep Motiion safe for everyone."
       size="sm"
@@ -102,6 +109,7 @@ export function IndustryIdentityGate({
           <button type="button" className="btn-secondary" onClick={onClose} disabled={busy || isPending}>
             Not now
           </button>
+          <button type="button" className="btn-secondary" disabled={busy || isPending} onClick={() => startTransition(async () => { const result = await refreshIndustryIdentityVerification(); if (!result.ok) { setError(result.error); return; } if (result.verified) { onVerified(); onClose(); } else setError(result.status === "processing" ? "Stripe is still checking your identity. Check again shortly." : "Verification is not complete. You can resume with Verify identity."); })}>Check status</button>
           <button
             type="button"
             className="btn-primary"
@@ -117,7 +125,7 @@ export function IndustryIdentityGate({
         </div>
       }
     >
-      {error ? <p className="text-sm text-rose-700">{error}</p> : null}
+      {error ? <p role="alert" className="text-sm text-rose-700">{error}</p> : null}
       <p className="text-sm text-[var(--ink-soft)]">
         Have a government-issued photo ID ready. Stripe will confirm your ID and a live selfie.
       </p>

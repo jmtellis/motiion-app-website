@@ -1,5 +1,6 @@
 "use client";
-import { useState, type ReactNode, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 export function IndustrySettings({
   sections,
   initialSection = "account",
@@ -7,8 +8,28 @@ export function IndustrySettings({
   sections: { id: string; label: string; content: ReactNode }[];
   initialSection?: string;
 }) {
-  const [active, setActive] = useState(initialSection);
+  const searchParams = useSearchParams();
+  const requestedSection = searchParams.get("section");
+  const active = sections.some((section) => section.id === requestedSection)
+    ? requestedSection
+    : initialSection;
   const nav = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const list = nav.current;
+    const selected = list?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (!list || !selected || list.scrollWidth <= list.clientWidth) return;
+    const bounds = list.getBoundingClientRect();
+    const item = selected.getBoundingClientRect();
+    if (item.left < bounds.left) list.scrollLeft += item.left - bounds.left;
+    else if (item.right > bounds.right) list.scrollLeft += item.right - bounds.right;
+  }, [active]);
+  function setActive(section: string) {
+    if (section === active) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("section", section);
+    // Keep forms mounted while making refresh, deep links and Back predictable.
+    window.history.pushState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  }
   return (
     <div className="industry-settings-layout">
       <div

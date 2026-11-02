@@ -1,6 +1,8 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { readPagedRows } from "@/lib/supabase/read-pages";
+import { fetchAccessibleProjectRecord } from "./projects";
 import type { ChildCastingRecord } from "@/lib/talent-buyers/casting-child-payload";
-import type { CastingProjectRecord, CastingRoleRecord } from "@/types/casting";
+import type { CastingProjectRecord } from "@/types/casting";
 
 export type ProjectCastingSummary = {
   id: string;
@@ -41,25 +43,21 @@ export async function listProjectCastings(
   const supabase = await createServerSupabaseClient();
   if (!supabase) return [];
 
-  const { data: project } = await supabase
-    .from("projects")
-    .select("*")
-    .eq("id", projectId)
-    .eq("poster_id", posterId)
-    .maybeSingle();
-
+  const project = await fetchAccessibleProjectRecord(projectId, posterId);
   if (!project) return [];
 
-  const { data: castings } = await supabase
+  const { data: castings, error: castingsError } = await readPagedRows((from, to) => supabase
     .from("castings")
-    .select("id, project_id, title, visibility, status, created_at")
+    .select("id, project_id, title, visibility, status, created_at, updated_at")
     .eq("project_id", projectId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }).order("id").range(from, to));
+  if (castingsError) throw new Error("Could not load casting details. Please retry.");
 
   const castingIds = (castings ?? []).map((row) => row.id as string);
-  const { data: castingRoles } = castingIds.length
-    ? await supabase.from("casting_roles").select("id, casting_id").in("casting_id", castingIds)
-    : { data: [] };
+  const { data: castingRoles, error: roleError } = castingIds.length
+    ? await readPagedRows((from, to) => supabase.from("casting_roles").select("id, casting_id").in("casting_id", castingIds).order("id").range(from, to))
+    : { data: [], error: null };
+  if (roleError) throw new Error("Could not load casting roles. Please retry.");
 
   const summaries: ProjectCastingSummary[] = (castings ?? []).map((row) => ({
     id: row.id as string,
@@ -68,14 +66,15 @@ export async function listProjectCastings(
     status: (row.status as string) || "draft",
     visibility: (row.visibility as string) || "public",
     roleCount: (castingRoles ?? []).filter((role) => role.casting_id === row.id).length,
-    updatedAt: (row.created_at as string) ?? new Date().toISOString(),
+    updatedAt: (row.updated_at as string) ?? (row.created_at as string) ?? new Date().toISOString(),
   }));
 
-  const { data: legacyRoles } = await supabase
+  const { data: legacyRoles, error: legacyError } = await readPagedRows((from, to) => supabase
     .from("roles")
     .select("id")
     .eq("project_id", projectId)
-    .is("casting_id", null);
+    .is("casting_id", null).order("id").range(from, to));
+  if (legacyError) throw new Error("Could not load legacy casting roles. Please retry.");
 
   const legacy = legacyCastingFromProject(project as CastingProjectRecord, legacyRoles?.length ?? 0);
   if (legacy && !summaries.length) {
@@ -96,26 +95,22 @@ export async function fetchChildCastingDetail(castingId: string, projectId: stri
     .eq("project_id", projectId)
     .maybeSingle();
 
-  if (error || !casting) return null;
+  if (error) throw new Error("Could not load this casting. Please retry.");
+  if (!casting) return null;
 
-  const { data: project } = await supabase
-    .from("projects")
-    .select("id, poster_id")
-    .eq("id", projectId)
-    .eq("poster_id", posterId)
-    .maybeSingle();
-
+  const project = await fetchAccessibleProjectRecord(projectId, posterId);
   if (!project) return null;
 
-  const { data: roles } = await supabase
+  const { data: roles, error: rolesError } = await readPagedRows((from, to) => supabase
     .from("casting_roles")
     .select("*")
-    .eq("casting_id", castingId);
+    .eq("casting_id", castingId).order("id").range(from, to));
 
-  const { data: bridgedRoles } = await supabase
+  const { data: bridgedRoles, error: bridgeError } = await readPagedRows((from, to) => supabase
     .from("roles")
-    .select("id, title, visibility, password_hash, card_color_preset, cover_image_url, agency_required, height_min, height_max")
-    .eq("casting_id", castingId);
+    .select("id, title, visibility, password_hash, card_color_preset, cover_image_url, agency_required, slate_required, max_submission_links, submission_limit, talent_pays_travel, height_min, height_max")
+    .eq("casting_id", castingId).order("id").range(from, to));
+  if (rolesError || bridgeError) throw new Error("Could not load this casting's roles. Please retry.");
 
   return {
     casting: casting as ChildCastingRecord,

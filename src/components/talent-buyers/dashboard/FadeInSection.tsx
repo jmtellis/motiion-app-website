@@ -3,6 +3,8 @@
 import { motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
 
+const motionElements = { div: motion.div, section: motion.section, article: motion.article, li: motion.li };
+
 type FadeInSectionProps = {
   children: ReactNode;
   className?: string;
@@ -17,15 +19,15 @@ export function FadeInSection({
   as = "div",
 }: FadeInSectionProps) {
   const reducedMotion = useReducedMotion();
-  const Component = motion.create(as);
+  const Component = motionElements[as];
 
   return (
     <Component
       className={className}
-      initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 14 }}
+      initial={reducedMotion ? false : { opacity: 0, y: 14 }}
       animate={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
       transition={{
-        duration: reducedMotion ? 0.12 : 0.48,
+        duration: reducedMotion ? 0 : 0.24,
         delay: reducedMotion ? 0 : delay,
         ease: [0.22, 1, 0.36, 1],
       }}

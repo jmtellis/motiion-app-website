@@ -4,13 +4,13 @@ import { listCollections } from "@/lib/talent-buyers/library";
 import { requireHiringAccount } from "@/lib/auth/session";
 
 export default async function BuyerLibraryRoute() {
-  await requireHiringAccount();
+  const profile = await requireHiringAccount();
 
   const { collections, error } = await listCollections();
 
   return (
     <BuyerAppPage fullWidth className="!space-y-0 flex min-h-0 flex-1 flex-col">
-      <LibraryPage collections={collections} error={error} />
+      <LibraryPage key={profile.id} collections={collections} error={error} />
     </BuyerAppPage>
   );
 }

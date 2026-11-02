@@ -1,4 +1,5 @@
 import type { createServerSupabaseClient } from "@/lib/supabase/server";
+import { castingComposerFormSchema } from "@/lib/talent-buyers/casting-schema";
 import { childCastingToComposerForm } from "@/lib/talent-buyers/casting-child-payload";
 import { isPublicOpenCallForMatchNotify } from "@/lib/talent-buyers/casting/casting-configuration-mobile";
 import {
@@ -24,22 +25,27 @@ export async function activatePublishedCasting(
     return { ok: false, error: castingError?.message ?? "Casting not found." };
   }
 
-  const { data: castingRoles } = await supabase
+  const { data: castingRoles, error: castingRolesError } = await supabase
     .from("casting_roles")
     .select("*")
     .eq("casting_id", castingId);
 
-  const { data: bridgedRoles } = await supabase
+  const { data: bridgedRoles, error: bridgedRolesError } = await supabase
     .from("roles")
-    .select("id, title, visibility, password_hash, card_color_preset, cover_image_url, agency_required")
+    .select("id, title, visibility, password_hash, card_color_preset, cover_image_url, agency_required, slate_required, max_submission_links, submission_limit, talent_pays_travel, height_min, height_max, is_casting_finalized")
     .eq("casting_id", castingId);
 
+  if (castingRolesError || bridgedRolesError) return { ok: false, error: "Could not load roles before publication. Please retry." };
+  if (!bridgedRoles?.some((role) => !role.is_casting_finalized)) return { ok: false, error: "Add an open role before publishing this casting." };
   const form = childCastingToComposerForm(
     casting as Parameters<typeof childCastingToComposerForm>[0],
     (castingRoles ?? []) as Parameters<typeof childCastingToComposerForm>[1],
     projectId,
     bridgedRoles ?? [],
   );
+
+  const valid = castingComposerFormSchema.safeParse(form);
+  if (!valid.success) return { ok: false, error: valid.error.issues[0]?.message || "Complete the casting breakdown before publishing." };
 
   const { error: statusError } = await supabase
     .from("castings")
@@ -52,6 +58,7 @@ export async function activatePublishedCasting(
     .from("roles")
     .update({ is_active: true, updated_at: new Date().toISOString() })
     .eq("casting_id", castingId)
+    .or("is_casting_finalized.is.null,is_casting_finalized.eq.false")
     .select("id");
 
   if (rolesError) return { ok: false, error: rolesError.message };

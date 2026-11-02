@@ -34,6 +34,7 @@ export type ProfileRecord = {
   username: string | null;
   talent_types: string[] | null;
   headshot_urls: string[] | null;
+  industry_avatar_url?: string | null;
   onboarding_completed_at: string | null;
   enabled_shells?: string[] | null;
   active_shell?: string | null;
@@ -74,6 +75,7 @@ export type DashboardProfile = {
   onboardingCompletedAt?: string | null;
   talentTypes?: string[] | null;
   companyName?: string | null;
+  workEmail?: string | null;
   nonTalentType?: NonTalentSubtype | null;
   username?: string | null;
   avatarUrl?: string | null;

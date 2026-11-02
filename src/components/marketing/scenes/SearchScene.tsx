@@ -57,38 +57,25 @@ function buildCells(activeDancerOffset: number): GridCell[] {
 
 export function SearchScene({ play, reduceMotion = false, playKey }: MarketingSceneProps) {
   const beat = useSceneTimeline(STEPS, { play, reduceMotion, restartKey: playKey });
-  const [composeText, setComposeText] = useState("");
+  const [typedText, setTypedText] = useState("");
   // Rotate who sits in the center card; keep geometry centered in the frame.
   const activeDancerOffset = beat === "navigate" || beat === "hold" ? 1 : 0;
   const cells = buildCells(activeDancerOffset);
   const showChips = beat === "chips" || beat === "navigate" || beat === "hold" || reduceMotion;
   const typing = beat === "typing" && !reduceMotion;
 
+  const composeText = reduceMotion || showChips ? QUERY : typing ? typedText : "";
+  const [previousPlay, setPreviousPlay] = useState({ typing, playKey });
+  if (previousPlay.typing !== typing || previousPlay.playKey !== playKey) { setPreviousPlay({ typing, playKey }); setTypedText(""); }
   useEffect(() => {
-    setComposeText(reduceMotion ? QUERY : "");
-  }, [playKey, reduceMotion]);
-
-  useEffect(() => {
-    if (reduceMotion) {
-      setComposeText(QUERY);
-      return;
-    }
-    if (!typing) {
-      if (beat === "chips" || beat === "navigate" || beat === "hold") {
-        setComposeText(QUERY);
-      }
-      return;
-    }
-
-    setComposeText("");
+    if (!typing) return;
     let index = 0;
     const id = window.setInterval(() => {
-      index += 1;
-      setComposeText(QUERY.slice(0, index));
+      index += 1; setTypedText(QUERY.slice(0, index));
       if (index >= QUERY.length) window.clearInterval(id);
     }, 36);
     return () => window.clearInterval(id);
-  }, [typing, beat, reduceMotion]);
+  }, [typing, playKey]);
 
   return (
     <MarketingScene>

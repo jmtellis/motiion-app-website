@@ -8,7 +8,7 @@ import {
   resolveWorkspaceProjectType,
 } from "@/lib/talent-buyers/project-abilities";
 import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
-import { fetchProjectRecord } from "@/lib/talent-buyers/projects";
+import { fetchAccessibleProjectRecord } from "@/lib/talent-buyers/projects";
 import {
   projectHomePath,
   projectLandingPath,
@@ -31,7 +31,7 @@ export default async function BuyerProjectDetailPage({
   const { id } = await params;
   const query = await searchParams;
   const rawTab = typeof query.tab === "string" ? query.tab : null;
-  const project = await fetchProjectRecord(id, profile.id);
+  const project = await fetchAccessibleProjectRecord(id, profile.id);
   const projectType = project ? resolveWorkspaceProjectType(project) : null;
 
   if (rawTab) {

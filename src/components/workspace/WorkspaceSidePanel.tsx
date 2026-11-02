@@ -1,8 +1,17 @@
 "use client";
 
 import { X } from "lucide-react";
-import { createContext, useContext, useEffect, useRef, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { Dialog } from "@/components/ui/Dialog";
+
+function subscribeMobile(notify: () => void) {
+  const media = window.matchMedia("(max-width: 1023px)");
+  media.addEventListener("change", notify);
+  return () => media.removeEventListener("change", notify);
+}
+const isMobile = () => window.matchMedia("(max-width: 1023px)").matches;
+const serverMobile = () => false;
 
 const SidePanelHostContext = createContext<HTMLElement | null>(null);
 
@@ -32,6 +41,7 @@ export function WorkspaceSidePanel({
   persistent?: boolean;
 }) {
   const host = useContext(SidePanelHostContext);
+  const mobile = useSyncExternalStore(subscribeMobile, isMobile, serverMobile);
   const panelRef = useRef<HTMLElement>(null);
   const onCloseRef = useRef(onClose);
   useEffect(() => {
@@ -39,24 +49,30 @@ export function WorkspaceSidePanel({
   });
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || mobile) return;
     function onKey(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.defaultPrevented) return;
-      if (document.querySelector("[data-portfolio-dialog]")) return;
+      if (document.querySelector("dialog[open], [data-portfolio-dialog]")) return;
       onCloseRef.current();
     }
+    const previousFocus = document.activeElement;
+    if (!persistent) panelRef.current?.focus({ preventScroll: true });
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      if (!persistent && previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus({ preventScroll: true });
+    };
+  }, [open, persistent, mobile]);
 
   if (!host) return null;
 
-  return createPortal(
+  const panel = (
     <aside
       ref={panelRef}
       id={id}
       className={`workspace-frame workspace-side-frame${persistent ? " workspace-side-frame--persistent" : ""}`}
       aria-label={title}
+      tabIndex={-1}
       data-open={open}
       data-persistent={persistent}
       inert={!open && !persistent}
@@ -81,7 +97,7 @@ export function WorkspaceSidePanel({
         </header>
         <div className="workspace-side-panel__body">{children}</div>
       </div>
-    </aside>,
-    host,
+    </aside>
   );
+  return createPortal(mobile ? <Dialog open={open} onClose={onClose} label={title} className="workspace-panel-dialog">{panel}</Dialog> : panel, host);
 }

@@ -13,8 +13,9 @@ export function getProfileInitials(fullName: string) {
     .toUpperCase();
 }
 
-export function getProfileAvatarUrl(headshotUrls: string[] | null | undefined) {
-  const url = headshotUrls?.find((item) => item.trim().length > 0)?.trim();
+export function getProfileAvatarUrl(headshotUrls: unknown) {
+  if (!Array.isArray(headshotUrls)) return null;
+  const url = headshotUrls.find((item): item is string => typeof item === "string" && item.trim().length > 0)?.trim();
   return url || null;
 }
 

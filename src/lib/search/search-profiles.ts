@@ -1,3 +1,7 @@
+import { currentBlockedUsers } from "@/lib/app/blocked-visibility";
+import { allowsUser, blockedUserQuery } from "@/lib/app/blocked-visibility-model";
+import { buildProfessionalProfilesQueryPath, PROFESSIONAL_PROFILE_SELECT, TALENT_SUBTYPES } from "./professional-profile-query";
+export { buildProfessionalProfilesQueryPath } from "./professional-profile-query";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { cache } from "react";
 
@@ -34,7 +38,7 @@ type ProfessionalProfileRow = {
   agency_name: string | null;
 };
 
-const TALENT_SUBTYPES = ["dancer", "choreographer", "instructor"] as const;
+
 
 function titleCaseSlug(slug: string): string {
   return slug
@@ -218,7 +222,7 @@ function sortByName(profiles: SearchProfileRecord[]): SearchProfileRecord[] {
  * Fetch talent in keyset-paginated batches (cursored on id), applying in-memory
  * refinement filters between batches, until we have enough rows or run out.
  */
-async function queryTalent(filters: SearchFilters): Promise<SearchProfileRecord[] | null> {
+async function queryTalent(filters: SearchFilters, blocked: ReadonlySet<string>): Promise<SearchProfileRecord[] | null> {
   if (!getSupabaseConfig()) return null;
 
   const fetchLimit = filters.navigator ? NAVIGATOR_FETCH_LIMIT : DISCOVER_FETCH_LIMIT;
@@ -233,7 +237,7 @@ async function queryTalent(filters: SearchFilters): Promise<SearchProfileRecord[
 
   while (collected.length < fetchLimit && filteredCount < neededFiltered) {
     const rows: SearchProfileRecord[] | null = await supabaseRestGet<SearchProfileRecord[]>(
-      buildTalentQueryPath(filters, cursor),
+      buildTalentQueryPath(filters, cursor) + blockedUserQuery("id", blocked),
       { revalidate: filters.navigator ? 0 : 120 },
     );
     if (!rows) break;
@@ -255,11 +259,12 @@ async function queryTalent(filters: SearchFilters): Promise<SearchProfileRecord[
 async function querySupabaseView(
   viewName: "public_search_profiles" | "talent",
   filters: SearchFilters,
+  blocked: ReadonlySet<string>,
 ): Promise<SearchResult | null> {
   if (!getSupabaseConfig()) return null;
 
   if (viewName === "talent") {
-    const rows = await queryTalent(filters);
+    const rows = await queryTalent(filters, blocked);
     if (!rows) return null;
 
     const filtered = filterSearchProfiles(rows, filters);
@@ -281,7 +286,7 @@ async function querySupabaseView(
     };
   }
 
-  const rows = await supabaseRestGet<SearchProfileRecord[]>(`${viewName}?select=*&limit=${DISCOVER_FETCH_LIMIT}`, {
+  const rows = await supabaseRestGet<SearchProfileRecord[]>(`${viewName}?select=*&limit=${DISCOVER_FETCH_LIMIT}${blockedUserQuery("id", blocked)}`, {
     revalidate: 120,
   });
   if (!rows) return null;
@@ -307,31 +312,6 @@ async function querySupabaseView(
   };
 }
 
-const PROFESSIONAL_PROFILE_SELECT =
-  "id,user_id,slug,subtype,styles,skills,gender,ethnicity,union_status,location_city,location_region,is_verified,agency_name";
-
-/** Talent-only verified profile source (excludes industry professionals). */
-export function buildProfessionalProfilesQueryPath(filters: SearchFilters, cursor: string | null): string {
-  const subtypeFilter = TALENT_SUBTYPES.map((value) => `"${value}"`).join(",");
-  const params = [
-    `select=${PROFESSIONAL_PROFILE_SELECT}`,
-    "is_verified=eq.true",
-    `subtype=in.(${subtypeFilter})`,
-    "order=id.asc",
-    `limit=${KEYSET_BATCH_SIZE}`,
-  ];
-
-  if (cursor) {
-    params.push(`id=gt.${encodeURIComponent(cursor)}`);
-  }
-
-  if (filters.gender?.trim()) {
-    const variants = genderVariants(filters.gender).map((value) => `"${value.replace(/"/g, '\\"')}"`);
-    params.push(`gender=in.(${variants.join(",")})`);
-  }
-
-  return `talent_professional_profiles?${params.join("&")}`;
-}
 
 async function enrichProfessionalProfileRows(
   admin: NonNullable<ReturnType<typeof createAdminSupabaseClient>>,
@@ -435,7 +415,7 @@ async function fetchProfessionalProfileBatchRest(
  * Fetch verified professional profiles in keyset-paginated batches with SQL gender
  * filtering, applying in-memory refinement between batches until enough matches or exhausted.
  */
-async function queryProfessionalProfiles(filters: SearchFilters): Promise<SearchProfileRecord[] | null> {
+async function queryProfessionalProfiles(filters: SearchFilters, blocked: ReadonlySet<string>): Promise<SearchProfileRecord[] | null> {
   if (!filters.navigator) return null;
 
   const admin = createAdminSupabaseClient();
@@ -467,7 +447,7 @@ async function queryProfessionalProfiles(filters: SearchFilters): Promise<Search
 
   if (batchWasNull && !collected.length) return null;
 
-  const filtered = filterSearchProfiles(sortByName(collected), filters);
+  const filtered = filterSearchProfiles(sortByName(collected.filter(row => allowsUser(row.id, blocked))), filters);
   if (!filtered.length) return [];
 
   if (!admin) return filtered;
@@ -504,9 +484,12 @@ function mergeVerifiedFirst(
 }
 
 export const searchTalentProfiles = cache(async (filters: SearchFilters): Promise<SearchResult> => {
-  const verifiedProfiles = (await queryProfessionalProfiles(filters)) ?? [];
-
-  const talentProfiles = await querySupabaseView("talent", filters);
+  const blocked = await currentBlockedUsers();
+  if (blocked.error) return emptySearchResult(filters);
+  const [verifiedResult, talentProfiles] = await Promise.all([
+    queryProfessionalProfiles(filters, blocked.ids), querySupabaseView("talent", filters, blocked.ids),
+  ]);
+  const verifiedProfiles = verifiedResult ?? [];
   if (talentProfiles) return mergeVerifiedFirst(verifiedProfiles, talentProfiles);
 
   if (verifiedProfiles.length) {
@@ -520,28 +503,7 @@ export const searchTalentProfiles = cache(async (filters: SearchFilters): Promis
     };
   }
 
-  if (!getSupabaseConfig()) {
-    return emptySearchResult(filters);
-  }
-
-  const filtered = filterSearchProfiles(mockTalentProfiles.map(normalizeSearchProfile), filters);
-
-  if (filters.navigator) {
-    return {
-      items: filtered,
-      total: filtered.length,
-      page: 1,
-      pageSize: filtered.length,
-      usingFallbackData: true,
-      source: "mock",
-    };
-  }
-
-  return {
-    ...paginate(filtered, filters.page ?? 1),
-    usingFallbackData: true,
-    source: "mock",
-  };
+  return emptySearchResult(filters);
 });
 
 export const BROWSE_PAGE_SIZE = 24;
@@ -650,20 +612,11 @@ async function overlayVerification(rows: SearchProfileRecord[]): Promise<SearchP
 export const searchBrowseTalent = cache(async (filters: SearchFilters): Promise<SearchResult> => {
   const page = Number.isFinite(filters.page) && (filters.page ?? 0) > 0 ? Math.floor(filters.page!) : 1;
 
-  if (!getSupabaseConfig()) {
-    const filtered = filterSearchProfiles(mockTalentProfiles.map(normalizeSearchProfile), filters);
-    const start = (page - 1) * BROWSE_PAGE_SIZE;
-    return {
-      items: filtered.slice(start, start + BROWSE_PAGE_SIZE),
-      total: filtered.length,
-      page,
-      pageSize: BROWSE_PAGE_SIZE,
-      usingFallbackData: true,
-      source: "mock",
-    };
-  }
+  if (!getSupabaseConfig()) return { ...emptySearchResult(filters), pageSize: BROWSE_PAGE_SIZE };
 
-  const result = await supabaseRestGetCounted<SearchProfileRecord>(buildBrowseQueryPath(filters, page), {
+  const blocked = await currentBlockedUsers();
+  if (blocked.error) return { ...emptySearchResult(filters), page, pageSize: BROWSE_PAGE_SIZE };
+  const result = await supabaseRestGetCounted<SearchProfileRecord>(buildBrowseQueryPath(filters, page) + blockedUserQuery("id", blocked.ids), {
     revalidate: 60,
   });
   if (!result) return { ...emptySearchResult(filters), page, pageSize: BROWSE_PAGE_SIZE };
@@ -771,7 +724,9 @@ export const getPillarHeadshotImages = cache(async () => {
 /** Resolve the full Notion roster through the public talent view, preserving CMS order. */
 export async function searchCuratedTalent(userIds: string[]): Promise<SearchResult> {
   const empty: SearchResult = { items: [], total: 0, page: 1, pageSize: 0, source: "talent", usingFallbackData: false };
-  const ids = [...new Set(userIds.filter(id => /^[0-9a-f-]{36}$/i.test(id)))];
+  const blocked = await currentBlockedUsers();
+  if (blocked.error) return { ...empty, source: "unavailable" };
+  const ids = [...new Set(userIds.filter(id => /^[0-9a-f-]{36}$/i.test(id) && allowsUser(id, blocked.ids)))];
   if (!ids.length) return empty;
   const client = await createServerSupabaseClient();
   const found = new Map<string, SearchProfileRecord>();

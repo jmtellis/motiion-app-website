@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Moon, Sun } from "lucide-react";
+import { WorkflowStates } from "./WorkflowStates";
 import { useMemo, useState } from "react";
 
 import type { CatalogSampleProfile } from "@/lib/design-system/sample-media";
@@ -25,7 +25,6 @@ import {
   TalentCardsSection,
 } from "./SafePreviews";
 
-type Appearance = "dark" | "light";
 
 type NavSection = {
   id: string;
@@ -34,6 +33,7 @@ type NavSection = {
 };
 
 const NAV: NavSection[] = [
+  { id: "workflow-states", label: "Workflow states", group: "Components" },
   { id: "colors", label: "Colors", group: "Foundations" },
   { id: "typography", label: "Typography", group: "Foundations" },
   { id: "radius", label: "Radius", group: "Foundations" },
@@ -52,8 +52,7 @@ const NAV: NavSection[] = [
 ];
 
 export function DesignSystemGallery({ sample }: { sample: CatalogSampleProfile }) {
-  const [activeId, setActiveId] = useState("colors");
-  const [appearance, setAppearance] = useState<Appearance>("dark");
+  const [activeId, setActiveId] = useState("workflow-states");
 
   const active = useMemo(
     () => NAV.find((item) => item.id === activeId) ?? NAV[0],
@@ -62,15 +61,10 @@ export function DesignSystemGallery({ sample }: { sample: CatalogSampleProfile }
 
   const foundationItems = NAV.filter((item) => item.group === "Foundations");
   const componentItems = NAV.filter((item) => item.group === "Components");
-  const isLight = appearance === "light";
 
   return (
     <div
-      className={
-        isLight
-          ? "theme-ds-light flex min-h-screen bg-[var(--ds-background)] text-[var(--ds-text-default)]"
-          : "theme-dark theme-product flex min-h-screen bg-[var(--ds-background)] text-[var(--ds-text-default)]"
-      }
+      className="theme-ds-light product-reference flex min-h-screen bg-[var(--ui-canvas)] text-[var(--ui-text)]"
     >
       <aside className="sticky top-0 hidden h-screen w-[240px] shrink-0 flex-col border-r border-[var(--ds-border)] bg-[var(--ds-surface)] md:flex">
         <div className="border-b border-[var(--ds-border)] px-4 py-5">
@@ -120,16 +114,14 @@ export function DesignSystemGallery({ sample }: { sample: CatalogSampleProfile }
           </ul>
         </nav>
 
-        <div className="border-t border-[var(--ds-border)] p-3">
-          <AppearanceToggle appearance={appearance} onChange={setAppearance} />
-        </div>
+
       </aside>
 
       <main className="min-w-0 flex-1 overflow-y-auto">
         <div className="border-b border-[var(--ds-border)] px-4 py-4 md:px-10">
           <div className="mb-3 flex items-center justify-between gap-3 md:hidden">
             <h1 className="text-base font-semibold text-[var(--ds-text-default)]">Design system</h1>
-            <AppearanceToggle appearance={appearance} onChange={setAppearance} compact />
+
           </div>
           <label className="mb-3 block md:hidden">
             <span className="sr-only">Section</span>
@@ -163,13 +155,12 @@ export function DesignSystemGallery({ sample }: { sample: CatalogSampleProfile }
                 {active.label}
               </h2>
             </div>
-            <div className="hidden md:block">
-              <AppearanceToggle appearance={appearance} onChange={setAppearance} />
-            </div>
+
           </div>
         </div>
 
         <div className="px-4 py-8 md:px-10 md:py-10">
+          {activeId === "workflow-states" ? <WorkflowStates /> : null}
           {activeId === "colors" ? <ColorsSection /> : null}
           {activeId === "typography" ? <TypographySection /> : null}
           {activeId === "radius" ? <RadiusSection /> : null}
@@ -191,55 +182,6 @@ export function DesignSystemGallery({ sample }: { sample: CatalogSampleProfile }
   );
 }
 
-function AppearanceToggle({
-  appearance,
-  onChange,
-  compact = false,
-}: {
-  appearance: Appearance;
-  onChange: (value: Appearance) => void;
-  compact?: boolean;
-}) {
-  return (
-    <div
-      className={
-        compact
-          ? "inline-flex rounded-full border border-[var(--ds-border)] p-0.5"
-          : "flex w-full rounded-full border border-[var(--ds-border)] bg-[var(--ds-surface-tint)] p-0.5"
-      }
-      role="group"
-      aria-label="Appearance"
-    >
-      <button
-        type="button"
-        onClick={() => onChange("dark")}
-        className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium transition ${
-          appearance === "dark"
-            ? "bg-[var(--ds-button-surface-default)] text-[var(--ds-on-button-surface-default)]"
-            : "text-[var(--ds-muted)] hover:text-[var(--ds-text-default)]"
-        }`}
-        aria-pressed={appearance === "dark"}
-      >
-        <Moon className="size-3.5" aria-hidden />
-        {compact ? null : "Dark"}
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange("light")}
-        className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium transition ${
-          appearance === "light"
-            ? "bg-[var(--ds-button-surface-default)] text-[var(--ds-on-button-surface-default)]"
-            : "text-[var(--ds-muted)] hover:text-[var(--ds-text-default)]"
-        }`}
-        aria-pressed={appearance === "light"}
-      >
-        <Sun className="size-3.5" aria-hidden />
-        {compact ? null : "Light"}
-      </button>
-    </div>
-  );
-}
-
 function NavButton({
   label,
   active,
@@ -253,6 +195,7 @@ function NavButton({
     <button
       type="button"
       onClick={onClick}
+      aria-current={active ? "page" : undefined}
       className={
         active
           ? "w-full rounded-lg bg-[var(--ds-button-surface-default)] px-3 py-2 text-left text-sm font-medium text-[var(--ds-on-button-surface-default)]"

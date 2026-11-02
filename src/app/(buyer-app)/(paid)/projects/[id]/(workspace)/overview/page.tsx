@@ -9,7 +9,7 @@ import {
   parseAbilityModules,
 } from "@/lib/talent-buyers/project-abilities";
 import { listProjectClassSessions, summarizeClassSeries } from "@/lib/talent-buyers/project-classes";
-import { fetchProjectRecord } from "@/lib/talent-buyers/projects";
+import { fetchAccessibleProjectRecord } from "@/lib/talent-buyers/projects";
 import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
 import { projectWorkspacePath } from "@/lib/talent-buyers/project-routes";
 
@@ -23,7 +23,7 @@ export default async function ProjectOverviewPage({
   const profile = await requireHiringAccount();
   const { id } = await params;
   const query = await searchParams;
-  const project = await fetchProjectRecord(id, profile.id);
+  const project = await fetchAccessibleProjectRecord(id, profile.id);
 
   if (project && isComposableProject(project)) {
     const classSeries = parseAbilityModules(project.enabled_modules).classes

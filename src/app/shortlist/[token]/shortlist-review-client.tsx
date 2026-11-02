@@ -14,6 +14,10 @@ import type { PublicShortlistPayload, PublicShortlistSubmission, PublicShortlist
 import "@/app/shortlist/shortlist.css";
 
 export default function ShortlistReviewClient({ token }: { token: string }) {
+  return <ShortlistReviewContent key={token} token={token} />;
+}
+
+function ShortlistReviewContent({ token }: { token: string }) {
   const [payload, setPayload] = useState<PublicShortlistPayload | null>(null);
   const [name, setName] = useState("");
   const [reviewer, setReviewer] = useState<{ id: string; name: string } | null>(null);
@@ -64,16 +68,6 @@ export default function ShortlistReviewClient({ token }: { token: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setPayload(null);
-    setReviewer(null);
-    setName("");
-    setVotes({});
-    setActiveRole(0);
-    setReviewingSummary(false);
-    setSubmitted(false);
-    setExpired(false);
-    setError(null);
     fetchPublicShortlist(token).then((data) => {
       if (cancelled) return;
       setPayload(data);

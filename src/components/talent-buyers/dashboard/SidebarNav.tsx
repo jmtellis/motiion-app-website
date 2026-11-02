@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 import {
   BookOpen,
   CalendarDays,
-  CalendarCheck,
   ChevronsUpDown,
   Folder,
   House,
@@ -15,7 +14,8 @@ import {
   Search,
   BadgeCheck,
 } from "lucide-react";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
+import { Dialog } from "@/components/ui/Dialog";
 
 import { WorkspaceAccountMenu } from "@/components/workspace/WorkspaceAccountMenu";
 import { WorkspaceFooterNotices } from "@/components/workspace/WorkspaceFooterNotices";
@@ -35,10 +35,17 @@ import type { DashboardProfile } from "@/types/database";
 
 import "./buyer-chrome.css";
 
+function subscribeMobileNavigation(notify: () => void) {
+  const query = window.matchMedia("(max-width: 1023px)");
+  query.addEventListener("change", notify);
+  return () => query.removeEventListener("change", notify);
+}
+const mobileNavigation = () => window.matchMedia("(max-width: 1023px)").matches;
+const desktopNavigation = () => false;
+
 const navIcons = {
   home: House,
   projects: Folder,
-  bookings: CalendarCheck,
   talent: Search,
   messages: Inbox,
   calendar: CalendarDays,
@@ -267,7 +274,7 @@ function SidebarContent({
 }) {
   const showExpanded = sidebarExpanded || mobileOpen;
   const isMobileDrawer = Boolean(mobileOpen);
-  const { unreadCount: inboxUnread } = useBuyerInboxUnread();
+  const { unreadCount: inboxUnread } = useBuyerInboxUnread(profile.id);
   const inboxBadge = formatBadge(inboxUnread);
   const initials = getProfileInitials(profile.fullName);
   const orgName = profile.organizationName || profile.companyName;
@@ -382,6 +389,7 @@ export function SidebarNav({
   sidebarExpanded?: boolean;
 }) {
   const pathname = usePathname();
+  const mobile = useSyncExternalStore(subscribeMobileNavigation, mobileNavigation, desktopNavigation);
   const showMobileDrawer = mobileOpen;
   const railCollapsed = collapsed && !showMobileDrawer;
   const [contentFadeIn, setContentFadeIn] = useState(false);
@@ -394,17 +402,7 @@ export function SidebarNav({
     return () => window.cancelAnimationFrame(frame);
   }, [collapsed, showMobileDrawer]);
 
-  return (
-    <>
-      {showMobileDrawer ? (
-        <button
-          type="button"
-          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
-          aria-label="Close navigation overlay"
-          onClick={onMobileClose}
-        />
-      ) : null}
-
+  const navigation = (
       <aside
         id="buyer-sidebar-nav"
         className={`buyer-sidebar z-50 shrink-0 transition-[width,transform] duration-200 ease-out lg:translate-x-0 ${
@@ -429,6 +427,10 @@ export function SidebarNav({
           mobileOpen={showMobileDrawer}
         />
       </aside>
-    </>
   );
+  return mobile ? (
+    <Dialog open={showMobileDrawer} onClose={() => onMobileClose?.()} label="Navigation" className="buyer-sidebar-dialog">
+      {navigation}
+    </Dialog>
+  ) : navigation;
 }

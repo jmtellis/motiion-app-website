@@ -150,6 +150,8 @@ export type PublicEventScheduleItem = {
 };
 
 export type PublicActivity = {
+  /** Only returned to a signed-in viewer after database row authorization. */
+  privateAccess?: boolean;
   id: string;
   title: string;
   kind: PublicActivityKind;

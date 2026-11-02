@@ -36,6 +36,10 @@ function revalidateActivityPaths(activityId?: string, projectId?: string | null)
   revalidatePath("/events");
   revalidatePath("/projects");
   revalidatePath("/schedule");
+  revalidatePath("/home");
+  revalidatePath("/inbox");
+  revalidatePath("/messages");
+  if (activityId) revalidatePath(`/activity/${activityId}`);
   if (activityId) {
     revalidatePath(`/calendar/${activityId}`);
     revalidatePath(`/calendar/${activityId}/edit`);
@@ -185,13 +189,17 @@ export type HostedActivity = ActivityHubItem;
 
 export type CalendarEvent = {
   id: string;
+  /** Stable entity identity when an activity has multiple dated entries. */
+  activityId?: string;
   title: string;
   eventType: BuyerEventSummary["eventType"];
   date: string;
   startTime: string;
   endTime: string | null;
   location: string;
-  attendeeCount: number;
+  attendeeCount?: number;
+  /** Explicit project-local wall-clock zone; date-only entries never shift. */
+  timeZone?: string;
   /** No time slot — rendered in the all-day row (Industry Schedule markers). */
   allDay?: boolean;
   /** Direct destination for marker-mode calendars; skips the detail popover. */
@@ -264,7 +272,7 @@ export async function listHostedActivities(): Promise<HostedActivitiesResult> {
     supabase
       .from("enrollments")
       .select("activity_id")
-      .eq("user_id", user.id)
+      .eq("student_id", user.id)
       .in("status", ["paid", "guest", "comped", "pending", "confirmed"])
       .limit(200),
     supabase

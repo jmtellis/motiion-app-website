@@ -36,7 +36,7 @@ export function ProjectCard({
   const stockCategory = getProjectTypeStockCategory(project.projectType);
   const coverSrc = resolveBuyerCoverSrc(project.coverImageUrl, {
     fallbackUrl: project.productionCompanyLogoUrl,
-    allowStock: isDashboard,
+    allowStock: false,
     id: project.id,
     category: stockCategory,
   });
@@ -110,7 +110,7 @@ export function ProjectCard({
             secondarySrc={project.productionCompanyLogoUrl}
             fallbackId={project.id}
             fallbackCategory={stockCategory}
-            allowStockFallback
+            allowStockFallback={false}
           />
 
           <span className="bd-visual-card__status"><IndustryBadge tone={project.status === "active" ? "success" : "neutral"}>{labelFromSnake(project.status)}</IndustryBadge></span>
@@ -129,7 +129,7 @@ export function ProjectCard({
             {createElement(TypeIcon, { className: "size-3.5", strokeWidth: 2.25 })}
           </span>
           <div className="bd-project-card__footer-copy">
-            <p className="bd-project-card__footer-title">{project.title}</p>
+            <p className="bd-project-card__footer-title">{project.status === "draft" ? "Continue draft" : project.status === "archived" ? "View archived project" : `${project.talentCount} ${countLabel.toLowerCase()}`}</p>
             <p className="bd-project-card__footer-meta">
               {nextBeatLabel
                 ? `Next: ${nextBeatLabel}`

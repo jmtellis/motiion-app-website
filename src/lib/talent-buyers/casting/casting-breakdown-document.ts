@@ -171,7 +171,7 @@ export function buildCastingBreakdownDocumentFromForm(form: CastingComposerForm)
       form.visibility === "private"
         ? "private"
         : form.visibility === "unlisted"
-          ? "invitation_only"
+          ? "unlisted"
           : form.visibility === "public"
             ? "public"
             : "public",

@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
   try {
     const { error } = await resend.emails.send({
-      from: "Motiion <notifications@motiion.app>",
+      from: process.env.MOTIION_EMAIL_FROM || "Motiion <notifications@motiion.io>",
       to,
       subject,
       html,

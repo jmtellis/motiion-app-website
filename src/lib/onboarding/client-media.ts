@@ -1,8 +1,59 @@
 "use client";
 
+import { createClientSupabaseClient } from "@/lib/supabase/client";
+import { MAX_RESUME_BYTES, MAX_RESUME_PAGE_BYTES } from "@/lib/onboarding/resume-upload";
+
 const MAX_HEADSHOT_EDGE = 1200;
 const MAX_PDF_PAGES = 3;
 const PDF_RENDER_MAX_EDGE = 2560;
+const uploadedResumeSources = new WeakMap<File, { userId: string; path: string }>();
+
+/** Upload large originals directly; only bounded extraction pages cross the action. */
+export async function prepareResumeUpload(file: File): Promise<FormData> {
+  if (file.size === 0 || file.size > MAX_RESUME_BYTES) throw new Error("Choose a resume under 20 MB.");
+  const supabase = createClientSupabaseClient();
+  if (!supabase) throw new Error("Resume upload is temporarily unavailable.");
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) throw new Error("Sign in again before uploading your resume.");
+  const form = new FormData();
+  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+  let source: Blob;
+  let pages: Blob[];
+  if (isPdf) {
+    source = new Blob([file], { type: "application/pdf" });
+    pages = await renderPdfPagesToJpegBlobs(file);
+  } else {
+    if (!file.type.startsWith("image/")) throw new Error("Choose a PDF or image of your resume.");
+    let image: Blob;
+    try { image = await resizeImageFile(file, PDF_RENDER_MAX_EDGE); }
+    catch { throw new Error("This browser couldn’t read that image. Use a JPEG, PNG, or PDF resume."); }
+    source = image;
+    pages = [image];
+  }
+  const boundedPages = await Promise.all(pages.map(compressResumePage));
+  boundedPages.forEach((page, index) => form.append("pages", page, `resume_page_${index + 1}.jpg`));
+  let saved = uploadedResumeSources.get(file);
+  if (saved?.userId !== user.id) saved = undefined;
+  if (!saved) {
+    const path = `${user.id.toLowerCase()}/resume_${crypto.randomUUID()}.${isPdf ? "pdf" : "jpg"}`;
+    const { error } = await supabase.storage.from("resumes").upload(path, source, { contentType: source.type, upsert: false });
+    if (error) throw new Error(error.message || "Couldn’t upload your resume. Please try again.");
+    saved = { userId: user.id, path };
+    uploadedResumeSources.set(file, saved);
+  }
+  form.append("sourcePath", saved.path);
+  return form;
+}
+
+async function compressResumePage(page: Blob): Promise<Blob> {
+  if (page.size <= MAX_RESUME_PAGE_BYTES) return page;
+  let reduced = page;
+  for (const edge of [2200, 1800, 1400, 1100]) {
+    reduced = await resizeImageFile(new File([reduced], "resume-page.jpg", { type: "image/jpeg" }), edge);
+    if (reduced.size <= MAX_RESUME_PAGE_BYTES) return reduced;
+  }
+  throw new Error("This page is too complex to read. Try a simpler PDF or a clear photo of your resume.");
+}
 
 export async function resizeImageFile(file: File, maxEdge = MAX_HEADSHOT_EDGE): Promise<Blob> {
   const bitmap = await createImageBitmap(file);

@@ -1,15 +1,15 @@
 import { BuyerAppPage } from "@/components/talent-buyers/dashboard/BuyerAppPage";
 import { EventsHubPage } from "@/components/talent-buyers/dashboard/EventsHubPage";
 import { requireHiringAccount } from "@/lib/auth/session";
-import { fetchScheduleMarkers } from "@/lib/talent-buyers/schedule-markers-server";
+import { fetchScheduleBundle } from "@/lib/talent-buyers/schedule-markers-server";
 
 export default async function BuyerSchedulePage() {
   const profile = await requireHiringAccount();
-  const markers = await fetchScheduleMarkers(profile.id);
+  const { markers, error } = await fetchScheduleBundle(profile.id);
 
   return (
     <BuyerAppPage fullWidth className="buyer-calendar-page !space-y-0 flex min-h-0 flex-1 flex-col">
-      <EventsHubPage markers={markers} />
+      <EventsHubPage key={profile.id} markers={markers} error={error} />
     </BuyerAppPage>
   );
 }

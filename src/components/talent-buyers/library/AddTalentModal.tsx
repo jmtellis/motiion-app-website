@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
@@ -21,6 +22,7 @@ export function AddTalentModal({
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -39,13 +41,16 @@ export function AddTalentModal({
   }
 
   async function handleAdd() {
-    if (!selected.length) return;
+    if (!selected.length || pending) return;
     setPending(true);
+    setError(null);
     try {
       await onAdd(selected);
       setSelected([]);
       setQuery("");
       onClose();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not add talent. Please try again.");
     } finally {
       setPending(false);
     }
@@ -54,13 +59,13 @@ export function AddTalentModal({
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={() => { if (!pending) onClose(); }}
       title="Add Talent"
       description="Choose from talent you've already saved to your Library."
       size="lg"
       footer={
         <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-white/45">{selected.length} selected</p>
+          <p className="text-sm text-[var(--ui-muted)]">{selected.length} selected</p>
           <div className="flex gap-2">
             <button type="button" className="bd-btn-secondary" onClick={onClose} disabled={pending}>
               Cancel
@@ -78,11 +83,13 @@ export function AddTalentModal({
       }
     >
       <div className="space-y-3">
+        {error ? <p className="ui-notice" data-tone="error" role="alert">{error}</p> : null}
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           className="library-search w-full max-w-none"
           placeholder="Search saved talent"
+          aria-label="Search saved talent"
         />
         {filtered.length ? (
           <div className="library-add-list">
@@ -94,18 +101,18 @@ export function AddTalentModal({
                   <input
                     type="checkbox"
                     checked={isSelected}
-                    disabled={alreadyIn}
+                    disabled={alreadyIn || pending}
                     onChange={() => toggle(person.profileId)}
                   />
                   {person.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={person.avatarUrl} alt="" />
+                    <img src={person.avatarUrl} alt="" loading="lazy" decoding="async" />
                   ) : (
                     <span className="library-add-row__fallback">{person.name.slice(0, 1)}</span>
                   )}
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium text-white/90">{person.name}</span>
-                    <span className="block truncate text-xs text-white/40">
+                    <span className="block truncate text-sm font-medium text-[var(--ui-text)]">{person.name}</span>
+                    <span className="block truncate text-xs text-[var(--ui-muted)]">
                       {alreadyIn ? "Already in collection" : person.location || person.styles[0] || "Saved talent"}
                     </span>
                   </span>
@@ -114,7 +121,10 @@ export function AddTalentModal({
             })}
           </div>
         ) : (
-          <p className="py-6 text-center text-sm text-white/45">No saved talent match that search.</p>
+          <div className="space-y-3 py-6 text-center text-sm text-[var(--ui-muted)]">
+            <p>{savedTalent.length ? "No saved talent match that search." : "Save talent from Discover to start building this roster."}</p>
+            {savedTalent.length ? <button type="button" className="bd-btn-secondary" onClick={() => setQuery("")}>Clear search</button> : <Link className="bd-btn-secondary" href="/talent">Discover talent</Link>}
+          </div>
         )}
       </div>
     </Modal>

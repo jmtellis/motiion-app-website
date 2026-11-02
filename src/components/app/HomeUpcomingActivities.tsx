@@ -3,9 +3,11 @@ import type { CalendarEvent } from "@/app/(buyer-app)/(paid)/events/actions";
 
 export function HomeUpcomingActivities({
   events,
+  error = null,
   calendarHref = "/schedule",
 }: {
   events: CalendarEvent[];
+  error?: string | null;
   calendarHref?: string;
 }) {
   const today = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`;
@@ -19,16 +21,13 @@ export function HomeUpcomingActivities({
         </div>
         <Link href={calendarHref}>View calendar</Link>
       </div>
+      {error ? <p role="status" className="home-panel-status">{error} <Link href={calendarHref}>Open calendar</Link></p> : null}
       {upcoming.length ? (
         <ul className="home-upcoming-activities">
           {upcoming.map((event) => (
             <li key={event.id}>
               <Link
-                href={
-                  event.eventType === "event"
-                    ? `/event/${event.id}`
-                    : `/activity/${event.id}`
-                }
+                href={event.href ?? `/activity/${event.activityId ?? event.id}`}
               >
                 <strong>{event.title}</strong>
                 <span>
@@ -36,14 +35,14 @@ export function HomeUpcomingActivities({
                     undefined,
                     { weekday: "short", month: "short", day: "numeric" },
                   )}{" "}
-                  · {event.startTime.slice(0, 5)}
+                  · {event.allDay ? "All day" : event.startTime.slice(0, 5)}
                 </span>
-                <small>{event.location}</small>
+                <small>{event.location}{event.timeZone ? ` · ${event.timeZone}` : ""}</small>
               </Link>
             </li>
           ))}
         </ul>
-      ) : (
+      ) : error ? null : (
         <p className="home-panel-status">
           Your upcoming activities will appear here when you join or host an
           activity.

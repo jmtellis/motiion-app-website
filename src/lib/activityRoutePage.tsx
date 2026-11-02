@@ -14,6 +14,7 @@ import {
 import { resolveExternalTicketProvider } from "@/lib/external-ticket-provider";
 import { fetchPublicActivity } from "@/lib/catalog/fetch-public-activity";
 import { activityKindLabel } from "@/lib/publicActivity";
+import { activityViewerState } from "@/lib/app/activities";
 import { getIosAppStoreId } from "@/lib/referrals/app-store";
 
 type PageProps = {
@@ -49,8 +50,8 @@ export function createActivityRouteMetadata(pathPrefix: string) {
       ? activity.kind === "class"
         ? `${activityKindLabel(activity.kind)} on Motiion — view details and book online.`
         : activity.kind === "session"
-          ? `${activityKindLabel(activity.kind)} on Motiion — view details and request to join in the app.`
-          : `${activityKindLabel(activity.kind)} on Motiion — view details and book in the app.`
+          ? `${activityKindLabel(activity.kind)} on Motiion — view details and request to join.`
+          : `${activityKindLabel(activity.kind)} on Motiion — view details and get tickets.`
       : activityShareDescription(name, kind);
     const ogImage = activityOgImageUrl(id);
     const itunes = appleItunesMeta();
@@ -111,13 +112,16 @@ export function createActivityRoutePage(pathPrefix: string) {
       );
     }
 
+    const viewer = await activityViewerState(id);
     const ticketProvider = resolveExternalTicketProvider(activity.externalTicketUrl);
     const ticketProviderName = ticketProvider?.displayName ?? null;
     const ticketProviderLogoUrl = ticketProvider?.logoURL ?? null;
 
     return (
       <ActivityPageClient
+        key={`${activity.id}:${viewer.accountId ?? "guest"}`}
         activity={activity}
+        viewer={viewer}
         sharePath={sharePath}
         ticketProviderName={ticketProviderName}
         ticketProviderLogoUrl={ticketProviderLogoUrl}

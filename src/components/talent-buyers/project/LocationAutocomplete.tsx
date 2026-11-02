@@ -50,9 +50,14 @@ export function LocationAutocomplete({
   const [error, setError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setQuery(value);
-  }, [value]);
+  const [previousValue, setPreviousValue] = useState(value);
+  if (previousValue !== value) { setPreviousValue(value); setQuery(value); }
+
+  const requestKey = `${open}:${query}:${mode}`;
+  const [previousRequestKey, setPreviousRequestKey] = useState(requestKey);
+  if (previousRequestKey !== requestKey) {
+    setPreviousRequestKey(requestKey); setPredictions([]); setLoading(false); setError(null);
+  }
 
   useEffect(() => {
     function handleClick(event: MouseEvent) {
@@ -66,10 +71,7 @@ export function LocationAutocomplete({
   }, []);
 
   useEffect(() => {
-    if (!open || query.trim().length < MIN_SEARCH_LENGTH) {
-      setPredictions([]);
-      return;
-    }
+    if (!open || query.trim().length < MIN_SEARCH_LENGTH) return;
 
     const controller = new AbortController();
     const timeout = window.setTimeout(async () => {
@@ -86,6 +88,7 @@ export function LocationAutocomplete({
           error?: string;
         };
 
+        if (controller.signal.aborted) return;
         if (!response.ok) {
           setError(payload.error ?? "Location search failed.");
           setPredictions([]);

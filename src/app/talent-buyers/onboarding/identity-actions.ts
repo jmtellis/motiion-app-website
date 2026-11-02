@@ -9,6 +9,7 @@ import {
   retrieveIdentityVerificationSession,
 } from "@/lib/billing/stripe";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { requireIndustryApproval } from "@/lib/talent-buyers/require-industry-approval";
 import type { IndustryIdentityStatus } from "@/types/talent-buyers";
 
 export type IdentityStatusResult =
@@ -35,6 +36,8 @@ async function requireUser(): Promise<
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "You must be signed in." };
+  const approval = await requireIndustryApproval(user.id);
+  if (!approval.ok) return { ok: false, error: approval.error };
 
   return { ok: true, user };
 }
@@ -43,16 +46,14 @@ export async function getIndustryIdentityStatus(): Promise<IdentityStatusResult>
   const auth = await requireUser();
   if (!auth.ok) return { ok: false, error: auth.error };
 
-  const row = await getIndustryIdentityVerificationByUserId(auth.user.id);
-  return {
-    ok: true,
-    status: row?.status ?? null,
-    lastErrorCode: row?.last_error_code ?? null,
-    verified: row?.status === "verified",
-  };
+  try {
+    const row = await getIndustryIdentityVerificationByUserId(auth.user.id);
+    return { ok: true, status: row?.status ?? null, lastErrorCode: row?.last_error_code ?? null, verified: row?.status === "verified" };
+  } catch { return { ok: false, error: "Could not check identity verification. Please retry." }; }
 }
 
 export async function startIndustryIdentityVerification(): Promise<StartIdentityResult> {
+  try {
   const auth = await requireUser();
   if (!auth.ok) return { ok: false, error: auth.error };
 
@@ -67,16 +68,19 @@ export async function startIndustryIdentityVerification(): Promise<StartIdentity
     (existing.status === "requires_input" || existing.status === "processing")
   ) {
     const refreshed = await retrieveIdentityVerificationSession(existing.stripe_session_id);
+    if (!refreshed.ok) return { ok: false, error: refreshed.error };
     if (refreshed.ok) {
-      await upsertIndustryIdentityVerification({
+      const persisted = await upsertIndustryIdentityVerification({
         userId: auth.user.id,
         stripeSessionId: refreshed.sessionId,
         status: refreshed.status,
         lastErrorCode: refreshed.lastErrorCode,
       });
+      if (!persisted.ok) return { ok: false, error: persisted.error };
       if (refreshed.status === "verified") {
         return { ok: false, error: "Identity is already verified." };
       }
+      if (refreshed.status === "processing") return { ok: false, error: "Stripe is still checking your identity. Use Check status in a moment." };
       if (refreshed.clientSecret && refreshed.status === "requires_input") {
         return {
           ok: true,
@@ -98,6 +102,7 @@ export async function startIndustryIdentityVerification(): Promise<StartIdentity
     userId: auth.user.id,
     stripeSessionId: created.sessionId,
     status: created.status,
+    replaceSession: true,
   });
   if (!persisted.ok) return { ok: false, error: persisted.error };
 
@@ -106,9 +111,11 @@ export async function startIndustryIdentityVerification(): Promise<StartIdentity
     clientSecret: created.clientSecret,
     status: created.status,
   };
+  } catch { return { ok: false, error: "Could not check identity verification. Your current session is saved; please retry." }; }
 }
 
 export async function refreshIndustryIdentityVerification(): Promise<IdentityStatusResult> {
+  try {
   const auth = await requireUser();
   if (!auth.ok) return { ok: false, error: auth.error };
 
@@ -134,4 +141,5 @@ export async function refreshIndustryIdentityVerification(): Promise<IdentitySta
     lastErrorCode: refreshed.lastErrorCode,
     verified: refreshed.status === "verified",
   };
+  } catch { return { ok: false, error: "Could not check identity verification. Your current session is saved; please retry." }; }
 }

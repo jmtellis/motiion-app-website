@@ -71,7 +71,7 @@ function ReferralCodeCard({ code }: { code: string }) {
       </div>
       <p className="mt-3 text-sm leading-relaxed text-[#a3a3a3]">
         If Motiion doesn’t open automatically after install, enter this code on signup under
-        “Have a referral code?”
+        “Who invited you?” in Privacy & support
       </p>
     </div>
   );
@@ -124,8 +124,7 @@ export function JoinLandingClient({ code, referrer }: JoinLandingClientProps) {
               </h1>
               {handle ? <p className="mt-2 text-sm text-[#a3a3a3]">{handle}</p> : null}
               <p className="mt-4 max-w-sm text-sm leading-relaxed text-[#a3a3a3]">
-                Download the Motiion iOS app to create your account. If you already have the app,
-                open this invite to apply the referral automatically.
+                Create your account in the browser or the iOS app. Confirm your friend’s code after signing up.
               </p>
             </div>
 
@@ -137,9 +136,9 @@ export function JoinLandingClient({ code, referrer }: JoinLandingClientProps) {
                 <AppleLogo className="h-[1.125rem] w-[1.125rem] shrink-0" />
                 Download on the App Store
               </a>
-              <a href="/" className="btn-hero-pill btn-hero-pill-ghost w-full">
+              <Link href={`/referrals?code=${encodeURIComponent(code)}`} className="btn-hero-pill btn-hero-pill-ghost w-full">
                 Continue in Browser
-              </a>
+              </Link>
             </div>
 
             <div className="mt-8">

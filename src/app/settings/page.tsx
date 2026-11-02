@@ -4,6 +4,9 @@ import { AppShell } from "@/components/app/AppShell";
 import { SettingsAdminAnalyticsSection } from "@/components/settings/SettingsAdminAnalyticsSection";
 import { TalentAccountForm } from "@/components/settings/TalentAccountForm";
 import { TalentAdminPanel } from "@/components/settings/TalentAdminPanel";
+import { ReferralsPanel } from "@/components/settings/ReferralsPanel";
+import { NotificationSettingsSection } from "@/components/settings/NotificationSettingsSection";
+import { BlockedUsersSection } from "@/components/settings/BlockedUsersSection";
 import { TalentResourcesPanel } from "@/components/settings/TalentResourcesPanel";
 import { TalentVerificationPanel } from "@/components/settings/TalentVerificationPanel";
 import { IndustryPageHeader } from "@/components/talent-buyers/dashboard/IndustryUI";
@@ -31,6 +34,7 @@ type AccountRow = {
   contact_email: string | null;
   member_number: number | string | null;
   is_private: boolean | null;
+  hide_age: boolean | null;
   resume_url: string | null;
   identity_verification_status: string | null;
   talent_types: string[] | null;
@@ -43,6 +47,7 @@ export default async function SettingsPage({
 }: {
   searchParams: Promise<{
     section?: string;
+    referral?: string;
     identity?: string;
     identityFee?: string;
     session_id?: string;
@@ -63,12 +68,13 @@ export default async function SettingsPage({
   const accountQuery = await supabase
     ?.from("profiles")
     .select(
-      "first_name, last_name, username, date_of_birth, email, contact_email, member_number, is_private, resume_url, identity_verification_status, talent_types",
+      "first_name, last_name, username, date_of_birth, email, contact_email, member_number, is_private, hide_age, resume_url, identity_verification_status, talent_types",
     )
     .eq("user_id", profile.id)
     .maybeSingle<AccountRow>();
 
-  const account = accountQuery?.data;
+  if (!supabase || accountQuery?.error || !accountQuery?.data) throw new Error("Couldn’t load account settings. Please try again.");
+  const account = accountQuery.data;
   const {
     data: { user },
   } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
@@ -105,14 +111,16 @@ export default async function SettingsPage({
         <div className="talent-settings-stack">
           {admin ? <SettingsAdminAnalyticsSection variant="talent" /> : null}
           <TalentAccountForm
+            key={profile.id}
             firstName={account?.first_name ?? ""}
             lastName={account?.last_name ?? ""}
             username={account?.username ?? profile.username ?? ""}
             dateOfBirth={account?.date_of_birth?.slice(0, 10) ?? ""}
-            email={account?.email ?? profile.email ?? ""}
+            email={profile.email ?? ""}
             contactEmail={account?.contact_email ?? ""}
             memberNumber={account?.member_number == null ? null : String(account.member_number)}
             isPrivate={account?.is_private === true}
+            hideAge={account?.hide_age === true}
             canChangePassword={canChangePassword}
             profileLabel={profileLabel}
           />
@@ -142,7 +150,7 @@ export default async function SettingsPage({
     id: "resources",
     label: "Privacy & support",
     content: (
-      <TalentResourcesPanel planLabel={plan.label} canManageBilling={plan.canManageBilling} />
+      <div className="talent-settings-stack"><ReferralsPanel key={profile.id} accountId={profile.id} username={profile.username} initialCode={params.referral} /><NotificationSettingsSection accountId={profile.id} community={isCommunity} retryPath="/settings?section=resources" /><BlockedUsersSection accountId={profile.id} /><TalentResourcesPanel planLabel={plan.label} canManageBilling={plan.canManageBilling} /></div>
     ),
   });
 

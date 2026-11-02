@@ -42,22 +42,20 @@ export function ProjectAttachmentThumbnail({
   const [pdfFailed, setPdfFailed] = useState(false);
   const [isLoadingPdf, setIsLoadingPdf] = useState(isPdf);
 
+  const requestKey = `${href}:${isPdf}`;
+  const [previousRequestKey, setPreviousRequestKey] = useState(requestKey);
+  if (previousRequestKey !== requestKey) {
+    setPreviousRequestKey(requestKey);
+    setPdfPreview(null); setPdfFailed(false); setIsLoadingPdf(isPdf);
+  }
   useEffect(() => {
-    if (!isPdf || !href) {
-      setPdfPreview(null);
-      setPdfFailed(false);
-      setIsLoadingPdf(false);
-      return;
-    }
-
+    if (!isPdf || !href) return;
     let cancelled = false;
-    setIsLoadingPdf(true);
-    setPdfFailed(false);
-    setPdfPreview(null);
+    const controller = new AbortController();
 
     void (async () => {
       try {
-        const response = await fetch(href);
+        const response = await fetch(href, { signal: controller.signal });
         if (!response.ok) throw new Error("Could not load PDF");
         const bytes = new Uint8Array(await response.arrayBuffer());
         const thumbnail = await renderPdfFirstPageThumbnail(clonePdfBytes(bytes));
@@ -76,6 +74,7 @@ export function ProjectAttachmentThumbnail({
 
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [href, isPdf]);
 

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Camera } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 
 import {
   updateBuyerAvatar,
@@ -28,7 +28,12 @@ function roleLabel(role: DashboardProfile["buyerRole"]) {
 const fieldClass =
   "w-full rounded-full border border-white/10 bg-white/[0.06] px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none transition-colors focus:border-white/35 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none disabled:opacity-55";
 
-export function BuyerProfileModal({
+type BuyerProfileModalProps = { open: boolean; onClose: () => void; profile: DashboardProfile };
+export function BuyerProfileModal(props: BuyerProfileModalProps) {
+  return props.open ? <BuyerProfileModalContent key={props.profile.id} {...props} /> : null;
+}
+
+function BuyerProfileModalContent({
   open,
   onClose,
   profile,
@@ -44,7 +49,7 @@ export function BuyerProfileModal({
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const [fullName, setFullName] = useState(profile.fullName);
-  const [email, setEmail] = useState(profile.email ?? "");
+  const [email, setEmail] = useState(profile.workEmail ?? profile.email ?? "");
   const [buyerRole, setBuyerRole] = useState<TalentBuyerRole | "">(profile.buyerRole ?? "");
   const [organizationName, setOrganizationName] = useState(
     profile.organizationName ?? profile.companyName ?? "",
@@ -55,31 +60,27 @@ export function BuyerProfileModal({
   );
   const [linkedin, setLinkedin] = useState(profile.verificationLinks?.linkedin ?? "");
   const [instagram, setInstagram] = useState(profile.verificationLinks?.instagram ?? "");
+  const [customRole, setCustomRole] = useState(profile.customRole ?? "");
+  const [discardPrompt, setDiscardPrompt] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl ?? null);
 
-  useEffect(() => {
-    if (!open) return;
-    setFullName(profile.fullName);
-    setEmail(profile.email ?? "");
-    setBuyerRole(profile.buyerRole ?? "");
-    setOrganizationName(profile.organizationName ?? profile.companyName ?? "");
-    setOrganizationWebsite(profile.organizationWebsite ?? "");
-    setCompanyWebsite(profile.verificationLinks?.companyWebsite ?? "");
-    setLinkedin(profile.verificationLinks?.linkedin ?? "");
-    setInstagram(profile.verificationLinks?.instagram ?? "");
-    setAvatarUrl(profile.avatarUrl ?? null);
-  }, [open, profile]);
 
   const initials = getProfileInitials(fullName || profile.fullName);
   const markets = profile.markets?.filter(Boolean) ?? [];
   const subtitle = roleLabel(buyerRole || profile.buyerRole) || "Industry professional";
 
+  const dirty = fullName !== profile.fullName || email !== (profile.workEmail ?? profile.email ?? "") || buyerRole !== (profile.buyerRole ?? "") || customRole !== (profile.customRole ?? "") || organizationName !== (profile.organizationName ?? profile.companyName ?? "") || organizationWebsite !== (profile.organizationWebsite ?? "") || companyWebsite !== (profile.verificationLinks?.companyWebsite ?? "") || linkedin !== (profile.verificationLinks?.linkedin ?? "") || instagram !== (profile.verificationLinks?.instagram ?? "");
+  function requestClose() { if (isPending || isUploadingAvatar) return; if (dirty) setDiscardPrompt(true); else onClose(); }
   function handleSave() {
     startTransition(async () => {
+      setError(null);
+      try {
       const result = await updateBuyerProfile({
         fullName,
         email: email.trim() || undefined,
         buyerRole: buyerRole || null,
+        customRole,
         organizationName,
         organizationWebsite,
         verificationLinks: {
@@ -90,6 +91,7 @@ export function BuyerProfileModal({
       });
 
       if (!result.ok) {
+        setError(result.error ?? "Could not save profile.");
         showToast({ message: result.error ?? "Could not save profile.", variant: "error" });
         return;
       }
@@ -100,6 +102,7 @@ export function BuyerProfileModal({
       });
       router.refresh();
       onClose();
+      } catch { setError("Couldn’t save your profile. Your changes are still here; please retry."); }
     });
   }
 
@@ -148,10 +151,11 @@ export function BuyerProfileModal({
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={requestClose}
       title="Your profile"
       description="Update how you appear when casting and contacting talent."
       size="lg"
+      placement="drawer"
       footer={
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -159,7 +163,7 @@ export function BuyerProfileModal({
             <Link
               href="/dashboard/settings"
               className="text-sm text-white/55 transition hover:text-white/85"
-              onClick={onClose}
+              onClick={event => { if (dirty) { event.preventDefault(); requestClose(); } else onClose(); }}
             >
               Account settings
             </Link>
@@ -167,7 +171,7 @@ export function BuyerProfileModal({
           <button
             type="button"
             className="bd-btn-accent"
-            disabled={isPending || isUploadingAvatar}
+            disabled={isPending || isUploadingAvatar || !dirty}
             onClick={handleSave}
           >
             {isPending && !isUploadingAvatar ? "Saving…" : "Save changes"}
@@ -176,6 +180,8 @@ export function BuyerProfileModal({
       }
     >
       <div className="space-y-6">
+        {discardPrompt && <div className="rounded-xl border border-[var(--line)] p-4" role="alert"><p className="font-medium">Discard your unsaved changes?</p><p className="mt-1 text-sm text-white/65">Your uploaded photo is already saved. Other changes have not been saved.</p><div className="mt-3 flex gap-3"><button type="button" className="bd-btn-secondary" onClick={() => setDiscardPrompt(false)}>Keep editing</button><button type="button" className="bd-btn-secondary" onClick={onClose}>Discard changes</button></div></div>}
+        {error && <p role="alert" className="text-sm text-[var(--danger)]">{error}</p>}
         <div className="flex items-center gap-4">
           <button
             type="button"
@@ -192,6 +198,7 @@ export function BuyerProfileModal({
                 className="object-cover"
                 sizes="80px"
                 unoptimized
+                onError={() => setAvatarUrl(null)}
               />
             ) : (
               <span className="flex size-full items-center justify-center text-lg font-semibold tracking-wide text-white/90">
@@ -244,6 +251,7 @@ export function BuyerProfileModal({
               onChange={(event) => setBuyerRole(event.target.value as TalentBuyerRole | "")}
             >
               <option value="">Select a title</option>
+              {profile.buyerRole && !roleOptions.some(option => option.value === profile.buyerRole) && <option value={profile.buyerRole}>{profile.buyerRole.replaceAll("_", " ")}</option>}
               {roleOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -253,7 +261,7 @@ export function BuyerProfileModal({
           </label>
 
           <label className="block space-y-1.5">
-            <span className="text-xs font-medium uppercase tracking-wide text-white/45">Email</span>
+            <span className="text-xs font-medium uppercase tracking-wide text-white/45">Work contact email</span>
             <input
               className={fieldClass}
               type="email"
@@ -287,6 +295,8 @@ export function BuyerProfileModal({
           </label>
         </div>
 
+        {buyerRole === "other" && <label className="block space-y-1.5"><span className="text-sm">Your professional role</span><input className={fieldClass} value={customRole} onChange={event => setCustomRole(event.target.value)} maxLength={200} /></label>}
+        <p className="text-sm text-white/65">Work contact email is separate from your sign-in email. Photos save immediately.</p>
         <div className="space-y-3">
           <p className="text-xs font-medium uppercase tracking-wide text-white/45">Professional links</p>
           <div className="grid gap-3 sm:grid-cols-1">
@@ -295,6 +305,7 @@ export function BuyerProfileModal({
               type="url"
               value={companyWebsite}
               onChange={(event) => setCompanyWebsite(event.target.value)}
+              aria-label="Professional website"
               placeholder="Website"
             />
             <input
@@ -302,6 +313,7 @@ export function BuyerProfileModal({
               type="url"
               value={linkedin}
               onChange={(event) => setLinkedin(event.target.value)}
+              aria-label="LinkedIn URL"
               placeholder="LinkedIn URL"
             />
             <input
@@ -309,6 +321,7 @@ export function BuyerProfileModal({
               type="url"
               value={instagram}
               onChange={(event) => setInstagram(event.target.value)}
+              aria-label="Instagram URL"
               placeholder="Instagram URL"
             />
           </div>

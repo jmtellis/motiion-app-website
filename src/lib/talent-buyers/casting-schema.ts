@@ -173,7 +173,15 @@ const castingConfigurationSchema = z.object({
   composer_draft: z.boolean().default(true),
 });
 
+export const roleSubmissionOptionsSchema = z.object({
+  slateRequired: z.boolean().default(false),
+  maxSubmissionLinks: z.number().int("Use a whole number of work links.").min(0).max(10, "Allow up to 10 work links.").default(0),
+  submissionLimit: z.number().int("Use a whole number for the submission limit.").min(0).max(2147483647, "The submission limit is too large.").default(0),
+  talentPaysTravel: z.boolean().default(false),
+});
+
 const castingRoleSchema = z.object({
+  ...roleSubmissionOptionsSchema.shape,
   clientId: z.string().uuid(),
   id: z.string().uuid().nullable().optional(),
   title: z.string().trim().min(1, "Each role needs a title."),

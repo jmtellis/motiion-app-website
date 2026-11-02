@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 import {
   buildSignupUserMetadata,
+  buildEmailConfirmationRedirectUrl,
   parseOAuthSignupIntent,
   resolveSignupIntent,
   signupIntentFromUserMetadata,
@@ -62,4 +63,12 @@ describe("signup intent resolution", () => {
     } as never);
     assert.deepEqual(intent, { flow: "signup", accountType: "talent" });
   });
+});
+
+it("generic confirmation recovery retains industry intent without guessing a role", () => {
+  const redirect = new URL(buildEmailConfirmationRedirectUrl());
+  assert.equal(redirect.searchParams.has("account_type"), false);
+  const intent = resolveSignupIntent(redirect.searchParams, { user_metadata: buildSignupUserMetadata("lookingForTalent") } as never);
+  assert.equal(intent.flow, "signup");
+  assert.equal(intent.accountType, "lookingForTalent");
 });

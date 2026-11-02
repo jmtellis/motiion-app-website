@@ -19,16 +19,17 @@ const talentTabs = [
   { href: "/home", label: "Home", icon: House },
   { href: "/discover", label: "Discover", icon: Search },
   { href: "/opportunities", label: "Opportunities", icon: Megaphone },
-  { href: "/deal-memos", label: "Bookings", icon: CalendarDays },
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/schedule", label: "Calendar", icon: CalendarDays },
   { href: "/portfolio", label: "Portfolio", icon: Layers },
 ] as const;
 
-/** Community: Home · Browse · Inbox · Settings */
+/** Community discovery, responses and saved schedule. */
 const communityTabs = [
   { href: "/home", label: "Home", icon: House },
   { href: "/discover", label: "Browse", icon: Search },
+  { href: "/community/events", label: "Live", icon: Megaphone },
+  { href: "/schedule", label: "Calendar", icon: CalendarDays },
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;

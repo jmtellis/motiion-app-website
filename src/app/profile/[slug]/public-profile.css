@@ -1,0 +1,22 @@
+.product-theme.public-profile-theme {
+  background:var(--ui-canvas); color:var(--ui-text); color-scheme:light;
+  --background-default:var(--ui-canvas); --text-default:var(--ui-text); --text-low:var(--ui-muted);
+  --border-low:var(--ui-border); --surface-overlay:var(--ui-surface-soft); --surface-accent:var(--ui-accent-soft);
+  --ds-border-low:var(--ui-border); --ds-surface-tint:var(--ui-surface-soft); --ds-text-default:var(--ui-text);
+}
+.public-profile-theme .product-shell { max-width:880px; padding:24px 24px 48px; }
+.public-profile-nav { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:32px; }
+.public-profile-nav a { min-height:44px; display:inline-flex; align-items:center; color:var(--ui-accent); font-size:14px; font-weight:600; text-decoration:none; }
+.public-profile-nav .public-profile-brand { color:var(--ui-text); font-size:23px; letter-spacing:-.7px; }
+.public-profile { overflow-wrap:anywhere; }
+.public-profile-theme .product-glass-card,.public-profile-theme .product-highlight-card { background:var(--ui-surface); border-color:var(--ui-border); box-shadow:var(--ui-shadow-card); }
+.public-profile-theme .product-tab { min-height:44px; border-radius:var(--ui-radius-control); color:var(--ui-muted); }
+.public-profile-theme .product-tab:hover,.public-profile-theme .product-tab[data-active=true] { color:var(--ui-accent); background:var(--ui-accent-soft); }
+.public-profile-theme .product-pill { background:var(--ui-surface-soft); color:var(--ui-text); border-color:var(--ui-border); }
+.public-profile-theme :is(button,a,[role=tabpanel]):focus-visible { outline:2px solid var(--ui-focus); outline-offset:3px; }
+.public-profile-theme .product-btn-primary { min-height:44px; background:var(--ui-accent); color:var(--ui-on-accent); border-radius:var(--ui-radius-control); }
+.public-profile-join { display:grid; gap:16px; margin-top:16px; padding-top:24px; border-top:1px solid var(--ui-border); }
+.public-profile-join h2 { margin:0; font-size:18px; font-weight:600; }
+.public-profile-join p { margin:8px 0 0; color:var(--ui-muted); font-size:14px; line-height:1.6; }
+@media(max-width:639px) { .public-profile-theme .product-shell { padding:16px 20px 32px; } .public-profile-nav { margin-bottom:24px; } }
+@media(prefers-reduced-motion:reduce) { .public-profile-theme .product-tab { transition:none; } }

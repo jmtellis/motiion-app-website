@@ -2,10 +2,11 @@ import { redirect } from "next/navigation";
 
 import { ProjectRosterAbilityPage } from "@/components/talent-buyers/project/composable/ProjectRosterAbilityPage";
 import { requireHiringAccount } from "@/lib/auth/session";
+import { listProjectPeopleGroups } from "@/lib/talent-buyers/project-roster";
 import { listCollections } from "@/lib/talent-buyers/library";
-import { isComposableProject, parseAbilityModules } from "@/lib/talent-buyers/project-abilities";
-import { projectHomePath, projectOverviewTalentPath } from "@/lib/talent-buyers/project-routes";
-import { fetchProjectRecord } from "@/lib/talent-buyers/projects";
+import { isComposableProject } from "@/lib/talent-buyers/project-abilities";
+import { projectOverviewTalentPath } from "@/lib/talent-buyers/project-routes";
+import { fetchAccessibleProjectRecord } from "@/lib/talent-buyers/projects";
 
 export default async function ProjectRosterPage({
   params,
@@ -17,16 +18,13 @@ export default async function ProjectRosterPage({
   const profile = await requireHiringAccount();
   const { id } = await params;
   const query = await searchParams;
-  const project = await fetchProjectRecord(id, profile.id);
+  const project = await fetchAccessibleProjectRecord(id, profile.id);
 
   if (!project || !isComposableProject(project)) {
     redirect(projectOverviewTalentPath(id));
   }
-  if (!parseAbilityModules(project.enabled_modules).roster) {
-    redirect(projectHomePath(id));
-  }
 
-  const { collections } = await listCollections();
+  const [{ collections }, groupData] = await Promise.all([listCollections(), listProjectPeopleGroups(id)]);
 
   return (
     <ProjectRosterAbilityPage
@@ -35,6 +33,8 @@ export default async function ProjectRosterPage({
         name: collection.name,
         talentCount: collection.talentCount,
       }))}
+      key={id}
+      groupData={groupData}
       inviteOpen={query.invite === "1"}
     />
   );

@@ -7,7 +7,7 @@ import { EventProgramShell } from "@/components/event/EventProgramShell";
 import { useEventProgramChrome } from "@/components/event/useEventProgramChrome";
 import { PublicPageAnalytics } from "@/components/analytics/PublicPageAnalytics";
 import { programCastNodes, programHeroEyebrow, resolveTalentAppearance } from "@/lib/publicActivity";
-import { getIosAppStoreUrl } from "@/lib/referrals/app-store";
+import Link from "next/link";
 import type { PublicActivity } from "@/types/public";
 
 import "@/app/casting/casting.css";
@@ -21,7 +21,6 @@ export default function EventShowcasePageClient({
 }) {
   const appearance = resolveTalentAppearance(activity);
   const featured = programCastNodes(activity);
-  const appStoreUrl = getIosAppStoreUrl();
   const poweredByOpacity = useEventProgramChrome();
   const analyticsPath = sharePath.startsWith("/") ? sharePath : `/${sharePath}`;
 
@@ -51,14 +50,9 @@ export default function EventShowcasePageClient({
       <EventProgramPoweredBy opacity={poweredByOpacity} />
 
       <EventProgramFixedCta>
-        <a
-          className="event-program-cta-glass event-program-cta-button"
-          href={appStoreUrl}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Download Motiion
-        </a>
+        <Link className="event-program-cta-glass event-program-cta-button" href={`/activity/${activity.id}`}>
+          {activity.requirePayment || activity.externalTicketUrl ? "Event details & tickets" : "View event details"}
+        </Link>
       </EventProgramFixedCta>
     </EventProgramShell>
   );

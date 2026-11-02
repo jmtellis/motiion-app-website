@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
 
 export default function RootError({
   error,
-  reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [retrying, setRetrying] = useState(false);
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
@@ -19,20 +20,21 @@ export default function RootError({
       <div className="w-full max-w-md space-y-4 text-center">
         <h1 className="text-xl font-semibold">Something went wrong</h1>
         <p className="text-sm opacity-70">
-          An unexpected error occurred. Try again, or head back to the home page — we&apos;ve been
-          notified.
+          This page couldn’t be loaded. Try again, or return home to continue.
         </p>
         <div className="flex items-center justify-center gap-3">
           <button
             type="button"
-            onClick={reset}
-            className="rounded-xl border border-current/20 px-4 py-2 text-sm font-semibold"
+            onClick={() => { setRetrying(true); window.location.reload(); }}
+            disabled={retrying}
+            aria-busy={retrying}
+            className="ui-button ui-button--secondary min-h-11"
           >
-            Try again
+            {retrying ? "Retrying…" : "Try again"}
           </button>
-          <a href="/" className="rounded-xl border border-current/20 px-4 py-2 text-sm font-semibold">
+          <Link href="/" className="ui-button ui-button--secondary min-h-11">
             Go home
-          </a>
+          </Link>
         </div>
       </div>
     </main>

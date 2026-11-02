@@ -165,10 +165,13 @@ export function toDashboardProfile(
     accountType: normalizeAccountType(profile.account_type),
     onboardingCompletedAt: profile.onboarding_completed_at ?? null,
     talentTypes: profile.talent_types ?? null,
+    workEmail: nonTalentProfile?.work_email ?? null,
     companyName: nonTalentProfile?.company_name ?? nonTalentProfile?.organization_name ?? null,
     nonTalentType: nonTalentProfile?.non_talent_type ?? null,
     username: profile.username ?? null,
-    avatarUrl: getProfileAvatarUrl(profile.headshot_urls),
+    avatarUrl: getActiveShell({ accountType: profile.account_type, activeShell: profile.active_shell, enabledShells: profile.enabled_shells }) === "lookingForTalent"
+      ? profile.industry_avatar_url?.trim() || getProfileAvatarUrl(profile.headshot_urls)
+      : getProfileAvatarUrl(profile.headshot_urls),
     userType: nonTalentProfile?.user_type ?? null,
     primaryGoal: nonTalentProfile?.primary_goal ?? null,
     buyerRole: nonTalentProfile?.role ?? null,

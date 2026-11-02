@@ -11,10 +11,8 @@ import { listProjectCastings } from "@/lib/talent-buyers/castings";
 import { listProjectActivities } from "@/lib/talent-buyers/project-activities";
 import { resolveWorkspaceAttachments } from "@/lib/talent-buyers/project-attachments";
 import { listProjectRosterMembers } from "@/lib/talent-buyers/project-roster";
-import { fetchProjectRecord } from "@/lib/talent-buyers/projects";
+import { fetchAccessibleProjectRecord } from "@/lib/talent-buyers/projects";
 import { isProjectDraft } from "@/lib/talent-buyers/project-payload";
-import { resolvePrimaryCastingId } from "@/lib/talent-buyers/casting/casting-workflow-data";
-import { syncProjectCastingConfigurationFromCastingId } from "@/lib/talent-buyers/casting/sync-project-casting-config";
 import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
 import {
   parseComposableConfig,
@@ -24,41 +22,6 @@ import {
 import { requireHiringAccount } from "@/lib/auth/session";
 import { recordBuyerContentView } from "@/lib/talent-buyers/dashboard-live";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-
-function castingMirrorNeedsRepair(project: {
-  title?: string | null;
-  production_company?: string | null;
-  rate_type?: string | null;
-  visibility?: string | null;
-  casting_configuration?: Record<string, unknown> | null;
-}): boolean {
-  const cfg = project.casting_configuration ?? {};
-  const substantiveKeys = Object.keys(cfg).filter(
-    (key) => key !== "schema_version" && key !== "composer_draft" && key !== "_composer_meta",
-  );
-  if (substantiveKeys.length < 3) return true;
-
-  const deadline = typeof cfg.submission_deadline_iso8601 === "string" ? cfg.submission_deadline_iso8601 : "";
-  if (deadline && !/(Z|[+-]\d{2}:\d{2})$/.test(deadline)) return true;
-
-  if (!project.title?.trim()) return true;
-  if (!project.rate_type || project.rate_type === "tbd") {
-    // Prefer repairing when config claims paid but project rate column is missing/TBD.
-    if (cfg.compensation_category_raw === "paid") return true;
-  }
-
-  // Invite-only / private-link castings previously wrote projects.visibility=private,
-  // which blocked talent iOS detail loads.
-  const presentation = String(cfg.visibility_presentation_raw ?? "").toLowerCase();
-  if (
-    project.visibility === "private" &&
-    (presentation === "invite_only" || presentation === "private_link" || presentation === "unlisted")
-  ) {
-    return true;
-  }
-
-  return false;
-}
 
 export default async function ProjectWorkspaceLayout({
   children,
@@ -70,40 +33,25 @@ export default async function ProjectWorkspaceLayout({
   const profile = await requireHiringAccount();
   const { id } = await params;
 
-  const [liveDetail, projectRecord, castings, { activities }, { members: rosterMembers }] =
-    await Promise.all([
-      fetchPosterCastingDetail(id, profile.id),
-      fetchProjectRecord(id, profile.id),
-      listProjectCastings(id, profile.id),
-      listProjectActivities(id),
-      listProjectRosterMembers(id),
-    ]);
-
-  if (!liveDetail || !projectRecord) {
-    notFound();
-  }
+  const projectRecord = await fetchAccessibleProjectRecord(id, profile.id);
+  if (!projectRecord) notFound();
+  const db = await createServerSupabaseClient();
+  const canReviewCasting = projectRecord.poster_id === profile.id || Boolean(db && (await db.rpc("is_project_operator", { p_project_id: id, p_user_id: profile.id })).data);
+  const [liveDetail, castings, { activities }, rosterResult] = await Promise.all([
+    fetchPosterCastingDetail(id, profile.id),
+    listProjectCastings(id, profile.id),
+    listProjectActivities(id), listProjectRosterMembers(id),
+  ]);
+  if (!liveDetail) notFound();
+  if (rosterResult.error) throw new Error(rosterResult.error);
+  const rosterMembers = rosterResult.members;
 
   await recordBuyerContentView("project", id);
 
-  let resolvedProject = projectRecord;
+  const resolvedProject = projectRecord;
   const workspaceProjectType = resolveWorkspaceProjectType(projectRecord);
   const isCastingProject = getNormalizedProjectType(workspaceProjectType) === "casting";
   const composableConfig = parseComposableConfig(projectRecord.project_configuration);
-
-  if (isCastingProject && castingMirrorNeedsRepair(projectRecord)) {
-    const supabase = await createServerSupabaseClient();
-    const castingId = await resolvePrimaryCastingId(id, profile.id);
-    if (supabase && castingId) {
-      await syncProjectCastingConfigurationFromCastingId(
-        supabase,
-        id,
-        castingId,
-        isProjectDraft(projectRecord),
-      );
-      const refreshed = await fetchProjectRecord(id, profile.id);
-      if (refreshed) resolvedProject = refreshed;
-    }
-  }
 
   const attachments = resolveWorkspaceAttachments({
     project_type: workspaceProjectType,
@@ -111,13 +59,10 @@ export default async function ProjectWorkspaceLayout({
     casting_configuration: resolvedProject.casting_configuration as Record<string, unknown> | null,
   });
 
-  const castingConfig = resolvedProject.casting_configuration as Record<string, unknown> | null;
-  const castingHasAttachments =
-    Array.isArray(castingConfig?.attachments) && castingConfig.attachments.length > 0;
-  const needsAttachmentMigration =
-    isCastingProject && !castingHasAttachments && attachments.length > 0;
-
   const project: ProjectWorkspaceMeta = {
+    notes: resolvedProject.project_abilities?.find((ability) => ability.ability === "notes")?.settings?.body ?? "",
+    isOwner: resolvedProject.poster_id === profile.id,
+    canReviewCasting,
     id,
     title: resolvedProject.title,
     coverImageUrl: resolvedProject.cover_image_url,
@@ -152,14 +97,13 @@ export default async function ProjectWorkspaceLayout({
         castingWorkflow={null}
       >
         <Suspense
-          fallback={<ProjectWorkspaceShell>{children}</ProjectWorkspaceShell>}
+          fallback={<ProjectWorkspaceShell><div className="project-workspace__panel-body py-12" role="status" aria-live="polite">Loading casting details…</div></ProjectWorkspaceShell>}
         >
           <ProjectWorkspaceCastingBootstrap
             projectId={id}
             userId={profile.id}
             enabled={isCastingProject}
             initialAttachments={attachments}
-            needsAttachmentMigration={needsAttachmentMigration}
           >
             <ProjectWorkspaceShell>{children}</ProjectWorkspaceShell>
           </ProjectWorkspaceCastingBootstrap>

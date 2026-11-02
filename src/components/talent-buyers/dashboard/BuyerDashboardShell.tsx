@@ -138,10 +138,12 @@ export function BuyerDashboardShell({
     sidebar.toggle();
   }
 
-  const showChrome = needsShellChrome && !mobileOpen;
+  // Keep the opener mounted while the native navigation dialog owns focus, so
+  // Escape/close can return focus to the same control without losing context.
+  const showChrome = needsShellChrome;
 
   return (
-    <WorkspaceNotificationsProvider userId={profile.id}>
+    <WorkspaceNotificationsProvider userId={profile.id} viewerRole="industry">
     <WorkspaceSidePanelHost value={shell}>
     <>
       <DashboardScrollLock />
@@ -197,7 +199,7 @@ export function BuyerDashboardShell({
             </div>
           ) : null}
 
-          {!showChrome && !mobileOpen ? (
+          {!showChrome ? (
             <div className="workspace-industry-mobile-toolbar">
               <button
                 type="button"

@@ -52,10 +52,18 @@ export function CastingReferralForm({
   const [searching, setSearching] = useState(false);
   const [isPending, startTransition] = useTransition();
 
+  const sourceKey = `${tab}:${selectedListId}`;
+  const [previousSourceKey, setPreviousSourceKey] = useState(sourceKey);
+  if (previousSourceKey !== sourceKey) {
+    setPreviousSourceKey(sourceKey);
+    setLoadingSource(tab === "favorites" || tab === "following" || (tab === "lists" && Boolean(selectedListId)));
+    setLoadingLists(tab === "lists");
+    setListMembers([]);
+  }
+
   useEffect(() => {
     if (tab !== "favorites") return;
     let cancelled = false;
-    setLoadingSource(true);
     void fetchReferrerFavorites().then((result) => {
       if (cancelled) return;
       if (result.error) {
@@ -74,7 +82,6 @@ export function CastingReferralForm({
   useEffect(() => {
     if (tab !== "following") return;
     let cancelled = false;
-    setLoadingSource(true);
     void fetchReferrerFollowing().then((result) => {
       if (cancelled) return;
       if (result.error) {
@@ -93,7 +100,6 @@ export function CastingReferralForm({
   useEffect(() => {
     if (tab !== "lists") return;
     let cancelled = false;
-    setLoadingLists(true);
     void fetchReferrerDiscoverLists().then((result) => {
       if (cancelled) return;
       if (result.error) {
@@ -111,12 +117,8 @@ export function CastingReferralForm({
   }, [showToast, tab]);
 
   useEffect(() => {
-    if (tab !== "lists" || !selectedListId) {
-      setListMembers([]);
-      return;
-    }
+    if (tab !== "lists" || !selectedListId) return;
     let cancelled = false;
-    setLoadingSource(true);
     void fetchReferrerDiscoverListMembers(selectedListId).then((result) => {
       if (cancelled) return;
       if (result.error) {

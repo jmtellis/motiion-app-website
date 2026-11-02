@@ -162,7 +162,7 @@ export const PROJECT_WORKSPACE_CONFIG: Record<ProjectType, ProjectWorkspaceConfi
         Link2,
         "Prepare shortlisted dancers and send a private link for client voting.",
       ),
-      item("cast", "Cast", CheckCircle2, "Finalize selections, send offers, and confirm the cast."),
+      item("cast", "Cast", CheckCircle2, "Finalize selections and coordinate the cast."),
     ],
     quickActions: [
       { id: "create-role", label: "Create role", action: { kind: "casting" } },

@@ -1,7 +1,9 @@
 "use client";
 
+import { Dialog } from "@/components/ui/Dialog";
+import { roleSubmissionOptionsSchema } from "@/lib/talent-buyers/casting-schema";
+
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { Pencil, Plus, Trash2, Users, X } from "lucide-react";
 
 import { createDefaultRole } from "@/lib/talent-buyers/casting-composer-defaults";
@@ -390,7 +392,6 @@ export function CastingRoleStep({
   autoOpenWhenEmpty?: boolean;
 }) {
   const titleId = useId();
-  const [mounted, setMounted] = useState(false);
   const [editor, setEditor] = useState<RoleEditorState | null>(null);
   const [ageOption, setAgeOption] = useState<AgeOption>("any");
   const [minAge, setMinAge] = useState(AGE_DEFAULT_MIN);
@@ -406,9 +407,6 @@ export function CastingRoleStep({
     [form.roles],
   );
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!autoOpenWhenEmpty || didAutoOpenRef.current) return;
@@ -422,17 +420,6 @@ export function CastingRoleStep({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    if (!editor) return;
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") closeEditor();
-    }
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [editor]);
 
   function syncRequirementsFromRole(role: CastingRoleForm) {
     const nextAgeOption = detectAgeOption(role);
@@ -600,7 +587,7 @@ export function CastingRoleStep({
   function applyEditor() {
     if (!editor) return;
     const title = editor.draft.title.trim();
-    if (!title) return;
+    if (!title || !roleSubmissionOptionsSchema.safeParse(editor.draft).success) return;
 
     const committed = applyRequirementsToRole({
       ...editor.draft,
@@ -630,22 +617,10 @@ export function CastingRoleStep({
     openEditor(createDefaultRole(), null);
   }
 
-  const rail =
-    mounted && editor ? (
-      createPortal(
-        <div className="casting-schedule-rail" role="presentation">
-          <button
-            type="button"
-            className="casting-schedule-rail__backdrop"
-            aria-label="Close role editor"
-            onClick={closeEditor}
-          />
-          <aside
-            className="casting-schedule-rail__panel"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-          >
+  const optionsError = editor ? roleSubmissionOptionsSchema.safeParse(editor.draft) : null;
+  const rail = editor ? (
+        <Dialog open onClose={closeEditor} labelledBy={titleId} className="casting-role-dialog">
+          <aside className="casting-schedule-rail__panel">
             <header className="casting-schedule-rail__header">
               <div>
                 <h3 id={titleId} className="casting-schedule-rail__title">
@@ -688,6 +663,37 @@ export function CastingRoleStep({
                     rows={4}
                   />
                 </div>
+
+                <fieldset className="casting-role-options">
+                  <legend className="project-create__label">Submission options</legend>
+                  <label className="casting-role-options__check">
+                    <input type="checkbox" checked={editor.draft.slateRequired ?? false}
+                      onChange={(event) => updateDraft({ slateRequired: event.target.checked })} />
+                    <span>Require a slate video link</span>
+                  </label>
+                  <label className="project-create__field">
+                    <span className="project-create__label">Additional work links</span>
+                    <input type="number" min={0} max={10} step={1} className="project-create__input"
+                      value={editor.draft.maxSubmissionLinks ?? 0}
+                      onChange={(event) => updateDraft({ maxSubmissionLinks: Number(event.target.value) })}
+                      aria-describedby={`${titleId}-links-help`} />
+                    <span id={`${titleId}-links-help`} className="casting-role-options__hint">Allow up to 10 optional work links. Set to 0 to omit them.</span>
+                  </label>
+                  <label className="project-create__field">
+                    <span className="project-create__label">Submission limit</span>
+                    <input type="number" min={0} max={2147483647} step={1} className="project-create__input"
+                      value={editor.draft.submissionLimit ?? 0}
+                      onChange={(event) => updateDraft({ submissionLimit: Number(event.target.value) })}
+                      aria-describedby={`${titleId}-limit-help`} />
+                    <span id={`${titleId}-limit-help`} className="casting-role-options__hint">The maximum number of applications for this role. Set to 0 for unlimited.</span>
+                  </label>
+                  <label className="casting-role-options__check">
+                    <input type="checkbox" checked={editor.draft.talentPaysTravel ?? false}
+                      onChange={(event) => updateDraft({ talentPaysTravel: event.target.checked })} />
+                    <span>Talent pays their own travel</span>
+                  </label>
+                  {optionsError?.success === false ? <p className="casting-role-options__error" role="alert">{optionsError.error.issues[0]?.message}</p> : null}
+                </fieldset>
 
                 <div className="casting-role-attr-list">
                   <RoleAttributeDisclosure
@@ -878,15 +884,13 @@ export function CastingRoleStep({
                 type="button"
                 className="project-create__btn project-create__btn--primary"
                 onClick={applyEditor}
-                disabled={!editor.draft.title.trim()}
+                disabled={!editor.draft.title.trim() || optionsError?.success === false}
               >
                 Apply
               </button>
             </footer>
           </aside>
-        </div>,
-        document.body,
-      )
+        </Dialog>
     ) : null;
 
   return (

@@ -1,8 +1,8 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Download, ExternalLink, Link2, Share, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Dialog } from "@/components/ui/Dialog";
 
 /**
  * Bottom sheet over the whole side panel (header included), like the iOS
@@ -19,46 +19,17 @@ export function PanelSheet({
   children: ReactNode;
   footer?: ReactNode;
 }) {
-  const [host, setHost] = useState<HTMLElement | null>(null);
-  const anchorRef = useCallback((node: HTMLSpanElement | null) => {
-    if (node) setHost(node.closest<HTMLElement>(".workspace-side-panel"));
-  }, []);
-  const onCloseRef = useRef(onClose);
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  });
-
-  useEffect(() => {
-    function onKey(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      onCloseRef.current();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
   return (
-    <>
-      <span ref={anchorRef} hidden />
-      {host
-        ? createPortal(
-            <div className="profile-sheet" data-portfolio-dialog>
-              <button type="button" className="profile-sheet__backdrop" aria-label="Close" onClick={onClose} />
-              <section className="profile-sheet__card" role="dialog" aria-modal="true" aria-label={title}>
-                <span className="profile-sheet__grabber" aria-hidden />
-                <header className="profile-sheet__header">
-                  <h3>{title}</h3>
-                  <button type="button" className="profile-sheet__done" onClick={onClose}>Done</button>
-                </header>
-                <div className="profile-sheet__body">{children}</div>
-                {footer ? <footer className="profile-sheet__footer">{footer}</footer> : null}
-              </section>
-            </div>,
-            host,
-          )
-        : null}
-    </>
+    <Dialog open onClose={onClose} label={title} className="profile-sheet-dialog">
+      <section className="profile-sheet__card" data-portfolio-dialog>
+        <header className="profile-sheet__header">
+          <h3>{title}</h3>
+          <button type="button" className="ui-button ui-button--secondary" onClick={onClose}>Done</button>
+        </header>
+        <div className="profile-sheet__body">{children}</div>
+        {footer ? <footer className="profile-sheet__footer">{footer}</footer> : null}
+      </section>
+    </Dialog>
   );
 }
 
@@ -82,30 +53,21 @@ export function HeadshotViewer({
   const [index, setIndex] = useState(initialIndex);
   const [notice, setNotice] = useState<string | null>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const onCloseRef = useRef(onClose);
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  });
   const url = urls[index];
   const count = urls.length;
 
   useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
     closeRef.current?.focus();
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onCloseRef.current();
-      } else if (event.key === "ArrowRight") {
+      if (event.key === "ArrowRight" && count > 1) {
         setIndex((current) => (current + 1) % count);
-      } else if (event.key === "ArrowLeft") {
+      } else if (event.key === "ArrowLeft" && count > 1) {
         setIndex((current) => (current - 1 + count) % count);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
-      previous?.focus();
     };
   }, [count]);
 
@@ -119,6 +81,7 @@ export function HeadshotViewer({
     const title = `${name} — headshot`;
     try {
       const response = await fetch(url);
+      if (!response.ok) throw new Error("Image unavailable");
       const blob = await response.blob();
       const file = new File([blob], fileNameFor(url, name, index), { type: blob.type || "image/jpeg" });
       if (navigator.canShare?.({ files: [file] })) {
@@ -140,13 +103,18 @@ export function HeadshotViewer({
   }
 
   async function copyLink() {
-    await navigator.clipboard.writeText(url);
-    setNotice("Image link copied");
+    try {
+      await navigator.clipboard.writeText(url);
+      setNotice("Image link copied");
+    } catch {
+      setNotice("Could not copy. Use Open original to copy the image address.");
+    }
   }
 
   async function download() {
     try {
       const response = await fetch(url);
+      if (!response.ok) throw new Error("Image unavailable");
       const blob = await response.blob();
       const href = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
@@ -160,8 +128,9 @@ export function HeadshotViewer({
     }
   }
 
-  return createPortal(
-    <div className="headshot-viewer" role="dialog" aria-modal="true" aria-label={`${name} headshots`} data-portfolio-dialog>
+  return (
+    <Dialog open onClose={onClose} label={`${name} headshots`} className="headshot-dialog">
+    <div className="headshot-viewer" data-portfolio-dialog>
       <header className="headshot-viewer__bar">
         <p>
           <strong>{name}</strong>
@@ -200,13 +169,12 @@ export function HeadshotViewer({
         ) : null}
       </div>
       {count > 1 ? (
-        <div className="headshot-viewer__thumbs" role="tablist" aria-label="Headshots">
+        <div className="headshot-viewer__thumbs" role="group" aria-label="Headshots">
           {urls.map((item, itemIndex) => (
             <button
               key={item}
               type="button"
-              role="tab"
-              aria-selected={itemIndex === index}
+              aria-pressed={itemIndex === index}
               aria-label={`Headshot ${itemIndex + 1}`}
               onClick={() => setIndex(itemIndex)}
             >
@@ -217,7 +185,7 @@ export function HeadshotViewer({
         </div>
       ) : null}
       {notice ? <p className="headshot-viewer__notice" role="status">{notice}</p> : null}
-    </div>,
-    document.body,
+    </div>
+    </Dialog>
   );
 }

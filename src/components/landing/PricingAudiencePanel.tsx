@@ -3,6 +3,7 @@ import { LandingAudienceProvider, useLandingAudience } from "./LandingAudienceCo
 import { LandingAudienceChoices } from "./LandingAudienceChoices";
 import { AudiencePricingSection } from "./AudiencePricingSection";
 import { talentPricingContent, industryPricingContent, communityPricingContent } from "@/lib/marketing/audience-pricing";
+import { getIosAppStoreUrl } from "@/lib/referrals/app-store";
 import type { MarketingTab } from "@/lib/marketing/marketing-pages";
 function Plans() {
   const { audience } = useLandingAudience();
@@ -14,6 +15,10 @@ function Plans() {
     <LandingAudienceChoices />
     <div id="landing-audience-panel" role="tabpanel" aria-labelledby={`landing-audience-choice-${audience}`} className="py-12">
       <AudiencePricingSection key={audience} content={content} dark />
+      <p className="mx-auto mt-6 max-w-2xl text-center text-sm text-[var(--mkt-muted,#b7b7b7)]">
+        Prices shown in USD. Talent Pro and Motiion Pro subscriptions are purchased and managed in the iOS app.
+        Dual Pro includes Talent and Industry for $79.99/month in the app. <a href={getIosAppStoreUrl()} className="underline">View Motiion on the App Store</a>.
+      </p>
       <section className="pricing-comparison" aria-label="Plan comparison">
         <h2>Compare features across plans</h2>
         <table><thead><tr><th scope="col">Feature</th><th scope="col">Free</th><th scope="col">{content.pro.name}</th></tr></thead>

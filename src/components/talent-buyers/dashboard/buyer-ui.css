@@ -82,13 +82,14 @@
 .buyer-modal-panel {
   position: relative;
   width: 100%;
-  max-height: min(90vh, 720px);
+  max-height: min(calc(100dvh - 48px), 840px);
   display: flex;
   flex-direction: column;
-  border-radius: 1rem;
-  border: 1px solid var(--buyer-line, rgb(255 255 255 / 0.12));
-  background: var(--buyer-card, #151515);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  border-radius: var(--ui-radius-panel);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  box-shadow: var(--ui-shadow-overlay);
   overflow: hidden;
 }
 
@@ -113,7 +114,12 @@
 
 .buyer-modal-close {
   display: inline-flex;
-  size: 2rem;
+  width: 2.75rem;
+  min-width: 2.75rem;
+  height: 2.75rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
   align-items: center;
   justify-content: center;
   border-radius: 9999px;

@@ -1,15 +1,7 @@
-/**
- * Composable projects (MOT-93): a generic project shell with modular abilities.
- *
- * Shared-schema contract with iOS (no migration):
- * - `projects.enabled_modules` JSONB carries one boolean per ability
- *   (`casting`, `roster`, `classes`) next to the legacy `activities` flag.
- * - `projects.project_configuration.composable` marks the row as a composable
- *   shell and holds paused abilities, prompt dismissal, and archive state.
- * - `projects.project_type` stays the column default (`production`); it is a
- *   soft label only and never drives composable routing.
- * - `projects.visibility` starts `private`. Abilities publish on their own rows
- *   (castings / activities), never by widening the whole project.
+/** Web project presentation helpers. Canonical iOS fields and project_abilities
+ * are normalized by project-contract.ts; older JSON is a compatibility read.
+ * Prompt dismissal and explicit pause metadata remain web presentation state.
+ * See docs/composable-projects.md for current storage and trusted commands.
  */
 
 import type { LucideIcon } from "lucide-react";
@@ -69,12 +61,12 @@ export const PROJECT_ABILITIES: Record<ProjectAbilityId, ProjectAbilityDefinitio
   },
   roster: {
     id: "roster",
-    label: "Roster",
-    promptTitle: "Build a roster",
-    promptDescription: "Keep confirmed dancers, their Talent Cards, and contacts together.",
-    firstStepLabel: "Invite dancers",
+    label: "People",
+    promptTitle: "Organize project people",
+    promptDescription: "Keep participants, talent profiles, and project groups together.",
+    firstStepLabel: "Add people",
     icon: Users,
-    publishes: "Invite-only",
+    publishes: "Private project",
   },
   classes: {
     id: "classes",
@@ -127,8 +119,8 @@ export function parseComposableConfig(projectConfiguration: unknown): Composable
   };
 }
 
-export function isComposableProject(record: { project_configuration?: unknown } | null | undefined) {
-  return Boolean(record && parseComposableConfig(record.project_configuration));
+export function isComposableProject(record: { project_configuration?: unknown; is_composable?: boolean | null } | null | undefined) {
+  return Boolean(record && (record.is_composable === true || parseComposableConfig(record.project_configuration)));
 }
 
 export function parseAbilityModules(value: unknown): ProjectAbilityModules {

@@ -10,6 +10,7 @@ import type { CastingAttachmentCodable, CastingConfiguration } from "@/types/cas
 type SupabaseClient = NonNullable<Awaited<ReturnType<typeof createServerSupabaseClient>>>;
 
 type ExistingProjectShell = {
+  is_composable?: boolean;
   casting_configuration: Record<string, unknown> | null;
   project_configuration: Record<string, unknown> | null;
   location: string | null;
@@ -22,11 +23,12 @@ async function fetchExistingProjectShell(
   supabase: SupabaseClient,
   projectId: string,
 ): Promise<ExistingProjectShell | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("projects")
-    .select("casting_configuration, project_configuration, location, start_date, end_date, cover_image_url")
+    .select("is_composable, casting_configuration, project_configuration, location, start_date, end_date, cover_image_url")
     .eq("id", projectId)
     .maybeSingle<ExistingProjectShell>();
+  if (error) throw new Error("Could not load the project before saving casting changes.");
   return data ?? null;
 }
 
@@ -98,7 +100,8 @@ export async function syncProjectCastingConfiguration(
     protectComposableShellColumns(updates, shell, isDraft);
   }
 
-  await supabase.from("projects").update(updates).eq("id", projectId);
+  const result = await supabase.from("projects").update(updates).eq("id", projectId);
+  if (result.error) throw new Error("Casting changes could not be synchronized to the project. Please retry.");
 }
 
 /** Load configuration from a child casting row and sync to the parent project. */
@@ -130,7 +133,7 @@ export async function syncProjectCastingConfigurationFromCastingId(
     supabase
       .from("projects")
       .select(
-        "title, description, production_company, production_company_logo_url, cover_image_url, location, start_date, end_date, rate_type, rate_details, casting_configuration, project_configuration",
+        "is_composable, title, description, production_company, production_company_logo_url, cover_image_url, location, start_date, end_date, rate_type, rate_details, casting_configuration, project_configuration",
       )
       .eq("id", projectId)
       .maybeSingle(),

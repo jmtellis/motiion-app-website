@@ -1,3 +1,6 @@
+import { INDUSTRY_OFFER } from "@/lib/billing/industry-offer";
+import { getIosAppStoreUrl } from "@/lib/referrals/app-store";
+
 export type PricingPlan = {
   name: string;
   price: string;
@@ -63,8 +66,8 @@ export const talentPricingContent: IndustryPricingContent = {
     "period": "USD / month",
     "description": "More opportunities, visibility, and room to showcase your work.",
     "cta": {
-      "label": "Get Talent Pro",
-      "href": "/signup?plan=pro"
+      "label": "Get Talent Pro in the app",
+      "href": getIosAppStoreUrl()
     },
     "features": [
       "Unlimited casting submissions",
@@ -91,7 +94,7 @@ export const industryPricingContent: IndustryPricingContent = {
     "description": "Explore Motiion with the essentials.",
     "cta": {
       "label": "Sign up free",
-      "href": "/signup"
+      "href": "/signup?account_type=lookingForTalent"
     },
     "features": [
       "One new casting every rolling 30 days; one accepting applications",
@@ -103,12 +106,12 @@ export const industryPricingContent: IndustryPricingContent = {
   },
   "pro": {
     "name": "Industry Pro",
-    "price": "$59.99",
+    "price": INDUSTRY_OFFER.price,
     "period": "USD / month",
     "description": "Tools to discover talent and manage your castings.",
     "cta": {
       "label": "Get Industry Pro",
-      "href": "/signup?plan=pro"
+      "href": "/signup?account_type=lookingForTalent&plan=pro"
     },
     "features": [
       "Unlimited new and open castings",
@@ -150,8 +153,8 @@ export const communityPricingContent: IndustryPricingContent = {
     "period": "USD / month",
     "description": "More ways to connect with the dance community.",
     "cta": {
-      "label": "Get Motiion Pro",
-      "href": "/signup?plan=pro"
+      "label": "Get Motiion Pro in the app",
+      "href": getIosAppStoreUrl()
     },
     "features": [
       "Premium community access",

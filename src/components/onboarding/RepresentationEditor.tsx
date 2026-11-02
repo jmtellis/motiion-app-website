@@ -25,10 +25,6 @@ function AgencySelector({
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setSearch(value);
-  }, [value]);
-
-  useEffect(() => {
     function handleClick(event: MouseEvent) {
       if (!containerRef.current?.contains(event.target as Node)) {
         setOpen(false);
@@ -52,7 +48,7 @@ function AgencySelector({
       ) : null}
       <button
         type="button"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => { setSearch(value); setOpen((current) => !current); }}
         aria-expanded={open}
         className="workspace-input-shell flex w-full items-center gap-3 rounded-full border border-[var(--line)] bg-[var(--surface-card)] px-4 py-3 text-left"
       >

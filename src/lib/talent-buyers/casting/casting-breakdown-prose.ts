@@ -77,6 +77,11 @@ function lowercaseLead(value: string): string {
 
 function formatDateTime(value: string | null | undefined): string | null {
   if (!value) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const civilDate = new Date(`${value}T00:00:00Z`);
+    if (Number.isNaN(civilDate.getTime()) || civilDate.toISOString().slice(0, 10) !== value) return usable(value);
+    return civilDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+  }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return usable(value);
   return date.toLocaleString(undefined, {

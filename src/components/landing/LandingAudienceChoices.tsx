@@ -23,9 +23,8 @@ export function LandingAudienceChoices() {
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const shouldFocusRef = useRef(false);
 
-  useEffect(() => {
-    setFocusIndex(selectedIndex);
-  }, [selectedIndex]);
+  const [previousSelection, setPreviousSelection] = useState(selectedIndex);
+  if (previousSelection !== selectedIndex) { setPreviousSelection(selectedIndex); setFocusIndex(selectedIndex); }
 
   useEffect(() => {
     if (!shouldFocusRef.current) return;

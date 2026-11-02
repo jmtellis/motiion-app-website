@@ -18,12 +18,14 @@ export function TalentResourcesPanel({
   function manageBilling() {
     setError(null);
     startTransition(async () => {
+      try {
       const result = await openBillingPortal();
       if (result.url) {
         window.location.href = result.url;
         return;
       }
       setError(result.error ?? "Billing isn’t available for this account yet.");
+      } catch { setError("Couldn’t open billing. Check your connection and try again."); }
     });
   }
 
@@ -51,7 +53,7 @@ export function TalentResourcesPanel({
         <div className="talent-settings-row">
           <div>
             <h2>Data & privacy</h2>
-            <p>Privacy policy</p>
+            <p>Read how your information is handled. For account data requests, contact support below.</p>
           </div>
           <a className="talent-settings-secondary" href="https://www.motiion.app/privacy" target="_blank" rel="noreferrer">
             Open

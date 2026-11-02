@@ -141,13 +141,13 @@ export function buildBookingMailto(card: FinalSelectBookingCard, castingTitle: s
   if (!names.length) return null;
 
   const subject = encodeURIComponent(
-    `Booking request${castingTitle ? ` — ${castingTitle}` : ""}`,
+    `Project coordination${castingTitle ? ` — ${castingTitle}` : ""}`,
   );
   const body = encodeURIComponent(
     [
       `Hi${card.isDirect ? "" : ` ${card.displayName}`},`,
       "",
-      `We'd like to move forward with booking ${names.join(", ")} for ${castingTitle || "this casting"}.`,
+      `We'd like to coordinate next steps with ${names.join(", ")} for ${castingTitle || "this casting"}.`,
       "",
       "Please confirm availability and next steps when you can.",
       "",

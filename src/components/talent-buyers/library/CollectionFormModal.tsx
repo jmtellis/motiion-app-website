@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 
-export function CollectionFormModal({
+function CollectionFormModalSession({
   open,
   onClose,
   title,
@@ -26,15 +26,9 @@ export function CollectionFormModal({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    setName(initialName);
-    setDescription(initialDescription);
-    setError(null);
-    setPending(false);
-  }, [open, initialName, initialDescription]);
 
   async function handleSubmit() {
+    if (pending) return;
     const trimmed = name.trim();
     if (!trimmed) {
       setError("Collection name is required");
@@ -55,7 +49,7 @@ export function CollectionFormModal({
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={() => { if (!pending) onClose(); }}
       title={title}
       size="sm"
       footer={
@@ -71,17 +65,19 @@ export function CollectionFormModal({
     >
       <div className="space-y-3">
         <label className="block space-y-1.5">
-          <span className="text-xs font-medium text-white/55">Collection name</span>
+          <span className="text-xs font-medium text-[var(--ui-muted)]">Collection name</span>
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
             className="library-search w-full max-w-none"
             placeholder="e.g. Tour Ready"
+            aria-invalid={!!error}
+            maxLength={120}
             autoFocus
           />
         </label>
         <label className="block space-y-1.5">
-          <span className="text-xs font-medium text-white/55">Description (optional)</span>
+          <span className="text-xs font-medium text-[var(--ui-muted)]">Description (optional)</span>
           <textarea
             value={description}
             onChange={(event) => setDescription(event.target.value)}
@@ -89,8 +85,12 @@ export function CollectionFormModal({
             placeholder="What is this collection for?"
           />
         </label>
-        {error ? <p className="text-sm text-amber-200">{error}</p> : null}
+        {error ? <p role="alert" className="text-sm text-[var(--ui-danger)]">{error}</p> : null}
       </div>
     </Modal>
   );
+}
+
+export function CollectionFormModal(props: Parameters<typeof CollectionFormModalSession>[0]) {
+  return props.open ? <CollectionFormModalSession {...props} /> : null;
 }

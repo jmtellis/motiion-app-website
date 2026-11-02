@@ -21,52 +21,51 @@ function talentKeys(talentIdOrSlug: string | string[]) {
     .filter(Boolean);
 }
 
-export function SaveToCollectionPopover({
-  open,
-  onClose,
-  talentIdOrSlug,
-  displayName,
-  anchorClassName = "",
-  trigger,
-  align = "right",
-}: {
-  open: boolean;
-  onClose: () => void;
-  talentIdOrSlug: string | string[];
-  displayName: string;
-  anchorClassName?: string;
-  trigger: React.ReactNode;
-  align?: "left" | "right";
-}) {
+type SaveProps = {
+  open: boolean; onClose: () => void; talentIdOrSlug: string | string[];
+  displayName: string; anchorClassName?: string; trigger: React.ReactNode; align?: "left" | "right";
+};
+export function SaveToCollectionPopover(props: SaveProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const { open, onClose } = props;
+  useEffect(() => {
+    if (!open) return;
+    function outside(event: PointerEvent) { if (!rootRef.current?.contains(event.target as Node)) onClose(); }
+    document.addEventListener("pointerdown", outside);
+    return () => document.removeEventListener("pointerdown", outside);
+  }, [open, onClose]);
+  return <div className={`relative ${props.anchorClassName ?? ""}`} ref={rootRef}>
+    {props.trigger}
+    {props.open ? <SaveSession {...props} onClose={() => { props.onClose(); rootRef.current?.querySelector<HTMLButtonElement>("button")?.focus(); }} /> : null}
+  </div>;
+}
+function SaveSession({ onClose, talentIdOrSlug, displayName, align = "right" }: SaveProps) {
   const { showToast } = useToast();
   const { requirePro } = useIndustryProOptional();
-  const rootRef = useRef<HTMLDivElement>(null);
   const [collections, setCollections] = useState<LibraryCollectionSummary[]>([]);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [isPending, startTransition] = useTransition();
   const [savingTarget, setSavingTarget] = useState<string | null>(null);
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [retry, setRetry] = useState(0);
+  const panelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!open) return;
-    setCreating(false);
-    setNewName("");
-    setSavingTarget(null);
-    void listCollections().then((result) => {
-      setCollections(result.collections);
-    });
-  }, [open]);
-
+    panelRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+  }, []);
   useEffect(() => {
-    if (!open) return;
-    function onPointerDown(event: MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) onClose();
-    }
-    document.addEventListener("mousedown", onPointerDown);
-    return () => document.removeEventListener("mousedown", onPointerDown);
-  }, [open, onClose]);
+    let active = true;
+    void listCollections().then(result => {
+      if (!active) return;
+      setCollections(result.collections); setLoadError(result.error ?? null); setLoading(false);
+    }).catch(() => { if (active) { setLoadError("Could not load collections. Please retry."); setLoading(false); } });
+    return () => { active = false; };
+  }, [retry]);
 
   function saveTo(collectionIds: string[], label: string) {
+    if (isPending) return;
     if (collectionIds.length && !requirePro("roster_write")) return;
     const keys = talentKeys(talentIdOrSlug);
     if (!keys.length) {
@@ -145,17 +144,18 @@ export function SaveToCollectionPopover({
   }
 
   return (
-    <div className={`relative ${anchorClassName}`} ref={rootRef}>
-      {trigger}
-      {open ? (
-        <div
+    <div
+          ref={panelRef}
+          onKeyDown={event => { if (event.key === "Escape" && !isPending) { event.preventDefault(); onClose(); } }}
           className={`library-save-popover${align === "left" ? " library-save-popover--left" : ""}`}
           role="dialog"
           aria-label="Save to"
         >
-          <p className="text-sm font-semibold text-white/90">Save to</p>
-          <p className="mt-0.5 text-xs text-white/45">Library, or pick a collection</p>
+          <p className="text-sm font-semibold text-[var(--ui-text)]">Save to</p>
+          <p className="mt-0.5 text-xs text-[var(--ui-muted)]">Library, or pick a collection</p>
 
+          {loading ? <p role="status" className="text-sm text-[var(--ui-muted)]">Loading collections…</p> : null}
+          {loadError ? <div className="ui-notice" data-tone="error" role="alert">{loadError} <button type="button" onClick={() => { setLoading(true); setLoadError(null); setRetry(value => value + 1); }}>Retry</button></div> : null}
           <div className="library-save-popover__list">
             <button
               type="button"
@@ -211,6 +211,8 @@ export function SaveToCollectionPopover({
                 onChange={(event) => setNewName(event.target.value)}
                 className="library-search max-w-none flex-1"
                 placeholder="Collection name"
+                aria-label="New collection name"
+                maxLength={120}
                 autoFocus
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
@@ -242,8 +244,6 @@ export function SaveToCollectionPopover({
               Create collection
             </button>
           )}
-        </div>
-      ) : null}
     </div>
   );
 }

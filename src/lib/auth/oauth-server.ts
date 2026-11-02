@@ -51,11 +51,13 @@ export async function ensureOAuthProfile(
   user: User,
   intent: OAuthSignupIntent,
 ): Promise<{ created: boolean }> {
-  const { data: existing } = await supabase
+  const { data: existing, error: lookupError } = await supabase
     .from("profiles")
     .select("user_id, account_type, onboarding_completed_at")
     .eq("user_id", user.id)
     .maybeSingle<Pick<ProfileRecord, "user_id" | "account_type" | "onboarding_completed_at">>();
+
+  if (lookupError) throw new Error("Could not load your account. Please try again.");
 
   if (existing) {
     return { created: false };
@@ -94,7 +96,7 @@ export async function ensureOAuthProfile(
     experiences: [],
     training: [],
     headshot_urls: [],
-  });
+  }, { onConflict: "user_id", ignoreDuplicates: true });
 
   if (profileError) {
     throw new Error(profileError.message);
@@ -107,7 +109,7 @@ export async function ensureOAuthProfile(
       non_talent_type: resolvedIntent.nonTalentType || null,
       work_email: email,
       user_type: "talent_buyer",
-    });
+    }, { onConflict: "id", ignoreDuplicates: true });
 
     if (nonTalentError) {
       throw new Error(nonTalentError.message);
@@ -123,19 +125,22 @@ export async function resolveOAuthRedirectPath(
   intent: OAuthSignupIntent,
   user?: User | null,
 ): Promise<string> {
-  const { data: profile } = await supabase
+  void intent;
+  void user;
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select(
-      "user_id, email, first_name, last_name, display_name, account_type, username, talent_types, headshot_urls, onboarding_completed_at, enabled_shells, active_shell",
+      "user_id, email, first_name, last_name, display_name, account_type, username, talent_types, headshot_urls, industry_avatar_url, onboarding_completed_at, enabled_shells, active_shell",
     )
     .eq("user_id", userId)
     .maybeSingle<ProfileRecord>();
 
+  if (profileError) throw new Error("Could not load your account. Please try again.");
   if (!profile) {
     return "/signup";
   }
 
-  const { data: nonTalentProfile } = await supabase
+  const { data: nonTalentProfile, error: buyerError } = await supabase
     .from("non_talent_profiles")
     .select(
       "id, company_name, non_talent_type, work_email, user_type, primary_goal, role, custom_role, platform_goals, work_types, custom_work_type, organization_name, organization_website, organization_relationship, organization_brand_domain, company_size, talent_types, style_focus, markets, verification_links, notification_preferences, onboarding_completed, onboarding_step",
@@ -143,6 +148,7 @@ export async function resolveOAuthRedirectPath(
     .eq("id", userId)
     .maybeSingle<NonTalentProfileRecord>();
 
+  if (buyerError) throw new Error("Could not load your workspace. Please try again.");
   const dashboardProfile = toDashboardProfile(profile, nonTalentProfile);
 
   if (!isOnboardingComplete(dashboardProfile)) {

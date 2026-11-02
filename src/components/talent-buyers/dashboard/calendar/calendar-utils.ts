@@ -34,7 +34,11 @@ export function addDays(date: Date, days: number): Date {
 
 export function addMonths(date: Date, months: number): Date {
   const d = new Date(date);
+  const originalDay = d.getDate();
+  d.setDate(1);
   d.setMonth(d.getMonth() + months);
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(originalDay, lastDay));
   return d;
 }
 
@@ -73,7 +77,7 @@ export function formatMonthYear(date: Date): string {
 }
 
 export function formatHourLabel(hour: number): string {
-  if (hour === 0) return "12 AM";
+  if (hour === 0 || hour === 24) return "12 AM";
   if (hour < 12) return `${hour} AM`;
   if (hour === 12) return "12 PM";
   return `${hour - 12} PM`;
@@ -81,7 +85,7 @@ export function formatHourLabel(hour: number): string {
 
 export function formatTimeShort(time: string): string {
   const [hStr, mStr] = time.split(":");
-  const h = Number(hStr);
+  const h = Number(hStr) % 24;
   const m = Number(mStr);
   const period = h >= 12 ? "PM" : "AM";
   const hour12 = h % 12 || 12;
@@ -107,62 +111,44 @@ export function minutesToTimeLabel(minutes: number): string {
 
 export function eventsForDate(events: CalendarEvent[], date: Date): CalendarEvent[] {
   const key = toDateKey(date);
-  return events.filter((e) => e.date === key);
+  return events.filter((e) => e.date === key).sort((a, b) =>
+    Number(Boolean(b.allDay)) - Number(Boolean(a.allDay))
+    || a.startTime.localeCompare(b.startTime) || a.id.localeCompare(b.id));
 }
 
 export function layoutDayEvents(events: CalendarEvent[]): PlacedEvent[] {
-  if (!events.length) return [];
-
-  const sorted = [...events].sort(
-    (a, b) => parseTimeToMinutes(a.startTime) - parseTimeToMinutes(b.startTime),
-  );
-
+  const bounds = (event: CalendarEvent) => {
+    const start = Math.max(0, Math.min(1439, parseTimeToMinutes(event.startTime)));
+    const rawEnd = event.endTime ? parseTimeToMinutes(event.endTime) : start + 60;
+    // Overnight entries reach midnight; activity normalization creates the next-day segment.
+    const end = Math.min(1440, Math.max(start + 30, rawEnd <= start ? 1440 : rawEnd));
+    return { start, end };
+  };
+  const sorted = events.filter((event) => !event.allDay)
+    .map((event) => ({ event, ...bounds(event) }))
+    .filter(({ start, end }) => Number.isFinite(start) && Number.isFinite(end))
+    .sort((a, b) => a.start - b.start || b.end - a.end || a.event.id.localeCompare(b.event.id));
   const placed: PlacedEvent[] = [];
-  const columns: { end: number }[] = [];
-
-  for (const event of sorted) {
-    const startMin = parseTimeToMinutes(event.startTime);
-    const endMin = event.endTime
-      ? parseTimeToMinutes(event.endTime)
-      : startMin + 60;
-    const duration = Math.max(endMin - startMin, 30);
-
-    let column = columns.findIndex((col) => col.end <= startMin);
-    if (column === -1) {
-      column = columns.length;
-      columns.push({ end: endMin });
-    } else {
-      columns[column].end = endMin;
-    }
-
-    placed.push({
-      ...event,
-      top: (startMin / 60) * HOUR_HEIGHT,
-      height: (duration / 60) * HOUR_HEIGHT,
-      column,
-      columnCount: 1,
-    });
+  let group: PlacedEvent[] = [];
+  let groupEnd = -1;
+  let columns: number[] = [];
+  const finishGroup = () => {
+    for (const event of group) event.columnCount = columns.length;
+    group = [];
+    columns = [];
+  };
+  for (const { event, start, end } of sorted) {
+    if (start >= groupEnd) finishGroup();
+    let column = columns.findIndex((columnEnd) => columnEnd <= start);
+    if (column < 0) column = columns.length;
+    columns[column] = end;
+    const item = { ...event, top: start / 60 * HOUR_HEIGHT, height: (end - start) / 60 * HOUR_HEIGHT,
+      column, columnCount: 1 };
+    placed.push(item);
+    group.push(item);
+    groupEnd = Math.max(group.length === 1 ? end : groupEnd, end);
   }
-
-  // Resolve column counts for overlapping groups
-  for (let i = 0; i < placed.length; i++) {
-    const a = placed[i];
-    const aStart = parseTimeToMinutes(a.startTime);
-    const aEnd = a.endTime ? parseTimeToMinutes(a.endTime) : aStart + 60;
-
-    let maxCol = a.column;
-    for (let j = 0; j < placed.length; j++) {
-      if (i === j) continue;
-      const b = placed[j];
-      const bStart = parseTimeToMinutes(b.startTime);
-      const bEnd = b.endTime ? parseTimeToMinutes(b.endTime) : bStart + 60;
-      if (aStart < bEnd && bStart < aEnd) {
-        maxCol = Math.max(maxCol, b.column);
-      }
-    }
-    a.columnCount = maxCol + 1;
-  }
-
+  finishGroup();
   return placed;
 }
 

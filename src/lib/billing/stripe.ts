@@ -1,5 +1,7 @@
 import Stripe from "stripe";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { assertTestStripeKey, getAppEnvironment } from "@/lib/environment";
+import { INDUSTRY_OFFER, industryCheckoutPriceError } from "./industry-offer";
 
 import type { IndustryIdentityStatus } from "@/types/talent-buyers";
 
@@ -51,6 +53,7 @@ export async function createIdentityVerificationSession(input: {
       },
       metadata: {
         user_id: input.userId,
+        supabase_user_id: input.userId,
       },
       provided_details: input.email
         ? {
@@ -117,58 +120,63 @@ export async function createIndustryCheckoutSession(input: {
   const stripe = getStripeClient();
   if (!stripe) return { url: null, error: "Stripe is not configured" };
 
-  const appUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const appUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 
   try {
+    const price = await stripe.prices.retrieve(input.priceId, { expand: ["product"] });
+    const offerError = industryCheckoutPriceError(price, getAppEnvironment() === "production");
+    if (offerError) return { url: null, error: offerError };
+    const admin = createAdminSupabaseClient();
+    if (!admin) return { url: null, error: "Billing is temporarily unavailable." };
+    const [saved, existing] = await Promise.all([
+      admin.from("stripe_customer_links").select("customer_id").eq("user_id", input.userId).maybeSingle<{customer_id:string}>(),
+      admin.from("subscriptions").select("customer_id").eq("user_id", input.userId).eq("provider", "stripe").maybeSingle<{customer_id:string|null}>(),
+    ]);
+    if (saved.error || existing.error) throw new Error("Could not check existing billing profile. Please retry.");
+    let customerId = saved.data?.customer_id ?? existing.data?.customer_id;
+    if (!customerId) {
+      const customer = await stripe.customers.create({ email: input.email, metadata: { user_id: input.userId } }, { idempotencyKey: `motiion-customer-${input.userId}` });
+      const { error } = await admin.from("stripe_customer_links").upsert({ user_id: input.userId, customer_id: customer.id }, { onConflict: "user_id", ignoreDuplicates: true });
+      if (error) throw new Error("Could not save billing profile. Please retry.");
+      const { data: linked, error: linkError } = await admin.from("stripe_customer_links").select("customer_id").eq("user_id",input.userId).single<{customer_id:string}>();
+      if (linkError || !linked) throw new Error("Could not load billing profile. Please retry.");
+      customerId = linked.customer_id;
+    }
+    const subscriptions = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 100 });
+    if (subscriptions.data.some(sub => ["active", "trialing", "past_due", "unpaid", "incomplete"].includes(sub.status))) {
+      return { url: null, error: "You already have a subscription or pending payment. Open Manage billing in Settings to continue." };
+    }
+    const pending = await stripe.checkout.sessions.list({ customer: customerId, status: "open", limit: 100 });
+    const reusable = pending.data.find(session => session.mode === "subscription" && session.metadata?.price_id === input.priceId && session.metadata?.offer_version === INDUSTRY_OFFER.version);
+    if (reusable?.url) return { url: reusable.url };
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      customer_email: input.email,
+      integration_identifier: "motiion_web_yctmhzva",
+      customer: customerId,
       client_reference_id: input.userId,
       line_items: [{ price: input.priceId, quantity: 1 }],
-      // Card collected up front; first charge occurs after the trial.
+      // Match the current monthly iOS base offer; no unverified introductory trial.
       subscription_data: {
-        trial_period_days: 60,
-        metadata: { user_id: input.userId },
+        metadata: { user_id: input.userId, plan_entitlement: "industry_pro" },
       },
       allow_promotion_codes: true,
       success_url: `${appUrl}/payments/industry-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/payments/cancelled`,
-      metadata: { user_id: input.userId },
-    });
+      metadata: { user_id: input.userId, plan_entitlement: "industry_pro", price_id: input.priceId, offer_version: INDUSTRY_OFFER.version },
+    }, { idempotencyKey: `motiion-checkout-${input.userId}-${input.priceId}-${INDUSTRY_OFFER.version}-${Math.floor(Date.now() / 1_800_000)}` });
     return { url: session.url };
   } catch (err) {
     return { url: null, error: err instanceof Error ? err.message : "Checkout failed" };
   }
 }
 
-/** Maps Stripe subscription statuses into the values we persist for entitlement checks. */
-export function mapStripeSubscriptionStatus(
-  status: Stripe.Subscription.Status,
-): "active" | "trialing" | "canceled" {
-  if (status === "active") return "active";
-  if (status === "trialing") return "trialing";
-  return "canceled";
-}
-
-export function subscriptionPeriodEndIso(subscription: Stripe.Subscription): string | null {
-  const sub = subscription as Stripe.Subscription & {
-    current_period_end?: number;
-    trial_end?: number | null;
-  };
-  const unix =
-    typeof sub.current_period_end === "number"
-      ? sub.current_period_end
-      : typeof sub.trial_end === "number"
-        ? sub.trial_end
-        : null;
-  return unix ? new Date(unix * 1000).toISOString() : null;
-}
+export { mapStripeSubscriptionStatus, subscriptionPeriodEndIso } from "./subscription-state";
 
 export async function createBillingPortalSession(customerId: string): Promise<{ url: string | null; error?: string }> {
   const stripe = getStripeClient();
   if (!stripe) return { url: null, error: "Stripe is not configured" };
 
-  const appUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const appUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 
   try {
     const session = await stripe.billingPortal.sessions.create({

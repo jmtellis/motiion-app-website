@@ -2,61 +2,43 @@
 
 import { PreviewFrame } from "./PreviewFrame";
 
-/** Dark MotiionColor swatches — mirrored from iOS Colors.swift */
+/** Runtime semantic workspace tokens. */
 const COLOR_TOKENS = [
-  { name: "backgroundDefault", varName: "--ds-background-default" },
-  { name: "surfaceDefault", varName: "--ds-surface-default" },
-  { name: "surfaceHigh", varName: "--ds-surface-high" },
-  { name: "surfaceAccent", varName: "--ds-surface-accent" },
-  { name: "surfaceTint", varName: "--ds-surface-tint" },
-  { name: "textDefault", varName: "--ds-text-default" },
-  { name: "textLow", varName: "--ds-text-low" },
-  { name: "textDisabled", varName: "--ds-text-disabled" },
-  { name: "textAccent", varName: "--ds-text-accent" },
-  { name: "borderDefault", varName: "--ds-border-default" },
-  { name: "borderHigh", varName: "--ds-border-high" },
-  { name: "borderLow", varName: "--ds-border-low" },
-  { name: "primary500", varName: "--ds-primary-500" },
-  { name: "primary600", varName: "--ds-primary-600" },
-  { name: "error500", varName: "--ds-error-500" },
-  { name: "buttonSurfaceDefault", varName: "--ds-button-surface-default" },
-  { name: "buttonSurfaceAccent", varName: "--ds-button-surface-accent" },
-  { name: "accentClass", varName: "--ds-accent-class" },
-  { name: "accentEvent", varName: "--ds-accent-event" },
-  { name: "accentJob", varName: "--ds-accent-job" },
-  { name: "accentSession", varName: "--ds-accent-session" },
-  { name: "accentSubmission", varName: "--ds-accent-submission" },
+  { name: "canvas", varName: "--ui-canvas" },
+  { name: "surface", varName: "--ui-surface" },
+  { name: "surface-soft", varName: "--ui-surface-soft" },
+  { name: "surface-hover", varName: "--ui-surface-hover" },
+  { name: "text", varName: "--ui-text" },
+  { name: "muted", varName: "--ui-muted" },
+  { name: "subtle", varName: "--ui-subtle" },
+  { name: "border", varName: "--ui-border" },
+  { name: "control-border", varName: "--ui-control-border" },
+  { name: "accent", varName: "--ui-accent" },
+  { name: "accent-hover", varName: "--ui-accent-hover" },
+  { name: "accent-soft", varName: "--ui-accent-soft" },
+  { name: "on-accent", varName: "--ui-on-accent" },
+  { name: "focus", varName: "--ui-focus" },
+  { name: "success", varName: "--ui-success" },
+  { name: "success-soft", varName: "--ui-success-soft" },
+  { name: "warning", varName: "--ui-warning" },
+  { name: "warning-soft", varName: "--ui-warning-soft" },
+  { name: "danger", varName: "--ui-danger" },
+  { name: "danger-soft", varName: "--ui-danger-soft" },
+  { name: "info", varName: "--ui-info" },
+  { name: "info-soft", varName: "--ui-info-soft" },
+  { name: "disabled", varName: "--ui-disabled" },
 ] as const;
 
 const RADIUS_TOKENS = [
-  { name: "sm", varName: "--ds-radius-sm" },
-  { name: "md", varName: "--ds-radius-md" },
-  { name: "button", varName: "--ds-radius-button" },
-  { name: "lg / card", varName: "--ds-radius-card" },
-  { name: "sheet", varName: "--ds-radius-sheet" },
-  { name: "full", varName: "--ds-radius-full" },
+ {name:"control",varName:"--ui-radius-control"}, {name:"card",varName:"--ui-radius-card"}, {name:"panel",varName:"--ui-radius-panel"}, {name:"pill",varName:"--ui-radius-pill"}
 ] as const;
-
-const SPACE_TOKENS = [
-  { name: "xs", varName: "--ds-space-xs" },
-  { name: "sm", varName: "--ds-space-sm" },
-  { name: "md", varName: "--ds-space-md" },
-  { name: "lg", varName: "--ds-space-lg" },
-  { name: "xl", varName: "--ds-space-xl" },
-  { name: "xxl", varName: "--ds-space-xxl" },
-  { name: "xxxl", varName: "--ds-space-xxxl" },
-] as const;
+const SPACE_TOKENS = [1,2,3,4,5,6,8,12].map(n=>({name:String(n),varName:`--ui-space-${n}`}));
 
 export function ColorsSection() {
   return (
     <div>
       <p className="mb-6 max-w-2xl text-sm leading-relaxed text-[var(--ds-muted)]">
-        Dark appearance values from iOS{" "}
-        <code className="font-mono text-[11px]">MotiionColor</code> (
-        <code className="font-mono text-[11px]">Colors.swift</code>). The web product canvas uses
-        near-black in dark mode; light mode uses iOS{" "}
-        <code className="font-mono text-[11px]">backgroundDefault</code> (#F4FCFF). Toggle appearance
-        in the sidebar.
+        Semantic workspace tokens from system.css. Text, controls and status surfaces share these values across both user roles.
       </p>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         <div className="overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface)]">
@@ -89,30 +71,21 @@ export function TypographySection() {
   return (
     <div>
       <p className="mb-6 max-w-2xl text-sm leading-relaxed text-[var(--ds-muted)]">
-        Product UI uses Montserrat via <code className="font-mono text-[11px]">--ds-font-product</code>,
-        matching iOS product hierarchy. Size steps below approximate MotiionTypography headers/body.
+        Product UI uses Geist via <code className="font-mono text-[11px]">--ds-font-product</code>,
+        with a compact, readable hierarchy for the web workspace.
       </p>
       <div className="space-y-5 rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface)] p-6 font-[family-name:var(--ds-font-product)]">
-        <p className="text-[2.5rem] font-semibold leading-[1.2] tracking-[-0.02em] text-[var(--ds-text-default)]">
-          Header 1 · 40
-        </p>
-        <p className="text-[2rem] font-semibold leading-[1.2] tracking-[-0.02em] text-[var(--ds-text-default)]">
-          Header 2 · 32
-        </p>
-        <p className="text-[1.5rem] font-semibold leading-[1.2] text-[var(--ds-text-default)]">
-          Header 3 · 24
-        </p>
-        <p className="text-[1.125rem] font-semibold leading-[1.2] text-[var(--ds-text-default)]">
-          Header 4 · 18
-        </p>
+        <p className="text-[2rem] font-semibold leading-[1.2] tracking-[-0.02em] text-[var(--ui-text)]">Page title · 32</p>
+        <p className="text-[1.5rem] font-semibold leading-[1.3] tracking-[-0.01em] text-[var(--ui-text)]">Section title · 24</p>
+        <p className="text-[1.125rem] font-semibold leading-[1.4] text-[var(--ui-text)]">Card title · 18</p>
         <p className="text-base leading-relaxed text-[var(--ds-text-default)]">
           Body medium · 16 — professional creative software for the dance industry.
         </p>
         <p className="text-sm leading-relaxed text-[var(--ds-text-low)]">
-          Body small · 14 — secondary copy uses textLow.
+          Control / compact body · 14 — secondary copy uses the muted token.
         </p>
-        <p className="text-xs font-medium leading-relaxed text-[var(--ds-text-disabled)]">
-          Body xSmall / label · 12 — textDisabled for de-emphasized metadata.
+        <p className="text-[13px] font-medium leading-relaxed text-[var(--ui-subtle)]">
+          Metadata · 13 — supporting details remain readable.
         </p>
       </div>
     </div>
@@ -123,7 +96,7 @@ export function RadiusSection() {
   return (
     <div>
       <p className="mb-6 max-w-2xl text-sm leading-relaxed text-[var(--ds-muted)]">
-        MotiionRadius — sm 8, md 12, button 14, card/lg 16, sheet 26, full.
+        Controls 10px, cards 16px, panels 20px. Pills are reserved for badges.
       </p>
       <div className="flex flex-wrap gap-5">
         {RADIUS_TOKENS.map((token) => (
@@ -144,7 +117,7 @@ export function SpacingSection() {
   return (
     <div>
       <p className="mb-6 max-w-2xl text-sm leading-relaxed text-[var(--ds-muted)]">
-        MotiionSpacing — xs 4 → xxxl 40.
+        A 4px rhythm, with larger 32px and 48px gaps between major sections.
       </p>
       <div className="flex flex-wrap items-end gap-4">
         {SPACE_TOKENS.map((token) => (

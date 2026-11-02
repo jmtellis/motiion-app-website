@@ -688,3 +688,15 @@
   text-transform: capitalize;
   color: var(--industry-muted, rgb(255 255 255 / 0.45));
 }
+
+/* One responsive card workspace; status is the primary navigation. */
+.projects-hub__toolbar { margin-bottom: 0; }
+.projects-hub__result-count { color: var(--ink-soft); font-size: 0.8125rem; margin: 18px 0 12px; }
+.projects-hub__files-caption { color: var(--ink-soft); font-size: 0.875rem; margin: 6px 0 0; }
+.projects-hub__files-dropzone { width: 100%; color: inherit; background: transparent; font: inherit; }
+.projects-hub__files-dropzone:disabled { cursor: wait; opacity: .65; }
+.projects-hub .bd-project-card__footer-title { color: var(--ink); }
+.projects-hub .bd-project-card__overlay-title { overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) {
+  .projects-hub * { animation: none !important; transition: none !important; }
+}

@@ -45,9 +45,14 @@ export function ClientEntityAutocomplete({
   const canSearch = query.trim().length >= MIN_SEARCH_LENGTH;
   const showDropdown = open && query.trim().length > 0;
 
-  useEffect(() => {
-    setQuery(value);
-  }, [value]);
+  const [previousValue, setPreviousValue] = useState(value);
+  if (previousValue !== value) { setPreviousValue(value); setQuery(value); }
+
+  const requestKey = `${open}:${query}:${kind}`;
+  const [previousRequestKey, setPreviousRequestKey] = useState(requestKey);
+  if (previousRequestKey !== requestKey) {
+    setPreviousRequestKey(requestKey); setResults([]); setLoading(false); setError(null);
+  }
 
   useEffect(() => {
     function handleClick(event: MouseEvent) {
@@ -60,12 +65,7 @@ export function ClientEntityAutocomplete({
   }, []);
 
   useEffect(() => {
-    if (!open || !canSearch) {
-      setResults([]);
-      setLoading(false);
-      setError(null);
-      return;
-    }
+    if (!open || !canSearch) return;
 
     const controller = new AbortController();
     const timeout = window.setTimeout(async () => {
@@ -80,6 +80,7 @@ export function ClientEntityAutocomplete({
           results?: ClientSearchResult[];
           error?: string;
         };
+        if (controller.signal.aborted) return;
         if (!response.ok) {
           setError(payload.error ?? "Search failed.");
           setResults([]);

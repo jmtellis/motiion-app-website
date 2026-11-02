@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from "react";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, User } from "lucide-react";
+import { CheckCircle2, Users } from "lucide-react";
 
 import { computeCastingRoleAvatarGridLayout } from "@/lib/talent-buyers/casting/casting-role-avatar-grid-layout";
 import {
@@ -52,7 +52,7 @@ export function CastingRoleSubmissionAvatarGrid({
     );
   }, [bleed, grid.columns, grid.rows, regionSize.height, regionSize.width]);
 
-  const { slots, showsPlaceholders } = useMemo(() => {
+  const { slots } = useMemo(() => {
     if (!layout) {
       return buildCastingRoleAvatarSlots(candidates, role, grid);
     }
@@ -65,7 +65,12 @@ export function CastingRoleSubmissionAvatarGrid({
 
   return (
     <div ref={containerRef} className="casting-role-avatar-grid" aria-hidden>
-      {layout
+      {!slots.some((slot) => slot.kind === "face") ? (
+        <div className="casting-role-avatar-grid__empty">
+          <Users aria-hidden />
+          <span>No submissions yet</span>
+        </div>
+      ) : layout
         ? slots.map((slot, index) => {
             const position = layout.positions[index];
             if (!position) return null;
@@ -96,10 +101,6 @@ export function CastingRoleSubmissionAvatarGrid({
                   </div>
                 ) : slot.kind === "overflow" ? (
                   <div className="casting-role-avatar-grid__overflow">+{slot.count}</div>
-                ) : showsPlaceholders ? (
-                  <div className="casting-role-avatar-grid__placeholder">
-                    <User className="casting-role-avatar-grid__placeholder-icon" aria-hidden />
-                  </div>
                 ) : null}
               </div>
             );

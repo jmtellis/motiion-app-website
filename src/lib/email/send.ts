@@ -9,12 +9,12 @@ function getResend(): Resend | null {
   return resendClient;
 }
 
-/** Fire-and-forget transactional email; failures are logged, never thrown. */
+/** Provider acceptance is not delivery. Return the email ID so delivery can be checked. */
 export async function sendNotificationEmail(input: {
   to: string;
   subject: string;
   html: string;
-}): Promise<{ ok: boolean; error?: string }> {
+}): Promise<{ ok: boolean; error?: string; id?: string }> {
   if (!isEmailRecipientAllowed(input.to, getAppEnvironment(), process.env.STAGING_EMAIL_ALLOWLIST)) {
     return { ok: false, error: "Email blocked: recipient is not on the staging allowlist" };
   }
@@ -22,8 +22,8 @@ export async function sendNotificationEmail(input: {
   if (!resend) return { ok: false, error: "Resend not configured" };
 
   try {
-    const { error } = await resend.emails.send({
-      from: "Motiion <notifications@motiion.app>",
+    const { data, error } = await resend.emails.send({
+      from: process.env.MOTIION_EMAIL_FROM || "Motiion <notifications@motiion.io>",
       to: input.to,
       subject: input.subject,
       html: input.html,
@@ -32,7 +32,7 @@ export async function sendNotificationEmail(input: {
       console.error("Resend send failed:", error.message);
       return { ok: false, error: error.message };
     }
-    return { ok: true };
+    return { ok: true, id: data?.id };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Send failed";
     console.error("Resend send failed:", message);

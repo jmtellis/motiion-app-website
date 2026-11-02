@@ -145,10 +145,7 @@ function useDropdownMenuPosition(
   const [placement, setPlacement] = useState<"below" | "above">("below");
 
   useLayoutEffect(() => {
-    if (!open) {
-      setMenuStyle(null);
-      return;
-    }
+    if (!open) return;
 
     function update() {
       const container = containerRef.current;
@@ -194,7 +191,7 @@ function useDropdownMenuPosition(
     };
   }, [containerRef, open]);
 
-  return { menuStyle, placement };
+  return { menuStyle: open ? menuStyle : null, placement };
 }
 
 function FilterDropdownMenu({
@@ -604,25 +601,13 @@ export function TalentFilterPanel({
 }: TalentFilterPanelProps) {
   const embedded = variant === "embedded";
 
-  const genres = filters.genres?.length ? filters.genres : filters.style ? [filters.style] : [];
-  const skills = filters.skills ?? [];
-  const ethnicities = filters.ethnicities?.length
-    ? filters.ethnicities
-    : filters.ethnicity
-      ? [filters.ethnicity]
-      : [];
-  const locations = filters.locations?.length
-    ? filters.locations
-    : filters.location
-      ? [filters.location]
-      : [];
-  const agencies = filters.agencies?.length
-    ? filters.agencies
-    : filters.agency
-      ? [filters.agency]
-      : [];
-  const hairColors = filters.hairColors ?? [];
-  const eyeColors = filters.eyeColors ?? [];
+  const genres = useMemo(() => filters.genres?.length ? filters.genres : filters.style ? [filters.style] : [], [filters.genres, filters.style]);
+  const skills = useMemo(() => filters.skills ?? [], [filters.skills]);
+  const ethnicities = useMemo(() => filters.ethnicities?.length ? filters.ethnicities : filters.ethnicity ? [filters.ethnicity] : [], [filters.ethnicities, filters.ethnicity]);
+  const locations = useMemo(() => filters.locations?.length ? filters.locations : filters.location ? [filters.location] : [], [filters.locations, filters.location]);
+  const agencies = useMemo(() => filters.agencies?.length ? filters.agencies : filters.agency ? [filters.agency] : [], [filters.agencies, filters.agency]);
+  const hairColors = useMemo(() => filters.hairColors ?? [], [filters.hairColors]);
+  const eyeColors = useMemo(() => filters.eyeColors ?? [], [filters.eyeColors]);
   const verifiedOnly =
     filters.verificationStatuses.includes("motiion_verified") ||
     filters.verificationStatuses.includes("industry_confirmed");

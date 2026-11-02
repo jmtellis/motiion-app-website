@@ -35,11 +35,14 @@ export function SignupSplitOAuth({
     setError(null);
 
     const redirectTo = buildOAuthRedirectUrl({
+      provider,
       flow,
+      returnTo: new URLSearchParams(window.location.search).get("next") ?? undefined,
       accountType: signupPath === "talent" ? "talent" : "lookingForTalent",
       nonTalentType: signupPath === "hiring" ? "casting_director" : undefined,
     });
 
+    try {
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -50,6 +53,10 @@ export function SignupSplitOAuth({
 
     if (oauthError) {
       setError(oauthError.message);
+      setLoadingProvider(null);
+    }
+    } catch {
+      setError("Couldn’t connect to sign-in. Check your connection and try again.");
       setLoadingProvider(null);
     }
   }
@@ -76,7 +83,7 @@ export function SignupSplitOAuth({
           <ButtonProgress loading={loadingProvider === "apple"}><AppleLogo className="h-4 w-4 shrink-0" />Apple</ButtonProgress>
         </button>
       </div>
-      {error ? <div className="signup-split-error">{error}</div> : null}
+      {error ? <div className="signup-split-error" role="alert">{error}</div> : null}
     </div>
   );
 }

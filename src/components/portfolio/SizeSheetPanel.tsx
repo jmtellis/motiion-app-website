@@ -35,7 +35,7 @@ export function SizeSheetPanel({ owner, actionsHost, onDirtyChange, onSaved }: P
   const [exporting, setExporting] = useState<"share" | "download" | null>(null);
 
   const sizing = buildSizingSummary(values);
-  const dirty = sizing !== baseline.sizing || height !== baseline.height;
+  const dirty = sizing !== buildSizingSummary(parseSizingSummary(baseline.sizing)) || height !== baseline.height;
   useReportDirty(dirty, onDirtyChange);
 
   const rows = useMemo(() => sizeSheetRows(height, sizing), [height, sizing]);
@@ -47,11 +47,13 @@ export function SizeSheetPanel({ owner, actionsHost, onDirtyChange, onSaved }: P
   async function save() {
     setPending(true);
     setError(null);
-    const result = await savePortfolioSizing({ sizing, height });
-    setPending(false);
-    if (!result.ok) return setError(result.error);
-    setBaseline({ sizing, height });
-    onSaved("Size sheet saved");
+    try {
+      const result = await savePortfolioSizing({ sizing, height });
+      if (!result.ok) return setError(result.error);
+      setBaseline({ sizing, height });
+      onSaved("Size sheet saved");
+    } catch { setError("Couldn’t save your size sheet. Check your connection and try again."); }
+    finally { setPending(false); }
   }
 
   async function exportPdf(mode: "share" | "download") {

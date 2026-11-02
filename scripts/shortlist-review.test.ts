@@ -31,11 +31,11 @@ function server(options: { expired?: boolean; foreign?: boolean; failVotes?: boo
   const share = { id: "share", role_id: "lead", role_ids: ["lead", "ensemble"], title: "Campaign", roles: { title: "Lead", production: "Project" }, expires_at: options.expired ? "2020-01-01" : null };
   const database = { from(table: string) {
     const filters: Record<string, unknown> = {};
-    let write: any;
-    const query: any = {
+    let write: Record<string, unknown> | undefined;
+    const query = {
       select() { return query; }, eq(key: string, value: unknown) { filters[key] = value; return query; },
       in(key: string, value: unknown) { filters[key] = value; return query; }, order() { return query; },
-      upsert(value: any) { write = value; return query; }, single() { return query; }, maybeSingle() { return query; },
+      upsert(value: Record<string, unknown>) { write = value; return query; }, single() { return query; }, maybeSingle() { return query; },
       then(resolve: (result: unknown) => void) {
         if (table === "profiles") return Promise.resolve(resolve({ data: { display_name: "Casting team", industry_avatar_url: null } }));
         if (table === "casting_shortlist_shares") return Promise.resolve(resolve({ data: share }));
@@ -45,7 +45,7 @@ function server(options: { expired?: boolean; foreign?: boolean; failVotes?: boo
           return Promise.resolve(resolve({ data: all.filter((row) => roleIds.includes(row.role_id) && (!filters.id || (filters.id as string[]).includes(row.id))) }));
         }
         if (table === "casting_shortlist_share_recipients") {
-          if (write && !people.has(write.id)) people.set(write.id, options.foreign ? { ...write, share_id: "other" } : write);
+          if (write && !people.has(String(write.id))) people.set(String(write.id), options.foreign ? { ...write, share_id: "other" } : write);
           const person = people.get(String(filters.id));
           return Promise.resolve(resolve({ data: write ? null : person?.share_id === filters.share_id ? person : null }));
         }

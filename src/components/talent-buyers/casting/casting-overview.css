@@ -407,28 +407,7 @@
   padding-top: 0.25rem;
 }
 
-.casting-breakdown-workspace__doc-edit {
-  position: absolute;
-  top: 0.15rem;
-  right: 0;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.5rem;
-  color: var(--industry-muted, rgb(255 255 255 / 0.42));
-  text-decoration: none;
-  transition:
-    color 140ms ease,
-    background 140ms ease;
-}
 
-.casting-breakdown-workspace__doc-edit:hover {
-  background: var(--industry-fill, rgb(255 255 255 / 0.08));
-  color: var(--industry-text, #fff);
-}
 
 .casting-overview-breakdown__roles {
   display: flex;
@@ -589,19 +568,12 @@
   height: 9.5rem;
   min-height: 0;
   overflow: hidden;
-  background:
-    linear-gradient(145deg, rgb(0 0 0 / 0.82) 0%, rgb(0 0 0 / 0.68) 55%, rgb(255 255 255 / 0.06) 100%),
-    #050505;
-  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+  background: var(--industry-fill);
+  border-bottom: 1px solid var(--industry-line);
   text-decoration: none;
 }
 
-.casting-overview-role-card__media-scrim {
-  position: absolute;
-  inset: 0;
-  background: rgb(0 0 0 / 0.1);
-  pointer-events: none;
-}
+
 
 .casting-overview-role-card__body {
   flex-shrink: 0;
@@ -751,7 +723,6 @@
 }
 
 .casting-role-avatar-grid__face,
-.casting-role-avatar-grid__placeholder,
 .casting-role-avatar-grid__overflow {
   position: relative;
   width: 100%;
@@ -801,18 +772,22 @@
   filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.8));
 }
 
-.casting-role-avatar-grid__placeholder {
+.casting-role-avatar-grid__empty {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--industry-line, rgb(255 255 255 / 0.1));
-  background: var(--industry-fill, rgb(255 255 255 / 0.04));
+  flex-direction: column;
+  gap: 0.625rem;
+  width: 100%;
+  height: 100%;
+  color: var(--industry-muted);
+  font-size: 0.8125rem;
 }
 
-.casting-role-avatar-grid__placeholder-icon {
-  width: 42%;
-  height: 42%;
-  color: var(--industry-muted, rgb(255 255 255 / 0.14));
+.casting-role-avatar-grid__empty > svg {
+  width: 2rem;
+  height: 2rem;
+  stroke-width: 1.5;
 }
 
 .casting-role-avatar-grid__overflow {

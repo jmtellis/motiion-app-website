@@ -1,5 +1,6 @@
 "use server";
 
+import { readPagedRows } from "@/lib/supabase/read-pages";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
@@ -85,11 +86,12 @@ async function fetchRolesByProject(projectIds: string[]) {
   if (!supabase || !projectIds.length)
     return new Map<string, ProjectHubRole[]>();
 
-  const { data } = await supabase
+  const { data, error: dataError } = await supabase
     .from("roles")
     .select("id, project_id, title, is_active")
     .in("project_id", projectIds)
     .order("created_at", { ascending: true });
+  if (dataError) throw new Error("Could not load project details. Please try again.");
 
   const map = new Map<string, ProjectHubRole[]>();
   for (const row of data ?? []) {
@@ -110,7 +112,7 @@ async function fetchActivitiesByProject(projectIds: string[]) {
   if (!supabase || !projectIds.length)
     return new Map<string, ProjectActivitySummary[]>();
 
-  const { data } = await supabase
+  const { data, error: dataError } = await supabase
     .from("activities")
     .select(
       "id, project_id, title, type, status, location, activity_date, start_time, cover_image_url",
@@ -118,18 +120,20 @@ async function fetchActivitiesByProject(projectIds: string[]) {
     .in("project_id", projectIds)
     .neq("status", "cancelled")
     .order("activity_date", { ascending: true, nullsFirst: false });
+  if (dataError) throw new Error("Could not load project details. Please try again.");
 
   const rows = data ?? [];
   const counts = new Map<string, number>();
 
   if (rows.length) {
-    const { data: enrollments } = await supabase
+    const { data: enrollments, error: enrollmentsError } = await supabase
       .from("enrollments")
       .select("activity_id")
       .in(
         "activity_id",
         rows.map((row) => row.id as string),
       );
+  if (enrollmentsError) throw new Error("Could not load project details. Please try again.");
 
     for (const enrollment of enrollments ?? []) {
       const activityId = enrollment.activity_id as string;
@@ -160,12 +164,13 @@ async function fetchRosterPreviewsByProject(
   >();
   if (!supabase || !projectIds.length) return map;
 
-  const { data: lists } = await supabase
+  const { data: lists, error: listsError } = await supabase
     .from("talent_lists")
     .select("id, project_id")
     .eq("owner_id", ownerId)
     .eq("kind", PROJECT_ROSTER_KIND)
     .in("project_id", projectIds);
+  if (listsError) throw new Error("Could not load project details. Please try again.");
 
   if (!lists?.length) return map;
 
@@ -174,13 +179,14 @@ async function fetchRosterPreviewsByProject(
     lists.map((list) => [list.id as string, list.project_id as string]),
   );
 
-  const { data: members } = await supabase
+  const { data: members, error: membersError } = await supabase
     .from("talent_list_members")
     .select(
       "id, list_id, profile_id, added_at, professional_profiles(slug, media_assets(url, kind, position))",
     )
     .in("list_id", listIds)
     .order("added_at", { ascending: false });
+  if (membersError) throw new Error("Could not load project details. Please try again.");
 
   const admin = createAdminSupabaseClient();
   const profileIds = [
@@ -190,10 +196,11 @@ async function fetchRosterPreviewsByProject(
   const headshotByProfileId = new Map<string, string>();
 
   if (admin && profileIds.length) {
-    const { data: profiles } = await admin
+    const { data: profiles, error: profilesError } = await admin
       .from("professional_profiles")
       .select("id, user_id, slug")
       .in("id", profileIds);
+  if (profilesError) throw new Error("Could not load project details. Please try again.");
 
     const userIds = (profiles ?? []).map(
       (profile) => profile.user_id as string,
@@ -212,10 +219,11 @@ async function fetchRosterPreviewsByProject(
     );
 
     if (userIds.length) {
-      const { data: names } = await admin
+      const { data: names, error: namesError } = await admin
         .from("profiles")
         .select("user_id, display_name, first_name, last_name, headshot_urls")
         .in("user_id", userIds);
+  if (namesError) throw new Error("Could not load project details. Please try again.");
 
       const nameByUserId = new Map(
         (names ?? []).map((profile) => [
@@ -299,11 +307,12 @@ async function fetchCastingsByProject(
   const map = new Map<string, ProjectHubCasting[]>();
   if (!supabase || !projectIds.length) return map;
 
-  const { data: castings } = await supabase
+  const { data: castings, error: castingsError } = await supabase
     .from("castings")
     .select("id, project_id, title, status")
     .in("project_id", projectIds)
     .order("created_at", { ascending: false });
+  if (castingsError) throw new Error("Could not load project details. Please try again.");
 
   for (const row of castings ?? []) {
     const projectId = row.project_id as string;
@@ -316,11 +325,12 @@ async function fetchCastingsByProject(
     map.set(projectId, list);
   }
 
-  const { data: legacyRoles } = await supabase
+  const { data: legacyRoles, error: legacyRolesError } = await supabase
     .from("roles")
     .select("project_id")
     .in("project_id", projectIds)
     .is("casting_id", null);
+  if (legacyRolesError) throw new Error("Could not load project details. Please try again.");
 
   const legacyRoleCounts = new Map<string, number>();
   for (const row of legacyRoles ?? []) {
@@ -436,7 +446,7 @@ async function fetchHostedActivityHubItems(
   const supabase = await createServerSupabaseClient();
   if (!supabase) return [];
 
-  const { data } = await supabase
+  const { data, error: dataError } = await readPagedRows((from, to) => supabase
     .from("activities")
     .select(
       "id, project_id, title, type, status, location, activity_date, start_time, cover_image_url, updated_at",
@@ -444,7 +454,8 @@ async function fetchHostedActivityHubItems(
     .eq("creator_id", posterId)
     .neq("status", "cancelled")
     .order("activity_date", { ascending: false, nullsFirst: false })
-    .limit(200);
+    .order("id").range(from, to));
+  if (dataError) throw new Error("Could not load project details. Please try again.");
 
   // Class sessions inside a composable project are listed under that project's Classes ability.
   const rows = ((data ?? []) as Record<string, unknown>[]).filter(
@@ -453,7 +464,7 @@ async function fetchHostedActivityHubItems(
   if (!rows.length) return [];
 
   const counts = new Map<string, number>();
-  const { data: enrollments } = await supabase
+  const { data: enrollments, error: enrollmentsError } = await supabase
     .from("enrollments")
     .select("activity_id")
     .in(
@@ -461,6 +472,7 @@ async function fetchHostedActivityHubItems(
       rows.map((row) => row.id as string),
     )
     .in("status", ["paid", "guest", "comped", "pending", "confirmed"]);
+  if (enrollmentsError) throw new Error("Could not load project details. Please try again.");
 
   for (const enrollment of enrollments ?? []) {
     const activityId = enrollment.activity_id as string;
@@ -481,13 +493,9 @@ function isLegacyEventProjectShell(project: ProjectHubSummary): boolean {
   return (
     project.workKind !== "activity" &&
     project.workKind !== "job" &&
-    project.projectType === "event"
+    project.projectType === "event" &&
+    project.activities.length > 0
   );
-}
-
-/** Legacy `projects.project_type = job` workspace — not the lightweight production Job card. */
-function isLegacyJobProjectContainer(project: ProjectHubSummary): boolean {
-  return project.workKind !== "job" && project.projectType === "job";
 }
 
 function productionJobToHubSummary(row: {
@@ -530,10 +538,11 @@ async function fetchProductionJobHubItems(
   const supabase = await createServerSupabaseClient();
   if (!supabase) return [];
 
-  const { data: organized } = await supabase
+  const { data: organized, error: organizedError } = await supabase
     .from("job_organizers")
     .select("job_id")
     .eq("user_id", posterId);
+  if (organizedError) throw new Error("Could not load project details. Please try again.");
 
   const organizedIds = (organized ?? []).map((row) => row.job_id as string);
 
@@ -541,8 +550,7 @@ async function fetchProductionJobHubItems(
     .from("jobs")
     .select("id, title, status, updated_at, cover_image_url, poster_id")
     .eq("job_kind", "production")
-    .order("updated_at", { ascending: false })
-    .limit(200);
+    .order("updated_at", { ascending: false }).order("id");
 
   if (organizedIds.length) {
     query = query.or(
@@ -552,16 +560,18 @@ async function fetchProductionJobHubItems(
     query = query.eq("poster_id", posterId);
   }
 
-  const { data } = await query;
+  const { data, error: dataError } = await readPagedRows((from, to) => query.range(from, to));
+  if (dataError) throw new Error("Could not load project details. Please try again.");
   const rows = data ?? [];
   if (!rows.length) return [];
 
   const jobIds = rows.map((row) => row.id as string);
-  const { data: members } = await supabase
+  const { data: members, error: membersError } = await supabase
     .from("job_members")
     .select("job_id")
     .in("job_id", jobIds)
     .eq("status", "active");
+  if (membersError) throw new Error("Could not load project details. Please try again.");
 
   const counts = new Map<string, number>();
   for (const member of members ?? []) {
@@ -582,7 +592,7 @@ async function fetchProductionJobHubItems(
 }
 
 export async function fetchProjectsHubData(posterId: string) {
-  const summaries = await fetchPosterCastingSummaries(posterId);
+  const summaries = await fetchPosterCastingSummaries(posterId, { strict: true, includeMemberships: true });
   const { drafts, published } = splitCastingSummaries(summaries);
   const allIds = summaries.map((project) => project.id);
   const composableIds = new Set(
@@ -613,8 +623,7 @@ export async function fetchProjectsHubData(posterId: string) {
     rosterByProject,
   ).filter(
     (project) =>
-      !isLegacyEventProjectShell(project) &&
-      !isLegacyJobProjectContainer(project),
+      !isLegacyEventProjectShell(project),
   );
 
   const projectPublished = enrichSummaries(
@@ -625,8 +634,7 @@ export async function fetchProjectsHubData(posterId: string) {
     rosterByProject,
   ).filter(
     (project) =>
-      !isLegacyEventProjectShell(project) &&
-      !isLegacyJobProjectContainer(project),
+      !isLegacyEventProjectShell(project),
   );
 
   const activityDrafts = hostedActivities.filter(

@@ -166,11 +166,13 @@ export function Footer({
           <div className="landing-footer__meta-divider" aria-hidden />
           <div className="landing-footer__meta-row">
             <p>© {year} Motiion Ventures, Inc.</p>
-            <div className="flex items-center gap-2.5" aria-label="Social media">
-              {footerSocialLinks.map((link) => (
-                <FooterSocialIcon key={link.label} link={link} />
-              ))}
-            </div>
+            {footerSocialLinks.length > 0 ? (
+              <div className="flex items-center gap-2.5" aria-label="Social media">
+                {footerSocialLinks.map((link) => (
+                  <FooterSocialIcon key={link.label} link={link} />
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

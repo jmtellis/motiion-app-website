@@ -3,13 +3,12 @@ import { notFound } from "next/navigation";
 
 import ProfilePageClient from "@/app/profile/[slug]/profile-page-client";
 import {
-  fetchPublicTalentName,
-  normalizeUsernameSlug,
   profileOgImageUrl,
-  PROFILE_SLUG_UUID_RE,
 } from "@/lib/profileOg";
 import { fetchPublicTalentProfile } from "@/lib/publicProfile";
 import { getIosAppStoreId } from "@/lib/referrals/app-store";
+import { getCurrentUserProfile } from "@/lib/auth/session";
+import { getProfileDestination, isOnboardingComplete } from "@/lib/auth/profile";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -27,7 +26,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const pageUrl = `${siteUrl}/profile/${encodeURIComponent(slug)}`;
 
   const displayName =
-    (await fetchPublicTalentName(slug)) ??
     (await fetchPublicTalentProfile(slug))?.full_name ??
     null;
   const title = displayName ? `${displayName} on Motiion` : "Profile on Motiion";
@@ -50,7 +48,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const appStoreId = getIosAppStoreId();
 
   return {
-    title,
+    title: { absolute: title },
     description,
     metadataBase: new URL(siteUrl),
     openGraph: {
@@ -79,11 +77,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ProfilePage({ params }: PageProps) {
   const { slug } = await params;
-  const profile = await fetchPublicTalentProfile(slug);
+  const [profile, viewerNavigation] = await Promise.all([
+    fetchPublicTalentProfile(slug),
+    getCurrentUserProfile().then((viewer) => viewer ? {
+      href: getProfileDestination(viewer),
+      label: isOnboardingComplete(viewer) ? "Back to workspace" : "Continue setup",
+    } : null).catch(() => ({ href: "/home", label: "Open Motiion" })),
+  ]);
 
   if (!profile) {
     notFound();
   }
 
-  return <ProfilePageClient profile={profile} />;
+  return <ProfilePageClient profile={profile} viewerNavigation={viewerNavigation} />;
 }

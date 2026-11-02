@@ -1,7 +1,8 @@
 "use client";
 
 import { Bell, X } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -16,12 +17,14 @@ import { NotificationAvatar, useNotificationActors } from "@/components/workspac
 import { useBuyerNotifications } from "@/hooks/use-buyer-notifications";
 import { castingNotificationHref } from "@/lib/app/talent-casting-state";
 import { dealMemoNotificationHref } from "@/lib/booking/deal-memo-routes";
+import { coordinationNotificationHref, type NotificationViewerRole } from "@/lib/app/notification-inbox";
 import { formatBuyerRelativeDate } from "@/lib/talent-buyers/dashboard-data";
 
 const PANEL_ID = "workspace-notifications-panel";
 
 type NotificationsState = ReturnType<typeof useBuyerNotifications> & {
   viewerId: string;
+  viewerRole: NotificationViewerRole;
   open: boolean;
   setOpen: (open: boolean) => void;
 };
@@ -36,9 +39,11 @@ function useWorkspaceNotifications() {
 
 export function WorkspaceNotificationsProvider({
   userId,
+  viewerRole,
   children,
 }: {
   userId: string;
+  viewerRole: NotificationViewerRole;
   children: ReactNode;
 }) {
   const notifications = useBuyerNotifications(userId, { limit: 30 });
@@ -46,7 +51,7 @@ export function WorkspaceNotificationsProvider({
   const [openPath, setOpenPath] = useState<string | null>(null);
   const open = openPath === pathname;
   const setOpen = useCallback((next: boolean) => setOpenPath(next ? pathname : null), [pathname]);
-  const value = { ...notifications, viewerId: userId, open, setOpen };
+  const value = { ...notifications, viewerId: userId, viewerRole, open, setOpen };
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;
 }
 
@@ -77,9 +82,8 @@ export function NotificationsButton() {
 }
 
 export function NotificationsPanel() {
-  const { open, setOpen, notifications, unreadCount, isLoading, error, markAllRead, markRead, loadNotifications } =
+  const { open, setOpen, viewerRole, notifications, unreadCount, isLoading, error, markAllRead, markRead, loadNotifications } =
     useWorkspaceNotifications();
-  const router = useRouter();
   const closeRef = useRef<HTMLButtonElement>(null);
   const [saving, setSaving] = useState(false);
   const actors = useNotificationActors(notifications);
@@ -154,7 +158,7 @@ export function NotificationsPanel() {
           ) : (
             <ul>
               {notifications.map((row) => {
-                const href = dealMemoNotificationHref(row) ?? castingNotificationHref(row);
+                const href = coordinationNotificationHref(row, viewerRole) ?? dealMemoNotificationHref(row) ?? castingNotificationHref(row);
                 const title = row.title ?? row.type.replace(/_/g, " ");
                 const copy = (
                   <>
@@ -169,17 +173,16 @@ export function NotificationsPanel() {
                 return (
                   <li key={row.id} data-unread={!row.read_at}>
                     {href ? (
-                      <button
-                        type="button"
+                      <Link
+                        href={href}
                         className="workspace-notifications__link"
                         onClick={() => {
                           if (!row.read_at) void markRead(row.id);
                           setOpen(false);
-                          router.push(href);
                         }}
                       >
                         {copy}
-                      </button>
+                      </Link>
                     ) : (
                       copy
                     )}

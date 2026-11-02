@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { useHydrated } from "@/hooks/use-hydrated";
 import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
@@ -9,7 +10,7 @@ import {
   beginIndustryOnboarding,
   checkUsernameAvailability,
   completeOnboarding,
-  syncOnboardingProfessionalDraft,
+  saveOnboardingEssentials,
 } from "@/app/onboarding/actions";
 import {
   AuthButton,
@@ -26,6 +27,7 @@ import { BirthDateInput } from "./BirthDateInput";
 import { initialProfileNames, normalizeProfileNames, updateProfileNames } from "@/lib/onboarding/names";
 import { birthDateError } from "@/lib/onboarding/birth-date";
 import { ButtonProgress } from "@/components/auth/ButtonProgress";
+import { Field } from "@/components/ui/Field";
 import { SizingEditor } from "@/components/onboarding/SizingEditor";
 import { WorkingLocationsEditor } from "@/components/onboarding/WorkingLocationsEditor";
 import type { TalentAgency } from "@/lib/agencies/fetch-talent-agencies";
@@ -170,15 +172,6 @@ function createInitialDraft(profile: DashboardProfile): OnboardingDraft {
   };
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="field">
-      <span>{label}</span>
-      {children}
-    </label>
-  );
-}
-
 function SectionBlock({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="space-y-4 border-t border-[var(--line)] pt-6 first:border-t-0 first:pt-0">
@@ -198,7 +191,7 @@ const talentStepCopy: Record<
   },
   account: {
     title: "Confirm your details",
-    subtitle: "We'll use this to set up your talent profile.",
+    subtitle: "We'll use this to set up your account.",
   },
   profile: {
     title: "Your profile",
@@ -297,27 +290,35 @@ function TogglePills({
   );
 }
 
-export function OnboardingFlow({
-  profile,
-  agencies,
-  addingTalentShell = false,
-}: {
+type OnboardingFlowProps = {
   profile: DashboardProfile;
   agencies: TalentAgency[];
   addingTalentShell?: boolean;
-}) {
+  initialEssentials?: Partial<OnboardingDraft>;
+};
+
+export function OnboardingFlow(props: OnboardingFlowProps) {
+  // A resumed draft lives in browser storage. Mount the interactive form only
+  // after hydration so the initial server markup cannot reset or flash its step.
+  const hydrated = useHydrated();
+  if (!hydrated) return <div className="p-8" role="status" aria-live="polite">Restoring your setup…</div>;
+  return <OnboardingFlowContent key={`${props.profile.id}:${Boolean(props.addingTalentShell)}`} {...props} />;
+}
+
+function OnboardingFlowContent({ profile, agencies, addingTalentShell = false, initialEssentials }: OnboardingFlowProps) {
   const router = useRouter();
   const [draft, setDraft] = useState(() => {
-    const loaded = addingTalentShell ? null : loadOnboardingDraft(profile.id);
-    let base = loaded ?? createInitialDraft(profile);
+    const stored = loadOnboardingDraft(profile.id);
+    const loaded = addingTalentShell && stored?.role !== "talent" ? null : stored;
+    let base = { ...createInitialDraft(profile), ...initialEssentials, ...(loaded ?? {}), userId: profile.id, email: profile.email ?? "" };
     base = { ...base, ...normalizeProfileNames(base) };
     if (addingTalentShell) {
       base = {
         ...base,
         role: "talent",
         accountType: "talent",
-        talentTypes: [],
-        currentStep: "role",
+        talentTypes: loaded?.talentTypes ?? [],
+        currentStep: loaded?.currentStep ?? "role",
       };
     } else if (base.role === "industry") {
       base = { ...base, role: null, accountType: null, talentTypes: [], currentStep: "role" };
@@ -355,25 +356,9 @@ export function OnboardingFlow({
   const [stepDirection, setStepDirection] = useState<"forward" | "back">("forward");
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      saveOnboardingDraft(draft);
-      if (isTalent(draft.role)) {
-        void syncOnboardingProfessionalDraft({
-          styles: draft.styles,
-          skills: draft.skills,
-          gender: draft.gender || null,
-          ethnicity: draft.ethnicity || null,
-          height: draft.height || null,
-          unionStatus: draft.unionStatus || null,
-          workingLocations: draft.workingLocations,
-          instagramUrl: draft.instagramUrl || null,
-          tiktokUrl: draft.tiktokUrl || null,
-          username: draft.username || null,
-          availability: "available",
-        });
-      }
-    }, 300);
-    return () => window.clearTimeout(timeout);
+    // Persist locally immediately; server writes happen on Continue, in order.
+    // This avoids background requests racing with final completion or account switches.
+    saveOnboardingDraft(draft);
   }, [draft]);
 
   const steps = useMemo(() => getOnboardingSteps(draft.role), [draft.role]);
@@ -487,9 +472,15 @@ export function OnboardingFlow({
       return;
     }
 
-    setAttempted(false);
-    setStepDirection("forward");
-    updateDraft({ currentStep: getNextStep(draft.currentStep, draft.role) });
+    startTransition(async () => {
+      try {
+        const result = await saveOnboardingEssentials(draft);
+        if (!result.ok) { setError(result.error); return; }
+        setAttempted(false);
+        setStepDirection("forward");
+        updateDraft({ currentStep: getNextStep(draft.currentStep, draft.role) });
+      } catch { setError("Couldn’t save your progress. Your draft is still here; please try again."); }
+    });
   }
 
   function goBack() {
@@ -507,6 +498,7 @@ export function OnboardingFlow({
     const payload = buildCompletePayload(openProfileSetupAfterComplete);
 
     startTransition(async () => {
+      try {
       const result = await completeOnboarding(payload);
 
       if (!result.ok) {
@@ -523,6 +515,7 @@ export function OnboardingFlow({
         featuredToken ? featuredInvitePath(featuredToken) : result.redirectTo,
       );
       router.refresh();
+      } catch { setError("Couldn’t finish setup. Your progress is saved; please try again."); }
     });
   }
 
@@ -600,7 +593,8 @@ export function OnboardingFlow({
           </Field>
         </div>
         <Field label="Email">
-          <AuthInput type="email" value={draft.email} onChange={(event) => updateDraft({ email: event.target.value })} />
+          <AuthInput type="email" value={profile.email ?? draft.email} readOnly aria-describedby="onboarding-email-help" />
+          <span id="onboarding-email-help" className="setup-field-help">Your verified sign-in address. You can change it later in account settings.</span>
           {attempted && !draft.email.includes("@") ? <span className="setup-field-error">Enter a valid email address.</span> : null}
         </Field>
         <Field label="Date of birth">
@@ -615,8 +609,9 @@ export function OnboardingFlow({
   function renderTalentProfileSection() {
     return (
       <div className="space-y-0">
-        <SectionBlock title={isCommunity(draft.role) ? "Headshots (optional)" : "Headshots"}>
+        <SectionBlock title={isCommunity(draft.role) ? "Profile photos (optional)" : "Headshots"}>
           <HeadshotUploadGrid
+            optional={isCommunity(draft.role)}
             headshotUrls={draft.headshotUrls}
             headshotOriginalUrls={draft.headshotOriginalUrls}
             onUploaded={(urls) => { updateDraft(urls); setHeadshotError(null); }}
@@ -629,11 +624,14 @@ export function OnboardingFlow({
         <SectionBlock title="Public profile">
           <div className="grid items-start gap-4 md:grid-cols-2">
             <Field label="Display name">
-              <AuthInput value={draft.displayName} onChange={(event) => updateDraft({ displayName: event.target.value })} />
+              <AuthInput id="onboarding-display-name" name="displayName" autoComplete="nickname" value={draft.displayName} onChange={(event) => updateDraft({ displayName: event.target.value })} />
             {attempted && !draft.displayName.trim() ? <span className="setup-field-error">Display name is required.</span> : null}
             </Field>
             <Field label="Username">
               <AuthInput
+                id="onboarding-username"
+                name="username"
+                autoComplete="username"
                 value={draft.username}
                 onChange={(event) =>
                   updateDraft({ username: event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "") })
@@ -834,7 +832,7 @@ export function OnboardingFlow({
           <span className="absolute bottom-0 right-0 flex size-8 items-center justify-center rounded-full border-4 border-black bg-[#ffffff] text-[#111111]"><Check size={18}/></span>
         </div>
         <p className="onboarding-success-name">{draft.displayName}</p>
-        <ProfileSetupBenefits />
+        {isTalent(draft.role) ? <ProfileSetupBenefits /> : <p className="text-sm text-[var(--ink-soft)]">Your account is ready. Discover artists, classes, and events, and save your favorites.</p>}
         {isTalent(draft.role) ? (
           <p className="text-sm text-[var(--ink-soft)]">
             Your progress is saved. You can finish your profile anytime from Home.
@@ -887,6 +885,10 @@ export function OnboardingFlow({
   const stepSubtitle =
     addingTalentShell && draft.currentStep === "role"
       ? "Choose the talent types you want people to hire you for."
+      : isCommunity(draft.role) && draft.currentStep === "profile"
+        ? "Choose how you appear in the community. A photo is optional."
+      : isCommunity(draft.role) && draft.currentStep === "accountCreated"
+        ? "You're ready to explore Motiion."
       : currentCopy.subtitle;
 
   return (

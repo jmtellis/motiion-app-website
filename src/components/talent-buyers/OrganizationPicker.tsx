@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import { Building2, Check, Layers, UserRound } from "lucide-react";
 
+import { useDebouncedSearch } from "@/hooks/use-debounced-search";
+
 import { AuthInput } from "@/components/auth/ui";
 import { SetupFieldBlock } from "@/components/auth/SetupFieldBlock";
 import { setupChoiceCard } from "@/lib/setup-flow/form-styles";
@@ -45,6 +47,13 @@ const relationshipOptions: Array<{
   },
 ];
 
+async function searchOrganizations(query: string, signal: AbortSignal) {
+  const response = await fetch(`/api/clients/companies?q=${encodeURIComponent(query.trim())}`, { signal });
+  const payload = await response.json() as { results?: ClientSearchResult[]; error?: string };
+  if (!response.ok) throw new Error(payload.error ?? "Organization search failed.");
+  return payload.results ?? [];
+}
+
 export function OrganizationPicker({
   relationship,
   organizationName,
@@ -64,17 +73,10 @@ export function OrganizationPicker({
 }) {
   void _organizationBrandDomain;
   const needsOrgSearch = relationship === "organization" || relationship === "multiple";
-  const [query, setQuery] = useState(organizationName);
-  const [results, setResults] = useState<ClientSearchResult[]>([]);
+  const query = organizationName;
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [manualMode, setManualMode] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setQuery(organizationName);
-  }, [organizationName]);
 
   useEffect(() => {
     function handleClick(event: MouseEvent) {
@@ -88,46 +90,8 @@ export function OrganizationPicker({
 
   const canSearch = !manualMode && query.trim().length >= MIN_SEARCH_LENGTH;
 
-  useEffect(() => {
-    if (!needsOrgSearch || !open || !canSearch) {
-      setResults([]);
-      setLoading(false);
-      return;
-    }
-
-    const controller = new AbortController();
-    const timeout = window.setTimeout(async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(
-          `/api/clients/companies?q=${encodeURIComponent(query.trim())}`,
-          { signal: controller.signal },
-        );
-        const payload = (await response.json()) as {
-          results?: ClientSearchResult[];
-          error?: string;
-        };
-        if (!response.ok) {
-          setError(payload.error ?? "Organization search failed.");
-          setResults([]);
-          return;
-        }
-        setResults(payload.results ?? []);
-      } catch (fetchError) {
-        if (controller.signal.aborted) return;
-        setError(fetchError instanceof Error ? fetchError.message : "Organization search failed.");
-        setResults([]);
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
-      }
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => {
-      controller.abort();
-      window.clearTimeout(timeout);
-    };
-  }, [needsOrgSearch, open, canSearch, query]);
+  const { data, loading, error } = useDebouncedSearch(query, needsOrgSearch && open && canSearch, searchOrganizations, SEARCH_DEBOUNCE_MS);
+  const results = data ?? [];
 
   function selectResult(result: ClientSearchResult) {
     const website = result.domain ? `https://${result.domain}` : "";
@@ -137,17 +101,13 @@ export function OrganizationPicker({
       brandDomain: result.domain ?? "",
       imageUrl: result.imageUrl,
     });
-    setQuery(result.name);
     setOpen(false);
-    setResults([]);
     setManualMode(false);
-    setError(null);
   }
 
   function enableManualEntry() {
     setManualMode(true);
     setOpen(false);
-    setResults([]);
     onOrganizationChange({
       name: query.trim() || organizationName,
       website: organizationWebsite,
@@ -171,7 +131,6 @@ export function OrganizationPicker({
                 if (option.value === "independent") {
                   onOrganizationChange({ name: "", website: "", brandDomain: "", imageUrl: null });
                   setManualMode(false);
-                  setQuery("");
                 }
               }}
               className={setupChoiceCard(selected)}
@@ -219,7 +178,6 @@ export function OrganizationPicker({
                       value={query}
                       onChange={(event) => {
                         const next = event.target.value;
-                        setQuery(next);
                         onOrganizationChange({
                           name: next,
                           website: organizationWebsite,
@@ -333,7 +291,6 @@ export function OrganizationPicker({
                   className="self-end text-sm font-medium text-[var(--accent-dark)] underline-offset-2 hover:underline"
                   onClick={() => {
                     setManualMode(false);
-                    setQuery(organizationName);
                   }}
                 >
                   Search organizations instead

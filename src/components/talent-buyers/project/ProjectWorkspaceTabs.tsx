@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useVisibleActiveTab } from "@/hooks/use-visible-active-tab";
+import { isCastingFullyFinalized } from "@/lib/talent-buyers/casting/casting-completion";
 import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { useId } from "react";
@@ -24,7 +26,7 @@ function formatBadge(count: number) {
 }
 
 function projectNavItemHref(projectId: string, tab: ProjectNavItem) {
-  if (tab.id === "bookings") return `/projects/${projectId}/bookings`;
+  if (tab.id === "coordination") return `/projects/${projectId}/coordination`;
   if (tab.id === "overview" || tab.id === "files" || tab.path === "overview" || tab.path === "files") {
     return projectTabPath(projectId, tab.id as ProjectTabId);
   }
@@ -33,6 +35,7 @@ function projectNavItemHref(projectId: string, tab: ProjectNavItem) {
 
 export function ProjectWorkspaceTabs() {
   const pathname = usePathname();
+  const tabScroller = useVisibleActiveTab<HTMLDivElement>(pathname);
   const { projectId, project, attachments, castingWorkflow } = useProjectWorkspace();
   const groupId = useId();
   const reducedMotion = useReducedMotion();
@@ -45,7 +48,7 @@ export function ProjectWorkspaceTabs() {
   const fileBadge = attachments.length > 0 ? formatBadge(attachments.length) : null;
   const castingLifecycleStatus = castingWorkflow?.primaryCasting?.status;
   const castStatusLabel =
-    castingLifecycleStatus === "closed"
+    isCastingFullyFinalized(castingWorkflow?.roles ?? []) ? "Finalized" : castingLifecycleStatus === "closed"
       ? "Closed"
       : castingLifecycleStatus === "published" || castingLifecycleStatus === "paused"
         ? "Open"
@@ -55,7 +58,7 @@ export function ProjectWorkspaceTabs() {
 
   return (
     <nav className={`project-workspace-tabs${isCasting ? " industry-casting-navigation" : ""}`} aria-label="Project sections">
-      <div className="project-workspace-tabs__scroller">
+      <div ref={tabScroller} className="project-workspace-tabs__scroller">
         {items.map((tab, index) => {
           const isActive = active.id === tab.id;
           const href = projectNavItemHref(projectId, tab);

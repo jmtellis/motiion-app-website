@@ -2,6 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Dialog } from "@/components/ui/Dialog";
+import { ReportContentDialog } from "@/components/settings/ReportContentDialog";
+import { blockUser } from "@/app/settings/moderation-actions";
 import {
   Bell,
   BellOff,
@@ -22,9 +26,13 @@ import {
   Share,
   Sparkles,
   Briefcase,
+  Flag,
+  ShieldOff,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 
+import { useIndustryProOptional, useIsIndustryWorkspace } from "@/components/talent-buyers/billing/IndustryProContext";
+import { fetchIndustryTalentSaveState, setIndustryTalentSaved, setIndustryRosterMembership, createIndustryRosterForTalent } from "@/lib/talent-buyers/roster-profile-actions";
 import { loadHomeProfile } from "@/app/(app)/home/actions";
 import { useWorkspaceViewerId } from "@/components/workspace/WorkspaceNotifications";
 import { getProfileInitials } from "@/lib/auth/avatar";
@@ -92,7 +100,11 @@ export function TalentProfileSheet({
   matchReason?: string | null;
 }) {
   const viewerId = useWorkspaceViewerId();
+  const industryWorkspace = useIsIndustryWorkspace();
+  const [blocked, setBlocked] = useState<{ slug: string; name: string } | null>(null);
   const [profile, setProfile] = useState<PublicTalentProfile | null | undefined>(undefined);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [stack, setStack] = useState<ProfilePage[]>([]);
   const [overlay, setOverlay] = useState<Overlay | null>(null);
   const [viewer, setViewer] = useState<number | null>(null);
@@ -103,13 +115,16 @@ export function TalentProfileSheet({
     let cancelled = false;
     void loadHomeProfile(slug, userId).then((result) => {
       if (cancelled) return;
+      setLoadError(null);
       setProfile(result.profile);
       if (result.profile) void recordProfileView(result.profile.id);
+    }).catch(() => {
+      if (!cancelled) setLoadError("We couldn’t load this profile. Check your connection and try again.");
     });
     return () => {
       cancelled = true;
     };
-  }, [slug, userId]);
+  }, [slug, userId, loadAttempt]);
 
   useEffect(() => {
     if (!notice) return;
@@ -133,8 +148,10 @@ export function TalentProfileSheet({
 
   const open = useCallback((next: ProfilePage) => setStack((current) => [...current, next]), []);
 
+  if (blocked?.slug === slug) return <div className="ui-state" role="status"><h2>{blocked.name} is blocked</h2><p>This person is hidden from your messages, search, Discover, and feeds. You can unblock them in settings.</p><Link className="ui-button ui-button--secondary" href={industryWorkspace ? "/dashboard/settings?section=privacy" : "/settings?section=resources"}>Manage blocked users</Link></div>;
+  if (loadError) return <div className="ui-state ui-state--error" role="alert"><h2>Profile unavailable</h2><p>{loadError}</p><button type="button" className="ui-button" onClick={() => { setLoadError(null); setLoadAttempt((value) => value + 1); }}>Try again</button></div>;
   if (profile === undefined) return <ProfileSkeleton />;
-  if (!profile) return <p className="home-panel-status">This profile could not be opened.</p>;
+  if (!profile) return <div className="ui-state"><h2>Profile unavailable</h2><p>This person may have changed their profile’s visibility or removed their account.</p></div>;
 
   const isSelf = profile.id === viewerId;
   const shots = headshots(profile);
@@ -165,6 +182,7 @@ export function TalentProfileSheet({
             <ProfileActions
               profile={profile}
               onNotice={setNotice}
+              onBlocked={() => { setBlocked({ slug, name: displayName(profile) }); setStack([]); setOverlay(null); setViewer(null); }}
               onLists={() => setOverlay({ kind: "lists" })}
               onMessage={() => setOverlay({ kind: "message" })}
             />
@@ -432,27 +450,38 @@ function ProfileActions({
   onNotice,
   onLists,
   onMessage,
+  onBlocked,
 }: {
   profile: PublicTalentProfile;
   onNotice: (message: string) => void;
   onLists: () => void;
   onMessage: () => void;
+  onBlocked: () => void;
 }) {
+  const industry = useIsIndustryWorkspace();
+  const viewerId = useWorkspaceViewerId();
+  const router = useRouter();
+  const disclosureId = useId();
+  const [reportOpen, setReportOpen] = useState(false);
+  const [confirmBlock, setConfirmBlock] = useState(false);
+  const [blockError, setBlockError] = useState<string | null>(null);
+  const canModerate = Boolean(viewerId && profile.id !== viewerId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(profile.id));
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [state, setState] = useState<TalentSaveState | null>(null);
-  const [busy, setBusy] = useState<"favorite" | "notify" | null>(null);
+  const [busy, setBusy] = useState<"favorite" | "notify" | "block" | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const path = `/profile/${encodeURIComponent(profile.username || profile.id)}`;
 
   useEffect(() => {
     let cancelled = false;
-    void fetchTalentSaveState(profile.id).then((next) => {
+    void (industry ? fetchIndustryTalentSaveState(profile.id) : fetchTalentSaveState(profile.id)).then((next) => {
       if (!cancelled) setState(next);
-    });
+    }).catch(() => { if (!cancelled) setState({ favorited: false, notifying: false, lists: [], error: "Saved state could not be loaded." }); });
     return () => {
       cancelled = true;
     };
-  }, [profile.id]);
+  }, [profile.id, industry, loadAttempt]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -464,22 +493,28 @@ function ProfileActions({
   }, [menuOpen]);
 
   async function favorite() {
+    if (busy || !state || state.error) return;
     setBusy("favorite");
-    const result = await toggleFavorite(profile.id);
-    setBusy(null);
-    if (result.error) return onNotice(result.error);
-    setState((current) => (current ? { ...current, favorited: result.favorited } : current));
-    onNotice(result.favorited ? "Added to Favorites." : "Removed from Favorites.");
+    try {
+      const result = industry ? await setIndustryTalentSaved(profile.id, !state.favorited) : await toggleFavorite(profile.id);
+      if (result.error) return onNotice(result.error);
+      setState((current) => current ? { ...current, favorited: result.favorited } : current);
+      onNotice(result.favorited ? "Added to Favorites." : "Removed from Favorites.");
+    } catch { onNotice("Could not update Favorites. Please try again."); }
+    finally { setBusy(null); }
   }
 
   async function notify() {
+    if (busy || !state || state.error) return;
     setMenuOpen(false);
     setBusy("notify");
-    const result = await toggleNotifyMe(profile.id);
-    setBusy(null);
-    if (result.error) return onNotice(result.error);
-    setState((current) => (current ? { ...current, notifying: result.notifying } : current));
-    onNotice(result.notifying ? `You'll be notified when ${displayName(profile).split(" ")[0]} posts.` : "Notifications turned off.");
+    try {
+      const result = await toggleNotifyMe(profile.id);
+      if (result.error) return onNotice(result.error);
+      setState((current) => current ? { ...current, notifying: result.notifying } : current);
+      onNotice(result.notifying ? `You'll be notified when ${displayName(profile).split(" ")[0]} posts.` : "Notifications turned off.");
+    } catch { onNotice("Could not update notifications. Please try again."); }
+    finally { setBusy(null); }
   }
 
   async function share() {
@@ -492,22 +527,38 @@ function ProfileActions({
         if (error instanceof DOMException && error.name === "AbortError") return;
       }
     }
-    await navigator.clipboard.writeText(url);
-    onNotice("Profile link copied.");
+    try { await navigator.clipboard.writeText(url); onNotice("Profile link copied."); }
+    catch { onNotice("Copy is unavailable. Open the full profile and copy its address."); }
   }
 
   async function copy() {
     setMenuOpen(false);
-    await navigator.clipboard.writeText(`${window.location.origin}${path}`);
-    onNotice("Profile link copied.");
+    try { await navigator.clipboard.writeText(`${window.location.origin}${path}`); onNotice("Profile link copied."); }
+    catch { onNotice("Copy is unavailable. Open the full profile and copy its address."); }
+  }
+
+  async function confirmBlocking() {
+    if (!canModerate || busy) return;
+    setBusy("block"); setBlockError(null);
+    try {
+      const result = await blockUser(profile.id);
+      if (!result.ok) { setBlockError(result.error); return; }
+      setConfirmBlock(false);
+      onBlocked();
+      window.dispatchEvent(new Event("motiion:blocked-users-changed"));
+      router.refresh();
+    } catch { setBlockError("Couldn’t block this person. Check your connection and try again."); }
+    finally { setBusy(null); }
   }
 
   const favorited = Boolean(state?.favorited);
   const notifying = Boolean(state?.notifying);
 
   return (
+    <>
+    {state?.error ? <p className="ui-notice" data-tone="error" role="alert">{state.error} <button type="button" onClick={() => setLoadAttempt(value => value + 1)}>Retry</button></p> : null}
     <div className="talent-profile__actions">
-      <button type="button" className="talent-profile__action" aria-pressed={favorited} disabled={busy === "favorite"} onClick={() => void favorite()}>
+      <button type="button" className="talent-profile__action" aria-pressed={favorited} disabled={Boolean(busy) || !state || Boolean(state.error)} onClick={() => void favorite()}>
         <Heart size={16} aria-hidden fill={favorited ? "currentColor" : "none"} />
         {favorited ? "Favorited" : "Favorite"}
       </button>
@@ -519,32 +570,36 @@ function ProfileActions({
         <MessageCircle size={16} aria-hidden />
         Message
       </button>
-      <div className="talent-profile__more" ref={menuRef}>
+      <div className="talent-profile__more" ref={menuRef} onKeyDown={(event) => { if (event.key === "Escape" && menuOpen) { event.preventDefault(); event.stopPropagation(); setMenuOpen(false); menuRef.current?.querySelector<HTMLButtonElement>("button")?.focus(); } }} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setMenuOpen(false); }}>
         <button
           type="button"
           className="talent-profile__action talent-profile__action--icon"
           aria-label="More actions"
-          aria-haspopup="menu"
+          aria-controls={disclosureId}
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((current) => !current)}
         >
           <MoreHorizontal size={18} aria-hidden />
         </button>
         {menuOpen ? (
-          <div className="talent-profile__menu" role="menu">
-            <button type="button" role="menuitem" disabled={busy === "notify"} onClick={() => void notify()}>
+          <div className="talent-profile__menu" id={disclosureId}>
+            <button type="button" disabled={busy === "notify"} onClick={() => void notify()}>
               {notifying ? <BellOff size={16} aria-hidden /> : <Bell size={16} aria-hidden />}
               {notifying ? "Stop notifying" : "Notify me"}
             </button>
-            <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onLists(); }}>
+            <button type="button" onClick={() => { setMenuOpen(false); onLists(); }}>
               <ListPlus size={16} aria-hidden />
-              Save to list
+              Save to {industry ? "roster" : "list"}
             </button>
-            <button type="button" role="menuitem" onClick={() => void copy()}>
+            <button type="button" onClick={() => void copy()}>
               <Link2 size={16} aria-hidden />
               Copy profile link
             </button>
-            <a role="menuitem" href={path} target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>
+            {canModerate ? <>
+              <button type="button" onClick={() => { setMenuOpen(false); setReportOpen(true); }}><Flag size={16} aria-hidden />Report profile</button>
+              <button type="button" onClick={() => { setMenuOpen(false); setConfirmBlock(true); setBlockError(null); }}><ShieldOff size={16} aria-hidden />Block person</button>
+            </> : null}
+            <a href={path} target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>
               <ExternalLink size={16} aria-hidden />
               Open full profile
             </a>
@@ -552,6 +607,11 @@ function ProfileActions({
         ) : null}
       </div>
     </div>
+    {canModerate ? <ReportContentDialog open={reportOpen} onClose={() => setReportOpen(false)} target={{ contentType: "profile", contentId: null, reportedUserId: profile.id, displayName: displayName(profile) }} /> : null}
+    <Dialog open={confirmBlock && canModerate} onClose={() => { if (busy !== "block") setConfirmBlock(false); }} label={`Block ${displayName(profile)}?`} alert>
+      <div className="ui-dialog-panel"><div className="ui-dialog-body space-y-4"><h2 className="text-lg font-semibold">Block {displayName(profile)}?</h2><p>You won’t see this person in your messages, search, Discover, or feeds. You can unblock them in settings.</p>{blockError ? <p className="ui-notice" data-tone="error" role="alert">{blockError}</p> : null}<div className="flex flex-wrap gap-3"><button type="button" className="ui-button ui-button--danger" disabled={busy === "block"} onClick={confirmBlocking}>{busy === "block" ? "Blocking…" : "Block person"}</button><button type="button" className="ui-button ui-button--secondary" disabled={busy === "block"} onClick={() => setConfirmBlock(false)}>Cancel</button></div></div></div>
+    </Dialog>
+    </>
   );
 }
 
@@ -601,6 +661,10 @@ function ListsSheet({
   onClose: () => void;
   onNotice: (message: string) => void;
 }) {
+  const industry = useIsIndustryWorkspace();
+  const { requirePro } = useIndustryProOptional();
+  const noun = industry ? "roster" : "list";
+  const [attempt, setAttempt] = useState(0);
   const [lists, setLists] = useState<TalentSaveState["lists"] | null>(null);
   const [pending, setPending] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -608,67 +672,77 @@ function ListsSheet({
 
   useEffect(() => {
     let cancelled = false;
-    void fetchTalentSaveState(profile.id).then((state) => {
+    void (industry ? fetchIndustryTalentSaveState(profile.id) : fetchTalentSaveState(profile.id)).then((state) => {
       if (cancelled) return;
-      setLists(state.lists);
+      if (!state.error) setLists(state.lists);
       setError(state.error);
-    });
+    }).catch(() => { if (!cancelled) setError("Could not load your saved lists. Please retry."); });
     return () => {
       cancelled = true;
     };
-  }, [profile.id]);
+  }, [profile.id, industry, attempt]);
 
   async function toggle(listId: string, includes: boolean) {
+    if (pending || (industry && !requirePro("roster_write"))) return;
     setPending(listId);
-    const result = includes
-      ? await removeFromDiscoverList(listId, profile.id)
-      : await addToDiscoverList(listId, profile.id);
-    setPending(null);
-    setError(result.error);
-    if (result.error) return;
-    setLists((current) => current?.map((list) => (list.id === listId ? { ...list, includes: !includes } : list)) ?? current);
+    try {
+      const result = industry ? await setIndustryRosterMembership(profile.id, listId, !includes)
+        : includes ? await removeFromDiscoverList(listId, profile.id) : await addToDiscoverList(listId, profile.id);
+      setError(result.error);
+      if (result.error) return;
+      setLists(current => current?.map(list => list.id === listId ? { ...list, includes: !includes } : list) ?? current);
+    } catch { setError("Could not update this selection. Please try again."); }
+    finally { setPending(null); }
   }
 
   async function create() {
     const name = draft.trim();
-    if (!name) return;
+    if (!name || pending || (industry && !requirePro("roster_write"))) return;
     setPending("new");
-    const created = await createDiscoverList(name);
-    if (!created.id) {
-      setPending(null);
-      setError(created.error);
-      return;
-    }
-    const added = await addToDiscoverList(created.id, profile.id);
-    setPending(null);
-    setError(added.error);
-    setDraft("");
-    setLists((current) => [{ id: created.id as string, name, includes: !added.error }, ...(current ?? [])]);
-    if (!added.error) onNotice(`Saved to ${name}.`);
+    try {
+      if (industry) {
+        const result = await createIndustryRosterForTalent(profile.id, name);
+        setError(result.error);
+        if (result.id) {
+          setLists(current => [{ id: result.id!, name, includes: result.includes }, ...(current ?? [])]);
+          setDraft("");
+          if (result.includes) onNotice(`Saved to ${name}.`);
+        }
+      } else {
+        const created = await createDiscoverList(name);
+        if (!created.id) { setError(created.error); return; }
+        const added = await addToDiscoverList(created.id, profile.id);
+        setError(added.error);
+        setDraft("");
+        setLists(current => [{ id: created.id!, name, includes: !added.error }, ...(current ?? [])]);
+        if (!added.error) onNotice(`Saved to ${name}.`);
+      }
+    } catch { setError("Could not save this list. Your name is still here; please try again."); }
+    finally { setPending(null); }
   }
 
   return (
     <PanelSheet
-      title="Save to list"
-      onClose={onClose}
+      title={`Save to ${noun}`}
+      onClose={() => { if (!pending) onClose(); }}
       footer={
         <form className="profile-sheet__compose" onSubmit={(event) => { event.preventDefault(); void create(); }}>
-          <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="New list name" aria-label="New list name" maxLength={80} />
-          <button type="submit" disabled={!draft.trim() || pending === "new"}>
+          <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={`New ${noun} name`} aria-label={`New ${noun} name`} maxLength={80} />
+          <button type="submit" disabled={!draft.trim() || Boolean(pending)}>
             {pending === "new" ? <Loader2 size={14} className="animate-spin" aria-hidden /> : <Plus size={14} aria-hidden />}
             Create
           </button>
         </form>
       }
     >
-      {error ? <p className="profile-sheet__error">{error}</p> : null}
-      {lists === null ? <p className="home-panel-status">Loading lists…</p> : null}
-      {lists?.length === 0 ? <p className="home-panel-status">No lists yet. Create one below.</p> : null}
+      {error ? <p className="profile-sheet__error" role="alert">{error} <button type="button" onClick={() => setAttempt(value => value + 1)}>Retry loading</button></p> : null}
+      {lists === null && !error ? <p className="home-panel-status">Loading {noun}s…</p> : null}
+      {lists?.length === 0 ? <p className="home-panel-status">No {noun}s yet. Create one below.</p> : null}
       {lists?.length ? (
         <ul className="home-profile__picks">
           {lists.map((list) => (
             <li key={list.id}>
-              <button type="button" className="home-profile-row" aria-pressed={list.includes} disabled={pending === list.id} onClick={() => void toggle(list.id, list.includes)}>
+              <button type="button" className="home-profile-row" aria-pressed={list.includes} disabled={Boolean(pending)} onClick={() => void toggle(list.id, list.includes)}>
                 <span className="home-profile-row__label">{list.name}</span>
                 <span className="profile-sheet__check" data-on={list.includes} aria-hidden>
                   {list.includes ? <Check size={14} /> : null}

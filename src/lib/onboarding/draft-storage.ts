@@ -14,14 +14,12 @@ export function loadOnboardingDraft(userId: string) {
     return null;
   }
 
-  const rawDraft = window.localStorage.getItem(getDraftKey(userId));
-
-  if (!rawDraft) {
-    return null;
-  }
-
   try {
+    const rawDraft = window.localStorage.getItem(getDraftKey(userId));
+    if (!rawDraft) return null;
     const draft = JSON.parse(rawDraft) as OnboardingDraft & { role?: string | null };
+    if (!draft || draft.userId !== userId || typeof draft.currentStep !== "string" ||
+        [draft.firstName, draft.lastName, draft.email, draft.username, draft.dateOfBirth, draft.displayName].some(value => typeof value !== "string")) return null;
     const legacyRole = draft.role;
     const role = normalizeOnboardingRole(legacyRole);
     const talentTypes = normalizeTalentTypes(draft.talentTypes, legacyRole);
@@ -47,7 +45,6 @@ export function loadOnboardingDraft(userId: string) {
       currentStep,
     };
   } catch {
-    window.localStorage.removeItem(getDraftKey(userId));
     return null;
   }
 }
@@ -57,7 +54,7 @@ export function saveOnboardingDraft(draft: OnboardingDraft) {
     return;
   }
 
-  window.localStorage.setItem(getDraftKey(draft.userId), JSON.stringify(draft));
+  try { window.localStorage.setItem(getDraftKey(draft.userId), JSON.stringify(draft)); return true; } catch { return false; }
 }
 
 export function clearOnboardingDraft(userId: string) {
@@ -65,5 +62,5 @@ export function clearOnboardingDraft(userId: string) {
     return;
   }
 
-  window.localStorage.removeItem(getDraftKey(userId));
+  try { window.localStorage.removeItem(getDraftKey(userId)); } catch { /* storage is optional */ }
 }

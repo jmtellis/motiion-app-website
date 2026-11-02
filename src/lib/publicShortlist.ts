@@ -22,6 +22,7 @@ async function callShortlistFunction<T>(body: Record<string, unknown>): Promise<
 
   const response = await fetch(`${config.supabaseUrl}/functions/v1/shortlist-share-public`, {
     method: "POST",
+    cache: "no-store",
     headers: {
       "Content-Type": "application/json",
       apikey: config.anon,

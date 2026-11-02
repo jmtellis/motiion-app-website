@@ -41,9 +41,8 @@ export function LandingAudienceTabs({
 
   // Keep roving focus anchored to the selection when it changes elsewhere
   // (query init, footer links, learn-more chooser).
-  useEffect(() => {
-    setFocusIndex(selectedIndex);
-  }, [selectedIndex]);
+  const [previousSelection, setPreviousSelection] = useState(selectedIndex);
+  if (previousSelection !== selectedIndex) { setPreviousSelection(selectedIndex); setFocusIndex(selectedIndex); }
 
   useEffect(() => {
     if (!shouldFocusRef.current) return;

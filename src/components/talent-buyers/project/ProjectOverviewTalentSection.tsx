@@ -308,7 +308,7 @@ export function ProjectOverviewTalentSection({
 
     return sortCandidates(searched, sortField, sortDirection);
   }, [
-    castingWorkflow?.candidates,
+    castingWorkflow,
     query,
     sortDirection,
     sortField,

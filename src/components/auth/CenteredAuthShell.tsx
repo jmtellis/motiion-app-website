@@ -8,7 +8,7 @@ import "@/components/landing/home-split-landing.css";
 import { HomeMarketingHeaderClient } from "@/components/landing/HomeMarketingHeaderClient";
 import "./centered-auth.css";
 
-export function CenteredAuthShell({ mode, children }: { mode: "login" | "signup"; children: ReactNode }) {
+export function CenteredAuthShell({ mode, children, title, subtitle, showAlternateAuth = true }: { mode: "login" | "signup"; children: ReactNode; title?: string; subtitle?: string; showAlternateAuth?: boolean }) {
   const signup = mode === "signup";
   return <SmoothScroll>
     <MarketingBodySurface dark />
@@ -19,12 +19,12 @@ export function CenteredAuthShell({ mode, children }: { mode: "login" | "signup"
         <div className="signup-split-form">
           <AuthLogo className="mb-6" />
           <div className="signup-split-form__header">
-            <h1 className="signup-split-form__title">{signup ? "Sign up for Motiion" : "Welcome back"}</h1>
+            <h1 className="signup-split-form__title">{title ?? (signup ? "Sign up for Motiion" : "Welcome back")}</h1>
             <p className="signup-split-form__subtitle centered-auth__subtitle">
-              {signup ? "Your next move starts here." : "Sign in to your Motiion account."}{" "}
-              <span>{signup ? "Already have an account?" : "Need to create an account?"}{" "}
+              {subtitle ?? (signup ? "Your next move starts here." : "Sign in to your Motiion account.")}{" "}
+              {showAlternateAuth && <span>{signup ? "Already have an account?" : "Need to create an account?"}{" "}
                 <AuthSplitLink href={signup ? "/login" : "/signup"} className="signup-split-text-btn signup-split-text-btn--accent">{signup ? "Log in" : "Sign up"}</AuthSplitLink>
-              </span>
+              </span>}
             </p>
           </div>
           {children}

@@ -1,32 +1,10 @@
 "use client";
-
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-
-import { createClientSupabaseClient } from "@/lib/supabase/client";
-
-export function SignOutButton({ className = "btn-outline text-sm" }: { className?: string }) {
-  const router = useRouter();
-  const [signingOut, setSigningOut] = useState(false);
-
-  async function handleSignOut() {
-    setSigningOut(true);
-    const supabase = createClientSupabaseClient();
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
-    router.push("/");
-    router.refresh();
-  }
-
-  return (
-    <button
-      type="button"
-      className={className}
-      onClick={handleSignOut}
-      disabled={signingOut}
-    >
-      {signingOut ? "Signing out…" : "Sign out"}
-    </button>
-  );
+import { useSignOut } from "@/hooks/use-sign-out";
+import { safeAuthReturnPath } from "@/lib/auth/redirects";
+export function SignOutButton({ className = "btn-outline text-sm", returnTo, label = "Sign out" }: { className?: string; returnTo?: string; label?: string }) {
+  const destination = safeAuthReturnPath(returnTo);
+  const { signOut, pending, error } = useSignOut(destination ? `/login?next=${encodeURIComponent(destination)}` : "/");
+  return <div><button type="button" className={className} onClick={signOut} disabled={pending} aria-busy={pending}>{pending ? "Signing out…" : label}</button>
+    {error ? <p className="text-sm text-[var(--ui-danger)]" role="alert">{error}</p> : null}
+  </div>;
 }

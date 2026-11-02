@@ -1,5 +1,7 @@
 "use server";
 
+import { headers } from "next/headers";
+import { resolveAuthCallbackOrigin } from "@/lib/auth/redirects";
 import { revalidatePath } from "next/cache";
 
 import { buildAuthDisplayNameMetadata } from "@/lib/auth/profile";
@@ -22,6 +24,9 @@ async function requireUser() {
 function refreshAccount() {
   revalidatePath("/settings");
   revalidatePath("/home");
+  revalidatePath("/profile/[slug]", "page");
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/", "layout");
 }
 
 export async function updateTalentAccount(input: {
@@ -108,10 +113,10 @@ export async function updateTalentEmail(
   const currentEmail = (auth.user.email ?? "").trim().toLowerCase();
   if (nextEmail === currentEmail) return { ok: true, confirmationRequired: false };
 
-  const { error } = await auth.supabase.auth.updateUser({ email: nextEmail });
+  const { error } = await auth.supabase.auth.updateUser({ email: nextEmail }, { emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.motiion.app"}/auth/callback?type=email_change` });
   if (error) return { ok: false, error: error.message };
 
-  await auth.supabase.from("profiles").update({ email: nextEmail }).eq("user_id", auth.user.id);
+  // Keep the verified account address until the authentication provider confirms the change.
   refreshAccount();
   return { ok: true, confirmationRequired: true };
 }
@@ -140,7 +145,10 @@ export async function updateTalentPassword(input: {
 export async function sendTalentPasswordReset(): Promise<{ ok: true } | { ok: false; error: string }> {
   const auth = await requireUser();
   if (!auth.supabase || !auth.user?.email) return { ok: false, error: auth.error ?? "You must be signed in." };
-  const { error } = await auth.supabase.auth.resetPasswordForEmail(auth.user.email);
+  const requestHeaders = await headers();
+  const configured = process.env.NEXT_PUBLIC_SITE_URL || "https://www.motiion.app";
+  const origin = resolveAuthCallbackOrigin(configured, requestHeaders.get("x-forwarded-host"), configured);
+  const { error } = await auth.supabase.auth.resetPasswordForEmail(auth.user.email, { redirectTo: `${origin}/auth/callback?flow=recovery` });
   if (error) return { ok: false, error: error.message };
   return { ok: true };
 }
@@ -148,14 +156,25 @@ export async function sendTalentPasswordReset(): Promise<{ ok: true } | { ok: fa
 export async function setTalentAccountPrivate(
   isPrivate: boolean,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (typeof isPrivate !== "boolean") return { ok: false, error: "Choose your profile visibility." };
   const auth = await requireUser();
   if (!auth.supabase || !auth.user) return { ok: false, error: auth.error ?? "You must be signed in." };
 
   const { error } = await auth.supabase
     .from("profiles")
     .update({ is_private: isPrivate, updated_at: new Date().toISOString() })
-    .eq("user_id", auth.user.id);
+    .eq("user_id", auth.user.id).select("user_id").single();
   if (error) return { ok: false, error: "Could not update privacy setting. Please try again." };
+  refreshAccount();
+  return { ok: true };
+}
+
+export async function setTalentAgeHidden(hideAge: boolean): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (typeof hideAge !== "boolean") return { ok: false, error: "Choose whether to hide your age." };
+  const auth = await requireUser();
+  if (!auth.supabase || !auth.user) return { ok: false, error: auth.error ?? "You must be signed in." };
+  const { error } = await auth.supabase.from("profiles").update({ hide_age: hideAge }).eq("user_id", auth.user.id).select("user_id").single();
+  if (error) return { ok: false, error: "Couldn’t update age visibility. Please try again." };
   refreshAccount();
   return { ok: true };
 }

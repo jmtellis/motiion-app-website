@@ -1,8 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 
-import { OpenInAppBar } from "@/components/product/OpenInAppBar";
+import Link from "next/link";
+import { Avatar } from "@/components/ui/Avatar";
+import { publicWebUrl } from "@/lib/links/external-url";
+import { getIosAppStoreUrl } from "@/lib/referrals/app-store";
+import "./public-profile.css";
 import { PublicPageAnalytics } from "@/components/analytics/PublicPageAnalytics";
 import { ProductShell } from "@/components/product/ProductShell";
 import type {
@@ -26,11 +30,15 @@ const monoLabelStyle: React.CSSProperties = {
   fontWeight: 500,
   letterSpacing: "0.08em",
   textTransform: "uppercase",
-  color: "#8a8a8a",
+  color: "var(--ui-muted)",
 };
 
-export default function ProfilePageClient({ profile }: { profile: PublicTalentProfile }) {
+export default function ProfilePageClient({ profile, viewerNavigation = null }: {
+  profile: PublicTalentProfile;
+  viewerNavigation?: { href: string; label: string } | null;
+}) {
   const [tab, setTab] = useState<ProfileTab>("about");
+  const tabId = useId();
 
   const displayName = profile.full_name?.trim() || "Talent profile";
   const headshot = profile.headshot_url;
@@ -41,16 +49,17 @@ export default function ProfilePageClient({ profile }: { profile: PublicTalentPr
   );
 
   return (
-    <ProductShell>
+    <ProductShell className="public-profile-theme" appearance="light">
       <PublicPageAnalytics
         eventName="profile_viewed"
         properties={{ slug: profile.username ?? profile.id }}
         path={`/profile/${profile.username ?? profile.id}`}
       />
-      <main style={{ display: "grid", gap: 20 }}>
+      <nav className="public-profile-nav" aria-label="Motiion"><Link href={viewerNavigation?.href ?? "/"} className="public-profile-brand">Motiion</Link><Link href={viewerNavigation?.href ?? "/login"}>{viewerNavigation?.label ?? "Log in"}</Link></nav>
+      <main className="public-profile" style={{ display: "grid", gap: 24 }}>
         <header className="product-profile-header" style={{ display: "grid", gap: 16 }}>
           <div style={{ display: "flex", gap: 14, alignItems: "center", minWidth: 0 }}>
-            <Headshot url={headshot} name={displayName} />
+            <Avatar src={headshot} name={displayName} size="xl" loading="eager" />
             <div style={{ minWidth: 0 }}>
               <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, letterSpacing: -0.5, lineHeight: 1.1 }}>
                 {displayName}
@@ -70,6 +79,7 @@ export default function ProfilePageClient({ profile }: { profile: PublicTalentPr
           <nav
             className="product-profile-tabs"
             aria-label="Profile sections"
+            role="tablist"
             style={{ display: "flex", gap: 20, flexWrap: "wrap" }}
           >
             {TABS.map((item) => (
@@ -77,8 +87,20 @@ export default function ProfilePageClient({ profile }: { profile: PublicTalentPr
                 key={item.id}
                 type="button"
                 className="product-tab"
+                role="tab"
+                id={`${tabId}-${item.id}`}
+                aria-controls={`${tabId}-panel`}
+                aria-selected={tab === item.id}
+                tabIndex={tab === item.id ? 0 : -1}
                 data-active={tab === item.id}
                 onClick={() => setTab(item.id)}
+                onKeyDown={event => {
+                  const index = TABS.findIndex(candidate => candidate.id === item.id);
+                  const next = event.key === "ArrowRight" ? (index + 1) % TABS.length : event.key === "ArrowLeft" ? (index + TABS.length - 1) % TABS.length : event.key === "Home" ? 0 : event.key === "End" ? TABS.length - 1 : null;
+                  if (next === null) return;
+                  event.preventDefault(); setTab(TABS[next].id);
+                  (event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>("[role=tab]")[next])?.focus();
+                }}
               >
                 {item.label}
               </button>
@@ -99,72 +121,30 @@ export default function ProfilePageClient({ profile }: { profile: PublicTalentPr
           </section>
         ) : null}
 
-        <section style={{ display: "grid", gap: 16 }}>
+        <section role="tabpanel" id={`${tabId}-panel`} aria-labelledby={`${tabId}-${tab}`} tabIndex={0} style={{ display: "grid", gap: 16 }}>
           {tab === "about" ? <AboutPanel profile={profile} styleTags={styleTags} /> : null}
           {tab === "resume" ? <ResumePanel experiences={profile.experiences} training={profile.training} resumeUrl={profile.resume_url} /> : null}
           {tab === "visuals" ? <VisualsPanel visuals={orderVisuals(profile.profile_visuals)} /> : null}
         </section>
 
-        <OpenInAppBar
-          href={`/profile/${profile.username ?? profile.id}`}
-          label="View full profile in Motiion"
-          hint="Download Motiion for the full profile experience — highlights, resume, and visuals."
-        />
+        <footer className="public-profile-join">
+          <div><h2>{viewerNavigation ? "Keep exploring" : "Connect through Motiion"}</h2><p>{viewerNavigation ? "Open your account to explore talent, opportunities, and your saved work." : "Show your work, find opportunities, and connect with the dance industry."}</p></div>
+          <div className="flex flex-wrap gap-3"><Link className="ui-button" href={viewerNavigation?.href ?? "/signup"}>{viewerNavigation?.label ?? "Join Motiion"}</Link><a className="ui-button ui-button--secondary" href={getIosAppStoreUrl()}>Get the iOS app</a></div>
+        </footer>
       </main>
     </ProductShell>
   );
 }
 
-function Headshot({ url, name }: { url: string | null; name: string }) {
-  if (url) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={url}
-        alt=""
-        width={72}
-        height={72}
-        style={{ width: 72, height: 72, borderRadius: 18, objectFit: "cover", flexShrink: 0, border: "1px solid var(--border-low)" }}
-      />
-    );
-  }
-
-  const initials =
-    name
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((p) => p[0]?.toUpperCase())
-      .join("") || "?";
-
-  return (
-    <div
-      aria-hidden
-      style={{
-        width: 72,
-        height: 72,
-        borderRadius: 18,
-        flexShrink: 0,
-        display: "grid",
-        placeItems: "center",
-        fontWeight: 800,
-        fontSize: 22,
-        background: "var(--surface-overlay)",
-        border: "1px solid var(--border-low)",
-      }}
-    >
-      {initials}
-    </div>
-  );
-}
 
 function HighlightCard({ highlight }: { highlight: ProfileHighlight }) {
   const image = highlight.image_url?.trim();
+  const [failedImage, setFailedImage] = useState<string | null>(null);
   return (
     <article className="product-highlight-card">
-      {image ? (
+      {image && image !== failedImage ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={image} alt="" />
+        <img src={image} alt="" loading="lazy" decoding="async" onError={() => setFailedImage(image)} />
       ) : (
         <div style={{ aspectRatio: "3/4", background: "var(--surface-accent)" }} />
       )}
@@ -186,6 +166,8 @@ function AboutPanel({
   styleTags: string[];
 }) {
   const skills = profile.skills ?? [];
+  const hasDetails = Boolean(profile.gender || profile.height || profile.union_status || styleTags.length || skills.length || publicWebUrl(profile.instagram_url) || publicWebUrl(profile.youtube_url));
+  if (!hasDetails) return <EmptySection message="This profile is getting started. Credits, skills, and other details will appear as they are added." />;
 
   return (
     <div className="product-glass-card" style={{ padding: 16, display: "grid", gap: 14 }}>
@@ -251,8 +233,8 @@ function TagGroup({ title, tags }: { title: string; tags: string[] }) {
 
 function SocialLinks({ profile }: { profile: PublicTalentProfile }) {
   const links = [
-    { label: "Instagram", url: profile.instagram_url },
-    { label: "YouTube", url: profile.youtube_url },
+    { label: "Instagram", url: publicWebUrl(profile.instagram_url) },
+    { label: "YouTube", url: publicWebUrl(profile.youtube_url) },
   ].filter((l) => l.url?.trim());
 
   if (links.length === 0) return null;
@@ -285,15 +267,16 @@ function ResumePanel({
   resumeUrl: string | null;
 }) {
   const grouped = groupExperiences(experiences);
+  const safeResumeUrl = publicWebUrl(resumeUrl);
 
-  if (grouped.length === 0 && training.length === 0 && !resumeUrl) {
+  if (grouped.length === 0 && training.length === 0 && !safeResumeUrl) {
     return <EmptySection message="Resume credits will appear here when added in Motiion." />;
   }
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
-      {resumeUrl ? (
-        <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="product-btn-primary" style={{ textAlign: "center" }}>
+      {safeResumeUrl ? (
+        <a href={safeResumeUrl} target="_blank" rel="noopener noreferrer" className="product-btn-primary" style={{ textAlign: "center" }}>
           View resume PDF
         </a>
       ) : null}
@@ -337,7 +320,8 @@ function ResumePanel({
 
 function ExperienceThumb({ experience }: { experience: ProfileExperience }) {
   const src = experience.tv_film_project_poster_url || experience.image_url;
-  if (!src) {
+  const [failedImage, setFailedImage] = useState<string | null>(null);
+  if (!src || src === failedImage) {
     return (
       <div
         style={{
@@ -356,6 +340,9 @@ function ExperienceThumb({ experience }: { experience: ProfileExperience }) {
     <img
       src={src}
       alt=""
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailedImage(src)}
       style={{ width: 44, height: 44, borderRadius: 10, objectFit: "cover", flexShrink: 0 }}
     />
   );
@@ -376,11 +363,11 @@ function VisualsPanel({ visuals }: { visuals: ProfileVisual[] }) {
               controls
               playsInline
               preload="metadata"
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              style={{ width: "100%", height: "100%", objectFit: "contain" }}
             />
             <span
               className="product-pill"
-              style={{ position: "absolute", top: 10, right: 10, background: "rgba(0,0,0,0.55)" }}
+              style={{ position: "absolute", top: 10, right: 10, background: "var(--ui-surface)" }}
             >
               {visualChipLabel(visual)}
             </span>

@@ -9,7 +9,8 @@ import { requireTalentAccount } from "@/lib/auth/session";
 import { fetchTalentSetupSnapshot } from "@/lib/talent/fetch-setup-snapshot";
 import { buildChecklist, primaryCtaTitle } from "@/lib/talent/profile-setup";
 
-export default async function PortfolioPage() {
+export default async function PortfolioPage({ searchParams }: { searchParams: Promise<{ panel?: string }> }) {
+  const query = await searchParams;
   const profile = await requireTalentAccount();
   const [portfolio, owner, setup, agencies] = await Promise.all([
     fetchOwnPortfolioProfile(profile),
@@ -82,6 +83,7 @@ export default async function PortfolioPage() {
 
   return (
     <PortfolioView
+      initialPanel={query.panel}
       profile={portfolio}
       owner={owner}
       editor={editor}

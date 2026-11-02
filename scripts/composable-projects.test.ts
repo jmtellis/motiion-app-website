@@ -30,7 +30,8 @@ const composableConfig = { composable: { version: 1, paused: [] } };
 const noCounts = { castingRoleCount: 0, castingCount: 0, rosterCount: 0, classSessionCount: 0 };
 
 describe("composable project marker", () => {
-  it("only treats rows with project_configuration.composable v1+ as composable", () => {
+  it("recognizes the current backend shell before legacy metadata exists", () => { assert.equal(isComposableProject({ is_composable: true }), true); });
+  it("recognizes canonical shells and valid legacy composable markers", () => {
     assert.equal(isComposableProject({ project_configuration: composableConfig }), true);
     assert.equal(isComposableProject({ project_configuration: { attachments: [] } }), false);
     assert.equal(isComposableProject({ project_configuration: { composable: { version: 0 } } }), false);
@@ -125,7 +126,7 @@ describe("smart primary CTA", () => {
     assert.equal(resolveSmartPrimaryAction(abilities, noCounts).label, "Add first role");
     assert.equal(
       resolveSmartPrimaryAction(abilities, { ...noCounts, castingRoleCount: 1 }).label,
-      "Invite dancers",
+      "Add people",
     );
   });
 

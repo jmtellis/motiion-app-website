@@ -139,6 +139,7 @@ export function VisualsPanel({ owner, actionsHost, onDirtyChange, onSaved }: Por
         sort: clip.kind === "other" ? otherSort++ : 0,
         duration_seconds: typeof clip.duration_seconds === "number" ? Math.round(clip.duration_seconds * 10) / 10 : null,
       }));
+      setClips(uploaded); // Keep completed uploads for a retry if the profile save fails.
       const result = await savePortfolioVisuals(payload);
       if (!result.ok) {
         setError(result.error);

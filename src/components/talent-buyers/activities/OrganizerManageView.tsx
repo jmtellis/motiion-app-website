@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import {
   Camera,
   CheckCircle2,
@@ -149,11 +149,11 @@ export function OrganizerManageView({
   const [leadInvitees, setLeadInvitees] = useState<DraftPersonRef[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  useEffect(() => {
-    if (!leadInviteGroupId && subgroups[0]?.id) {
-      setLeadInviteGroupId(subgroups[0].id);
-    }
-  }, [subgroups, leadInviteGroupId]);
+  const [previousSubgroups, setPreviousSubgroups] = useState(subgroups);
+  if (previousSubgroups !== subgroups) {
+    setPreviousSubgroups(subgroups);
+    if (leadInviteGroupId && !subgroups.some((group) => group.id === leadInviteGroupId)) setLeadInviteGroupId(subgroups[0]?.id ?? null);
+  }
   const streamRef = useRef<MediaStream | null>(null);
   const scanLoopRef = useRef<number | null>(null);
 

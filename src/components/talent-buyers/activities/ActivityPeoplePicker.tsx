@@ -30,15 +30,15 @@ export function ActivityPeoplePicker({
 
   useEffect(() => {
     const trimmed = query.trim();
-    if (trimmed.length < 2) {
-      setResults([]);
-      return;
-    }
+    if (trimmed.length < 2) return;
+    let cancelled = false;
     const handle = window.setTimeout(() => {
       startTransition(async () => {
+        try {
         const response = talentOnly
           ? await searchFeaturedTalentPeople(trimmed)
           : await searchActivityPeople(trimmed);
+        if (cancelled) return;
         if (!response.ok) {
           setError(response.error);
           setResults([]);
@@ -47,9 +47,10 @@ export function ActivityPeoplePicker({
         setError(null);
         const selectedIds = new Set(selected.map((person) => person.userId));
         setResults(response.people.filter((person) => !selectedIds.has(person.userId)));
+        } catch { if (!cancelled) setError("Search could not be loaded. Please retry."); }
       });
     }, 220);
-    return () => window.clearTimeout(handle);
+    return () => { cancelled = true; window.clearTimeout(handle); };
   }, [query, selected, talentOnly]);
 
   function addPerson(person: DraftPersonRef) {
@@ -73,7 +74,7 @@ export function ActivityPeoplePicker({
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/35" />
           <input
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => { setQuery(event.target.value); setResults([]); setError(null); }}
             placeholder={placeholder}
             className="w-full rounded-full border border-white/12 bg-black/30 py-2.5 pl-10 pr-3.5 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/30"
           />

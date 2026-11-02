@@ -177,6 +177,10 @@ export type CastingRoleForm = {
   heightMin: string;
   heightMax: string;
   agencyRequired: boolean;
+  slateRequired: boolean;
+  maxSubmissionLinks: number;
+  submissionLimit: number;
+  talentPaysTravel: boolean;
   unionStatus: string;
   peopleNeeded: string;
   visibility: ProjectVisibility;
@@ -257,6 +261,10 @@ export type CastingRoleRecord = {
   height_min: string | null;
   height_max: string | null;
   agency_required: boolean | null;
+  slate_required?: boolean | null;
+  max_submission_links?: number | null;
+  submission_limit?: number | null;
+  talent_pays_travel?: boolean | null;
   union_status: string | null;
   people_needed: number | null;
   client_match_filters: Record<string, unknown> | null;

@@ -43,6 +43,8 @@ export function IndustryApplicationReview({ application: a, profile, disabled = 
     <section className="industry-review-acquisition" aria-label="How they heard about Motiion">
       <h3>How they heard about Motiion</h3><p className="launch-note">Current profile information; not captured in the application version above.</p>
       <dl className="industry-review-fields">
+        {profile.username && <div><dt>Username</dt><dd>@{profile.username}</dd></div>}
+        {profile.dateOfBirth && <div><dt>Date of birth (private)</dt><dd>{profile.dateOfBirth}</dd></div>}
         <div><dt>Source</dt><dd>{unavailable ? "Unavailable" : profile.acquisitionSource}</dd></div>
         <div><dt>Supporting detail</dt><dd>{unavailable ? "Unavailable" : profile.acquisitionDetail}</dd></div>
       </dl>

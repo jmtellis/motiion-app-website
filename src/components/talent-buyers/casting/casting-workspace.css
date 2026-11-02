@@ -2720,3 +2720,22 @@
   font-size: 0.875rem;
   color: var(--industry-muted, rgb(255 255 255 / 0.5));
 }
+
+/* One mobile review scroll surface: the shortlist must not shrink cards to a sliver. */
+@media (max-width: 768px) {
+  .casting-review__layout { display: block; overflow-y: auto; }
+  .casting-review .casting-review__main { display: flex; flex: none; min-height: auto; overflow: visible; }
+  .casting-review .casting-review__toolbar { grid-template-columns: minmax(0, 1fr) auto; gap: 0.625rem; padding-block: 0.75rem; }
+  .casting-review__toolbar-spacer { display: none; }
+  .casting-review__toolbar-shortlist { grid-column: 1 / -1; width: 100%; }
+  .casting-review .casting-review__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); justify-items: stretch; padding-block: 1rem; }
+  .casting-review__grid > li { min-width: 0; }
+  .casting-review .casting-review__shortlist { flex: none; min-height: auto; width: 100%; }
+  .casting-review__shortlist .casting-find-talent-dropzone { min-height: 5rem; padding: 1rem; }
+  .casting-review .casting-review-focus-profile { flex: none; min-height: 28rem; overflow: visible; }
+  .casting-review .casting-review-focus-profile__stage { flex: none; min-height: 24rem; }
+}
+
+.casting-final-selects-rail__next { display: grid; gap: 0.625rem; }
+.casting-final-selects-rail__next > a { display: flex; align-items: center; justify-content: center; min-height: 2.75rem; text-align: center; }
+.casting-final-selects-rail__next .casting-final-selects-rail__text-btn { justify-self: start; min-height: 2.75rem; }

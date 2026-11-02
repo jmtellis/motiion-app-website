@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { FileUp, Loader2 } from "lucide-react";
 
 import { processOnboardingResume } from "@/app/onboarding/media-actions";
-import { renderPdfPagesToJpegBlobs } from "@/lib/onboarding/client-media";
+import { prepareResumeUpload } from "@/lib/onboarding/client-media";
 import type { OnboardingDraft } from "@/types/onboarding";
 
 const RESUME_PHASES = [
@@ -48,19 +48,8 @@ export function ResumeUploadField({
 
     startTransition(async () => {
       try {
-        const formData = new FormData();
-        formData.append("source", file);
-
-        const isPdf =
-          file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-
-        if (isPdf) {
-          setPhaseIndex(1);
-          const pages = await renderPdfPagesToJpegBlobs(file);
-          pages.forEach((page, index) => {
-            formData.append("pages", page, `resume_page_${index + 1}.jpg`);
-          });
-        }
+        setPhaseIndex(1);
+        const formData = await prepareResumeUpload(file);
 
         setPhaseIndex(2);
         const result = await processOnboardingResume(formData);

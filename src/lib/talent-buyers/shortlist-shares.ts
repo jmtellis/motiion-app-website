@@ -1,9 +1,13 @@
 "use server";
 
+import { z } from "zod";
+import { requireIndustryApproval } from "./require-industry-approval";
 import { revalidatePath } from "next/cache";
 
 import { trackServerEvent } from "@/lib/analytics/track-server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { readPagedRows } from "@/lib/supabase/read-pages";
+import { groupClientFeedback, tallyClientFeedback, type ClientFeedbackRow, type ClientReviewFeedback } from "./casting/client-feedback";
 
 export type ShortlistLinkDuration =
   | "two_hours"
@@ -46,7 +50,8 @@ function publicShortlistUrl(token: string): string {
 }
 
 function uniqueRoleIds(roleIds: string[]): string[] {
-  return [...new Set(roleIds.map((id) => id.trim()).filter(Boolean))];
+  if (!Array.isArray(roleIds)) return [];
+  return [...new Set(roleIds.filter((id): id is string => typeof id === "string").map((id) => id.trim()).filter(Boolean))];
 }
 
 function mapShareRow(row: Record<string, unknown>): ShortlistShareSummary {
@@ -101,6 +106,7 @@ export async function listShortlistSharesForRoles(roleIds: string[]): Promise<{
 }> {
   const ids = uniqueRoleIds(roleIds);
   if (!ids.length) return { shares: [] };
+  if (!z.array(z.string().uuid()).max(100).safeParse(ids).success) return { shares: [], error: "Choose valid casting roles." };
 
   const supabase = await createServerSupabaseClient();
   if (!supabase) return { shares: [], error: "Supabase is not configured." };
@@ -113,23 +119,18 @@ export async function listShortlistSharesForRoles(roleIds: string[]): Promise<{
   const access = await assertRoleAccess(ids[0], user.id);
   if (!access.ok) return { shares: [], error: access.error };
 
-  const { data, error } = await supabase
+  const now = new Date().toISOString();
+  const { data, error } = await readPagedRows((from, to) => supabase
     .from("casting_shortlist_shares")
     .select("id, role_id, role_ids, token, title, is_active, expires_at, expiration_kind, created_at")
     .eq("is_active", true)
     .eq("owner_user_id", user.id)
-    .order("created_at", { ascending: false });
-
+    .or(`role_id.in.(${ids.join(",")}),role_ids.ov.{${ids.join(",")}}`)
+    .or(`expires_at.is.null,expires_at.gt.${now}`)
+    .order("created_at", { ascending: false }).order("id")
+    .range(from, to));
   if (error) return { shares: [], error: error.message };
-
-  const idSet = new Set(ids);
-  const shares = (data ?? [])
-    .map((row) => mapShareRow(row as Record<string, unknown>))
-    .filter(
-      (share) => idSet.has(share.roleId) || share.roleIds.some((roleId) => idSet.has(roleId)),
-    );
-
-  return { shares };
+  return { shares: (data ?? []).map((row) => mapShareRow(row as Record<string, unknown>)) };
 }
 
 /** @deprecated Prefer listShortlistSharesForRoles */
@@ -160,13 +161,18 @@ export async function createRoleShortlistShare(input: {
   ]);
   if (!roleIds.length) return { ok: false, error: "Select at least one role." };
 
+  if (!z.array(z.string().uuid()).max(100).safeParse(roleIds).success || !["two_hours", "twenty_four_hours", "one_week", "until_casting_closes"].includes(input.duration)) return { ok: false, error: "Choose valid roles and a link duration." };
+  const approval = await requireIndustryApproval(user.id);
+  if (!approval.ok) return { ok: false, error: approval.error };
   const primaryRoleId = roleIds[0];
   const access = await assertRoleAccess(primaryRoleId, user.id);
   if (!access.ok || !access.projectId) return { ok: false, error: access.error };
 
+  const operator = await supabase.rpc("is_project_operator", { p_project_id: access.projectId, p_user_id: user.id });
+  if (operator.error || !operator.data) return { ok: false, error: "Only the project owner or an approved admin can share casting reviews." };
   for (const roleId of roleIds.slice(1)) {
     const nextAccess = await assertRoleAccess(roleId, user.id);
-    if (!nextAccess.ok) return { ok: false, error: nextAccess.error };
+    if (!nextAccess.ok || nextAccess.projectId !== access.projectId) return { ok: false, error: "Every role must belong to this project." };
   }
 
   const { data: share, error } = await supabase
@@ -185,11 +191,15 @@ export async function createRoleShortlistShare(input: {
 
   if (error || !share) return { ok: false, error: error?.message ?? "Could not create share link." };
 
-  await supabase.from("casting_shortlist_share_recipients").insert({
+  const recipient = await supabase.from("casting_shortlist_share_recipients").insert({
     share_id: share.id,
     display_name: "Client",
     sort_order: 0,
   });
+  if (recipient.error) {
+    await supabase.from("casting_shortlist_shares").update({ is_active: false }).eq("id", share.id).eq("owner_user_id", user.id);
+    return { ok: false, error: "Could not prepare client review. Please retry creating the link." };
+  }
 
   await trackServerEvent("shortlist_share_created", {
     role_id: primaryRoleId,
@@ -205,6 +215,7 @@ export async function createRoleShortlistShare(input: {
 }
 
 export async function deactivateShortlistShare(shareId: string): Promise<{ ok: boolean; error?: string }> {
+  if (!z.string().uuid().safeParse(shareId).success) return { ok: false, error: "Invalid review link." };
   const supabase = await createServerSupabaseClient();
   if (!supabase) return { ok: false, error: "Supabase is not configured." };
 
@@ -213,13 +224,14 @@ export async function deactivateShortlistShare(shareId: string): Promise<{ ok: b
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "You must be signed in." };
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("casting_shortlist_shares")
     .update({ is_active: false })
     .eq("id", shareId)
-    .eq("owner_user_id", user.id);
-
+    .eq("owner_user_id", user.id)
+    .select("id").maybeSingle();
   if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: "This link is unavailable or you do not own it." };
 
   revalidatePath("/library");
   revalidatePath("/projects");
@@ -232,40 +244,31 @@ export type ShortlistVoteTally = {
   noCount: number;
 };
 
-/** Aggregated client yes/no votes for submissions covered by active shares on these roles. */
+/** Saved feedback includes expired and revoked links, matching the current iOS history. */
+export async function fetchClientFeedbackForRoles(roleIds: string[]): Promise<{ feedback: ClientReviewFeedback[]; error?: string }> {
+  const ids = uniqueRoleIds(roleIds);
+  if (!ids.length) return { feedback: [] };
+  if (!z.array(z.string().uuid()).max(100).safeParse(ids).success) return { feedback: [], error: "Choose valid casting roles." };
+  const supabase = await createServerSupabaseClient();
+  if (!supabase) return { feedback: [], error: "Supabase is not configured." };
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { feedback: [], error: "You must be signed in." };
+  const access = await assertRoleAccess(ids[0], user.id);
+  if (!access.ok) return { feedback: [], error: access.error };
+  const { data, error } = await readPagedRows((from, to) => supabase
+    .from("casting_shortlist_share_votes")
+    .select("id,recipient_id,submission_id,vote,updated_at,submission:submissions!inner(role_id,talent(full_name)),reviewer:casting_shortlist_share_recipients(display_name)")
+    .in("submission.role_id", ids)
+    .order("id").range(from, to));
+  if (error) return { feedback: [], error: error.message };
+  return { feedback: groupClientFeedback((data ?? []) as unknown as ClientFeedbackRow[], ids) };
+}
+
 export async function fetchShortlistVoteTalliesForRoles(roleIds: string[]): Promise<{
   talliesBySubmissionId: Record<string, ShortlistVoteTally>;
   error?: string;
 }> {
-  const ids = uniqueRoleIds(roleIds);
-  if (!ids.length) return { talliesBySubmissionId: {} };
-
-  const listed = await listShortlistSharesForRoles(ids);
-  if (listed.error) return { talliesBySubmissionId: {}, error: listed.error };
-  if (!listed.shares.length) return { talliesBySubmissionId: {} };
-
-  const supabase = await createServerSupabaseClient();
-  if (!supabase) return { talliesBySubmissionId: {}, error: "Supabase is not configured." };
-
-  const shareIds = listed.shares.map((share) => share.id);
-  const { data, error } = await supabase
-    .from("casting_shortlist_share_votes")
-    .select("submission_id, vote")
-    .in("share_id", shareIds);
-
-  if (error) return { talliesBySubmissionId: {}, error: error.message };
-
-  const talliesBySubmissionId: Record<string, ShortlistVoteTally> = {};
-  for (const row of data ?? []) {
-    const submissionId = row.submission_id as string;
-    if (!submissionId) continue;
-    const current =
-      talliesBySubmissionId[submissionId] ??
-      ({ submissionId, yesCount: 0, noCount: 0 } satisfies ShortlistVoteTally);
-    if (row.vote === "yes") current.yesCount += 1;
-    if (row.vote === "no") current.noCount += 1;
-    talliesBySubmissionId[submissionId] = current;
-  }
-
-  return { talliesBySubmissionId };
+  const result = await fetchClientFeedbackForRoles(roleIds);
+  if (result.error) return { talliesBySubmissionId: {}, error: result.error };
+  return { talliesBySubmissionId: tallyClientFeedback(result.feedback) };
 }

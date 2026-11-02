@@ -1,5 +1,9 @@
 "use client";
 
+import { ReportContentDialog } from "@/components/settings/ReportContentDialog";
+import { blockUser } from "@/app/settings/moderation-actions";
+import { BLOCKED_USERS_CHANGED_EVENT } from "@/lib/app/blocked-visibility-model";
+import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -24,6 +28,7 @@ import {
   isMotiionBrandedThread,
   isOneWayMotiionThread,
 } from "@/lib/messaging/inbox-partition";
+import { conversationDraftKey, mergeConversationMessages, notifyInboxChanged } from "@/lib/messaging/reliability";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 import type { InboxConversation } from "@/types/app";
 
@@ -60,23 +65,37 @@ export function ConversationPane({
   conversation,
   currentUserId,
   variant = "default",
+  onBlocked,
 }: {
   conversation: InboxConversation;
   currentUserId: string;
   variant?: "default" | "dashboard";
+  onBlocked?: () => void;
 }) {
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [draft, setDraft] = useState(() => drafts.get(conversation.conversation_id) ?? "");
+  const [draft, setDraft] = useState(() => drafts.get(conversationDraftKey(currentUserId, conversation.conversation_id)) ?? "");
   const [failedId, setFailedId] = useState<string | null>(null);
   const [showPeople, setShowPeople] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmBlock, setConfirmBlock] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [blocking, setBlocking] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [blockError, setBlockError] = useState<string | null>(null);
+  const blockPending = useRef(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [pendingRequest, setPendingRequest] = useState(false);
   const [readOnlyNote, setReadOnlyNote] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const isDashboard = variant === "dashboard";
+  const requestId = useRef(0);
+  const alive = useRef(true);
+  const sending = useRef(false);
+  const pendingIds = useRef(new Set<string>());
+  const keepAtBottom = useRef(true);
+  const draftKey = conversationDraftKey(currentUserId, conversation.conversation_id);
   const conversationId = conversation.conversation_id;
   const displayName = inboxDisplayName(conversation);
   const group = isGroupThread(conversation);
@@ -84,36 +103,56 @@ export function ConversationPane({
   const profileHref = conversation.participant_user_id ? `/profile/${conversation.participant_user_id}` : null;
   const headerHref = profileHref ?? activityHref(conversation);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const dismiss = (event: PointerEvent) => { if (event.target instanceof Node && !menuRef.current?.contains(event.target)) setMenuOpen(false); };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); setMenuOpen(false); menuRef.current?.querySelector("button")?.focus(); } };
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("pointerdown", dismiss); document.removeEventListener("keydown", escape); };
+  }, [menuOpen]);
+
   const loadMessages = useCallback(async () => {
-    const result = await fetchConversationMessages(conversationId);
-    if (result.error) {
-      setError(result.error);
-    } else {
-      setError(null);
-      setMessages(result.messages);
-      setFailedId(null);
+    const id = ++requestId.current;
+    try {
+      const result = await fetchConversationMessages(conversationId);
+      if (!alive.current || id !== requestId.current) return;
+      if (result.error) setError("Couldn't refresh messages. Your conversation is still here. Try again.");
+      else {
+        setError(null);
+        setMessages((current) => mergeConversationMessages(current, result.messages, pendingIds.current));
+      }
+    } catch {
+      if (alive.current && id === requestId.current) setError("Couldn't load messages. Check your connection and retry.");
+    } finally {
+      if (alive.current && id === requestId.current) setLoading(false);
     }
-    setLoading(false);
+  }, [conversationId]);
+
+  const markRead = useCallback(async () => {
+    if (document.visibilityState !== "visible") return;
+    await markConversationRead(conversationId);
+    if (alive.current) notifyInboxChanged();
   }, [conversationId]);
 
   useEffect(() => {
-    let cancelled = false;
-    void fetchConversationMessages(conversationId).then((result) => {
-      if (cancelled) return;
-      if (result.error) {
-        setError(result.error);
-      } else {
-        setError(null);
-        setMessages(result.messages);
-        setFailedId(null);
-      }
-      setLoading(false);
-    });
-    void markConversationRead(conversationId);
-    return () => {
-      cancelled = true;
+    alive.current = true;
+    // This effect starts external I/O; message state changes only after its response.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadMessages();
+    void markRead();
+    const refresh = () => {
+      if (document.visibilityState === "visible") { void loadMessages(); void markRead(); }
     };
-  }, [conversationId]);
+    window.addEventListener("online", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      alive.current = false;
+      requestId.current += 1;
+      window.removeEventListener("online", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [loadMessages, markRead]);
 
   useEffect(() => {
     const supabase = createClientSupabaseClient();
@@ -124,22 +163,22 @@ export function ConversationPane({
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "*",
           schema: "public",
           table: "messages",
           filter: `conversation_id=eq.${conversationId}`,
         },
         () => {
           void loadMessages();
-          void markConversationRead(conversationId);
+          void markRead();
         },
       )
-      .subscribe();
+      .subscribe((status) => { if (status === "SUBSCRIBED") void loadMessages(); });
 
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [conversationId, loadMessages]);
+  }, [conversationId, loadMessages, markRead]);
 
   useEffect(() => {
     if (oneWay || !conversation.participant_user_id) return;
@@ -191,18 +230,22 @@ export function ConversationPane({
   }, [conversation.context_id, conversation.context_type, conversation.participant_user_id, oneWay]);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+    if (keepAtBottom.current) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages.length]);
 
   function updateDraft(value: string) {
     setDraft(value);
-    drafts.set(conversationId, value);
+    if (value.trim()) drafts.set(draftKey, value);
+    else drafts.delete(draftKey);
   }
 
   function handleSend(retryBody?: string) {
     const body = (retryBody ?? draft).trim();
-    if (!body || isSending || oneWay || pendingRequest || readOnlyNote) return;
+    if (!body || sending.current || (failedId && !retryBody) || oneWay || pendingRequest || readOnlyNote) return;
 
+    sending.current = true;
+    keepAtBottom.current = true;
+    requestId.current += 1;
     const optimisticId = `optimistic-${crypto.randomUUID()}`;
     const optimistic: ConversationMessage = {
       id: optimisticId,
@@ -216,6 +259,8 @@ export function ConversationPane({
       deleted_at: null,
     };
 
+    if (failedId) pendingIds.current.delete(failedId);
+    pendingIds.current.add(optimisticId);
     setMessages((current) => [...current.filter((message) => message.id !== failedId), optimistic]);
     setFailedId(null);
     if (!retryBody) updateDraft("");
@@ -224,16 +269,41 @@ export function ConversationPane({
     setIsSending(true);
     void sendConversationMessage(conversationId, body)
       .then(async (result) => {
+        if (!alive.current) return;
         if (!result.ok) {
           setFailedId(optimisticId);
           setError(result.error ?? "Could not send message.");
           return;
         }
-        drafts.delete(conversationId);
+        pendingIds.current.delete(optimisticId);
+        if (result.messageId) {
+          setMessages((current) => current.map((message) => message.id === optimisticId ? { ...message, id: result.messageId! } : message));
+        }
+        notifyInboxChanged();
         await loadMessages();
       })
-      .finally(() => setIsSending(false));
+      .catch(() => {
+        if (!alive.current) return;
+        setFailedId(optimisticId);
+        setError("Message wasn't confirmed. Check your connection before retrying.");
+      })
+      .finally(() => { sending.current = false; if (alive.current) setIsSending(false); });
   }
+
+  async function confirmBlockPerson() {
+    if (!conversation.participant_user_id || blockPending.current) return;
+    blockPending.current = true; setBlocking(true); setBlockError(null);
+    try {
+      const result = await blockUser(conversation.participant_user_id);
+      if (!alive.current) return;
+      if (!result.ok) { setBlockError(result.error); return; }
+      setConfirmBlock(false); setBlocked(true);
+      window.dispatchEvent(new Event(BLOCKED_USERS_CHANGED_EVENT));
+      notifyInboxChanged(); onBlocked?.();
+    } catch { if (alive.current) setBlockError("Could not confirm the block. Please retry."); }
+    finally { blockPending.current = false; if (alive.current) setBlocking(false); }
+  }
+  if (blocked) return <div className="p-6 text-[var(--ui-text)]"><p role="status">This person is blocked.</p><p className="mt-2 text-sm text-[var(--ui-muted)]">You can manage blocked users in Settings.</p><Link href="/settings" className="mt-4 inline-block underline">Open Settings</Link></div>;
 
   const composerHidden = oneWay || pendingRequest || Boolean(readOnlyNote);
   const composerNote = oneWay
@@ -244,7 +314,7 @@ export function ConversationPane({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className={`flex items-center gap-3 border-b px-4 py-3 ${isDashboard ? "border-white/8" : "border-[var(--line)]"}`}>
+      <header className={`flex items-center gap-3 border-b px-4 py-3 ${"border-[var(--ui-border)]"}`}>
         <PaneAvatar
           url={isMotiionBrandedThread(conversation) ? null : conversation.participant_avatar_url}
           name={displayName}
@@ -252,53 +322,54 @@ export function ConversationPane({
         />
         <div className="min-w-0 flex-1">
           {headerHref ? (
-            <Link href={headerHref} className={`block truncate text-sm font-semibold hover:underline ${isDashboard ? "text-white/92" : "text-[var(--ink)]"}`}>
+            <Link href={headerHref} className={`block truncate text-sm font-semibold hover:underline ${"text-[var(--ui-text)]"}`}>
               {displayName}
             </Link>
           ) : (
-            <p className={`truncate text-sm font-semibold ${isDashboard ? "text-white/92" : "text-[var(--ink)]"}`}>{displayName}</p>
+            <p className={`truncate text-sm font-semibold ${"text-[var(--ui-text)]"}`}>{displayName}</p>
           )}
           {conversation.context_title && !isMotiionBrandedThread(conversation) ? (
-            <p className={`truncate text-xs ${isDashboard ? "text-white/45" : "text-[var(--ink-soft)]"}`}>
+            <p className={`truncate text-xs ${"text-[var(--ui-muted)]"}`}>
               {conversation.context_title}
             </p>
           ) : null}
         </div>
-        {group ? (
-          <div className="relative">
+        {group || (conversation.participant_user_id && !oneWay && !isMotiionBrandedThread(conversation)) ? (
+          <div className="relative" ref={menuRef}>
             <button
               type="button"
               aria-label="Chat options"
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((open) => !open)}
-              className={`rounded-full px-2 py-1 text-lg leading-none ${isDashboard ? "text-white/70" : "text-[var(--ink)]"}`}
+              className={`rounded-full px-2 py-1 text-lg leading-none ${"text-[var(--ui-text)]"}`}
             >
               ···
             </button>
             {menuOpen ? (
-              <div className="absolute top-full right-0 z-10 mt-1 min-w-44 rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface)] p-1 text-sm shadow-lg">
-                <button
+              <div className="absolute top-full right-0 z-10 mt-1 min-w-44 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-1 text-sm shadow-lg">
+                {group ? <button
                   type="button"
-                  className="block w-full rounded-lg px-3 py-2 text-left hover:bg-[var(--ds-surface-raised)]"
+                  className="block w-full rounded-lg px-3 py-2 text-left hover:bg-[var(--ui-surface-soft)]"
                   onClick={() => {
                     setMenuOpen(false);
                     setShowPeople(true);
                   }}
                 >
                   View people in chat
-                </button>
+                </button> : <button type="button" className="block min-h-11 w-full rounded-lg px-3 py-2 text-left text-[var(--ui-danger)] hover:bg-[var(--ui-surface-soft)]" onClick={() => { setMenuOpen(false); setBlockError(null); setConfirmBlock(true); }}>Block person</button>}
+                {conversation.participant_user_id && !isMotiionBrandedThread(conversation) ? <button type="button" className="block min-h-11 w-full rounded-lg px-3 py-2 text-left hover:bg-[var(--ui-surface-soft)]" onClick={() => { setMenuOpen(false); setReportOpen(true); }}>Report conversation</button> : null}
               </div>
             ) : null}
           </div>
         ) : null}
       </header>
 
-      <div ref={scrollRef} className="min-w-0 flex-1 space-y-3 overflow-x-hidden overflow-y-auto px-4 py-4">
+      <div ref={scrollRef} onScroll={(event) => { const el = event.currentTarget; keepAtBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 96; }} className="min-w-0 flex-1 space-y-3 overflow-x-hidden overflow-y-auto px-4 py-4">
         {loading ? (
-          <p className={`text-sm ${isDashboard ? "text-white/45" : "text-[var(--ink-soft)]"}`}>Loading messages…</p>
+          <p className={`text-sm ${"text-[var(--ui-muted)]"}`}>Loading messages…</p>
         ) : null}
-        {!loading && !messages.length ? (
-          <p className={`text-sm ${isDashboard ? "text-white/45" : "text-[var(--ink-soft)]"}`}>
+        {!loading && !messages.length && !error ? (
+          <p className={`text-sm ${"text-[var(--ui-muted)]"}`}>
             No messages yet. Say hello!
           </p>
         ) : null}
@@ -309,12 +380,12 @@ export function ConversationPane({
           return (
             <div key={message.id} className="space-y-3">
               {showDay ? (
-                <p className="text-center text-[11px] font-medium tracking-wide text-[var(--ds-subtle)]">
+                <p className="text-center text-[11px] font-medium tracking-wide text-[var(--ui-muted)]">
                   {formatDayLabel(message.created_at)}
                 </p>
               ) : null}
               {isSystem ? (
-                <p className="px-6 text-center text-xs text-[var(--ds-muted)]">{message.body}</p>
+                <p className="px-6 text-center text-xs text-[var(--ui-muted)]">{message.body}</p>
               ) : (
                 <MessageRow
                   message={message}
@@ -331,11 +402,16 @@ export function ConversationPane({
         })}
       </div>
 
-      {error ? <p className="px-4 pb-2 text-xs text-amber-500">{error}</p> : null}
+      {error ? <p role="alert" className="px-4 pb-2 text-sm text-[var(--ui-danger)]">{error} {!failedId ? <button type="button" className="underline" onClick={() => void loadMessages()}>Retry</button> : <button type="button" className="underline" onClick={() => {
+        pendingIds.current.delete(failedId);
+        setMessages((current) => current.filter((message) => message.id !== failedId));
+        setFailedId(null);
+        setError(null);
+      }}>Discard failed message</button>}</p> : null}
 
-      <footer className={`border-t px-4 py-3 ${isDashboard ? "border-white/8" : "border-[var(--line)]"}`}>
+      <footer className={`border-t px-4 py-3 ${"border-[var(--ui-border)]"}`}>
         {composerHidden ? (
-          <p className={`py-2 text-center text-sm ${isDashboard ? "text-white/50" : "text-[var(--ds-muted)]"}`}>
+          <p className={`py-2 text-center text-sm ${"text-[var(--ui-muted)]"}`}>
             {composerNote}
           </p>
         ) : (
@@ -350,23 +426,21 @@ export function ConversationPane({
               value={draft}
               onChange={(event) => updateDraft(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
+                if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
                   event.preventDefault();
                   handleSend();
                 }
               }}
               rows={1}
               placeholder="Write a message…"
-              className={`min-h-[44px] flex-1 resize-none rounded-[var(--radius-field)] border px-3 py-2.5 text-sm outline-none ${
-                isDashboard
-                  ? "border-white/12 bg-white/4 text-white/90 placeholder:text-white/35 focus:border-white/30"
-                  : "border-[#262626] bg-[#0a0a0a] text-[#eaeaea] placeholder:text-[#5a5a5a] focus:border-white/30 focus:outline-none"
-              }`}
+              aria-label="Message"
+              maxLength={10000}
+              className="min-h-[44px] flex-1 resize-none rounded-[var(--ui-radius-control)] border border-[var(--ui-control-border)] bg-[var(--ui-surface)] px-3 py-2.5 text-sm text-[var(--ui-text)] placeholder:text-[var(--ui-muted)] focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
             />
             <button
               type="submit"
-              disabled={isSending || !draft.trim()}
-              className="rounded-full bg-[#fafafa] px-4 py-2.5 text-sm font-medium text-[#0a0a0a] transition-colors hover:bg-[#e6e6e6] disabled:opacity-40"
+              disabled={isSending || !draft.trim() || Boolean(failedId)}
+              className="ui-button"
             >
               {isSending ? "Sending…" : "Send"}
             </button>
@@ -374,6 +448,8 @@ export function ConversationPane({
         )}
       </footer>
 
+      {conversation.participant_user_id ? <ReportContentDialog open={reportOpen} target={{ contentType: "conversation", contentId: conversationId, reportedUserId: conversation.participant_user_id, displayName: "conversation" }} onClose={() => setReportOpen(false)} /> : null}
+      <Modal open={confirmBlock} alert title={`Block ${displayName}?`} onClose={() => { if (!blockPending.current) setConfirmBlock(false); }} size="sm" footer={<div className="flex justify-end gap-2"><button type="button" className="ui-button ui-button--secondary" disabled={blocking} onClick={() => setConfirmBlock(false)}>Cancel</button><button type="button" className="ui-button ui-button--danger" disabled={blocking} onClick={() => void confirmBlockPerson()}>{blocking ? "Blocking…" : "Block person"}</button></div>}><p className="text-sm text-[var(--ui-muted)]">Their conversation and profile will be hidden from your inbox and discovery. You can unblock them in Settings.</p>{blockError ? <p role="alert" className="mt-3 text-sm text-[var(--ui-danger)]">{blockError}</p> : null}</Modal>
       {showPeople ? (
         <ConversationParticipantsSheet conversationId={conversationId} onClose={() => setShowPeople(false)} />
       ) : null}
@@ -399,7 +475,6 @@ function MessageRow({
   onRetry: () => void;
 }) {
   const isMine = message.sender_id === currentUserId;
-  const isDashboard = variant === "dashboard";
   const showSender =
     group && !isMine && message.sender_id && previous?.sender_id !== message.sender_id;
   const linkPayload =
@@ -420,7 +495,7 @@ function MessageRow({
       ) : null}
       <div className={`flex min-w-0 max-w-[min(75%,100%)] flex-col ${isMine ? "items-end" : "items-start"}`}>
         {showSender ? (
-          <p className={`mb-1 text-[11px] font-medium ${isDashboard ? "text-white/55" : "text-[var(--ds-muted)]"}`}>
+          <p className={`mb-1 text-[11px] font-medium ${"text-[var(--ui-muted)]"}`}>
             {message.sender_name}
           </p>
         ) : null}
@@ -432,10 +507,8 @@ function MessageRow({
           <div
             className={`max-w-full min-w-0 overflow-hidden break-words rounded-2xl px-4 py-2.5 text-sm leading-relaxed [overflow-wrap:anywhere] ${
               isMine
-                ? "bg-[#fafafa] text-[#0a0a0a]"
-                : isDashboard
-                  ? "bg-white/8 text-white/88"
-                  : "bg-[#1e1e1e] text-[#eaeaea]"
+                ? "bg-[var(--ui-accent)] text-[var(--ui-on-accent)]"
+                : "bg-[var(--ui-surface-soft)] text-[var(--ui-text)]"
             }`}
           >
             {message.deleted_at ? (
@@ -445,18 +518,18 @@ function MessageRow({
             ) : (
               message.body
             )}
-            <p className={`mt-1 text-[10px] ${isMine ? "text-black/50" : isDashboard ? "text-white/40" : "text-[var(--ink-soft)]"}`}>
+            <p className={`mt-1 text-[10px] ${isMine ? "text-[var(--ui-on-accent)]/80" : "text-[var(--ui-muted)]"}`}>
               {formatTime(message.created_at)}
             </p>
           </div>
         )}
         {linkPayload || attachmentPayload ? (
-          <p className={`mt-1 text-[10px] ${isMine ? "text-white/40" : isDashboard ? "text-white/40" : "text-[var(--ink-soft)]"}`}>
+          <p className={`mt-1 text-[10px] ${"text-[var(--ui-muted)]"}`}>
             {formatTime(message.created_at)}
           </p>
         ) : null}
         {failed ? (
-          <button type="button" onClick={onRetry} className="mt-1 text-[11px] font-medium text-amber-500">
+          <button type="button" onClick={onRetry} className="mt-1 text-[11px] font-medium text-[var(--ui-danger)]">
             Couldn&apos;t send. Retry
           </button>
         ) : null}

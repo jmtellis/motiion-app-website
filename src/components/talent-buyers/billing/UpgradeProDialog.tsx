@@ -1,4 +1,5 @@
 "use client";
+import { INDUSTRY_OFFER } from "@/lib/billing/industry-offer";
 
 import { BadgeCheck } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
@@ -33,7 +34,9 @@ export function UpgradeProDialog({
     setError(null);
     trackClientEvent("paywall_cta_tapped", { feature, surface: "upgrade_dialog" });
     startTransition(async () => {
-      const result = await startIndustryCheckout();
+      let result: { url: string | null; error?: string };
+      try { result = await startIndustryCheckout(); }
+      catch { setError("Could not connect to billing. Please retry."); return; }
       if (result.url) {
         window.location.href = result.url;
         return;
@@ -58,21 +61,20 @@ export function UpgradeProDialog({
             onClick={upgrade}
           >
             <BadgeCheck className="size-3.5" aria-hidden />
-            {isPending ? "Redirecting…" : "Start 60-day free trial"}
+            {isPending ? "Redirecting…" : INDUSTRY_OFFER.cta}
           </button>
           <p className="upgrade-pro-dialog__meta">Cancel anytime from Settings → Billing.</p>
-          {error ? <p className="upgrade-pro-dialog__error">{error}</p> : null}
+          {error ? <p role="alert" className="upgrade-pro-dialog__error">{error}</p> : null}
         </div>
       }
     >
       <div className="upgrade-pro-dialog__card">
-        <p className="upgrade-pro-dialog__eyebrow">Industry Pro</p>
+        <p className="upgrade-pro-dialog__eyebrow">Industry Pro · {INDUSTRY_OFFER.priceWithPeriod}</p>
         <p className="upgrade-pro-dialog__copy">
           Publish unlimited castings, create unlimited rosters, share rosters with expiring access,
           and run client shortlist reviews across projects. Project groups include group schedules
           and contextual chats. Voice search is included. These Industry benefits are also included
-          with Dual Pro; invited participants can view and reply free. Enter a card to start — you
-          won’t be charged until the trial ends.
+          with Dual Pro; invited participants can view and reply free.
         </p>
       </div>
     </Modal>

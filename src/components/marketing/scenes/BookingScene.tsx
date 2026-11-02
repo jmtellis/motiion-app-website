@@ -23,8 +23,8 @@ const WORKSPACE_TABS = ["Breakdown", "Invite", "Review Submissions", "Client Rev
 function statusForBeat(beat: string, dancerId: string) {
   if (beat === "complete" || beat === "zoom" || beat === "finalize") {
     if (dancerId === "dancer-gabriela") return "Confirmed";
-    if (dancerId === "dancer-jay") return "Accepted";
-    return "Offer sent";
+    if (dancerId === "dancer-jay") return "Selected";
+    return "Selected";
   }
   if (beat === "availability") {
     if (dancerId === "dancer-gabriela") return "Availability requested";
@@ -110,7 +110,7 @@ export function BookingScene({ play, reduceMotion = false, playKey }: MarketingS
                       </div>
                       <span className="md-mock__btn md-mock__btn--ghost md-mock__btn--sm">
                         <Mail className="size-3.5" aria-hidden />
-                        Book
+                        Contact
                       </span>
                     </div>
                     <ul className="md-mock__final-people">

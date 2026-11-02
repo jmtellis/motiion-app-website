@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { isCastingFullyFinalized } from "@/lib/talent-buyers/casting/casting-completion";
 
 import { EditCastingProjectModal } from "@/components/talent-buyers/casting/EditCastingProjectModal";
 import { useRegisterBuyerChrome } from "@/components/talent-buyers/dashboard/BuyerPageChromeContext";
@@ -32,6 +33,7 @@ function TypedProjectWorkspaceShell({ children }: { children: ReactNode }) {
   const [editProjectOpen, setEditProjectOpen] = useState(false);
   const castingVisibility = castingWorkflow?.primaryCasting?.visibility;
   const castingLifecycleStatus = castingWorkflow?.primaryCasting?.status;
+  const castingFinalized = isCastingFullyFinalized(castingWorkflow?.roles ?? []);
   const isCastingProject = project.projectType === "casting";
   const isEventProject = project.projectType === "event";
   const usesStackedChrome = isCastingProject || isEventProject;
@@ -83,12 +85,13 @@ function TypedProjectWorkspaceShell({ children }: { children: ReactNode }) {
       <ProjectWorkspaceChromeEnd
         project={project}
         castingStatus={castingLifecycleStatus}
+        castingFinalized={castingFinalized}
         onEditProject={() => setEditProjectOpen(true)}
       />
     ),
     revision: `${projectId}:${projectTitle}:${project.isDraft}:${castingVisibility ?? ""}:${
       castingLifecycleStatus ?? ""
-    }:${castingTypeLabel}:${unionLabel}:${project.location ?? ""}`,
+    }:${castingFinalized}:${castingTypeLabel}:${unionLabel}:${project.location ?? ""}`,
   });
 
   return (

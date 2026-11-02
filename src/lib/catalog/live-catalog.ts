@@ -27,6 +27,7 @@ export type LiveCastPerson = {
 
 export type LiveHomeEvent = {
   id: string;
+  creator_id?: string | null;
   title: string;
   activity_date: string | null;
   start_time: string | null;
@@ -111,7 +112,7 @@ export async function readLiveFeaturedCollections(): Promise<LiveCollection[]> {
   });
 }
 
-const EVENT_SELECT = "id,title,activity_date,start_time,cover_image_url,sponsored_by_motiion,show_in_meet_the_cast";
+const EVENT_SELECT = "id,creator_id,title,activity_date,start_time,cover_image_url,sponsored_by_motiion,show_in_meet_the_cast";
 
 export async function readLiveHomeEvents(): Promise<{ sponsored: LiveHomeEvent[]; cast: LiveHomeEvent[] } | null> {
   if (!config()) return null;

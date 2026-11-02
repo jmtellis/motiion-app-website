@@ -10,7 +10,7 @@ export default async function BuyerTalentPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireHiringAccount();
+  const profile = await requireHiringAccount();
   const params = await searchParams;
   const canvas = await loadDiscoverCanvas(params, "/talent");
   if ("redirectTo" in canvas) redirect(canvas.redirectTo);
@@ -21,6 +21,8 @@ export default async function BuyerTalentPage({
   return (
     <div className="talent-navigator-route">
       <TalentDiscovery
+        key={profile.id}
+        currentUserId={profile.id}
         basePath="/talent"
         initialMode={initialMode}
         collectionTitle={canvas.collectionTitle}

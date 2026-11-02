@@ -19,12 +19,14 @@ export function HeadshotUploadGrid({
   onUploaded,
   onError,
   onBusyChange,
+  optional = false,
 }: {
   headshotUrls: string[];
   headshotOriginalUrls: string[];
   onUploaded: (urls: { headshotUrls: string[]; headshotOriginalUrls: string[] }) => void;
   onError: (message: string | null) => void;
   onBusyChange?: (busy: boolean) => void;
+  optional?: boolean;
 }) {
   const reduceMotion = useReducedMotion();
   const gridRef = useRef<HTMLDivElement>(null);
@@ -131,7 +133,7 @@ export function HeadshotUploadGrid({
             className="relative aspect-[3/4] overflow-hidden rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--tone)]"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img draggable={false} src={url} alt={`Headshot ${index + 1}`} className="size-full object-cover" />
+            <img draggable={false} src={url} alt={`${optional ? "Profile photo" : "Headshot"} ${index + 1}`} className="size-full object-cover" />
             <button
               type="button"
               aria-label="Remove headshot"
@@ -187,7 +189,7 @@ export function HeadshotUploadGrid({
             disabled={isPending}
             className="flex aspect-[3/4] flex-col items-center justify-center gap-2 rounded-[var(--radius-card)] border border-[var(--line)] shadow-sm bg-[var(--surface-card)] text-sm text-[var(--ink-soft)] transition hover:-translate-y-0.5 hover:shadow-md hover:border-[var(--ink-soft)] hover:bg-[var(--tone)] disabled:opacity-50"
           >
-            <ButtonProgress loading={isPending}><span className="flex flex-col items-center gap-2"><ImagePlus className="size-6" aria-hidden /><span>{filledCount === 0 ? "Add headshot" : "Add another"}</span></span></ButtonProgress>
+            <ButtonProgress loading={isPending}><span className="flex flex-col items-center gap-2"><ImagePlus className="size-6" aria-hidden /><span>{filledCount === 0 ? optional ? "Add photo" : "Add headshot" : "Add another"}</span></span></ButtonProgress>
           </button>
         ) : null}
       </div>
@@ -195,8 +197,8 @@ export function HeadshotUploadGrid({
       <p className="sr-only" aria-live="polite">{announcement}</p>
       <p className="text-sm text-[var(--ink-soft)]">
         {filledCount > 0
-          ? `${filledCount} of ${MAX_HEADSHOTS} headshots added. Drag the grip to reorder. Your first photo is your primary headshot.`
-          : "Add at least one headshot. JPEG or PNG, up to 12 MB each."}
+          ? `${filledCount} of ${MAX_HEADSHOTS} ${optional ? "photos" : "headshots"} added. Drag the grip to reorder. Your first photo is your primary ${optional ? "photo" : "headshot"}.`
+          : optional ? "A photo is optional. JPEG or PNG, up to 12 MB each." : "Add at least one headshot. JPEG or PNG, up to 12 MB each."}
       </p>
     </div>
   );

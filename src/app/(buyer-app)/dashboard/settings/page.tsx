@@ -1,3 +1,7 @@
+import { ReferralsPanel } from "@/components/settings/ReferralsPanel";
+import { NotificationSettingsSection } from "@/components/settings/NotificationSettingsSection";
+import { BlockedUsersSection } from "@/components/settings/BlockedUsersSection";
+import { AccountSignInSettings } from "@/components/settings/AccountSignInSettings";
 import { BuyerAppPage } from "@/components/talent-buyers/dashboard/BuyerAppPage";
 import { BuyerBillingSection } from "@/components/talent-buyers/dashboard/BuyerBillingSection";
 import { BuyerConnectPaymentsSection } from "@/components/talent-buyers/dashboard/BuyerConnectPaymentsSection";
@@ -19,7 +23,7 @@ import { getUserEntitlement } from "@/lib/billing/entitlement";
 export default async function BuyerSettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ connect?: string }>;
+  searchParams: Promise<{ connect?: string; section?: string; referral?: string }>;
 }) {
   const profile = await requireHiringAccount();
   const params = await searchParams;
@@ -39,7 +43,7 @@ export default async function BuyerSettingsPage({
         description="Manage your profile, your team, and the details that keep work running smoothly."
       />
       <IndustrySettings
-        initialSection={connectHighlight ? "payouts" : "account"}
+        initialSection={connectHighlight ? "payouts" : params.section === "workspace" ? "workspace" : params.section === "billing" ? "billing" : params.section === "privacy" ? "privacy" : params.section === "security" ? "security" : "account"}
         sections={[
           {
             id: "account",
@@ -57,6 +61,7 @@ export default async function BuyerSettingsPage({
                     profile={profile}
                     variant="dashboard"
                   />
+                  <AccountSignInSettings email={profile.email ?? ""} />
                   <div className="bd-muted-panel p-5">
                     <p className="text-sm font-medium text-white">Sign out</p>
                     <p className="mt-1 text-sm text-white/58">
@@ -87,6 +92,7 @@ export default async function BuyerSettingsPage({
                     tier={entitlement.tier}
                     active={entitlement.active}
                     currentPeriodEnd={entitlement.currentPeriodEnd}
+                    source={entitlement.source}
                   />
                 </section>
               </FadeInSection>
@@ -119,19 +125,21 @@ export default async function BuyerSettingsPage({
               <FadeInSection>
                 <section className="bd-page-section space-y-4">
                   <SectionHeader title="Workspace settings" size="dashboard" />
-                  <BuyerSettingsWorkspaceSections
+                  {settingsExtras.error ? <div role="alert" className="bd-muted-panel p-5"><p>{settingsExtras.error}</p><a href="/dashboard/settings?section=workspace" className="bd-btn-secondary mt-3">Try again</a></div> : <BuyerSettingsWorkspaceSections
                     organization={settingsExtras.organization}
                     teamMembers={settingsExtras.teamMembers}
-                    notificationPreferences={
-                      settingsExtras.notificationPreferences
-                    }
                     verificationLinks={settingsExtras.verificationLinks}
-                  />
+                  />}
                 </section>
               </FadeInSection>
             ),
           },
 
+          {
+            id: "privacy",
+            label: "Privacy & support",
+            content: (<div className="talent-settings-stack"><ReferralsPanel key={profile.id} accountId={profile.id} username={profile.username} initialCode={params.referral} /><NotificationSettingsSection accountId={profile.id} retryPath="/dashboard/settings?section=privacy" /><BlockedUsersSection accountId={profile.id} /><section className="space-y-4 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 text-[var(--ui-text)]"><h2 className="text-lg font-semibold">Data & privacy</h2><p>Read how Motiion handles your information or contact support about your account data.</p><div className="flex flex-wrap gap-3"><a href="/privacy" className="ui-button ui-button--secondary">Privacy policy</a><a href="mailto:support@motiion.io" className="ui-button ui-button--secondary">Contact support</a></div></section></div>),
+          },
           {
             id: "security",
             label: "Delete account",

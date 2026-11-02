@@ -2,13 +2,19 @@ import ExcelJS from "exceljs";
 import { PDFDocument, rgb } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import type { RosterDetail } from "./rosters";
+import { profileWebUrl } from "../app-links/motiion-profile";
 
-export async function rosterWorkbook(roster: RosterDetail) {
+export async function rosterWorkbook(roster: RosterDetail, siteUrl?: string) {
   const book = new ExcelJS.Workbook();
   book.creator = "Motiion";
   const sheet = book.addWorksheet("Talent roster");
   sheet.columns = [{ header: "Name", key: "name", width: 30 }, { header: "Location", key: "location", width: 28 }, { header: "Styles", key: "styles", width: 45 }, { header: "Profile", key: "profile", width: 60 }];
-  for (const person of roster.members) sheet.addRow({ name: person.name, location: person.location ?? "", styles: person.styles.join(", "), profile: person.slug ? `/talent/${person.slug}` : "" });
+  for (const person of roster.members) {
+    // Native professional-profile slugs are not public account usernames.
+    // Canonical account IDs resolve reliably across app and web sharing.
+    const url = person.userId ? profileWebUrl(person.userId, siteUrl) : null;
+    sheet.addRow({ name: person.name, location: person.location ?? "", styles: person.styles.join(", "), profile: url ? { text: url, hyperlink: url } : "" });
+  }
   sheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
   sheet.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF202828" } };
   sheet.views = [{ state: "frozen", ySplit: 1 }];

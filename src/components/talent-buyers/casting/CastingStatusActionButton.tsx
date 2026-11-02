@@ -15,9 +15,11 @@ import { isIndustryIdentityRequiredError } from "@/lib/talent-buyers/industry-id
 export function CastingStatusActionButton({
   projectId,
   status,
+  finalized = false,
 }: {
   projectId: string;
   status: CastingProjectStatus | null | undefined;
+  finalized?: boolean;
 }) {
   const router = useRouter();
   const { showToast } = useToast();
@@ -56,6 +58,8 @@ export function CastingStatusActionButton({
     });
   }
 
+  if (finalized) return <span className="buyer-chrome-bar__status-chip buyer-chrome-bar__status-chip--published" role="status">Finalized</span>;
+
   return (
     <>
       <button
@@ -64,7 +68,7 @@ export function CastingStatusActionButton({
         disabled={isPending}
         onClick={isPublished ? close : publish}
       >
-        {isPending ? (isPublished ? "Closing…" : "Publishing…") : isPublished ? "Close" : "Publish"}
+        {isPending ? (isPublished ? "Closing casting…" : "Publishing casting…") : isPublished ? "Close casting" : status === "closed" ? "Reopen casting" : "Publish casting"}
       </button>
       {gate}
     </>

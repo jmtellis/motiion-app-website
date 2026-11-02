@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Copy } from "lucide-react";
 
 import { getCastingPanelHeader } from "@/lib/talent-buyers/casting/casting-navigation";
@@ -10,15 +10,21 @@ import { castingWorkspaceHref } from "@/lib/talent-buyers/casting/casting-routes
 import type { CastingCandidate, CastingRole } from "@/lib/talent-buyers/casting/casting-types";
 import {
   listShortlistSharesForRoles,
+  fetchClientFeedbackForRoles,
+  deactivateShortlistShare,
   type ShortlistLinkDuration,
   type ShortlistShareSummary,
 } from "@/lib/talent-buyers/shortlist-shares";
 
+import type { ClientReviewFeedback } from "@/lib/talent-buyers/casting/client-feedback";
+
+import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 import { EmptyState } from "@/components/talent-buyers/dashboard/EmptyState";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
 import { useProjectWorkspace } from "@/components/talent-buyers/project/ProjectWorkspaceContext";
 
 import { CastingPanelHeader } from "./CastingPanelHeader";
+import { useCastingClientResource } from "./useCastingClientResource";
 import { CastingShortlistShareModal, SHORTLIST_SHARE_DURATIONS } from "./CastingShortlistShareModal";
 
 import "./casting-workspace.css";
@@ -43,21 +49,29 @@ function shareDurationLabel(expirationKind: string | null): string {
   return match?.label ?? expirationKind?.replaceAll("_", " ") ?? "—";
 }
 
-function replaceClientReviewQuery(role: string) {
-  const next = new URLSearchParams();
-  next.set("role", role);
-  const query = next.toString();
-  window.history.replaceState(null, "", query ? `?${query}` : window.location.pathname);
+const EMPTY_SHARES: ShortlistShareSummary[] = [];
+const EMPTY_FEEDBACK: ClientReviewFeedback[] = [];
+async function loadClientFeedback(roleIds: string[]) {
+  const result = await fetchClientFeedbackForRoles(roleIds);
+  return { data: result.feedback, error: result.error };
+}
+async function loadClientShares(roleIds: string[]) {
+  const result = await listShortlistSharesForRoles(roleIds);
+  return { data: result.shares, error: result.error };
 }
 
 export function CastingClientReviewPanel() {
   const searchParams = useSearchParams();
   const { showToast } = useToast();
-  const { projectId, castingWorkflow } = useProjectWorkspace();
+  const { projectId, project, castingWorkflow } = useProjectWorkspace();
+  const canReviewCasting = project.canReviewCasting !== false;
   const [shareOpen, setShareOpen] = useState(false);
-  const [shares, setShares] = useState<ShortlistShareSummary[]>([]);
-  const [sharesLoading, setSharesLoading] = useState(false);
-  const [roleFilter, setRoleFilter] = useState(searchParams.get("role") ?? "all");
+  const [revokeTarget, setRevokeTarget] = useState<ShortlistShareSummary | null>(null);
+  const [revokeError, setRevokeError] = useState<string | null>(null);
+  const [revoking, setRevoking] = useState(false);
+  const revokeBusy = useRef(false);
+  const [reviewerFilter, setReviewerFilter] = useState("all");
+  const requestedRole = searchParams.get("role") ?? "all";
 
   const workflow = castingWorkflow ?? {
     primaryCasting: null,
@@ -70,6 +84,8 @@ export function CastingClientReviewPanel() {
   };
 
   const roles = workflow.roles;
+  const requestedRoleMatch = roles.find((role) => role.id === requestedRole || role.bridgedRoleId === requestedRole);
+  const roleFilter = requestedRoleMatch ? requestedRoleMatch.bridgedRoleId ?? requestedRoleMatch.id : "all";
   const header = getCastingPanelHeader("client-review");
 
   const selectedRole =
@@ -108,6 +124,14 @@ export function CastingClientReviewPanel() {
     [roleFilter, roles, shareRoleIds, selectedRole],
   );
 
+  const { data: shares, error: sharesError, loading: sharesLoading, hasLoaded, refresh } =
+    useCastingClientResource(projectId, listRoleIds, EMPTY_SHARES, loadClientShares);
+
+  const { data: feedback, error: feedbackError, loading: feedbackLoading, hasLoaded: hasFeedback, refresh: refreshFeedback } =
+    useCastingClientResource(projectId, listRoleIds, EMPTY_FEEDBACK, loadClientFeedback);
+  const activeReviewer = feedback.some((review) => review.reviewerId === reviewerFilter) ? reviewerFilter : "all";
+  const visibleFeedback = activeReviewer === "all" ? feedback : feedback.filter((review) => review.reviewerId === activeReviewer);
+
   const shareRows = useMemo(() => {
     return shares.map((share) => {
       const ids = share.roleIds.length ? share.roleIds : [share.roleId];
@@ -138,31 +162,10 @@ export function CastingClientReviewPanel() {
     });
   }, [roles, shares, workflow.candidates]);
 
-  useEffect(() => {
-    if (!listRoleIds.length) {
-      setShares([]);
-      return;
-    }
-    let cancelled = false;
-
-    async function loadShares() {
-      setSharesLoading(true);
-      const result = await listShortlistSharesForRoles(listRoleIds);
-      if (!cancelled) {
-        setShares(result.shares);
-        setSharesLoading(false);
-      }
-    }
-
-    void loadShares();
-    return () => {
-      cancelled = true;
-    };
-  }, [listRoleIds.join("|")]);
-
   function setRoleFilterValue(next: string) {
-    setRoleFilter(next);
-    replaceClientReviewQuery(next);
+    const query = new URLSearchParams(searchParams.toString());
+    query.set("role", next);
+    window.history.replaceState(null, "", `${window.location.pathname}?${query}${window.location.hash}`);
   }
 
   async function copyShareUrl(url: string) {
@@ -171,6 +174,25 @@ export function CastingClientReviewPanel() {
       showToast({ message: "Link copied", variant: "success" });
     } catch {
       showToast({ message: "Could not copy link", variant: "error" });
+    }
+  }
+
+  async function revokeLink() {
+    if (!canReviewCasting || !revokeTarget || revokeBusy.current) return;
+    revokeBusy.current = true;
+    setRevoking(true);
+    setRevokeError(null);
+    try {
+      const result = await deactivateShortlistShare(revokeTarget.id);
+      if (!result.ok) throw new Error(result.error ?? "Could not revoke link.");
+      setRevokeTarget(null);
+      refresh();
+      showToast({ message: "Review link revoked. Submitted feedback is retained.", variant: "success" });
+    } catch (failure) {
+      setRevokeError(failure instanceof Error ? failure.message : "Could not revoke link. Check your connection and retry.");
+    } finally {
+      revokeBusy.current = false;
+      setRevoking(false);
     }
   }
 
@@ -221,16 +243,26 @@ export function CastingClientReviewPanel() {
       <CastingPanelHeader
         title={header.title}
         center={roleToggle}
-        primaryAction={primaryAction}
+        primaryAction={canReviewCasting ? primaryAction : undefined}
         onPrimaryAction={(actionId) => {
           if (actionId === "create-client-link") setShareOpen(true);
         }}
       />
 
       <div className="project-workspace__panel-body casting-client-review casting-client-review--share">
-        {sharesLoading ? (
-          <p className="text-sm text-white/50">Loading active links…</p>
-        ) : shareRows.length === 0 ? (
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p className="text-sm text-[var(--ui-muted)]" role="status">
+            {sharesLoading ? (hasLoaded ? "Refreshing client links…" : "Loading active links…") : "Active client links"}
+          </p>
+          <button type="button" className="bd-btn-secondary text-sm" disabled={sharesLoading} onClick={refresh}>Refresh</button>
+        </div>
+        {sharesError ? (
+          <div role="alert" className="mb-4 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3 text-sm text-[var(--ui-text)]">
+            <p>{sharesError}{hasLoaded ? " Previously loaded links are still shown." : ""}</p>
+            <button type="button" className="bd-btn-secondary mt-2" disabled={sharesLoading} onClick={refresh}>Try again</button>
+          </div>
+        ) : null}
+        {!hasLoaded ? null : shareRows.length === 0 ? (
           <EmptyState
             variant="dashboard"
             title="No active client links"
@@ -264,7 +296,7 @@ export function CastingClientReviewPanel() {
                     <td>
                       {peopleCount} {peopleCount === 1 ? "person" : "people"}
                     </td>
-                    <td>{durationLabel}</td>
+                    <td>{durationLabel}{share.expiresAt ? <time dateTime={share.expiresAt} className="block text-xs text-[var(--ui-muted)]">Expires {new Date(share.expiresAt).toLocaleString()}</time> : null}</td>
                     <td>
                       <div className="casting-client-review__link-cell">
                         <a
@@ -285,6 +317,7 @@ export function CastingClientReviewPanel() {
                         >
                           <Copy className="size-3.5" aria-hidden />
                         </button>
+                        {canReviewCasting ? <button type="button" className="bd-btn-secondary text-sm" onClick={() => { setRevokeError(null); setRevokeTarget(share); }}>Revoke</button> : null}
                       </div>
                     </td>
                   </tr>
@@ -293,7 +326,57 @@ export function CastingClientReviewPanel() {
             </table>
           </div>
         )}
+        <section className="mt-8 border-t border-[var(--ui-border)] pt-5" aria-labelledby="casting-client-feedback-heading">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 id="casting-client-feedback-heading" className="font-semibold text-[var(--ui-text)]">Client feedback</h3>
+              <p className="mt-1 text-sm text-[var(--ui-muted)]">Submitted decisions remain available after a review link expires or is revoked.</p>
+            </div>
+            <button type="button" className="bd-btn-secondary text-sm" disabled={feedbackLoading} onClick={refreshFeedback}>
+              {feedbackLoading ? "Loading feedback…" : "Refresh feedback"}
+            </button>
+          </div>
+          {feedbackError ? <div role="alert" className="mt-3 text-sm text-[var(--ui-danger)]">
+            {feedbackError}{hasFeedback ? " Previously loaded feedback is still shown." : ""}
+            <button type="button" className="bd-btn-secondary ml-2" disabled={feedbackLoading} onClick={refreshFeedback}>Try again</button>
+          </div> : null}
+          {hasFeedback && feedback.length === 0 ? <p className="mt-4 text-sm text-[var(--ui-muted)]">No client decisions submitted for these roles yet.</p> : null}
+          {feedback.length > 1 ? <label className="mt-4 flex items-center gap-2 text-sm text-[var(--ui-text)]">
+            Reviewer
+            <select className="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2" value={activeReviewer} onChange={(event) => setReviewerFilter(event.target.value)}>
+              <option value="all">All reviewers</option>
+              {feedback.map((review) => <option key={review.reviewerId} value={review.reviewerId}>{review.reviewerName}</option>)}
+            </select>
+          </label> : null}
+          <div className="mt-4 space-y-3">
+            {visibleFeedback.map((review) => {
+              const selected = review.choices.filter((choice) => choice.selected).length;
+              return <details key={review.reviewerId} className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4">
+                <summary className="cursor-pointer text-sm text-[var(--ui-text)]">
+                  <strong>{review.reviewerName}</strong> · {selected} selected · {review.choices.length - selected} passed
+                  <time dateTime={review.submittedAt} className="ml-2 text-xs text-[var(--ui-muted)]">{new Date(review.submittedAt).toLocaleString()}</time>
+                </summary>
+                <ul className="mt-3 divide-y divide-[var(--ui-border)]">
+                  {review.choices.map((choice) => {
+                    const role = roles.find((item) => roleMatchIds(item).includes(choice.roleId));
+                    const candidate = workflow.candidates.find((item) => item.submissionId === choice.submissionId);
+                    return <li key={choice.submissionId} className="flex items-start justify-between gap-3 py-3 text-sm">
+                      <div><p className="font-medium text-[var(--ui-text)]">{candidate?.displayName || choice.name}</p><p className="text-xs text-[var(--ui-muted)]">{role?.name ?? "Role"}</p></div>
+                      <span className={choice.selected ? "text-[var(--ui-success)]" : "text-[var(--ui-muted)]"}>{choice.selected ? "Selected" : "Passed"}</span>
+                    </li>;
+                  })}
+                </ul>
+              </details>;
+            })}
+          </div>
+        </section>
       </div>
+
+      <Modal open={Boolean(revokeTarget)} onClose={() => { if (!revokeBusy.current) setRevokeTarget(null); }} title="Revoke client review link?" size="sm"
+        footer={<button type="button" className="ui-button ui-button--danger" disabled={revoking} onClick={() => void revokeLink()}>{revoking ? "Revoking…" : "Revoke link"}</button>}>
+        <p className="text-sm text-[var(--ui-muted)]">Anyone with this link will lose access. Submitted client feedback remains available here. You can create a new link later.</p>
+        {revokeError ? <p role="alert" className="mt-3 text-sm text-[var(--ui-danger)]">{revokeError}</p> : null}
+      </Modal>
 
       <CastingShortlistShareModal
         open={shareOpen}
@@ -301,9 +384,7 @@ export function CastingClientReviewPanel() {
         roleIds={shareRoleIds}
         title={shareTitle}
         scopeLabel={shareScopeLabel}
-        onShareCreated={(share) => {
-          setShares((current) => [share, ...current.filter((item) => item.id !== share.id)]);
-        }}
+        onShareCreated={refresh}
       />
     </>
   );

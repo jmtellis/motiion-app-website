@@ -4,34 +4,43 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition, type FormEvent } from "react";
 
 import { createComposableProject } from "@/app/(buyer-app)/(paid)/projects/composable-actions";
+import { useHydrated } from "@/hooks/use-hydrated";
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 
 import "./composable-project.css";
 
 type FieldErrors = Partial<Record<"name" | "location" | "startDate" | "endDate" | "form", string>>;
 
-export function NewProjectSheet({
-  open,
-  onClose,
-  intent,
-}: {
-  open: boolean;
-  onClose: () => void;
-  /** Soft suggestion carried to the new project's home ("What do you need?"). */
-  intent?: "casting" | null;
-}) {
+type NewProjectProps = { open: boolean; onClose: () => void; userId: string; intent?: "casting" | null };
+function storedDraft(userId: string) {
+  try {
+    const value = JSON.parse(sessionStorage.getItem(`motiion:new-project:${userId}`) ?? "null");
+    if (value && typeof value === "object" && typeof value.requestId === "string" && /^[0-9a-f-]{36}$/i.test(value.requestId)) return value as { requestId: string; name?: string; location?: string; startDate?: string; endDate?: string };
+  } catch { /* Storage is optional. */ }
+  return { requestId: crypto.randomUUID() };
+}
+export function NewProjectSheet(props: NewProjectProps) {
+  const hydrated = useHydrated();
+  return hydrated ? <NewProjectForm key={props.userId} {...props} /> : null;
+}
+function NewProjectForm({ open, onClose, intent, userId }: NewProjectProps) {
+  const [draft] = useState(() => storedDraft(userId));
+  const [requestId, setRequestId] = useState(draft.requestId);
   const router = useRouter();
   const formId = useId();
-  const [name, setName] = useState("");
-  const [location, setLocation] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [name, setName] = useState(draft.name ?? "");
+  const [location, setLocation] = useState(draft.location ?? "");
+  const [startDate, setStartDate] = useState(draft.startDate ?? "");
+  const [endDate, setEndDate] = useState(draft.endDate ?? "");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [pending, startTransition] = useTransition();
 
   const nameRef = useRef<HTMLInputElement>(null);
 
   const canSubmit = name.trim().length > 0 && !pending;
+  useEffect(() => {
+    try { sessionStorage.setItem(`motiion:new-project:${userId}`, JSON.stringify({ requestId, name, location, startDate, endDate })); } catch { /* Keep the in-memory draft. */ }
+  }, [userId, requestId, name, location, startDate, endDate]);
 
   useEffect(() => {
     if (!open) return;
@@ -46,11 +55,12 @@ export function NewProjectSheet({
     setStartDate("");
     setEndDate("");
     setErrors({});
+    setRequestId(crypto.randomUUID());
+    try { sessionStorage.removeItem(`motiion:new-project:${userId}`); } catch { /* Storage optional. */ }
   }
 
   function handleClose() {
     if (pending) return;
-    reset();
     onClose();
   }
 
@@ -59,7 +69,7 @@ export function NewProjectSheet({
     if (!canSubmit) return;
     setErrors({});
     startTransition(async () => {
-      const result = await createComposableProject({ name, location, startDate, endDate });
+      const result = await createComposableProject({ requestId, name, location, startDate, endDate });
       if (!result.ok) {
         setErrors({ form: result.error, ...(result.fieldErrors ?? {}) });
         return;
@@ -146,7 +156,7 @@ export function NewProjectSheet({
           </label>
         </div>
 
-        <p className="composable-sheet__note">Projects are private. Only what you publish from an ability is visible to talent.</p>
+        <p className="composable-sheet__note">Projects are private. Only published castings and classes are visible to talent.</p>
 
         {errors.form && !errors.name && !errors.endDate ? (
           <p className="composable-field__error" role="alert">

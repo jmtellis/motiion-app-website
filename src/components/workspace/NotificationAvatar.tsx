@@ -1,9 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
-import { getProfileInitials } from "@/lib/auth/avatar";
+import { Avatar } from "@/components/ui/Avatar";
 import { fetchNotificationActors, type NotificationActor } from "@/lib/app/notification-actors";
 import { notificationActorName, notificationActorUserId } from "@/lib/app/notification-inbox";
 
@@ -22,20 +21,23 @@ export function useNotificationActors(rows: ActorSource[]) {
     return [...found];
   }, [rows]);
   const key = ids.join("|");
-  const [actors, setActors] = useState<Record<string, NotificationActor>>({});
+  const [snapshot, setSnapshot] = useState<{ key: string; actors: Record<string, NotificationActor> }>({ key: "", actors: {} });
 
   useEffect(() => {
     if (!key) return;
     let cancelled = false;
     void fetchNotificationActors(key.split("|")).then((next) => {
-      if (!cancelled) setActors(next);
+      if (!cancelled) setSnapshot({ key, actors: next });
+    }).catch(() => {
+      // Notification text remains useful when optional actor hydration fails.
+      if (!cancelled) setSnapshot({ key, actors: {} });
     });
     return () => {
       cancelled = true;
     };
   }, [key]);
 
-  return actors;
+  return snapshot.key === key ? snapshot.actors : {};
 }
 
 export function NotificationAvatar({
@@ -50,24 +52,5 @@ export function NotificationAvatar({
   const userId = notificationActorUserId(data);
   const actor = userId ? actors[userId] : undefined;
   const name = actor?.name || notificationActorName(data) || fallback || "";
-  const initials = getProfileInitials(name) || "?";
-
-  if (actor?.avatarUrl) {
-    return (
-      <Image
-        className="notification-avatar"
-        src={actor.avatarUrl}
-        alt=""
-        width={40}
-        height={40}
-        unoptimized
-      />
-    );
-  }
-
-  return (
-    <span className="notification-avatar" aria-hidden>
-      {initials}
-    </span>
-  );
+  return <Avatar className="notification-avatar" src={actor?.avatarUrl} name={name} />;
 }

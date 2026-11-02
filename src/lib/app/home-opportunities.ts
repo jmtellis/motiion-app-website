@@ -138,9 +138,9 @@ export const fetchOpenCalls = cache(async (): Promise<OpenCall[]> => {
 });
 
 /** Public upcoming classes and sessions for the next year (iOS home rails). */
-export const fetchUpcomingClassesAndSessions = cache(async (): Promise<PublicActivityItem[]> => {
+export const fetchUpcomingClassesAndSessions = cache(async (): Promise<{ activities: PublicActivityItem[]; error: string | null }> => {
   const supabase = await createServerSupabaseClient();
-  if (!supabase) return [];
+  if (!supabase) return { activities: [], error: "Classes and sessions are temporarily unavailable." };
   const today = new Date().toISOString().slice(0, 10);
   const end = new Date();
   end.setUTCFullYear(end.getUTCFullYear() + 1);
@@ -158,7 +158,7 @@ export const fetchUpcomingClassesAndSessions = cache(async (): Promise<PublicAct
     .limit(300);
   if (error) {
     console.error("Upcoming classes unavailable", error.code);
-    return [];
+    return { activities: [], error: "Classes and sessions could not be loaded. Please retry." };
   }
-  return (data ?? []).map((row) => ({ ...row, href: `/activity/${row.id}` })) as PublicActivityItem[];
+  return { activities: (data ?? []).map((row) => ({ ...row, href: `/activity/${row.id}` })) as PublicActivityItem[], error: null };
 });

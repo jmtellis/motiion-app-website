@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const WEEKDAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"] as const;
@@ -56,10 +56,13 @@ export function ProjectMultiDateCalendar({
   const selectedSet = new Set(values);
   const [viewMonth, setViewMonth] = useState(() => parseIsoDate(values[0] ?? "") ?? new Date());
 
-  useEffect(() => {
-    const parsed = parseIsoDate(values[0] ?? "");
+  const firstDate = values[0] ?? "";
+  const [previousDate, setPreviousDate] = useState(firstDate);
+  if (previousDate !== firstDate) {
+    setPreviousDate(firstDate);
+    const parsed = parseIsoDate(firstDate);
     if (parsed) setViewMonth(parsed);
-  }, [values]);
+  }
 
   const days = buildCalendarDays(viewMonth);
   const today = new Date();

@@ -1,5 +1,11 @@
 import type { CastingProjectStatus, CastingVisibility } from "./casting-types";
 
+export function normalizeCastingVisibility(value: string | null | undefined): CastingVisibility {
+  if (value === "public" || value === "unlisted" || value === "private") return value;
+  if (value === "invitation_only" || value === "invite_only") return "invitation_only";
+  return "private";
+}
+
 /** DB `castings.status` values that allow invites and referrals. */
 export function castingAcceptsOutreach(status: string | null | undefined): boolean {
   return status === "open" || status === "published";
@@ -17,6 +23,7 @@ export function isCastingPublicVisibility(visibility: CastingVisibility | undefi
 }
 
 export function castingVisibilityLabel(visibility: CastingVisibility | undefined): string {
+  if (visibility === "unlisted") return "Unlisted";
   return isCastingPublicVisibility(visibility) ? "Public" : "Private";
 }
 
@@ -24,6 +31,8 @@ export function castingVisibilityHint(visibility: CastingVisibility | undefined)
   switch (visibility) {
     case "public":
       return "Open call — talent can discover and submit.";
+    case "unlisted":
+      return "Unlisted — shared by link and hidden from discovery. Submission requirements still apply.";
     case "private":
       return "Private — talent can only submit when invited.";
     case "invitation_only":

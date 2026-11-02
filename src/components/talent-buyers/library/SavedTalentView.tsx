@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { LayoutGrid, Rows3, Search } from "lucide-react";
 
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
@@ -21,6 +21,15 @@ import "./library.css";
 type BrowseLayout = "grid" | "table";
 
 const BROWSE_LAYOUT_KEY = "library-browse-layout";
+function subscribeLayout(notify: () => void) {
+  window.addEventListener("storage", notify);
+  window.addEventListener("motiion-library-layout", notify);
+  return () => { window.removeEventListener("storage", notify); window.removeEventListener("motiion-library-layout", notify); };
+}
+function readLayout(): BrowseLayout {
+  try { return window.localStorage.getItem(BROWSE_LAYOUT_KEY) === "table" ? "table" : "grid"; }
+  catch { return "grid"; }
+}
 
 export function SavedTalentView({
   talent: initialTalent,
@@ -38,20 +47,20 @@ export function SavedTalentView({
   const [query, setQuery] = useState("");
   const [collectionFilter, setCollectionFilter] = useState("all");
   const [sort, setSort] = useState<"recent" | "name">("recent");
-  const [browseLayout, setBrowseLayout] = useState<BrowseLayout>("grid");
+  const storedLayout = useSyncExternalStore(subscribeLayout, readLayout, () => "grid" as BrowseLayout);
+  const [localLayout, setLocalLayout] = useState<BrowseLayout | null>(null);
+  const browseLayout = localLayout ?? storedLayout;
 
-  useEffect(() => {
+  const [lastSnapshot, setLastSnapshot] = useState(initialTalent);
+  if (lastSnapshot !== initialTalent) {
+    setLastSnapshot(initialTalent);
     setTalent(initialTalent);
-  }, [initialTalent]);
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem(BROWSE_LAYOUT_KEY);
-    if (stored === "grid" || stored === "table") setBrowseLayout(stored);
-  }, []);
+  }
 
   function setBrowseLayoutAndPersist(next: BrowseLayout) {
-    setBrowseLayout(next);
-    window.localStorage.setItem(BROWSE_LAYOUT_KEY, next);
+    setLocalLayout(next);
+    try { window.localStorage.setItem(BROWSE_LAYOUT_KEY, next); window.dispatchEvent(new Event("motiion-library-layout")); }
+    catch { /* Keep the preference for this visit when storage is unavailable. */ }
   }
 
   const filtered = useMemo(() => {
@@ -94,6 +103,7 @@ export function SavedTalentView({
           <Search className="library-search-wrap__icon" aria-hidden />
           <input
             type="search"
+            aria-label="Search saved talent"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             className="library-search"

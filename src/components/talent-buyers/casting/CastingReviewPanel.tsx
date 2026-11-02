@@ -1,7 +1,9 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import Link from "next/link";
+import { castingReviewEmptyState, isCastingFullyFinalized } from "@/lib/talent-buyers/casting/casting-completion";
+import { useMemo, useState, useTransition } from "react";
 import { ListPlus, X } from "lucide-react";
 
 import {
@@ -71,7 +73,8 @@ export function CastingReviewPanel() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
-  const { projectId, castingWorkflow, currentUserId } = useProjectWorkspace();
+  const { projectId, project, castingWorkflow, currentUserId } = useProjectWorkspace();
+  const canReview = project.canReviewCasting !== false;
   const [viewMode, setViewMode] = useState<ReviewViewMode>("cards");
   const [activeCandidate, setActiveCandidate] =
     useState<CastingCandidate | null>(null);
@@ -113,21 +116,18 @@ export function CastingReviewPanel() {
     [roleScopedCandidates],
   );
 
+  const reviewFinalized = isCastingFullyFinalized(workflow.roles.filter((role) => roleFilter === "all" || role.id === roleFilter || role.bridgedRoleId === roleFilter));
+  const reviewEmptyState = castingReviewEmptyState({ finalized: reviewFinalized, reviewedCount: roleScopedCandidates.length, shortlistedCount: shortlisted.length });
+
   const shortlistedIds = useMemo(
     () => new Set(shortlisted.map((candidate) => candidate.id)),
     [shortlisted],
   );
 
-  useEffect(() => {
-    if (!pendingShortlistIds.size) return;
-    setPendingShortlistIds((current) => {
-      const next = new Set<string>();
-      for (const id of current) {
-        if (!shortlistedIds.has(id)) next.add(id);
-      }
-      return next.size === current.size ? current : next;
-    });
-  }, [shortlistedIds, pendingShortlistIds.size]);
+  const confirmedPendingIds = [...pendingShortlistIds].filter((id) => shortlistedIds.has(id));
+  if (confirmedPendingIds.length) {
+    setPendingShortlistIds(new Set([...pendingShortlistIds].filter((id) => !shortlistedIds.has(id))));
+  }
 
   const submissions = useMemo(
     () =>
@@ -149,21 +149,15 @@ export function CastingReviewPanel() {
     replaceReviewQuery({ role: next });
   }
 
-  useEffect(() => {
-    if (!submissions.length) {
-      setFocusIndex(0);
-      return;
-    }
-    if (focusIndex > submissions.length - 1) {
-      setFocusIndex(submissions.length - 1);
-    }
-  }, [submissions.length, focusIndex]);
+  const lastIndex = Math.max(0, submissions.length - 1);
+  if (focusIndex > lastIndex) setFocusIndex(lastIndex);
 
   const focusCandidate =
     submissions[Math.min(focusIndex, Math.max(submissions.length - 1, 0))] ??
     null;
 
   function moveCandidate(candidateId: string, status: CastingCandidateStatus) {
+    if (!canReview) return;
     startTransition(async () => {
       const result = await updateCastingCandidateStatus({
         projectId,
@@ -253,6 +247,7 @@ export function CastingReviewPanel() {
           viewMode === "focus" ? " casting-review--focus" : ""
         }`}
       >
+        {!canReview && <p className="ui-state" role="status">You can view applicants. The project owner or an admin manages review decisions.</p>}
         <div className="casting-review__layout">
           <div className="casting-review__main">
             <div className="casting-review__toolbar">
@@ -271,7 +266,7 @@ export function CastingReviewPanel() {
                 <button
                   type="button"
                   className="buyer-chrome-bar__cta casting-review__toolbar-shortlist"
-                  disabled={isPending}
+                  disabled={isPending || !canReview}
                   onClick={() => shortlistCandidate(focusCandidate)}
                 >
                   Shortlist
@@ -284,26 +279,11 @@ export function CastingReviewPanel() {
             {!submissions.length ? (
               <EmptyState
                 variant="dashboard"
-                title={
-                  shortlisted.length || roleScopedCandidates.length
-                    ? "All submissions are shortlisted"
-                    : "No submissions to review"
-                }
-                description={
-                  shortlisted.length || roleScopedCandidates.length
-                    ? "Remove someone from the shortlist rail to keep reviewing, or continue to Cast."
-                    : "Invite talent and wait for submissions, or add candidates from Discover."
-                }
-                actionLabel={
-                  shortlisted.length || roleScopedCandidates.length
-                    ? undefined
-                    : "Find talent"
-                }
-                actionHref={
-                  shortlisted.length || roleScopedCandidates.length
-                    ? undefined
-                    : `/projects/${projectId}/workspace/talent-search`
-                }
+                title={reviewEmptyState.title}
+                description={reviewEmptyState.description}
+                actionLabel={reviewEmptyState.action === "cast" ? "View final selections" : "Invite talent"}
+                actionHref={`/projects/${projectId}/workspace/${reviewEmptyState.action === "cast" ? "cast" : "talent-search"}`}
+
               />
             ) : null}
 
@@ -313,7 +293,7 @@ export function CastingReviewPanel() {
                   <li key={candidate.id}>
                     <article
                       className="casting-candidate-card casting-review__draggable-card"
-                      draggable
+                      draggable={canReview}
                       onDragStart={(event) => {
                         event.dataTransfer.setData(
                           PROFILE_DRAG_MIME,
@@ -355,7 +335,7 @@ export function CastingReviewPanel() {
                         type="button"
                         className="casting-review__card-shortlist"
                         disabled={
-                          isPending || pendingShortlistIds.has(candidate.id)
+                          isPending || !canReview || pendingShortlistIds.has(candidate.id)
                         }
                         aria-label={`Add ${candidate.displayName} to shortlist`}
                         title="Add to shortlist"
@@ -410,13 +390,13 @@ export function CastingReviewPanel() {
           >
             <div className="casting-find-talent-board__section-header">
               <h3 id="casting-shortlist-heading">
-                Shortlist ({shortlisted.length})
+                {reviewFinalized && !shortlisted.length ? "Review complete" : `Shortlist (${shortlisted.length})`}
               </h3>
             </div>
 
             {shortlisted.length === 0 ? (
               <div className="casting-find-talent-dropzone">
-                <p>Drop submissions here to shortlist.</p>
+                {reviewFinalized ? <><p>Final selections are saved in Cast.</p><Link href={`/projects/${projectId}/workspace/cast`} className="bd-btn-secondary">View selections</Link></> : <p>Use the shortlist button on a submission, or drag it here.</p>}
               </div>
             ) : (
               <ul className="casting-find-talent-invite-list">
@@ -455,7 +435,7 @@ export function CastingReviewPanel() {
                       onClick={() => unshortlistCandidate(candidate)}
                       aria-label={`Remove ${candidate.displayName} from shortlist`}
                       title="Remove from shortlist"
-                      disabled={isPending}
+                      disabled={isPending || !canReview}
                     >
                       <X className="size-3.5" aria-hidden />
                     </button>

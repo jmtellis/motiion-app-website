@@ -20,12 +20,13 @@ export async function resolveClientLoginDestination(supabase: SupabaseClient): P
 
   if (!user) return "/login";
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("account_type, onboarding_completed_at, enabled_shells, active_shell")
     .eq("user_id", user.id)
     .maybeSingle();
 
+  if (profileError) throw new Error("Could not load your account. Please try again.");
   if (!profile) {
     const intent = signupIntentFromUserMetadata(user);
     if (intent) {

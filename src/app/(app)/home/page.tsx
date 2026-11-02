@@ -1,21 +1,21 @@
+import { CommunityFavorites } from "@/components/app/CommunityFavorites";
+import { loadCommunityFavorites } from "@/lib/app/community";
+import { isCommunityAccount } from "@/lib/auth/profile";
 import { HomeUpcomingActivities } from "@/components/app/HomeUpcomingActivities";
 import { fetchTalentCalendarEvents } from "@/lib/app/schedule";
-import Link from "next/link";
-import { FileSignature } from "lucide-react";
 
 import { HomeDiscovery } from "@/components/app/HomeDiscovery";
 import { HomeFeed } from "@/components/app/HomeFeed";
 import { HomeListings } from "@/components/app/HomeListings";
 import { fetchUpcomingClassesAndSessions } from "@/lib/app/home-opportunities";
-import { requireTalentAccount } from "@/lib/auth/session";
-import { countTalentDealMemosAwaiting } from "@/lib/booking/deal-memo-data";
+import { requireCommunityOrTalentAccount } from "@/lib/auth/session";
 
 export default async function HomePage() {
-  const profile = await requireTalentAccount();
-  const [activities, awaitingDealMemos, calendar] = await Promise.all([
+  const profile = await requireCommunityOrTalentAccount();
+  const [activities, calendar, community] = await Promise.all([
     fetchUpcomingClassesAndSessions(),
-    countTalentDealMemosAwaiting(profile.id),
     fetchTalentCalendarEvents(profile.id),
+    isCommunityAccount(profile.accountType) ? loadCommunityFavorites() : Promise.resolve(null),
   ]);
   const firstName = profile.fullName.split(" ")[0];
   const hour = new Date().getHours();
@@ -25,21 +25,8 @@ export default async function HomePage() {
   return (
     <HomeFeed
       greeting={greeting}
-      bookingSlot={
-        awaitingDealMemos ? (
-          <p className="talent-launch-banner" role="status">
-            <FileSignature size={16} aria-hidden />
-            <span>
-              <strong>
-                {awaitingDealMemos === 1 ? "A deal memo needs your response." : `${awaitingDealMemos} deal memos need your response.`}
-              </strong>
-            </span>
-            <Link href="/deal-memos">Review</Link>
-          </p>
-        ) : null
-      }
-      discoverySlot={<HomeDiscovery upcomingSlot={<HomeUpcomingActivities events={calendar} />} />}
-      listingsSlot={<HomeListings activities={activities} />}
+      discoverySlot={<HomeDiscovery upcomingSlot={<HomeUpcomingActivities events={calendar.events} error={calendar.error} />} />}
+      listingsSlot={<>{community ? <CommunityFavorites key={profile.id} initial={community} /> : null}<HomeListings activities={activities.activities} error={activities.error} /></>}
     />
   );
 }

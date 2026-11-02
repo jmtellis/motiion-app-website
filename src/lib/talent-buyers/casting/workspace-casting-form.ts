@@ -12,21 +12,25 @@ export function rolesToComposerRoles(roles: CastingRole[]): CastingComposerForm[
     description: role.description ?? "",
     ageRangeMin: role.ageRange?.min != null ? String(role.ageRange.min) : "",
     ageRangeMax: role.ageRange?.max != null ? String(role.ageRange.max) : "",
-    gender: "",
+    gender: role.gender ?? "",
     ethnicityPreferences: role.ethnicityPreferences ?? [],
     specialSkills: role.specialSkills ?? role.danceStyles ?? [],
     heightMin:
       role.heightMinDisplay ?? (role.heightRange?.min != null ? String(role.heightRange.min) : ""),
     heightMax:
       role.heightMaxDisplay ?? (role.heightRange?.max != null ? String(role.heightRange.max) : ""),
-    agencyRequired: false,
+    agencyRequired: role.agencyRequired ?? false,
+    slateRequired: role.slateRequired ?? false,
+    maxSubmissionLinks: role.maxSubmissionLinks ?? 0,
+    submissionLimit: role.submissionLimit ?? 0,
+    talentPaysTravel: role.talentPaysTravel ?? false,
     unionStatus: role.unionRequirement ?? "",
     peopleNeeded: String(role.quantityNeeded ?? 1),
-    visibility: "public",
+    visibility: role.visibility ?? "public",
     password: "",
-    cardColorPreset: "midnight",
-    coverImageUrl: "",
-    clientMatchFilters: null,
+    cardColorPreset: role.cardColorPreset ?? "midnight",
+    coverImageUrl: role.coverImageUrl ?? "",
+    clientMatchFilters: role.clientMatchFilters ?? null,
   }));
 }
 

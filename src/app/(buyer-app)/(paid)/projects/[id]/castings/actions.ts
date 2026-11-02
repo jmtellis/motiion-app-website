@@ -59,18 +59,23 @@ async function syncCastingRoles(
   form: NonNullable<ReturnType<typeof parseCastingComposerForm>["data"]>,
   isDraft: boolean,
 ) {
-  const [{ data: existingCastingRoles }, { data: existingBridgedRoles }] = await Promise.all([
+  const [{ data: existingCastingRoles, error: castingReadError }, { data: existingBridgedRoles, error: bridgeReadError }] = await Promise.all([
     supabase
       .from("casting_roles")
       .select("id, title")
       .eq("casting_id", castingId)
-      .order("created_at", { ascending: true }),
+      .order("sort_order", { ascending: true })
+      .order("id", { ascending: true }),
     supabase
       .from("roles")
       .select("id, title")
       .eq("casting_id", castingId)
       .order("created_at", { ascending: true }),
   ]);
+
+  if (castingReadError || bridgeReadError) {
+    return { ok: false as const, error: "Existing roles could not be loaded. No role changes were made; please retry." };
+  }
 
   const castingRoles = existingCastingRoles ?? [];
   const bridgedRoles = existingBridgedRoles ?? [];
@@ -89,6 +94,18 @@ async function syncCastingRoles(
   const formRoleIds = new Set(
     form.roles.map((role) => role.id).filter((id): id is string => Boolean(id)),
   );
+  const removedCastingRoles = castingRoles.filter((item) => !formRoleIds.has(item.id as string));
+  const bridgedIdsToDelete = removedCastingRoles
+    .map((item) => bridgedByCastingRoleId.get(item.id as string))
+    .filter((id): id is string => Boolean(id));
+  if (bridgedIdsToDelete.length) {
+    const { data, error } = await supabase.rpc("list_role_submission_counts", { p_role_ids: bridgedIdsToDelete });
+    if (error || !data) return { ok: false as const, error: "Could not check existing applications. No roles were removed; please retry." };
+    const counts = data as Record<string, { total?: number }>;
+    if (bridgedIdsToDelete.some((id) => (counts[id]?.total ?? 0) > 0)) {
+      return { ok: false as const, error: "A role with applications cannot be removed. Keep the role and close casting when you are finished reviewing." };
+    }
+  }
   const roleIds: string[] = [];
 
   for (const role of form.roles) {
@@ -170,31 +187,15 @@ async function syncCastingRoles(
     }
   }
 
-  const removedCastingRoles = castingRoles.filter((item) => !formRoleIds.has(item.id as string));
-  if (removedCastingRoles.length) {
-    const bridgedIdsToMaybeDelete = removedCastingRoles
-      .map((item) => bridgedByCastingRoleId.get(item.id as string))
-      .filter((id): id is string => Boolean(id));
-
-    const submissionCounts =
-      bridgedIdsToMaybeDelete.length > 0
-        ? await supabase.rpc("list_role_submission_counts", { p_role_ids: bridgedIdsToMaybeDelete })
-        : { data: {} as Record<string, { total?: number }> };
-
-    const counts = (submissionCounts.data ?? {}) as Record<string, { total?: number }>;
-
-    for (const castingRole of removedCastingRoles) {
-      const castingRoleId = castingRole.id as string;
-      const bridgedRoleId = bridgedByCastingRoleId.get(castingRoleId);
-      const submissionTotal = bridgedRoleId ? (counts[bridgedRoleId]?.total ?? 0) : 0;
-
-      if (submissionTotal > 0) continue;
-
-      if (bridgedRoleId) {
-        await supabase.from("roles").delete().eq("id", bridgedRoleId);
-      }
-      await supabase.from("casting_roles").delete().eq("id", castingRoleId);
+  for (const castingRole of removedCastingRoles) {
+    const castingRoleId = castingRole.id as string;
+    const bridgedRoleId = bridgedByCastingRoleId.get(castingRoleId);
+    if (bridgedRoleId) {
+      const { error } = await supabase.from("roles").delete().eq("id", bridgedRoleId);
+      if (error) return { ok: false as const, error: "Could not remove the published role. Reload the casting and retry." };
     }
+    const { error } = await supabase.from("casting_roles").delete().eq("id", castingRoleId);
+    if (error) return { ok: false as const, error: "Could not remove the draft role. Reload the casting and retry." };
   }
 
   return { ok: true as const, roleIds };

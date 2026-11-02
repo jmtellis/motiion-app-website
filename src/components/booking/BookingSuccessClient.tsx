@@ -1,192 +1,122 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-
 import { CastingPublicShell } from "@/components/casting/CastingPublicShell";
-import { callSupabaseFunction } from "@/lib/supabaseRest";
+import { activityPaymentState } from "@/lib/app/activity-enrollment";
+import { callSupabaseFunction, callSupabaseFunctionAsUser } from "@/lib/supabaseRest";
+import { readGuestReceipt } from "@/lib/app/guest-receipt";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import type { PublicActivityKind } from "@/types/public";
-
-const SITE_HOME = "https://www.motiion.app";
 
 type CheckoutStatus = {
   status: string;
-  activityId: string;
-  activityTitle: string | null;
+  activityId?: string;
+  activityTitle?: string | null;
   activityKind?: PublicActivityKind;
   sessionId: string;
-  customerEmail?: string | null;
-  reconciled?: boolean;
+  receiptOnly?: boolean;
 };
 
 export type BookingSuccessProps = {
   stripeSessionId: string | null;
   activityId: string | null;
   kind: PublicActivityKind | null;
-  enrolled: boolean;
-  title: string | null;
-  email: string | null;
+  verifiedEnrollment: boolean;
+  signedIn: boolean;
 };
 
-function kindLabel(kind: PublicActivityKind | null): string {
-  switch (kind) {
-    case "class":
-      return "Class";
-    case "session":
-      return "Session";
-    case "event":
-      return "Event";
-    default:
-      return "Booking";
-  }
+export function BookingSuccessClient(props: BookingSuccessProps) {
+  return <BookingSuccessState key={`${props.stripeSessionId ?? props.activityId}:${props.signedIn}`} {...props} />;
 }
 
-function activityHref(kind: PublicActivityKind | null, activityId: string | null): string | null {
-  if (!activityId) return null;
-  const prefix = kind === "session" ? "/session" : kind === "event" ? "/event" : "/class";
-  return `${prefix}/${encodeURIComponent(activityId)}`;
-}
-
-export function BookingSuccessClient({
-  stripeSessionId,
-  activityId,
-  kind,
-  enrolled,
-  title,
-  email,
-}: BookingSuccessProps) {
+function BookingSuccessState({ stripeSessionId, activityId, kind, verifiedEnrollment, signedIn }: BookingSuccessProps) {
   const [status, setStatus] = useState<CheckoutStatus | null>(null);
   const [loading, setLoading] = useState(Boolean(stripeSessionId));
+  const [guestReceiptAvailable, setGuestReceiptAvailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [attempt, setAttempt] = useState(0);
+  const paymentState = activityPaymentState(status?.status);
+  const confirmed = stripeSessionId ? paymentState === "confirmed" : verifiedEnrollment;
   const resolvedKind = status?.activityKind ?? kind ?? "class";
-  const resolvedActivityId = activityId ?? status?.activityId ?? null;
-  const resolvedTitle = status?.activityTitle ?? title;
-  const resolvedEmail = status?.customerEmail ?? email;
-  const backHref = activityHref(resolvedKind, resolvedActivityId);
-  const isPaidFlow = Boolean(stripeSessionId);
-  const isFreeEnrollment = enrolled && !isPaidFlow;
+  const resolvedActivityId = status?.activityId ?? activityId;
+  const backHref = resolvedActivityId ? `/activity/${encodeURIComponent(resolvedActivityId)}` : null;
+
+  const returnQuery = new URLSearchParams();
+  if (stripeSessionId) returnQuery.set("session_id", stripeSessionId);
+  if (activityId) returnQuery.set("activity_id", activityId);
+  if (kind) returnQuery.set("kind", kind);
+  const signInHref = `/login?next=${encodeURIComponent(`/payments/success?${returnQuery}`)}`;
 
   useEffect(() => {
-    if (!stripeSessionId) {
-      setLoading(false);
-      return;
-    }
-
+    if (!stripeSessionId) return;
+    const currentSessionId = stripeSessionId;
     let cancelled = false;
-    let attempts = 0;
-    const maxAttempts = 10;
-
+    let tries = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     async function poll() {
       try {
-        const data = await callSupabaseFunction<CheckoutStatus>("web-checkout-status", {
-          sessionId: stripeSessionId,
-        });
+        let data: CheckoutStatus;
+        if (signedIn) {
+          const client = createClientSupabaseClient();
+          if (!client) throw new Error("Payment confirmation is unavailable. Please try again later.");
+          const { data: auth, error: authError } = await client.auth.getSession();
+          if (authError || !auth.session?.access_token) throw new Error("Sign in to the account used for this reservation, then check again.");
+          data = await callSupabaseFunctionAsUser<CheckoutStatus>("web-checkout-status", { sessionId: stripeSessionId }, auth.session.access_token);
+        } else {
+          const receiptToken = readGuestReceipt(currentSessionId);
+          if (!receiptToken) { if (!cancelled) setLoading(false); return; }
+          if (!cancelled) setGuestReceiptAvailable(true);
+          data = await callSupabaseFunction<CheckoutStatus>("web-checkout-status", { sessionId: stripeSessionId, receiptToken });
+        }
         if (cancelled) return;
+        if (data.sessionId !== stripeSessionId || typeof data.status !== "string" || (data.receiptOnly !== true && typeof data.activityId !== "string")) {
+          throw new Error("The payment service returned an incomplete confirmation.");
+        }
         setStatus(data);
         setError(null);
-
-        const normalized = data.status.trim().toLowerCase();
-        if (normalized === "succeeded" || normalized === "paid" || normalized === "complete" || data.reconciled) {
-          setLoading(false);
-          return;
-        }
+        const state = activityPaymentState(data.status);
+        if (state === "confirmed" || state === "failed") { setLoading(false); return; }
       } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Unable to confirm payment.");
-        }
+        if (!cancelled) setError(err instanceof Error ? err.message : "Unable to confirm payment.");
       }
-
-      attempts += 1;
-      if (attempts < maxAttempts && !cancelled) {
-        window.setTimeout(poll, 1500);
-      } else if (!cancelled) {
-        setLoading(false);
-      }
+      if (++tries < 10 && !cancelled) timer = setTimeout(poll, 1500);
+      else if (!cancelled) setLoading(false);
     }
-
     void poll();
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [stripeSessionId, attempt, signedIn]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [stripeSessionId]);
+  const needsSignIn = !signedIn && !guestReceiptAvailable && !loading;
+  const headline = needsSignIn && stripeSessionId ? "Sign in to confirm your reservation" : loading ? "Confirming your reservation…"
+    : confirmed ? (stripeSessionId ? "Payment confirmed" : "You're registered")
+      : paymentState === "failed" ? "Reservation not completed" : "Confirmation pending";
+  const summary = needsSignIn && stripeSessionId ? "Sign in to the Motiion account used for this reservation to view its payment and registration status. Your Stripe receipt remains your payment record." : loading ? "We're checking your payment and registration. This usually takes a few seconds."
+    : confirmed ? status?.receiptOnly ? "Your payment and registration are confirmed. Keep your Stripe receipt. Sign in to manage your reservation." : `Your place for this ${resolvedKind} is confirmed. You can return to the details or view your calendar.`
+      : paymentState === "failed" ? "This checkout did not complete, expired, or was refunded. Return to the activity to check current availability."
+        : "We haven't verified your registration yet. Check again before starting another payment. If you already paid, keep your receipt and check your activity details.";
 
-  const headline = useMemo(() => {
-    if (loading) return "Confirming your booking…";
-    if (resolvedKind === "session") return "Request received";
-    if (isFreeEnrollment) return "You're registered";
-    return "Payment successful";
-  }, [loading, resolvedKind, isFreeEnrollment]);
-
-  const summary = useMemo(() => {
-    if (loading) {
-      return "We're confirming your payment and securing your spot. This usually takes a few seconds.";
-    }
-    if (resolvedKind === "session") {
-      return "Open the Motiion app with the same email you used here to finish your join request and get updates from the organizer.";
-    }
-    if (isFreeEnrollment) {
-      return "Your spot is reserved. Finish setting up your Motiion profile in the app to view your schedule and get class updates.";
-    }
-    return "You're booked for this class. Finish setting up your Motiion profile in the app to view your schedule and get updates from the organizer.";
-  }, [loading, resolvedKind, isFreeEnrollment]);
-
-  return (
-    <CastingPublicShell>
-      <article className="casting-page">
-        <header className="casting-page-header">
-          <p className="casting-section-title">{kindLabel(resolvedKind)}</p>
-          <h1 className="casting-page-title">{headline}</h1>
-          {resolvedTitle ? <p className="casting-page-subtitle">{resolvedTitle}</p> : null}
-        </header>
-
-        <section className="casting-glass-card">
-          <p className="casting-body-copy">{summary}</p>
-          {error ? (
-            <p className="public-review-error" style={{ marginTop: 12 }}>
-              {error} If you were charged, your booking should appear in the app shortly.
-            </p>
-          ) : null}
-        </section>
-
-        {isPaidFlow && !loading ? (
-          <section className="casting-glass-card">
-            <h2 className="casting-section-title">Receipt</h2>
-            <p className="casting-body-copy">
-              {resolvedEmail
-                ? `Check ${resolvedEmail} for your Stripe payment receipt.`
-                : "Check the email you used at checkout for your Stripe payment receipt."}
-            </p>
-          </section>
-        ) : null}
-
-        <section className="casting-glass-card">
-          <h2 className="casting-section-title">Next step</h2>
-          <p className="casting-body-copy">
-            Download Motiion and sign in with the same email you used here to complete your profile,
-            see your bookings, and receive organizer updates.
-          </p>
-        </section>
-
-        <div style={{ display: "grid", gap: 10 }}>
-          <a href={`${SITE_HOME}/signup`} className="casting-submit-button" style={{ textDecoration: "none" }}>
-            Finish setup in Motiion
-          </a>
-          <a
-            href={SITE_HOME}
-            className="casting-btn-primary"
-            style={{ textAlign: "center", textDecoration: "none" }}
-          >
-            Get the app
-          </a>
-          {backHref ? (
-            <Link href={backHref} className="casting-modal-dismiss" style={{ textAlign: "center" }}>
-              Back to {kindLabel(resolvedKind).toLowerCase()}
-            </Link>
-          ) : null}
-        </div>
-      </article>
-    </CastingPublicShell>
-  );
+  return <CastingPublicShell>
+    <article className="casting-page">
+      <header className="casting-page-header">
+        <p className="casting-section-title">{resolvedKind}</p>
+        <h1 className="casting-page-title" role="status">{headline}</h1>
+        {status?.activityTitle ? <p className="casting-page-subtitle">{status.activityTitle}</p> : null}
+      </header>
+      <section className="casting-glass-card">
+        <p className="casting-body-copy">{summary}</p>
+        {error ? <p className="public-review-error" role="alert">{error}</p> : null}
+      </section>
+      {confirmed && stripeSessionId ? <section className="casting-glass-card">
+        <h2 className="casting-section-title">Receipt</h2>
+        <p className="casting-body-copy">Keep your Stripe receipt for this reservation.</p>
+      </section> : null}
+      <div style={{ display: "grid", gap: 10 }}>
+        {stripeSessionId && (signedIn || guestReceiptAvailable) && !confirmed && !loading ? <button type="button" className="casting-submit-button" onClick={() => { setLoading(true); setError(null); setAttempt((value) => value + 1); }}>Check confirmation again</button> : null}
+        {backHref ? <Link className="casting-submit-button" href={backHref}>View {resolvedKind} details</Link> : null}
+        <Link className="casting-page-cta casting-page-cta--secondary" style={{ textAlign: "center", minHeight: 48 }} href={signedIn ? "/schedule" : signInHref}>{signedIn ? "View calendar" : "Sign in to your Motiion account"}</Link>
+        {!signedIn ? <p className="casting-body-copy">Use the email from your reservation. If you booked as a guest, choose “Forgot password” on the sign-in page to set up access.</p> : null}
+      </div>
+    </article>
+  </CastingPublicShell>;
 }

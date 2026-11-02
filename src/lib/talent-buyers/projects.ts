@@ -1,8 +1,12 @@
+import { normalizeProjectContract } from "./project-contract";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { readWorkspaceProjects } from "./project-workspace-read";
 import { mapProjectRecordToSummary, projectRecordToComposerForm } from "@/lib/talent-buyers/project-payload";
 import { parseProjectModules } from "@/lib/talent-buyers/project-composer-defaults";
 import type { ProjectRecord } from "@/types/project";
 import type { BuyerProjectSummary } from "@/types/talent-buyer-dashboard";
+import { cache } from "react";
 
 export async function fetchProjectRecord(projectId: string, posterId: string): Promise<ProjectRecord | null> {
   const supabase = await createServerSupabaseClient();
@@ -10,13 +14,14 @@ export async function fetchProjectRecord(projectId: string, posterId: string): P
 
   const { data, error } = await supabase
     .from("projects")
-    .select("*")
+    .select("*,project_abilities(ability,settings)")
     .eq("id", projectId)
     .eq("poster_id", posterId)
     .maybeSingle();
 
-  if (error || !data) return null;
-  return data as ProjectRecord;
+  if (error) throw new Error("Could not load this project. Please retry.");
+  if (!data) return null;
+  return normalizeProjectContract(data) as ProjectRecord;
 }
 
 export async function fetchProjectSummary(projectId: string, posterId: string): Promise<BuyerProjectSummary | null> {
@@ -30,3 +35,11 @@ export function getProjectModules(record: ProjectRecord) {
 }
 
 export { projectRecordToComposerForm };
+
+/** Workspace reads allow an explicit project member; mutations keep owner checks. */
+export const fetchAccessibleProjectRecord = cache(async (projectId: string, userId: string): Promise<ProjectRecord | null> => {
+  const db = await createServerSupabaseClient();
+  if (!db) return null;
+  const projects = await readWorkspaceProjects(db, createAdminSupabaseClient, userId, projectId);
+  return projects.find((project) => project.id === projectId) ?? null;
+});

@@ -34,10 +34,11 @@ function normalizePath(href: string) {
 export function NavigationProgress({ className = "" }: { className?: string }) {
   const pathname = usePathname();
   const [active, setActive] = useState(false);
+  const [previousPath, setPreviousPath] = useState(pathname);
+  if (previousPath !== pathname) { setPreviousPath(pathname); setActive(false); }
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    setActive(false);
     if (hideTimerRef.current) {
       clearTimeout(hideTimerRef.current);
       hideTimerRef.current = null;

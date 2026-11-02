@@ -28,7 +28,7 @@ import { markerChipCopy, ScheduleMarkerLink } from "./ScheduleMarkerLink";
 
 const MAX_VISIBLE = 3;
 /** Months before/after the range center kept mounted for snap scrolling. */
-const MONTH_WINDOW = 12;
+const MONTH_WINDOW = 3;
 
 type MonthViewProps = {
   anchorDate: Date;
@@ -101,6 +101,7 @@ function MonthGrid({
               type="button"
               className={`bd-cal-month__day-num${isToday ? " bd-cal-month__day-num--today" : ""}`}
               onClick={() => onSelectDay(day)}
+              aria-label={day.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
             >
               {day.getDate()}
             </button>
@@ -245,7 +246,7 @@ export function MonthView({
       const key = monthKey(date);
       suppressSyncRef.current = true;
       visibleMonthKeyRef.current = key;
-      scroller.scrollTo({ top: index * pageHeight, behavior: "smooth" });
+      scroller.scrollTo({ top: index * pageHeight, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
       window.setTimeout(() => {
         suppressSyncRef.current = false;
       }, 450);
@@ -299,24 +300,14 @@ export function MonthView({
     const key = monthKey(anchorDate);
     if (key === visibleMonthKeyRef.current) return;
 
-    if (indexForDate(anchorDate) < 0) {
-      setRangeCenter(startOfMonth(anchorDate));
-      setReady(false);
-      return;
-    }
-
     animateToDate(anchorDate);
   }, [anchorDate, ready, pageHeight, indexForDate, animateToDate]);
 
-  useEffect(() => {
-    const anchorMonth = startOfMonth(anchorDate);
-    const delta = Math.abs(monthsBetween(anchorMonth, rangeCenter));
-    if (delta > MONTH_WINDOW - 2) {
-      pendingAnchorRef.current = anchorMonth;
-      setRangeCenter(anchorMonth);
-      setReady(false);
-    }
-  }, [anchorDate, rangeCenter]);
+  const anchorMonth = startOfMonth(anchorDate);
+  if (Math.abs(monthsBetween(anchorMonth, rangeCenter)) > MONTH_WINDOW - 2) {
+    setRangeCenter(anchorMonth);
+    setReady(false);
+  }
 
   useEffect(() => {
     const scroller = scrollerRef.current;
@@ -377,6 +368,8 @@ export function MonthView({
               key={key}
               data-month-key={key}
               className="bd-cal-month__page"
+              inert={!isSameMonth(monthDate, anchorDate)}
+              aria-hidden={!isSameMonth(monthDate, anchorDate)}
               style={pageHeight ? { height: pageHeight } : undefined}
               aria-label={monthDate.toLocaleDateString(undefined, {
                 month: "long",

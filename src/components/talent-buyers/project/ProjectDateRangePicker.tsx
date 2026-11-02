@@ -79,10 +79,12 @@ export function ProjectDatePickerField({
   const [viewMonth, setViewMonth] = useState(() => parseIsoDate(value) ?? new Date());
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const [previousValue, setPreviousValue] = useState(value);
+  if (previousValue !== value) {
+    setPreviousValue(value);
     const parsed = parseIsoDate(value);
     if (parsed) setViewMonth(parsed);
-  }, [value]);
+  }
 
   useEffect(() => {
     function handleClick(event: MouseEvent) {

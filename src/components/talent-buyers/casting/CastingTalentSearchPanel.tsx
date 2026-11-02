@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { X } from "lucide-react";
 
 import { fetchNavigatorTalent } from "@/app/(buyer-app)/(paid)/talent/actions";
@@ -61,7 +61,7 @@ export function CastingTalentSearchPanel() {
   const [dropActive, setDropActive] = useState(false);
   const [selectedTalent, setSelectedTalent] = useState<Talent | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [askReferralOpen, setAskReferralOpen] = useState(false);
+  const [askReferralOpen, setAskReferralOpen] = useState(searchParams.get("askReferral") === "1");
   const [, startTransition] = useTransition();
 
   const workflow = castingWorkflow ?? {
@@ -125,28 +125,13 @@ export function CastingTalentSearchPanel() {
     return matchedTalent.filter((talent) => !roleInvitedKeys.has(talent.id));
   }, [matchedTalent, roleInvitedKeys]);
 
-  const loadMatches = useCallback(
-    async (role: CastingRole | null) => {
-      if (!role) {
-        setMatchedTalent([]);
-        return;
-      }
-
-      setLoadingMatches(true);
-      try {
-        const data = await fetchNavigatorTalent(
-          mapCastingRoleToMatchFilters(role, { localHireOnly }),
-        );
-        setMatchedTalent(data.talent);
-      } catch {
-        showToast({ message: "Could not load matched talent.", variant: "error" });
-        setMatchedTalent([]);
-      } finally {
-        setLoadingMatches(false);
-      }
-    },
-    [localHireOnly, showToast],
-  );
+  const matchKey = JSON.stringify({ role: selectedRole, localHireOnly });
+  const [previousMatchKey, setPreviousMatchKey] = useState<string | null>(null);
+  if (previousMatchKey !== matchKey) {
+    setPreviousMatchKey(matchKey);
+    setMatchedTalent([]);
+    setLoadingMatches(Boolean(selectedRole));
+  }
 
   useEffect(() => {
     if (!searchParams.get("role") && roles[0]?.id) {
@@ -156,7 +141,6 @@ export function CastingTalentSearchPanel() {
 
   useEffect(() => {
     if (searchParams.get("askReferral") === "1" && workflow.primaryCasting?.id) {
-      setAskReferralOpen(true);
       const next = new URLSearchParams(searchParams.toString());
       next.delete("askReferral");
       const query = next.toString();
@@ -165,8 +149,14 @@ export function CastingTalentSearchPanel() {
   }, [router, searchParams, workflow.primaryCasting?.id]);
 
   useEffect(() => {
-    void loadMatches(selectedRole);
-  }, [loadMatches, selectedRole]);
+    if (!selectedRole) return;
+    let cancelled = false;
+    void fetchNavigatorTalent(mapCastingRoleToMatchFilters(selectedRole, { localHireOnly }))
+      .then((data) => { if (!cancelled) setMatchedTalent(data.talent); })
+      .catch(() => { if (!cancelled) showToast({ message: "Could not load matched talent. Change the role to retry.", variant: "error" }); })
+      .finally(() => { if (!cancelled) setLoadingMatches(false); });
+    return () => { cancelled = true; };
+  }, [selectedRole, localHireOnly, showToast]);
 
   useEffect(() => {
     if (!detailsOpen) return;

@@ -27,24 +27,18 @@ export function CastingReviewFocusProfile({
   indexLabel: string;
 }) {
   const [profile, setProfile] = useState<PublicTalentProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const key = candidate.talentSlug?.trim() || candidate.talentProfileId?.trim() || "";
+  const [loading, setLoading] = useState(Boolean(key));
+  const [error, setError] = useState<string | null>(key ? null : "This submission is missing a Motiion profile.");
+  const [previousKey, setPreviousKey] = useState(key);
+  if (previousKey !== key) {
+    setPreviousKey(key); setProfile(null); setLoading(Boolean(key));
+    setError(key ? null : "This submission is missing a Motiion profile.");
+  }
 
   useEffect(() => {
     let cancelled = false;
-    const key =
-      candidate.talentSlug?.trim() ||
-      candidate.talentProfileId?.trim() ||
-      "";
-    if (!key) {
-      setProfile(null);
-      setLoading(false);
-      setError("This submission is missing a Motiion profile.");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
+    if (!key) return;
     void fetchReviewTalentProfile(key).then((result) => {
       if (cancelled) return;
       if (result.error || !result.profile) {
@@ -54,12 +48,15 @@ export function CastingReviewFocusProfile({
         setProfile(result.profile);
       }
       setLoading(false);
+    }).catch(() => {
+      if (cancelled) return;
+      setError("Could not load profile. Try opening this person again."); setLoading(false);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [candidate.id, candidate.talentSlug, candidate.talentProfileId]);
+  }, [key]);
 
   return (
     <div className="casting-review-focus-profile">

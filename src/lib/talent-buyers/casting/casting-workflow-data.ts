@@ -1,3 +1,6 @@
+import { readPagedRows } from "@/lib/supabase/read-pages";
+import { finalSelectionDisplayStatus } from "./final-selection";
+import { normalizeCastingVisibility } from "./casting-display";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import {
@@ -15,7 +18,6 @@ import type {
   CastingReferral,
   CastingRole,
   CastingRoleStatus,
-  CastingVisibility,
   CastingWorkflowData,
 } from "@/lib/talent-buyers/casting/casting-types";
 import { normalizeSubmissionStatus } from "@/lib/talent-buyers/submission-status";
@@ -85,18 +87,6 @@ function mapCastingStatus(raw: string | null | undefined): CastingProjectStatus 
   }
 }
 
-function mapCastingVisibility(raw: string | null | undefined): CastingVisibility {
-  switch (raw) {
-    case "private":
-      return "private";
-    case "invitation_only":
-    case "invite_only":
-      return "invitation_only";
-    default:
-      return "public";
-  }
-}
-
 function mapCastingRow(row: Record<string, unknown>, projectId: string): CastingProject {
   const config = (row.configuration as Record<string, unknown> | null) ?? {};
   const meta = (config._composer_meta as Record<string, unknown> | undefined) ?? {};
@@ -107,7 +97,7 @@ function mapCastingRow(row: Record<string, unknown>, projectId: string): Casting
     description: (row.description as string | null) ?? undefined,
     submissionDeadline: (row.submission_deadline as string | null) ?? undefined,
     status: mapCastingStatus(row.status as string),
-    visibility: mapCastingVisibility(row.visibility as string),
+    visibility: normalizeCastingVisibility(row.visibility as string),
     allowExternalCandidates: (row.allow_external_candidates as boolean | null) ?? true,
     allowMultipleRoleSubmissions: (row.allow_multiple_role_submissions as boolean | null) ?? true,
     location: (meta.location as string | undefined) ?? (config.location as string | undefined),
@@ -129,10 +119,19 @@ function mapRoleRow(
     gender?: string | null;
     height_min?: string | null;
     height_max?: string | null;
+    agency_required?: boolean | null;
+    slate_required?: boolean | null;
+    max_submission_links?: number | null;
+    submission_limit?: number | null;
+    talent_pays_travel?: boolean | null;
+    visibility?: CastingRole["visibility"] | null;
+    card_color_preset?: CastingRole["cardColorPreset"] | null;
+    cover_image_url?: string | null;
     special_skills?: string[] | null;
     ethnicity_preferences?: string[] | null;
     client_match_filters?: Record<string, unknown> | null;
     is_casting_finalized?: boolean | null;
+    final_select_ids?: string[] | null;
     is_active?: boolean | null;
   },
   bridgedRoleIds: string[] = [],
@@ -190,6 +189,15 @@ function mapRoleRow(
     },
     heightMinDisplay: bridgedRole?.height_min ?? undefined,
     heightMaxDisplay: bridgedRole?.height_max ?? undefined,
+    agencyRequired: bridgedRole?.agency_required ?? false,
+    slateRequired: bridgedRole?.slate_required ?? false,
+    maxSubmissionLinks: bridgedRole?.max_submission_links ?? 0,
+    submissionLimit: bridgedRole?.submission_limit ?? 0,
+    talentPaysTravel: bridgedRole?.talent_pays_travel ?? false,
+    visibility: bridgedRole?.visibility ?? "public",
+    cardColorPreset: bridgedRole?.card_color_preset ?? "midnight",
+    coverImageUrl: bridgedRole?.cover_image_url ?? undefined,
+    clientMatchFilters: Object.keys(clientMatchFilters).length ? clientMatchFilters : matchFilters,
     locationRequirements: locationFromFilters.length ? locationFromFilters : undefined,
     unionRequirement: attrs.unionRequirement,
     internalNotes: (row.internal_notes as string | null) ?? undefined,
@@ -234,7 +242,7 @@ function mapSubmissionToCandidate(
   };
 }
 
-function mergeSubmissionCandidates(
+export function mergeSubmissionCandidates(
   pipelineCandidates: CastingCandidate[],
   submissionCandidates: CastingCandidate[],
 ): CastingCandidate[] {
@@ -264,7 +272,9 @@ function mergeSubmissionCandidates(
 
     merged[index] = {
       ...existing,
-      displayName: isGenericApplicantName(existing.displayName)
+      // The real submission's resolved identity outranks legacy pipeline labels
+      // (older promotion writes accidentally stored the role title as the name).
+      displayName: !isGenericApplicantName(submissionCandidate.displayName)
         ? submissionCandidate.displayName
         : existing.displayName,
       email: existing.email ?? submissionCandidate.email,
@@ -320,11 +330,10 @@ async function enrichCandidatesWithTalentProfiles(
   const { data: profiles } = profileIds.length
     ? await profileClient
         .from("professional_profiles")
-        .select("id, slug, user_id")
+        .select("id, user_id")
         .in("id", profileIds)
     : { data: [] };
 
-  const slugByProfile = new Map((profiles ?? []).map((p) => [p.id as string, p.slug as string]));
   const userIdByProfile = new Map((profiles ?? []).map((p) => [p.id as string, p.user_id as string]));
   const talentIds = [
     ...new Set([
@@ -339,9 +348,7 @@ async function enrichCandidatesWithTalentProfiles(
       candidate.talentUserId ??
       (candidate.talentProfileId ? userIdByProfile.get(candidate.talentProfileId) : undefined);
     const bundle = userId ? bundles.get(userId) : undefined;
-    const slug = candidate.talentProfileId
-      ? slugByProfile.get(candidate.talentProfileId)
-      : candidate.talentSlug;
+    const slug = bundle?.slug ?? candidate.talentSlug;
     const slugAsName = slug ? slug.replace(/-/g, " ") : "";
     const shouldUpgradeName =
       Boolean(bundle?.fullName) &&
@@ -448,22 +455,32 @@ export async function fetchCastingWorkflowData(
 
   const primaryCasting = mapCastingRow(detail.casting as unknown as Record<string, unknown>, projectId);
 
-  const { data: bridgedRoles } = await supabase
+  const { data: bridgedRoles, error: bridgedRolesError } = await supabase
     .from("roles")
     .select(
-      "id, title, gender, height_min, height_max, special_skills, ethnicity_preferences, client_match_filters, is_casting_finalized, is_active",
+      "id, title, gender, height_min, height_max, agency_required, slate_required, max_submission_links, submission_limit, talent_pays_travel, visibility, card_color_preset, cover_image_url, special_skills, ethnicity_preferences, client_match_filters, is_casting_finalized, final_select_ids, is_active",
     )
     .eq("casting_id", castingId);
+  if (bridgedRolesError) throw new Error("Could not load casting roles. Please retry.");
 
   const bridgedRoleList = (bridgedRoles ?? []) as Array<{
     id: string;
     title: string;
     height_min?: string | null;
     height_max?: string | null;
+    agency_required?: boolean | null;
+    slate_required?: boolean | null;
+    max_submission_links?: number | null;
+    submission_limit?: number | null;
+    talent_pays_travel?: boolean | null;
+    visibility?: CastingRole["visibility"] | null;
+    card_color_preset?: CastingRole["cardColorPreset"] | null;
+    cover_image_url?: string | null;
     special_skills?: string[] | null;
     ethnicity_preferences?: string[] | null;
     client_match_filters?: Record<string, unknown> | null;
     is_casting_finalized?: boolean | null;
+    final_select_ids?: string[] | null;
     is_active?: boolean | null;
   }>;
   const bridgedByCastingRole = mapBridgedRolesByCastingRole(
@@ -498,12 +515,13 @@ export async function fetchCastingWorkflowData(
     }),
   );
 
-  const { data: candidateRows } = await supabase
+  const { data: candidateRows, error: candidateError } = await readPagedRows((from, to) => supabase
     .from("casting_candidates")
     .select("*")
     .eq("casting_id", castingId)
     .order("updated_at", { ascending: false })
-    .limit(500);
+    .order("id").range(from, to));
+  if (candidateError) throw new Error("Could not load casting candidate records. Please retry.");
 
   let candidates = (candidateRows ?? []).map((row) => mapCandidateRow(row as Record<string, unknown>));
 
@@ -514,17 +532,19 @@ export async function fetchCastingWorkflowData(
   const submissionCandidates = submissions.map((submission) =>
     mapSubmissionToCandidate(submission, castingId),
   );
-  candidates = mergeSubmissionCandidates(candidates, submissionCandidates);
+  const savedFinalSelects = new Set(bridgedRoleList.flatMap((role) => role.final_select_ids ?? []));
+  candidates = mergeSubmissionCandidates(candidates, submissionCandidates.map((candidate) => finalSelectionDisplayStatus(candidate, savedFinalSelects)));
   candidates = await enrichCandidatesWithTalentProfiles(supabase, candidates);
 
-  const { data: invitationRows } = await supabase
+  const { data: invitationRows, error: invitationError } = await readPagedRows((from, to) => supabase
     .from("invitations")
     .select(
       "id, casting_id, invited_profile_id, status, message, created_at, sent_at, viewed_at, expires_at, role_id, role_ids, professional_profiles ( slug, user_id, styles, location_city, location_region )",
     )
     .eq("casting_id", castingId)
     .order("created_at", { ascending: false })
-    .limit(200);
+    .order("id").range(from, to));
+  if (invitationError) throw new Error("Could not load casting invitation records. Please retry.");
 
   const invitedUserIds = (invitationRows ?? [])
     .map((row) => {
@@ -566,7 +586,7 @@ export async function fetchCastingWorkflowData(
     };
   });
 
-  const { data: referralRows } = await supabase
+  const { data: referralRows, error: referralError } = await readPagedRows((from, to) => supabase
     .from("casting_referrals")
     .select(
       "id, casting_id, project_id, role_ids, referred_profile_id, referrer_user_id, referrer_display_name, referral_token_id, source, note, status, created_at",
@@ -574,7 +594,8 @@ export async function fetchCastingWorkflowData(
     .eq("casting_id", castingId)
     .eq("status", "submitted")
     .order("created_at", { ascending: false })
-    .limit(200);
+    .order("id").range(from, to));
+  if (referralError) throw new Error("Could not load casting referral records. Please retry.");
 
   const referredProfileIds = [
     ...new Set(
@@ -583,7 +604,7 @@ export async function fetchCastingWorkflowData(
         .filter((id): id is string => Boolean(id)),
     ),
   ];
-  const referralProfileClient = createAdminSupabaseClient() ?? supabase;
+  const referralProfileClient = supabase;
   const { data: referredProfiles } = referredProfileIds.length
     ? await referralProfileClient
         .from("professional_profiles")
@@ -684,11 +705,12 @@ export async function fetchCastingWorkflowData(
     };
   });
 
-  const { data: externalRows } = await supabase
+  const { data: externalRows, error: externalError } = await readPagedRows((from, to) => supabase
     .from("casting_external_candidates")
     .select("*")
     .eq("casting_id", castingId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }).order("id").range(from, to));
+  if (externalError) throw new Error("Could not load casting external records. Please retry.");
 
   const externalCandidates: CastingExternalCandidate[] = (externalRows ?? []).map((row) => ({
     id: row.id as string,

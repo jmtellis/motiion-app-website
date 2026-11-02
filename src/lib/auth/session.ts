@@ -24,28 +24,16 @@ export const getCurrentUserProfile = cache(async (): Promise<DashboardProfile | 
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select(
-      "user_id, email, first_name, last_name, display_name, account_type, username, talent_types, headshot_urls, onboarding_completed_at, enabled_shells, active_shell",
-    )
-    .eq("user_id", user.id)
-    .maybeSingle<ProfileRecord>();
+  const [profileResult, buyerResult] = await Promise.all([
+    supabase.from("profiles").select("user_id, email, first_name, last_name, display_name, account_type, username, talent_types, headshot_urls, industry_avatar_url, onboarding_completed_at, enabled_shells, active_shell").eq("user_id", user.id).maybeSingle<ProfileRecord>(),
+    supabase.from("non_talent_profiles").select("id, company_name, non_talent_type, work_email, user_type, primary_goal, role, custom_role, platform_goals, work_types, custom_work_type, organization_name, organization_website, organization_relationship, organization_brand_domain, company_size, talent_types, style_focus, markets, market_places, verification_links, notification_preferences, onboarding_completed, onboarding_step").eq("id", user.id).maybeSingle<NonTalentProfileRecord>(),
+  ]);
+  if (profileResult.error || buyerResult.error) throw new Error("Couldn’t load your account. Please try again.");
+  const profile = profileResult.data;
+  const nonTalentProfile = buyerResult.data;
+  if (!profile) return null;
 
-  // Auth identity without a Motiion profile is not a signed-in app user.
-  if (!profile) {
-    return null;
-  }
-
-  const { data: nonTalentProfile } = await supabase
-    .from("non_talent_profiles")
-    .select(
-      "id, company_name, non_talent_type, work_email, user_type, primary_goal, role, custom_role, platform_goals, work_types, custom_work_type, organization_name, organization_website, organization_relationship, organization_brand_domain, company_size, talent_types, style_focus, markets, market_places, verification_links, notification_preferences, onboarding_completed, onboarding_step",
-    )
-    .eq("id", user.id)
-    .maybeSingle<NonTalentProfileRecord>();
-
-  return toDashboardProfile(profile, nonTalentProfile);
+  return toDashboardProfile({ ...profile, email: user.email ?? profile.email }, nonTalentProfile);
 });
 
 export async function requireAuth() {
@@ -70,6 +58,14 @@ export async function requireCompleteProfile() {
 export async function requireTalentAccount() {
   const profile = await requireCompleteProfile();
   if (getActiveShell(profile) !== "talent") redirect(getProfileDestination(profile));
+  return profile;
+}
+
+/** Shared consumer surfaces belong to both talent and community accounts. */
+export async function requireCommunityOrTalentAccount() {
+  const profile = await requireCompleteProfile();
+  const shell = getActiveShell(profile);
+  if (shell !== "talent" && shell !== "community") redirect(getProfileDestination(profile));
   return profile;
 }
 

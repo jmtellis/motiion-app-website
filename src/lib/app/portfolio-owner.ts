@@ -93,7 +93,7 @@ export const fetchPortfolioOwnerData = cache(async (userId: string): Promise<Por
   const supabase = await createServerSupabaseClient();
   if (!supabase) return null;
 
-  const [{ data }, paid] = await Promise.all([
+  const [{ data, error }, paid] = await Promise.all([
     supabase
       .from("profiles")
       .select(
@@ -103,6 +103,7 @@ export const fetchPortfolioOwnerData = cache(async (userId: string): Promise<Por
       .maybeSingle<Row>(),
     userHasPaidEntitlement(userId, "talent_pro"),
   ]);
+  if (error) throw new Error("Couldn’t load your portfolio. Please try again.");
   if (!data) return null;
 
   const headshotUrls = strings(data.headshot_urls).filter(Boolean);

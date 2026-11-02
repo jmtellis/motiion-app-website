@@ -1,10 +1,14 @@
 "use client";
 
+import Link from "next/link";
+import { EMAIL_CHANGE_INSTRUCTIONS } from "@/lib/auth/email-change";
+
 import { useState, useTransition } from "react";
 
 import {
   sendTalentPasswordReset,
   setTalentAccountPrivate,
+  setTalentAgeHidden,
   updateTalentAccount,
   updateTalentEmail,
   updateTalentPassword,
@@ -29,6 +33,7 @@ export function TalentAccountForm({
   contactEmail,
   memberNumber,
   isPrivate,
+  hideAge,
   canChangePassword,
   profileLabel,
 }: {
@@ -40,6 +45,7 @@ export function TalentAccountForm({
   contactEmail: string;
   memberNumber: string | null;
   isPrivate: boolean;
+  hideAge: boolean;
   canChangePassword: boolean;
   profileLabel: string;
 }) {
@@ -52,6 +58,7 @@ export function TalentAccountForm({
   });
   const [accountEmail, setAccountEmail] = useState(email);
   const [passwords, setPasswords] = useState({ current: "", next: "", confirm: "" });
+  const [ageHidden, setAgeHidden] = useState(hideAge);
   const [privateAccount, setPrivateAccount] = useState(isPrivate);
   const [privacyPrompt, setPrivacyPrompt] = useState<boolean | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -60,10 +67,28 @@ export function TalentAccountForm({
   const [copied, setCopied] = useState(false);
   const [pending, startTransition] = useTransition();
 
+  function perform(action: () => Promise<void>) {
+    startTransition(async () => {
+      try { await action(); }
+      catch { setError("Couldn’t save this change. Check your connection and try again."); }
+    });
+  }
+
+  function toggleAge() {
+    setError(null); setMessage(null);
+    perform(async () => {
+      const next = !ageHidden;
+      const result = await setTalentAgeHidden(next);
+      if (!result.ok) { setError(result.error); return; }
+      setAgeHidden(next);
+      setMessage(next ? "Your age is now hidden from your public profile." : "Your age can now appear on your public profile.");
+    });
+  }
+
   function saveAccount() {
     setError(null);
     setMessage(null);
-    startTransition(async () => {
+    perform(async () => {
       const result = await updateTalentAccount(fields);
       if (!result.ok) {
         setError(result.error);
@@ -76,7 +101,7 @@ export function TalentAccountForm({
   function saveEmail() {
     setError(null);
     setMessage(null);
-    startTransition(async () => {
+    perform(async () => {
       const result = await updateTalentEmail(accountEmail);
       if (!result.ok) {
         setError(result.error);
@@ -84,7 +109,7 @@ export function TalentAccountForm({
       }
       setMessage(
         result.confirmationRequired
-          ? "Check your inbox to confirm the new email."
+          ? EMAIL_CHANGE_INSTRUCTIONS
           : "Email saved.",
       );
     });
@@ -97,7 +122,7 @@ export function TalentAccountForm({
       setError("Passwords do not match.");
       return;
     }
-    startTransition(async () => {
+    perform(async () => {
       const result = await updateTalentPassword({
         currentPassword: passwords.current,
         newPassword: passwords.next,
@@ -114,7 +139,7 @@ export function TalentAccountForm({
   function sendReset() {
     setError(null);
     setMessage(null);
-    startTransition(async () => {
+    perform(async () => {
       const result = await sendTalentPasswordReset();
       if (!result.ok) {
         setError(result.error);
@@ -128,7 +153,7 @@ export function TalentAccountForm({
     if (privacyPrompt === null) return;
     const next = privacyPrompt;
     setPrivacyPrompt(null);
-    startTransition(async () => {
+    perform(async () => {
       const result = await setTalentAccountPrivate(next);
       if (!result.ok) {
         setError(result.error);
@@ -204,9 +229,9 @@ export function TalentAccountForm({
             />
           </label>
         </div>
-        <button type="button" className="talent-settings-secondary" disabled={pending} onClick={saveEmail}>
+        <div className="flex flex-wrap items-center gap-3"><button type="button" className="talent-settings-secondary" disabled={pending} onClick={saveEmail}>
           Update email
-        </button>
+        </button><Link href="/auth/email-change" className="text-sm underline">Check email status</Link></div>
         {canChangePassword ? (
           <div className="talent-settings-grid">
             <label>
@@ -263,8 +288,7 @@ export function TalentAccountForm({
             disabled={!memberId}
             onClick={() => {
               if (!memberId) return;
-              void navigator.clipboard.writeText(memberId);
-              setCopied(true);
+              void navigator.clipboard.writeText(memberId).then(() => setCopied(true)).catch(() => setError("Couldn’t copy your member number. Select and copy it above."));
             }}
           >
             {copied ? "Copied" : "Copy"}
@@ -281,12 +305,17 @@ export function TalentAccountForm({
             type="button"
             role="switch"
             aria-checked={privateAccount}
+            aria-label="Private account"
             className="talent-settings-switch"
             disabled={pending}
             onClick={() => setPrivacyPrompt(!privateAccount)}
           >
             <span />
           </button>
+        </div>
+        <div className="talent-settings-privacy">
+          <div><p>Hide age</p><span>Keep your age off your public profile while retaining your birthday for account eligibility.</span></div>
+          <button type="button" role="switch" aria-checked={ageHidden} aria-label="Hide age" className="talent-settings-switch" disabled={pending} onClick={toggleAge}><span /></button>
         </div>
         {privacyPrompt !== null ? (
           <div className="talent-settings-confirm">
@@ -307,8 +336,8 @@ export function TalentAccountForm({
         ) : null}
       </section>
 
-      {error ? <p className="talent-settings-error">{error}</p> : null}
-      {message ? <p className="talent-settings-success">{message}</p> : null}
+      {error ? <p className="talent-settings-error" role="alert">{error}</p> : null}
+      {message ? <p className="talent-settings-success" role="status">{message}</p> : null}
 
       <section className="talent-settings-card" aria-labelledby="sign-out-heading">
         <h2 id="sign-out-heading">Sign out</h2>

@@ -2,10 +2,13 @@
 
 import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
+import { isPublicCollectionAccount } from "@/lib/talent-buyers/collection-public-people";
+import { readPagedRows } from "@/lib/supabase/read-pages";
 
 import { requireIndustryProFeature } from "@/lib/billing/gate";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
+  COLLECTION_SHARE_DURATIONS,
   collectionShareExpiresAt,
   publicCollectionShareUrl,
   type CollectionShareDuration,
@@ -24,14 +27,14 @@ export async function listCollectionShares(): Promise<{
   } = await supabase.auth.getUser();
   if (!user) return { shares: [], error: "Not signed in" };
 
-  const { data, error } = await supabase
+  const { data, error } = await readPagedRows((from, to) => supabase
     .from("talent_list_shares")
     .select(
       "id, list_id, token, title, is_active, expires_at, expiration_kind, created_at, talent_lists(name), talent_list_share_recipients(id, display_name, email, avatar_url, sort_order)",
     )
     .eq("owner_user_id", user.id)
     .eq("is_active", true)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }).order("id").range(from, to));
 
   if (error) return { shares: [], error: error.message };
 
@@ -99,11 +102,13 @@ export async function createCollectionShare(input: {
     .select("id, name")
     .eq("id", input.collectionId)
     .eq("owner_id", user.id)
-    .eq("kind", "roster")
+    .eq("kind", "roster").is("project_id", null)
     .maybeSingle();
 
   if (listError || !list) return { ok: false, error: "Collection not found" };
 
+  if (!COLLECTION_SHARE_DURATIONS.some((option) => option.value === input.duration)) return { ok: false, error: "Choose a valid link duration" };
+  if ((input.recipients?.length ?? 0) > 50) return { ok: false, error: "Use at most 50 recipient labels" };
   const token = randomBytes(18).toString("base64url");
   const expiresAt = collectionShareExpiresAt(input.duration);
 
@@ -134,7 +139,11 @@ export async function createCollectionShare(input: {
     .filter((recipient) => recipient.display_name || recipient.email);
 
   if (recipients.length) {
-    await supabase.from("talent_list_share_recipients").insert(recipients);
+    const { error: recipientError } = await supabase.from("talent_list_share_recipients").insert(recipients);
+    if (recipientError) {
+      await supabase.from("talent_list_shares").update({ is_active: false }).eq("id", share.id).eq("owner_user_id", user.id).select("id").maybeSingle();
+      return { ok: false, error: "Could not save recipient labels. Please try creating the share again." };
+    }
   }
 
   revalidatePath("/library");
@@ -178,13 +187,14 @@ export async function deactivateCollectionShare(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Not signed in" };
 
-  const { error } = await supabase
+  const { data: changed, error } = await supabase
     .from("talent_list_shares")
     .update({ is_active: false, updated_at: new Date().toISOString() })
     .eq("id", shareId)
     .eq("owner_user_id", user.id);
 
   if (error) return { ok: false, error: error.message };
+  if (!changed) return { ok: false, error: "This share is unavailable or access changed." };
   revalidatePath("/library");
   return { ok: true };
 }
@@ -230,88 +240,55 @@ export async function getPublicCollectionShare(
   const list = share.talent_lists as { name?: string } | { name?: string }[] | null;
   const listName = (Array.isArray(list) ? list[0]?.name : list?.name) || "Collection";
 
-  const { data: members } = await admin
-    .from("talent_list_members")
-    .select("profile_id, added_at")
+  const { data: members, error: membersError } = await readPagedRows((from, to) => admin
+    .from("talent_list_members").select("profile_id, added_at")
     .eq("list_id", share.list_id as string)
-    .order("added_at", { ascending: false });
+    .order("added_at", { ascending: false }).order("id").range(from, to));
+  if (membersError) return { share: null, error: "The collection could not be loaded. Please try again." };
 
   const profileIds = (members ?? []).map((row) => row.profile_id as string);
   const people: PublicCollectionShare["members"] = [];
 
-  if (profileIds.length) {
-    const { data: pros } = await admin
-      .from("professional_profiles")
-      .select("id, user_id, slug, location_city, location_region")
-      .in("id", profileIds);
-
-    const proById = new Map((pros ?? []).map((row) => [row.id as string, row]));
+  for (let index = 0; index < profileIds.length; index += 200) {
+    const batchIds = profileIds.slice(index, index + 200);
+    const { data: pros, error: profilesError } = await admin.from("professional_profiles")
+      .select("id, user_id, slug, location_city, location_region").in("id", batchIds);
+    if (profilesError) return { share: null, error: "The profiles could not be loaded. Please try again." };
     const userIds = [...new Set((pros ?? []).map((row) => row.user_id as string).filter(Boolean))];
-
-    const [{ data: accounts }, { data: mediaRows }] = await Promise.all([
-      userIds.length
-        ? admin
-            .from("profiles")
-            .select("user_id, display_name, first_name, last_name, headshot_urls")
-            .in("user_id", userIds)
-        : Promise.resolve({ data: [] as Record<string, unknown>[] }),
-      admin
-        .from("media_assets")
-        .select("profile_id, url, storage_path, kind, position")
-        .in("profile_id", profileIds)
-        .eq("kind", "headshot")
-        .order("position", { ascending: true }),
-    ]);
-
-    const accountByUser = new Map((accounts ?? []).map((row) => [row.user_id as string, row]));
-
+    const { data: accounts, error: accountsError } = userIds.length
+      ? await admin.from("profiles").select("user_id, username, display_name, first_name, last_name, headshot_urls, is_private, moderation_status").in("user_id", userIds)
+      : { data: [], error: null };
+    if (accountsError) return { share: null, error: "The profiles could not be loaded. Please try again." };
+    // A roster owner's share does not override a talent account's public visibility.
+    const accountByUser = new Map((accounts ?? []).filter(isPublicCollectionAccount).map((row) => [row.user_id as string, row]));
+    const visiblePros = (pros ?? []).filter((row) => row.user_id && accountByUser.has(row.user_id));
+    const proById = new Map(visiblePros.map((row) => [row.id as string, row]));
+    if (!visiblePros.length) continue;
+    const { data: mediaRows, error: mediaError } = await readPagedRows((from, to) => admin.from("media_assets")
+      .select("profile_id, url, storage_path, kind, position").in("profile_id", visiblePros.map((row) => row.id))
+      .eq("kind", "headshot").order("position", { ascending: true }).order("id").range(from, to));
+    if (mediaError) return { share: null, error: "Profile media could not be loaded. Please try again." };
     const mediaByProfile = new Map<string, { url: string | null; storage_path: string | null }>();
     for (const asset of mediaRows ?? []) {
-      const profileId = asset.profile_id as string;
-      if (mediaByProfile.has(profileId)) continue;
-      mediaByProfile.set(profileId, {
-        url: (asset.url as string | null) ?? null,
-        storage_path: (asset.storage_path as string | null) ?? null,
-      });
+      if (!mediaByProfile.has(asset.profile_id)) mediaByProfile.set(asset.profile_id, asset);
     }
-
-    const paths = [...mediaByProfile.values()]
-      .map((asset) => asset.storage_path?.trim())
-      .filter((path): path is string => Boolean(path));
+    const paths = [...new Set([...mediaByProfile.values()].map((asset) => asset.storage_path?.trim()).filter((path): path is string => Boolean(path)))];
     const signedByPath = new Map<string, string>();
     if (paths.length) {
-      const { data: signed } = await admin.storage.from("media").createSignedUrls(paths, 60 * 60);
-      signed?.forEach((entry, index) => {
-        if (entry.signedUrl) signedByPath.set(paths[index], entry.signedUrl);
-      });
+      const { data: signed, error: signingError } = await admin.storage.from("media").createSignedUrls(paths, 60 * 60);
+      if (signingError) return { share: null, error: "Profile media is temporarily unavailable. Please try again." };
+      signed?.forEach((entry, position) => { if (entry.signedUrl) signedByPath.set(paths[position], entry.signedUrl); });
     }
-
-    for (const profileId of profileIds) {
+    for (const profileId of batchIds) {
       const pro = proById.get(profileId);
-      const account = pro?.user_id ? accountByUser.get(pro.user_id as string) : null;
-      const name =
-        (account?.display_name as string | null)?.trim() ||
-        [account?.first_name, account?.last_name].filter(Boolean).join(" ").trim() ||
-        ((pro?.slug as string | null) ?? "Talent");
-      const headshots = account?.headshot_urls as string[] | null;
+      if (!pro?.user_id) continue;
+      const account = accountByUser.get(pro.user_id)!;
+      const name = account.display_name?.trim() || [account.first_name, account.last_name].filter(Boolean).join(" ").trim() || pro.slug || "Talent";
+      const headshots = account.headshot_urls as string[] | null;
       const media = mediaByProfile.get(profileId);
-      const signed =
-        media?.storage_path && signedByPath.get(media.storage_path.trim())
-          ? signedByPath.get(media.storage_path.trim())!
-          : null;
-      const avatarUrl =
-        headshots?.find((url) => typeof url === "string" && url.trim())?.trim() ||
-        signed ||
-        media?.url?.trim() ||
-        null;
-      const location = [pro?.location_city, pro?.location_region].filter(Boolean).join(", ") || null;
-
-      people.push({
-        name,
-        location,
-        avatarUrl,
-        slug: (pro?.slug as string | null) ?? null,
-      });
+      const avatarUrl = headshots?.find((url) => typeof url === "string" && url.trim())?.trim()
+        || (media?.storage_path ? signedByPath.get(media.storage_path.trim()) : null) || media?.url?.trim() || null;
+      people.push({ name, location: [pro.location_city, pro.location_region].filter(Boolean).join(", ") || null, avatarUrl, slug: account.username || pro.user_id });
     }
   }
 

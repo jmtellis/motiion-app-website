@@ -25,7 +25,8 @@ export function ShortlistProfileModal({ submission, submissions = [submission], 
   const lightbox = useRef<HTMLDialogElement>(null);
   const details = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(false);
-  const closeRef = useRef(onClose); closeRef.current = onClose;
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
   const portrait = submissionPortraitUrl(submission);
   const instagram = shortlistInstagramUrl(submission.instagramUrl);
   const position = submissions.findIndex((person) => person.id === submission.id);

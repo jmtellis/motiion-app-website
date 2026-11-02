@@ -2,7 +2,9 @@ import { PROFILE_SLUG_UUID_RE } from "@/lib/profileOg";
 
 /** Matches iOS `DeepLinkRouter.normalizeJoinReferralCode`. */
 export function normalizeJoinReferralCode(raw: string): string {
-  let code = decodeURIComponent(raw).trim().toLowerCase();
+  let decoded: string;
+  try { decoded = decodeURIComponent(raw); } catch { return ""; }
+  let code = decoded.trim().toLowerCase();
   if (code.startsWith("@")) {
     code = code.replace(/^@+/u, "");
   }

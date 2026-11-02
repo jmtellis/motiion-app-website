@@ -19,10 +19,12 @@ export default async function BuyerProjectsPage() {
   return (
     <BuyerAppPage fullWidth className="!space-y-0 flex min-h-0 flex-1 flex-col">
       <Suspense fallback={null}>
-        <ProjectsHubView
+        <ProjectsHubView key={profile.id}
+          userId={profile.id}
           drafts={drafts}
           published={published}
           inboxFiles={inboxFiles}
+          inboxError={inboxResult.ok ? undefined : inboxResult.error}
           nextBeats={nextBeats}
         />
       </Suspense>

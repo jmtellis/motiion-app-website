@@ -58,10 +58,10 @@ export function ProjectWorkspaceOverviewPanel() {
           <span>{rosterMembers.length} people in this project</span>
           <ArrowUpRight size={16} />
         </Link>
-        <Link href={`/projects/${projectId}/bookings`}>
+        <Link href={`/projects/${projectId}/coordination`}>
           <CalendarCheck size={19} />
-          <strong>Bookings</strong>
-          <span>Manage people and terms</span>
+          <strong>Coordination</strong>
+          <span>Manage people, dates, and notes</span>
           <ArrowUpRight size={16} />
         </Link>
         <Link href={projectTabPath(projectId, "files")}>

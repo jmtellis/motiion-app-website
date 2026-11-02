@@ -1,60 +1,22 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
+import { checkAccountDeletionBilling } from "@/lib/billing/account-deletion";
+import type { AccountDeletionResult } from "@/lib/billing/account-deletion-state";
+import type { z } from "zod";
+import { buyerProfileEditSchema, buyerVerificationLinksSchema } from "@/lib/talent-buyers/profile-edit";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { buildAuthDisplayNameMetadata, isHiringAccount } from "@/lib/auth/profile";
 import { mapBuyerRoleToLegacyNonTalentType } from "@/lib/talent-buyers/roles";
 import type {
-  TalentBuyerNotificationPreferences,
   TalentBuyerRole,
   TalentBuyerVerificationLinks,
 } from "@/types/talent-buyers";
 
-export type DeleteBuyerAccountResult =
-  | { ok: true }
-  | { ok: false; error: string };
+export type DeleteBuyerAccountResult = AccountDeletionResult;
 
-const talentBuyerRoleSchema = z.enum([
-  "choreographer",
-  "casting_professional",
-  "creative_director_or_producer",
-  "talent_representative",
-  "brand_or_agency_professional",
-  "other",
-  // Legacy values still accepted from existing profiles
-  "casting_director",
-  "creative_director",
-  "producer",
-  "talent_agency",
-  "studio_owner",
-  "dance_company",
-  "brand",
-  "production_company",
-  "event_organizer",
-]);
-
-const optionalUrlSchema = z
-  .string()
-  .trim()
-  .optional()
-  .refine((value) => !value || /^https?:\/\/.+/i.test(value), "Enter a valid URL.");
-
-const updateProfileSchema = z.object({
-  fullName: z.string().trim().min(1, "Name is required."),
-  organizationName: z.string().trim().optional(),
-  organizationWebsite: optionalUrlSchema,
-  email: z.string().trim().email("Enter a valid email.").optional(),
-  buyerRole: talentBuyerRoleSchema.optional().nullable(),
-  verificationLinks: z
-    .object({
-      companyWebsite: optionalUrlSchema,
-      linkedin: optionalUrlSchema,
-      instagram: optionalUrlSchema,
-    })
-    .optional(),
-});
+const updateProfileSchema = buyerProfileEditSchema;
 
 export type UpdateBuyerProfileInput = z.infer<typeof updateProfileSchema>;
 
@@ -62,25 +24,13 @@ export type UpdateBuyerProfileResult =
   | { ok: true; message?: string }
   | { ok: false; error: string };
 
-const HEADSHOTS_BUCKET = "headshots";
+const AVATARS_BUCKET = "avatars";
 const MAX_AVATAR_BYTES = 12 * 1024 * 1024;
-
-function getFileExtension(file: { name?: string; type?: string }, fallback: string) {
-  const fromName = file.name?.split(".").pop()?.toLowerCase();
-  if (fromName && fromName.length <= 5) return fromName;
-  if (file.type?.includes("png")) return "png";
-  if (file.type?.includes("webp")) return "webp";
-  return fallback;
-}
-
-function normalizeUrlList(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.map((item) => (typeof item === "string" ? item : "")).filter(Boolean);
-}
 
 function revalidateBuyerProfilePaths() {
   revalidatePath("/dashboard/settings");
   revalidatePath("/dashboard");
+  revalidatePath("/profile/[slug]", "page");
   revalidatePath("/", "layout");
 }
 
@@ -104,17 +54,7 @@ export async function updateBuyerProfile(
   const firstName = parts[0] ?? "";
   const lastName = parts.slice(1).join(" ");
   const nextEmail = parsed.data.email?.trim().toLowerCase();
-  const currentEmail = (user.email ?? "").trim().toLowerCase();
-  let emailConfirmationRequired = false;
-
-  if (nextEmail && nextEmail !== currentEmail) {
-    const { error: authEmailError } = await supabase.auth.updateUser({ email: nextEmail });
-    if (authEmailError) {
-      return { ok: false, error: authEmailError.message };
-    }
-    emailConfirmationRequired = true;
-  }
-
+  // This is a professional contact address. Sign-in email changes live in Account security.
   const profileUpdate: {
     display_name: string;
     first_name: string;
@@ -126,16 +66,13 @@ export async function updateBuyerProfile(
     last_name: lastName,
   };
 
-  if (nextEmail) {
-    profileUpdate.email = nextEmail;
-  }
 
-  const { error: profileError } = await supabase
+  const { data: savedProfile, error: profileError } = await supabase
     .from("profiles")
     .update(profileUpdate)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id).select("user_id").single();
 
-  if (profileError) return { ok: false, error: profileError.message };
+  if (profileError || !savedProfile) return { ok: false, error: "Couldn’t save your profile. Please try again." };
 
   const { error: authNameError } = await supabase.auth.updateUser({
     data: buildAuthDisplayNameMetadata({
@@ -144,14 +81,13 @@ export async function updateBuyerProfile(
       displayName: parsed.data.fullName.trim(),
     }),
   });
-  if (authNameError) {
-    return { ok: false, error: authNameError.message };
-  }
 
   const buyerUpdate: {
     organization_name: string | null;
     organization_website: string | null;
     role?: TalentBuyerRole;
+    custom_role?: string | null;
+    markets?: string[];
     non_talent_type?: string | null;
     verification_links?: TalentBuyerVerificationLinks;
     work_email?: string;
@@ -162,8 +98,11 @@ export async function updateBuyerProfile(
 
   if (parsed.data.buyerRole) {
     buyerUpdate.role = parsed.data.buyerRole;
+    buyerUpdate.custom_role = parsed.data.buyerRole === "other" ? parsed.data.customRole?.trim() || null : null;
     buyerUpdate.non_talent_type = mapBuyerRoleToLegacyNonTalentType(parsed.data.buyerRole);
   }
+
+  if (parsed.data.markets) buyerUpdate.markets = [...new Set(parsed.data.markets)];
 
   if (parsed.data.verificationLinks) {
     buyerUpdate.verification_links = {
@@ -177,23 +116,16 @@ export async function updateBuyerProfile(
     buyerUpdate.work_email = nextEmail;
   }
 
-  const { error: buyerError } = await supabase
+  const { data: savedBuyer, error: buyerError } = await supabase
     .from("non_talent_profiles")
     .update(buyerUpdate)
-    .eq("id", user.id);
+    .eq("id", user.id).select("id").single();
 
-  if (buyerError) return { ok: false, error: buyerError.message };
+  if (buyerError || !savedBuyer) return { ok: false, error: "Your name was saved, but professional details could not be saved. Please retry." };
 
   revalidateBuyerProfilePaths();
 
-  if (emailConfirmationRequired) {
-    return {
-      ok: true,
-      message: "Profile saved. Check your inbox to confirm the new email address.",
-    };
-  }
-
-  return { ok: true };
+  return { ok: true, ...(authNameError ? { message: "Profile saved. Your sign-in provider’s display name could not be updated." } : {}) };
 }
 
 export async function updateBuyerAvatar(
@@ -214,7 +146,7 @@ export async function updateBuyerAvatar(
     }
 
     const contentType = file.type || "image/jpeg";
-    if (!contentType.startsWith("image/")) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(contentType)) {
       return { ok: false, error: "Profile photo must be an image file." };
     }
 
@@ -223,50 +155,17 @@ export async function updateBuyerAvatar(
     }
 
     const bytes = Buffer.from(await file.arrayBuffer());
-    const fileName = file instanceof File ? file.name : "avatar.jpg";
-    const ext = getFileExtension({ name: fileName, type: contentType }, "jpg");
-    const timestamp = Math.floor(Date.now() / 1000);
-    const userFolder = user.id.toLowerCase();
-    const displayPath = `${userFolder}/headshot_0_${timestamp}.${ext}`;
-    const sourcePath = `${userFolder}/headshot_0_${timestamp}_source.${ext}`;
-    const uploadOptions = { contentType, upsert: true };
-
-    const displayUpload = await supabase.storage.from(HEADSHOTS_BUCKET).upload(displayPath, bytes, uploadOptions);
-    if (displayUpload.error) {
-      return { ok: false, error: displayUpload.error.message };
-    }
-
-    const sourceUpload = await supabase.storage.from(HEADSHOTS_BUCKET).upload(sourcePath, bytes, uploadOptions);
-    if (sourceUpload.error) {
-      return { ok: false, error: sourceUpload.error.message };
-    }
-
-    const { data: displayPublic } = supabase.storage.from(HEADSHOTS_BUCKET).getPublicUrl(displayPath);
-    const { data: sourcePublic } = supabase.storage.from(HEADSHOTS_BUCKET).getPublicUrl(sourcePath);
-
-    const { data: existing } = await supabase
-      .from("profiles")
-      .select("headshot_urls, headshot_original_urls")
-      .eq("user_id", user.id)
-      .maybeSingle<{ headshot_urls: string[] | null; headshot_original_urls: string[] | null }>();
-
-    const nextDisplay = normalizeUrlList(existing?.headshot_urls);
-    const nextOriginal = normalizeUrlList(existing?.headshot_original_urls);
-    nextDisplay[0] = displayPublic.publicUrl;
-    nextOriginal[0] = sourcePublic.publicUrl;
-
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({
-        headshot_urls: nextDisplay,
-        headshot_original_urls: nextOriginal,
-      })
-      .eq("user_id", user.id);
-
-    if (profileError) return { ok: false, error: profileError.message };
+    const ext = contentType === "image/png" ? "png" : contentType === "image/webp" ? "webp" : "jpg";
+    const path = `${user.id.toLowerCase()}/industry_${crypto.randomUUID()}.${ext}`;
+    const upload = await supabase.storage.from(AVATARS_BUCKET).upload(path, bytes, { contentType, upsert: false });
+    if (upload.error) return { ok: false, error: upload.error.message };
+    const avatarUrl = supabase.storage.from(AVATARS_BUCKET).getPublicUrl(path).data.publicUrl;
+    // A professional avatar is separate from a talent portfolio's headshots.
+    const { data: updated, error: profileError } = await supabase.from("profiles").update({ industry_avatar_url: avatarUrl }).eq("user_id", user.id).select("user_id").single();
+    if (profileError || !updated) return { ok: false, error: "The photo uploaded, but couldn’t be saved to your profile. Please retry." };
 
     revalidateBuyerProfilePaths();
-    return { ok: true, avatarUrl: displayPublic.publicUrl };
+    return { ok: true, avatarUrl };
   } catch (error) {
     return {
       ok: false,
@@ -275,30 +174,11 @@ export async function updateBuyerAvatar(
   }
 }
 
-export async function updateBuyerNotificationPreferences(
-  preferences: TalentBuyerNotificationPreferences,
-): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await createServerSupabaseClient();
-  if (!supabase) return { ok: false, error: "Supabase is not configured." };
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "You must be signed in." };
-
-  const { error } = await supabase
-    .from("non_talent_profiles")
-    .update({ notification_preferences: preferences })
-    .eq("id", user.id);
-
-  if (error) return { ok: false, error: error.message };
-  revalidatePath("/dashboard/settings");
-  return { ok: true };
-}
-
 export async function updateBuyerVerificationLinks(
   links: TalentBuyerVerificationLinks,
 ): Promise<{ ok: boolean; error?: string }> {
+  const parsed = buyerVerificationLinksSchema.safeParse(links);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check your professional links." };
   const supabase = await createServerSupabaseClient();
   if (!supabase) return { ok: false, error: "Supabase is not configured." };
 
@@ -309,7 +189,7 @@ export async function updateBuyerVerificationLinks(
 
   const { error } = await supabase
     .from("non_talent_profiles")
-    .update({ verification_links: links })
+    .update({ verification_links: parsed.data })
     .eq("id", user.id);
 
   if (error) return { ok: false, error: error.message };
@@ -354,6 +234,8 @@ export async function deleteBuyerAccount(): Promise<DeleteBuyerAccountResult> {
     return { ok: false, error: "Only talent buyer accounts can be deleted from this page." };
   }
 
+  const billing = await checkAccountDeletionBilling(user.id);
+  if (!billing.ok) return billing;
   const { error: deleteError } = await supabase.rpc("delete_my_account");
   if (deleteError) {
     return { ok: false, error: deleteError.message };

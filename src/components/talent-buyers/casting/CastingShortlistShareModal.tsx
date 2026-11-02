@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 
 import {
   createRoleShortlistShare,
@@ -37,37 +37,45 @@ export function CastingShortlistShareModal({
 }: CastingShortlistShareModalProps) {
   const { showToast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const busy = useRef(false);
+  const [error, setError] = useState<string | null>(null);
   const [shareDuration, setShareDuration] = useState<ShortlistLinkDuration>("twenty_four_hours");
   const [createdShareUrl, setCreatedShareUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
+  const resetKey = `${open}:${roleIds.join("|")}:${title}`;
+  const [previousKey, setPreviousKey] = useState(resetKey);
+  if (previousKey !== resetKey) {
+    setPreviousKey(resetKey);
     setCreatedShareUrl(null);
+    setError(null);
     setShareDuration("twenty_four_hours");
-  }, [open, roleIds.join("|"), title]);
+  }
 
   function handleCreateShare() {
+    if (busy.current || createdShareUrl) return;
     if (!roleIds.length) {
       showToast({ message: "Select a role with shortlisted talent first.", variant: "error" });
       return;
     }
+    busy.current = true;
+    setError(null);
     startTransition(async () => {
-      const result = await createRoleShortlistShare({
-        roleIds,
-        roleTitle: title,
-        duration: shareDuration,
-      });
-      if (!result.ok || !result.share) {
-        showToast({ message: result.error ?? "Could not create link", variant: "error" });
-        return;
+      try {
+        const result = await createRoleShortlistShare({ roleIds, roleTitle: title, duration: shareDuration });
+        if (!result.ok || !result.share) throw new Error(result.error ?? "Could not create link.");
+        setCreatedShareUrl(result.share.publicUrl);
+        onShareCreated?.(result.share);
+        showToast({ message: "Client presentation link created", variant: "success" });
+      } catch (failure) {
+        setError(failure instanceof Error ? failure.message : "Could not create link. Check your connection and retry.");
+      } finally {
+        busy.current = false;
       }
-      setCreatedShareUrl(result.share.publicUrl);
-      onShareCreated?.(result.share);
-      showToast({ message: "Client presentation link created", variant: "success" });
     });
   }
 
   function handleClose() {
+    if (busy.current) return;
     setCreatedShareUrl(null);
     onClose();
   }
@@ -79,8 +87,8 @@ export function CastingShortlistShareModal({
       title="Share with client"
       description={`Create a private presentation link for shortlisted talent (${scopeLabel}). Clients can review without a Motiion account.`}
       footer={
-        <button type="button" className="btn-primary text-sm" disabled={isPending || !roleIds.length} onClick={handleCreateShare}>
-          {isPending ? "Creating…" : "Create link"}
+        <button type="button" className="btn-primary text-sm" disabled={isPending || !roleIds.length} onClick={createdShareUrl ? handleClose : handleCreateShare}>
+          {isPending ? "Creating…" : createdShareUrl ? "Done" : "Create link"}
         </button>
       }
     >
@@ -94,6 +102,8 @@ export function CastingShortlistShareModal({
               key={option.value}
               type="button"
               onClick={() => setShareDuration(option.value)}
+              disabled={isPending || Boolean(createdShareUrl)}
+              aria-pressed={shareDuration === option.value}
               className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
                 shareDuration === option.value
                   ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--ink)]"
@@ -104,6 +114,7 @@ export function CastingShortlistShareModal({
             </button>
           ))}
         </div>
+        {error ? <p role="alert" className="text-sm text-[var(--ui-danger)]">{error}</p> : null}
         {createdShareUrl ? (
           <div className="rounded-xl border border-[var(--line)] bg-[var(--tone)] p-3">
             <p className="text-xs font-medium text-[var(--ink-soft)]">Share this link</p>

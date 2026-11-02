@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -35,7 +36,8 @@ function scheduleLabel(item: PublicActivityItem) {
   return time ? `${date} · ${time}` : date;
 }
 
-export function HomeListings({ activities }: { activities: PublicActivityItem[] }) {
+export function HomeListings({ activities, error }: { activities: PublicActivityItem[]; error?: string | null }) {
+  const router = useRouter();
   const notifications = useNotificationsPanel();
   const [active, setActive] = useState<PanelKey | null>(null);
   const [shown, setShown] = useState<PanelKey | null>(null);
@@ -61,6 +63,7 @@ export function HomeListings({ activities }: { activities: PublicActivityItem[] 
           panelId="home-classes-panel"
           onViewAll={activities.length ? () => open("classes") : undefined}
         />
+        {error ? <div role="alert" className="ui-notice" data-tone="error">{error} <button type="button" className="underline" onClick={() => router.refresh()}>Retry</button></div> : null}
         {activities.length ? (
           <ul className="home-activity-grid">
             {activities.slice(0, PREVIEW_COUNT).map((item) => (
@@ -69,7 +72,7 @@ export function HomeListings({ activities }: { activities: PublicActivityItem[] 
               </li>
             ))}
           </ul>
-        ) : (
+        ) : !error ? (
           <div className="home-listing-empty">
             <CalendarDays size={22} strokeWidth={1.6} aria-hidden />
             <div>
@@ -77,7 +80,7 @@ export function HomeListings({ activities }: { activities: PublicActivityItem[] 
               <p>New classes and sessions from the community will show up here.</p>
             </div>
           </div>
-        )}
+        ) : null}
       </section>
 
       <WorkspaceSidePanel

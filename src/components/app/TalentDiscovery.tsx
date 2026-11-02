@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { DiscoverProfilePanel } from "@/components/app/DiscoverProfilePanel";
 import { DiscoverSaved } from "@/components/app/DiscoverSaved";
@@ -27,6 +27,7 @@ type DiscoverMode = "discover" | "browse" | "saved";
 /** Same discovery canvas as the industry workspace; no hiring-only actions. */
 export function TalentDiscovery({
   initialData,
+  currentUserId,
   keyword,
   credit,
   recentlyViewed,
@@ -37,6 +38,7 @@ export function TalentDiscovery({
   saved,
 }: {
   initialData: TalentNavigatorInitialData;
+  currentUserId: string;
   keyword: string;
   credit: string;
   recentlyViewed: Talent[];
@@ -48,6 +50,7 @@ export function TalentDiscovery({
   saved?: ReactNode;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [mode, setMode] = useState<DiscoverMode>(initialMode);
   const [selected, setSelected] = useState<Talent | null>(null);
   const [viewed, setViewed] = useState(recentlyViewed);
@@ -94,7 +97,12 @@ export function TalentDiscovery({
               { value: "saved" as const, label: "Saved" },
             ]}
             value={mode}
-            onChange={setMode}
+            onChange={(next) => {
+              setMode(next);
+              const params = new URLSearchParams(searchParams.toString());
+              params.set("view", next === "discover" ? "explore" : next);
+              router.push(`${basePath}?${params}`, { scroll: false });
+            }}
             ariaLabel="Discover view"
             activeTone="white"
           />
@@ -164,6 +172,8 @@ export function TalentDiscovery({
                 </div>
               )}
               <DiscoverSearchBar
+                basePath={basePath}
+                currentUserId={currentUserId}
                 keyword={keyword}
                 credit={credit}
                 recentlyViewed={viewed}

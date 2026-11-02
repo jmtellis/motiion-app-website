@@ -76,6 +76,7 @@ export function CastingBreakdownPanel() {
   const router = useRouter();
   const { showToast } = useToast();
   const { projectId, project, castingWorkflow, attachments } = useProjectWorkspace();
+  const canEdit = project.isOwner !== false;
   const [castingOpen, setCastingOpen] = useState(false);
   const [editing, setEditing] = useState<EditSectionId | null>(null);
   const [draftForm, setDraftForm] = useState<CastingComposerForm | null>(null);
@@ -111,7 +112,7 @@ export function CastingBreakdownPanel() {
     breakdownDocument?.readiness.filter((item) => !item.ok && item.label !== "Published") ?? [];
 
   function openEdit(section: EditSectionId) {
-    if (!seedForm) return;
+    if (!seedForm || !canEdit) return;
     setDraftForm(seedForm);
     setEditing(section);
   }
@@ -120,8 +121,11 @@ export function CastingBreakdownPanel() {
     if (!seedForm || editing) return;
     if (typeof window === "undefined") return;
     if (window.location.hash !== "#roles") return;
-    openEdit("roles");
-    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    const frame = requestAnimationFrame(() => {
+      openEdit("roles");
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    });
+    return () => cancelAnimationFrame(frame);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- open once when seeded with #roles
   }, [seedForm]);
 
@@ -162,8 +166,8 @@ export function CastingBreakdownPanel() {
             variant="dashboard"
             title="No breakdown yet"
             description="Define the casting details, roles, requirements, and submission process."
-            actionLabel="Create breakdown"
-            onAction={() => setCastingOpen(true)}
+            actionLabel={canEdit ? "Create breakdown" : undefined}
+            onAction={canEdit ? () => setCastingOpen(true) : undefined}
           />
         </div>
         <CreateCastingModal projectId={projectId} open={castingOpen} onClose={() => setCastingOpen(false)} />
@@ -190,22 +194,13 @@ export function CastingBreakdownPanel() {
 
         {breakdownDocument ? (
           <section className="casting-breakdown-workspace__doc">
-            <button
-              type="button"
-              className="casting-breakdown-workspace__doc-edit"
-              aria-label="Edit breakdown"
-              title="Edit breakdown"
-              onClick={() => openEdit("general_info")}
-            >
-              <Pencil className="size-4" aria-hidden />
-            </button>
             <CastingBreakdownDocumentView
               document={{ ...breakdownDocument, readiness: [] }}
               sectionsOnly
               rolesAfterOverview
               renderSectionAction={(sectionTitle) => {
                 const chip = SECTION_CHIP_LABELS[sectionTitle];
-                if (!chip) return null;
+                if (!chip || !canEdit) return null;
                 return <SectionEditChip label={chip.label} onClick={() => openEdit(chip.id)} />;
               }}
               renderRoles={
@@ -214,7 +209,7 @@ export function CastingBreakdownPanel() {
                   casting={casting}
                   roles={roles}
                   candidates={workflow.candidates}
-                  onEditRoles={() => openEdit("roles")}
+                  onEditRoles={canEdit ? () => openEdit("roles") : undefined}
                   embedded
                 />
               }

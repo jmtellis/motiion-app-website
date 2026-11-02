@@ -37,7 +37,7 @@ export const UNIVERSAL_PROJECT_NAVIGATION: ProjectNavItem[] = [
   },
 ];
 
-const bookingNav: ProjectNavItem = { id: "bookings", label: "Bookings", icon: CalendarCheck, path: "bookings", description: "Talent, job terms, and payment planning" };
+const coordinationNav: ProjectNavItem = { id: "coordination", label: "Coordination", icon: CalendarCheck, path: "coordination", description: "People, dates, and internal coordination notes" };
 
 export function getProjectNavigation(project: {
   projectType?: string | null;
@@ -50,20 +50,20 @@ export function getProjectNavigation(project: {
     return {
       projectType,
       project: [],
-      workspace: [...config.workspaceItems, bookingNav],
+      workspace: [...config.workspaceItems, coordinationNav],
       config,
-      sections: [{ id: "workspace", label: "Workspace", items: [...config.workspaceItems, bookingNav] }],
+      sections: [{ id: "workspace", label: "Workspace", items: [...config.workspaceItems, coordinationNav] }],
     };
   }
 
   return {
     projectType,
     project: UNIVERSAL_PROJECT_NAVIGATION,
-    workspace: [...config.workspaceItems, bookingNav],
+    workspace: [...config.workspaceItems, coordinationNav],
     config,
     sections: [
       { id: "project", label: "Project", items: UNIVERSAL_PROJECT_NAVIGATION },
-      { id: "workspace", label: "Workspace", items: [...config.workspaceItems, bookingNav] },
+      { id: "workspace", label: "Workspace", items: [...config.workspaceItems, coordinationNav] },
     ],
   };
 }

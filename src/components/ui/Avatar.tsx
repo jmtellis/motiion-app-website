@@ -1,4 +1,6 @@
-import type { ImgHTMLAttributes } from "react";
+"use client";
+
+import { useState, type ImgHTMLAttributes } from "react";
 
 import { getProfileInitials } from "@/lib/auth/avatar";
 
@@ -20,17 +22,21 @@ type AvatarProps = {
 
 /** Circular identity image with initials fallback — MotiionAvatar analogue for web. */
 export function Avatar({ src, name, size = "md", className = "", ...imgProps }: AvatarProps) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const initials = getProfileInitials(name) || "?";
   const sizeClass = SIZE_CLASS[size];
 
-  if (src) {
+  if (src && src !== failedSrc) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
+        loading="lazy"
+        decoding="async"
         alt=""
         className={`inline-block shrink-0 rounded-full object-cover ring-1 ring-[var(--ds-border-low)] ${sizeClass} ${className}`}
         {...imgProps}
+        onError={(event) => { setFailedSrc(src); imgProps.onError?.(event); }}
       />
     );
   }

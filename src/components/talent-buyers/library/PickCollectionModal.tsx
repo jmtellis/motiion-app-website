@@ -18,18 +18,22 @@ export function PickCollectionModal({
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function toggle(id: string) {
     setSelected((current) => (current.includes(id) ? current.filter((value) => value !== id) : [...current, id]));
   }
 
   async function handleConfirm() {
-    if (!selected.length) return;
+    if (!selected.length || pending) return;
     setPending(true);
+    setError(null);
     try {
       await onConfirm(selected);
       setSelected([]);
       onClose();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not add talent. Please try again.");
     } finally {
       setPending(false);
     }
@@ -38,7 +42,7 @@ export function PickCollectionModal({
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={() => { if (!pending) onClose(); }}
       title="Add to collection"
       description="Choose one or more collections."
       size="sm"
@@ -58,19 +62,21 @@ export function PickCollectionModal({
         </div>
       }
     >
+      {error ? <p className="ui-notice" data-tone="error" role="alert">{error}</p> : null}
       <div className="library-save-popover__list max-h-72">
         {collections.map((collection) => (
           <label key={collection.id} className="library-save-popover__row">
             <input
               type="checkbox"
               checked={selected.includes(collection.id)}
+              disabled={pending}
               onChange={() => toggle(collection.id)}
             />
             <span className="truncate">{collection.name}</span>
           </label>
         ))}
         {!collections.length ? (
-          <p className="px-1 py-3 text-sm text-white/45">Create a collection first.</p>
+          <p className="px-1 py-3 text-sm text-[var(--ui-muted)]">Create a collection first.</p>
         ) : null}
       </div>
     </Modal>

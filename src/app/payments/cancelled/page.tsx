@@ -16,9 +16,9 @@ function readParam(params: Record<string, string | string[] | undefined>, key: s
   return null;
 }
 
-function activityHref(kind: PublicActivityKind | null, activityId: string | null): string | null {
+function activityHref(_kind: PublicActivityKind | null, activityId: string | null): string | null {
   if (!activityId) return null;
-  const prefix = kind === "session" ? "/session" : kind === "event" ? "/event" : "/class";
+  const prefix = "/activity";
   return `${prefix}/${encodeURIComponent(activityId)}`;
 }
 
@@ -36,20 +36,20 @@ export default async function PaymentCancelledPage({ searchParams }: PageProps) 
         <header className="casting-page-header">
           <p className="casting-section-title">Payment</p>
           <h1 className="casting-page-title">Payment cancelled</h1>
-          <p className="casting-page-subtitle">No charge was made. You can try booking again when you&apos;re ready.</p>
+          <p className="casting-page-subtitle">Checkout was closed. Return to the activity to review your reservation before starting another payment.</p>
         </header>
 
         {backHref ? (
           <Link href={backHref} className="casting-submit-button" style={{ textAlign: "center", textDecoration: "none" }}>
-            Back to booking
+            Back to activity
           </Link>
         ) : (
           <a
-            href="https://www.motiion.app"
+            href="/classes"
             className="casting-submit-button"
             style={{ textAlign: "center", textDecoration: "none" }}
           >
-            Go to Motiion
+            Explore classes
           </a>
         )}
       </article>

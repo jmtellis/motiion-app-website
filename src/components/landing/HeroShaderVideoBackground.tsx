@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useReducedMotion } from "motion/react";
 
 import "./hero-shader-video.css";
@@ -115,13 +115,7 @@ export function HeroShaderVideoBackground({ src, poster, alt }: HeroShaderVideoB
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [usePoster, setUsePoster] = useState(reduceMotion === true);
-
-  useEffect(() => {
-    if (reduceMotion) {
-      setUsePoster(true);
-    }
-  }, [reduceMotion]);
+  const usePoster = reduceMotion === true;
 
   useEffect(() => {
     const root = rootRef.current;

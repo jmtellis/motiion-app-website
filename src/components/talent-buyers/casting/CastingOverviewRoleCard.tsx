@@ -121,14 +121,13 @@ export function CastingOverviewRoleCard({
 
   return (
     <article className="casting-overview-role-card">
-      <Link href={reviewHref} className="casting-overview-role-card__media" aria-label={`Open ${role.name}`}>
+      <Link href={reviewHref} className="casting-overview-role-card__media" aria-label={`Review ${role.name} — ${totalSubmissionsLabel(totalSubmissionCount)}`}>
         <CastingRoleSubmissionAvatarGrid
           candidates={candidates}
           role={role}
           grid={CASTING_ROLE_OVERVIEW_AVATAR_GRID}
           bleed
         />
-        <div className="casting-overview-role-card__media-scrim" aria-hidden />
         <span className="sr-only">{role.name}</span>
       </Link>
 

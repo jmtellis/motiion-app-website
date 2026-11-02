@@ -6,7 +6,7 @@ import { useMemo, useRef, useState } from "react";
 import { processOnboardingResume } from "@/app/onboarding/media-actions";
 import { importPortfolioResume, savePortfolioExperiences } from "@/app/portfolio/material-actions";
 import type { OwnerExperience } from "@/lib/app/portfolio-owner";
-import { renderPdfPagesToJpegBlobs } from "@/lib/onboarding/client-media";
+import { prepareResumeUpload } from "@/lib/onboarding/client-media";
 import type { ResumeExperienceCategory } from "@/lib/profile/resume-experience";
 
 import { ConfirmBar, moveItem, Notice, SaveButton, usePointerReorder } from "./PanelKit";
@@ -43,18 +43,24 @@ export function ResumePanel({ owner, actionsHost, onDirtyChange, onSaved }: Port
     setExperiences(next);
     setSaving(true);
     setError(null);
-    const result = await savePortfolioExperiences(next);
-    setSaving(false);
-    if (!result.ok) {
+    try {
+      const result = await savePortfolioExperiences(next);
+      if (!result.ok) {
+        setExperiences(previous);
+        setError(result.error);
+        return false;
+      }
+      onSaved(message);
+      return true;
+    } catch {
       setExperiences(previous);
-      setError(result.error);
+      setError("Couldn’t save your resume. Check your connection and try again.");
       return false;
-    }
-    onSaved(message);
-    return true;
+    } finally { setSaving(false); }
   }
 
   function reorderWithin(category: ResumeExperienceCategory, from: number, to: number) {
+    if (saving || importing) return;
     const slots = sections.find((section) => section.key === category)?.items.map((item) => item.index) ?? [];
     const reordered = moveItem(slots.map((slot) => experiences[slot]!), from, to);
     const next = [...experiences];
@@ -69,13 +75,8 @@ export function ResumePanel({ owner, actionsHost, onDirtyChange, onSaved }: Port
     if (file.type !== "application/pdf" && !file.type.startsWith("image/")) return setError("Choose a PDF or image of your resume.");
     if (file.size > 20 * 1024 * 1024) return setError("Choose a resume under 20 MB.");
     try {
-      const formData = new FormData();
-      formData.append("source", file);
-      if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
-        setImporting("Reading document…");
-        const pages = await renderPdfPagesToJpegBlobs(file);
-        pages.forEach((page, index) => formData.append("pages", page, `resume_page_${index + 1}.jpg`));
-      }
+      setImporting("Reading document…");
+      const formData = await prepareResumeUpload(file);
       setImporting("Extracting credits…");
       const processed = await processOnboardingResume(formData);
       if (!processed.ok) return setError(processed.error);
@@ -136,11 +137,11 @@ export function ResumePanel({ owner, actionsHost, onDirtyChange, onSaved }: Port
               <ExternalLink size={14} aria-hidden /> Original
             </a>
           ) : null}
-          <button type="button" className="portfolio-button-secondary" disabled={Boolean(importing)} onClick={() => importInput.current?.click()}>
+          <button type="button" className="portfolio-button-secondary" disabled={Boolean(importing) || saving} onClick={() => importInput.current?.click()}>
             {importing ? <Loader2 size={14} className="animate-spin" aria-hidden /> : <Upload size={14} aria-hidden />}
             {importing ?? (resumeUrl ? "Upload new" : "Import resume")}
           </button>
-          <button type="button" className="portfolio-panel-save" aria-expanded={adding} onClick={() => setAdding((open) => !open)}>
+          <button type="button" className="portfolio-panel-save" disabled={Boolean(importing) || saving} aria-expanded={adding} onClick={() => setAdding((open) => !open)}>
             <Plus size={14} aria-hidden /> Add experience
           </button>
         </div>

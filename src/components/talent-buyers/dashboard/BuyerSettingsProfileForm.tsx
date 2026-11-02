@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import {
-  updateBuyerNotificationPreferences,
   updateBuyerProfile,
   updateBuyerVerificationLinks,
 } from "@/app/(buyer-app)/dashboard/settings/actions";
@@ -16,7 +15,6 @@ import type {
 } from "@/lib/talent-buyers/buyer-settings";
 import type { DashboardProfile } from "@/types/database";
 import type {
-  TalentBuyerNotificationPreferences,
   TalentBuyerRole,
   TalentBuyerVerificationLinks,
 } from "@/types/talent-buyers";
@@ -36,6 +34,7 @@ export function BuyerSettingsProfileForm({
   const { showToast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [isDirty, setIsDirty] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const markets = profile.markets?.join(", ") ?? "";
   const isDashboard = variant === "dashboard";
   const wrapperClass = isDashboard
@@ -51,10 +50,14 @@ export function BuyerSettingsProfileForm({
     const roleValue = String(form.get("buyerRole") ?? "");
 
     startTransition(async () => {
+      setError(null);
+      try {
       const result = await updateBuyerProfile({
         fullName: String(form.get("fullName") ?? ""),
         email: String(form.get("email") ?? "").trim() || undefined,
         buyerRole: (roleValue || null) as TalentBuyerRole | null,
+        customRole: String(form.get("customRole") ?? ""),
+        markets: String(form.get("markets") ?? "").split(",").map(value => value.trim()).filter(Boolean),
         organizationName: String(form.get("organizationName") ?? ""),
         organizationWebsite: String(form.get("organizationWebsite") ?? ""),
       });
@@ -67,11 +70,13 @@ export function BuyerSettingsProfileForm({
         });
         router.refresh();
       } else {
+        setError(result.error ?? "Could not save profile.");
         showToast({
           message: result.error ?? "Could not save profile.",
           variant: "error",
         });
       }
+      } catch { setError("Couldn’t save your profile. Your changes are still here; please try again."); }
     });
   }
 
@@ -82,7 +87,7 @@ export function BuyerSettingsProfileForm({
       onChange={() => setIsDirty(true)}
       onReset={() => setIsDirty(false)}
     >
-      <div className="industry-form-grid">
+      <fieldset disabled={isPending} className="industry-form-grid">
         <IndustryField label="Full name">
           <IndustryInput
             name="fullName"
@@ -95,7 +100,7 @@ export function BuyerSettingsProfileForm({
           <IndustryInput
             name="email"
             type="email"
-            defaultValue={profile.email ?? ""}
+            defaultValue={profile.workEmail ?? profile.email ?? ""}
             placeholder="you@company.com"
           />
         </IndustryField>
@@ -109,7 +114,8 @@ export function BuyerSettingsProfileForm({
         <IndustryField label="Organization website">
           <IndustryInput
             name="organizationWebsite"
-            type="url"
+            type="text"
+            inputMode="url"
             defaultValue={profile.organizationWebsite ?? ""}
             placeholder="https://"
           />
@@ -121,6 +127,7 @@ export function BuyerSettingsProfileForm({
             className={selectClass}
           >
             <option value="">Select a title</option>
+            {profile.buyerRole && !roleOptions.some(option => option.value === profile.buyerRole) && <option value={profile.buyerRole}>{profile.buyerRole.replaceAll("_", " ")}</option>}
             {roleOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -128,18 +135,18 @@ export function BuyerSettingsProfileForm({
             ))}
           </select>
         </IndustryField>
-        <IndustryField label="Markets">
+        <IndustryField label="Your role (if Other)"><IndustryInput name="customRole" defaultValue={profile.customRole ?? ""} maxLength={200} placeholder="Your professional title" /></IndustryField>
+        <IndustryField label="Markets (separate with commas)">
           <IndustryInput
             name="markets"
             defaultValue={markets}
-            readOnly
-            disabled
-            placeholder="Markets from onboarding"
+            placeholder="Los Angeles, New York City"
           />
         </IndustryField>
-      </div>
+      </fieldset>
 
-      <AuthMuted>Save your changes to update your Motiion account.</AuthMuted>
+      <AuthMuted>Your work email is a contact address. Manage your sign-in email separately below.</AuthMuted>
+      {error && <p role="alert" className="text-sm text-[var(--danger)]">{error}</p>}
 
       <div
         className={`industry-save-bar flex flex-wrap items-center gap-3 pt-2${isDirty ? " industry-save-bar--dirty" : ""}`}
@@ -154,7 +161,7 @@ export function BuyerSettingsProfileForm({
             Discard
           </button>
         )}
-        <AuthButton type="submit" disabled={isPending}>
+        <AuthButton type="submit" disabled={isPending || !isDirty}>
           {isPending ? "Saving…" : "Save changes"}
         </AuthButton>
       </div>
@@ -165,26 +172,15 @@ export function BuyerSettingsProfileForm({
 export function BuyerSettingsWorkspaceSections({
   organization,
   teamMembers,
-  notificationPreferences,
   verificationLinks,
 }: {
   organization: BuyerOrganizationInfo | null;
   teamMembers: BuyerTeamMember[];
-  notificationPreferences: TalentBuyerNotificationPreferences | null;
   verificationLinks: TalentBuyerVerificationLinks | null;
 }) {
   const { showToast } = useToast();
   const [isPending, startTransition] = useTransition();
 
-  const [newTalentMatches, setNewTalentMatches] = useState(
-    notificationPreferences?.newTalentMatches ?? true,
-  );
-  const [opportunityUpdates, setOpportunityUpdates] = useState(
-    notificationPreferences?.opportunityUpdates ?? true,
-  );
-  const [industryAnnouncements, setIndustryAnnouncements] = useState(
-    notificationPreferences?.industryAnnouncements ?? false,
-  );
   const [website, setWebsite] = useState(
     verificationLinks?.companyWebsite ?? "",
   );
@@ -193,26 +189,15 @@ export function BuyerSettingsWorkspaceSections({
     verificationLinks?.instagram ?? "",
   );
 
-  function saveNotifications() {
+  function perform(action: () => Promise<void>) {
     startTransition(async () => {
-      const result = await updateBuyerNotificationPreferences({
-        newTalentMatches,
-        opportunityUpdates,
-        industryAnnouncements,
-      });
-      showToast(
-        result.ok
-          ? { message: "Notification preferences saved", variant: "success" }
-          : {
-              message: result.error ?? "Could not save preferences.",
-              variant: "error",
-            },
-      );
+      try { await action(); }
+      catch { showToast({ message: "Couldn’t save your changes. Please try again.", variant: "error" }); }
     });
   }
 
   function saveVerification() {
-    startTransition(async () => {
+    perform(async () => {
       const result = await updateBuyerVerificationLinks({
         companyWebsite: website.trim() || undefined,
         linkedin: linkedin.trim() || undefined,
@@ -296,53 +281,14 @@ export function BuyerSettingsWorkspaceSections({
           </ul>
         ) : (
           <p className="mt-2 text-sm text-white/50">
-            Team invites are coming soon. Your organization workspace will list
-            collaborators here.
+            No organization team members yet. Manage project collaborators within each project.
           </p>
         )}
       </IndustryCard>
 
-      <IndustryCard className="space-y-4 px-5 py-5">
-        <h3 className="text-base font-semibold text-white/92">Notifications</h3>
-        <label className="flex items-center justify-between gap-3 text-sm text-white/75">
-          New talent matches
-          <input
-            type="checkbox"
-            checked={newTalentMatches}
-            onChange={(event) => setNewTalentMatches(event.target.checked)}
-            className="size-4 rounded border-white/20 bg-transparent accent-[var(--accent)]"
-          />
-        </label>
-        <label className="flex items-center justify-between gap-3 text-sm text-white/75">
-          Opportunity updates
-          <input
-            type="checkbox"
-            checked={opportunityUpdates}
-            onChange={(event) => setOpportunityUpdates(event.target.checked)}
-            className="size-4 rounded border-white/20 bg-transparent accent-[var(--accent)]"
-          />
-        </label>
-        <label className="flex items-center justify-between gap-3 text-sm text-white/75">
-          Industry announcements
-          <input
-            type="checkbox"
-            checked={industryAnnouncements}
-            onChange={(event) => setIndustryAnnouncements(event.target.checked)}
-            className="size-4 rounded border-white/20 bg-transparent accent-[var(--accent)]"
-          />
-        </label>
-        <button
-          type="button"
-          className="bd-btn-secondary"
-          disabled={isPending}
-          onClick={saveNotifications}
-        >
-          Save preferences
-        </button>
-      </IndustryCard>
-
       <IndustryCard className="space-y-3 px-5 py-5">
-        <h3 className="text-base font-semibold text-white/92">Verification</h3>
+        <h3 className="text-base font-semibold text-white/92">Professional links</h3>
+        <p className="text-sm text-white/60">Links support your professional profile. Identity verification and industry approval are managed separately.</p>
         <IndustryField label="Website">
           <IndustryInput
             type="url"

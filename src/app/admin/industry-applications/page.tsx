@@ -9,7 +9,7 @@ export default async function IndustryApplicationsPage() {
   const db = await createServerSupabaseClient();
   const result = db ? await db.from("industry_applications").select("*").eq("status", "pending").order("submitted_at").limit(100) : null;
   const applications = (result?.data ?? []) as IndustryApplication[];
-  const profiles = db && applications.length ? await db.from("profiles").select("user_id,headshot_urls,industry_avatar_url,acquisition_source,acquisition_source_detail").in("user_id", applications.map(a => a.user_id)) : null;
+  const profiles = db && applications.length ? await db.from("profiles").select("user_id,headshot_urls,industry_avatar_url,acquisition_source,acquisition_source_detail,username,date_of_birth").in("user_id", applications.map(a => a.user_id)) : null;
   const profileSource = profiles ? { rows: profiles.data ?? [], error: profiles.error ? "Profile lookup unavailable" : null } : undefined;
   return <main className="mx-auto max-w-3xl space-y-6 p-8"><Link href="/admin/analytics">Admin home</Link><h1 className="text-3xl font-semibold">Industry applications</h1>
     <p>Review professional work and company affiliation. Independent professionals and personal email addresses are welcome. Ask for more information when evidence is unclear.</p>

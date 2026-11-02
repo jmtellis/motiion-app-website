@@ -1,5 +1,7 @@
 "use server";
 
+import { currentBlockedUsers } from "@/lib/app/blocked-visibility";
+import { allowsUser } from "@/lib/app/blocked-visibility-model";
 import { getProfileAvatarUrl, getProfileInitials } from "@/lib/auth/avatar";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Talent } from "@/lib/talent-navigator/types";
@@ -50,48 +52,26 @@ async function hydrateUserIdsAsTalent(
   supabase: NonNullable<Awaited<ReturnType<typeof createServerSupabaseClient>>>,
   userIds: string[],
 ): Promise<Talent[]> {
-  const uniqueIds = [...new Set(userIds.filter(Boolean))];
+  const blocked = await currentBlockedUsers();
+  if (blocked.error) throw new Error(blocked.error);
+  const uniqueIds = [...new Set(userIds.filter(id => Boolean(id) && allowsUser(id, blocked.ids)))];
   if (!uniqueIds.length) return [];
+  // Use the public talent contract: a saved ID is not permission to read a private profile.
+  const people = new Map<string, Talent>();
+  for (let offset = 0; offset < uniqueIds.length; offset += 200) {
+    const { data, error } = await supabase.from("talent").select("id,username,full_name,headshot_url,headshot_urls,styles,location,representation")
+      .in("id", uniqueIds.slice(offset, offset + 200));
+    if (error) throw new Error("Saved profiles could not be loaded. Please retry.");
+    for (const row of data ?? []) {
+      const name = row.full_name?.trim() || "Talent";
+      people.set(row.id, { id: row.id, slug: row.username || row.id, name,
+        imageUrl: row.headshot_url || getProfileAvatarUrl(row.headshot_urls) || placeholderImage(name),
+        location: row.location || undefined, styles: Array.isArray(row.styles) ? row.styles : [],
+        represented: Boolean(row.representation), isVerified: false });
+    }
+  }
+  return uniqueIds.flatMap(id => people.has(id) ? [people.get(id)!] : []);
 
-  const [{ data: profiles }, { data: proProfiles }] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("user_id, display_name, first_name, last_name, headshot_urls")
-      .in("user_id", uniqueIds),
-    supabase
-      .from("professional_profiles")
-      .select("id, user_id, slug, styles, location_city, location_region")
-      .in("user_id", uniqueIds),
-  ]);
-
-  const profileByUser = new Map(
-    (profiles ?? []).map((row) => [row.user_id as string, row]),
-  );
-  const proByUser = new Map(
-    (proProfiles ?? []).map((row) => [row.user_id as string, row]),
-  );
-
-  return uniqueIds.map((userId) => {
-    const profile = profileByUser.get(userId);
-    const pro = proByUser.get(userId);
-    const name = profile
-      ? displayNameFromProfile(profile)
-      : ((pro?.slug as string | undefined)?.replace(/-/g, " ") ?? "Talent");
-    const city = (pro?.location_city as string | null) ?? undefined;
-    const region = (pro?.location_region as string | null) ?? undefined;
-    const headshots = (profile?.headshot_urls as string[] | null) ?? null;
-
-    return {
-      id: userId,
-      slug: (pro?.slug as string | undefined) ?? userId,
-      name,
-      imageUrl: getProfileAvatarUrl(headshots) ?? placeholderImage(name),
-      location: city ? (region ? `${city}, ${region}` : city) : undefined,
-      styles: ((pro?.styles as string[] | null) ?? []).filter(Boolean),
-      represented: false,
-      isVerified: false,
-    } satisfies Talent;
-  });
 }
 
 export async function fetchReferrerFavorites(): Promise<{

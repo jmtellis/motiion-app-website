@@ -45,11 +45,14 @@ export default async function BuyerMessagesPage({
     rawFilter === "general" || rawFilter === "requests" || rawFilter === "primary"
       ? rawFilter
       : "primary";
-  const { conversations, error, pendingRequests, messageRequests } = await fetchInboxBundle();
+  const { conversations, error, pendingRequests, messageRequests, pendingError, messageRequestsError } = await fetchInboxBundle();
 
   return (
     <BuyerAppPage fullWidth className="buyer-messages-page !space-y-0 flex min-h-0 flex-1 flex-col">
       <MessengerShell
+      key={profile.id}
+      pendingError={pendingError}
+      messageRequestsError={messageRequestsError}
         conversations={conversations}
         messageRequests={messageRequests}
         currentUserId={profile.id}

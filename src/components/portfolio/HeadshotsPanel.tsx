@@ -78,7 +78,7 @@ export function HeadshotsPanel({ owner, actionsHost, onDirtyChange, onSaved }: P
     JSON.stringify(shots.map(({ url, label }) => [url, label])) !== JSON.stringify(baseline.map(({ url, label }) => [url, label]));
   useReportDirty(dirty, onDirtyChange);
 
-  const reorder = usePointerReorder({
+  const { containerRef: reorderContainerRef, bind: bindReorder } = usePointerReorder({
     axis: "x",
     onTap: (index) => setSelected(index),
     onReorder: (from, to) => {
@@ -165,6 +165,7 @@ export function HeadshotsPanel({ owner, actionsHost, onDirtyChange, onSaved }: P
           return { ...shot, url, original, pending: undefined };
         }),
       );
+      setShots(uploaded); // Keep completed uploads for a retry if the profile save fails.
       const result = await savePortfolioHeadshots({
         urls: uploaded.map((shot) => shot.url),
         originals: uploaded.map((shot) => shot.original),
@@ -284,7 +285,7 @@ export function HeadshotsPanel({ owner, actionsHost, onDirtyChange, onSaved }: P
           count={`${shots.length}/${owner.plan === "pro" ? PORTFOLIO_LIMITS.headshots.pro : unlocked}`}
           hint="Drag to reorder. Your first headshot is the one casting teams see first."
         />
-        <div className="portfolio-strip" ref={reorder.containerRef}>
+        <div className="portfolio-strip" ref={reorderContainerRef}>
           <AddTile label="Add headshots" onClick={() => addInput.current?.click()} disabled={preparing || pending} locked={shots.length >= unlocked} />
           {shots.map((shot, index) => (
             <button
@@ -293,7 +294,7 @@ export function HeadshotsPanel({ owner, actionsHost, onDirtyChange, onSaved }: P
               className="portfolio-thumb portfolio-media-card"
               aria-label={`Headshot ${index + 1}${index === 0 ? ", primary" : ""}${shot.label ? `, ${shot.label}` : ""}`}
               aria-pressed={index === selected}
-              {...reorder.bind(index)}
+              {...bindReorder(index)}
               onClick={(event) => event.detail === 0 && setSelected(index)}
               onKeyDown={(event) => {
                 if (!event.altKey || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;

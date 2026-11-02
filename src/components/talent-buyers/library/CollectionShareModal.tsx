@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
@@ -13,7 +13,7 @@ import {
 } from "@/lib/talent-buyers/collection-share-types";
 import type { LibraryCollectionSummary } from "@/lib/talent-buyers/library";
 
-export function CollectionShareModal({
+function CollectionShareModalSession({
   open,
   onClose,
   collections,
@@ -36,16 +36,9 @@ export function CollectionShareModal({
   const [recipientEmail, setRecipientEmail] = useState("");
   const [createdUrl, setCreatedUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    setCreatedUrl(null);
-    setDuration("twenty_four_hours");
-    setRecipientName("");
-    setRecipientEmail("");
-    setCollectionId(lockedCollectionId || collections[0]?.id || "");
-  }, [open, collections, lockedCollectionId]);
 
   function handleCreate() {
+    if (isPending || createdUrl) return;
     if (!requirePro("roster_write")) return;
     if (!collectionId) {
       showToast({ message: "Create a collection before sharing.", variant: "error" });
@@ -72,25 +65,25 @@ export function CollectionShareModal({
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={() => { if (!isPending) onClose(); }}
       title="Share collection"
-      description="Create a private link to let someone review this collection."
+      description="Anyone with the link can review this collection until it expires or you revoke it. Recipient details are labels; no email is sent."
       size="md"
       footer={
         <button
           type="button"
           className="buyer-chrome-bar__cta"
-          disabled={isPending || !collectionId}
+          disabled={isPending || !!createdUrl || !collectionId}
           onClick={handleCreate}
         >
-          {isPending ? "Creating…" : "Create link"}
+          {createdUrl ? "Link created" : isPending ? "Creating…" : "Create link"}
         </button>
       }
     >
       <div className="space-y-4">
         {!lockedCollectionId ? (
           <label className="block space-y-1.5">
-            <span className="text-xs font-medium text-white/55">Collection</span>
+            <span className="text-xs font-medium text-[var(--ui-muted)]">Collection</span>
             <select
               className="library-select w-full"
               value={collectionId}
@@ -106,17 +99,18 @@ export function CollectionShareModal({
         ) : null}
 
         <div>
-          <p className="mb-2 text-xs font-medium text-white/55">Link duration</p>
+          <p className="mb-2 text-xs font-medium text-[var(--ui-muted)]">Link duration</p>
           <div className="flex flex-wrap gap-2">
             {COLLECTION_SHARE_DURATIONS.map((option) => (
               <button
                 key={option.value}
                 type="button"
+                aria-pressed={duration === option.value}
                 onClick={() => setDuration(option.value)}
                 className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                   duration === option.value
-                    ? "border-[var(--accent)] bg-[var(--accent)]/12 text-white"
-                    : "border-white/10 text-white/55 hover:text-white/85"
+                    ? "border-[var(--ui-accent)] bg-[var(--ui-accent-soft)] text-[var(--ui-accent)]"
+                    : "border-[var(--ui-border)] text-[var(--ui-muted)] hover:text-[var(--ui-text)]"
                 }`}
               >
                 {option.label}
@@ -127,7 +121,7 @@ export function CollectionShareModal({
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block space-y-1.5">
-            <span className="text-xs font-medium text-white/55">Shared with (optional)</span>
+            <span className="text-xs font-medium text-[var(--ui-muted)]">Shared with (optional)</span>
             <input
               value={recipientName}
               onChange={(event) => setRecipientName(event.target.value)}
@@ -136,8 +130,9 @@ export function CollectionShareModal({
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-xs font-medium text-white/55">Email (optional)</span>
+            <span className="text-xs font-medium text-[var(--ui-muted)]">Email (optional)</span>
             <input
+              type="email"
               value={recipientEmail}
               onChange={(event) => setRecipientEmail(event.target.value)}
               className="library-search w-full max-w-none"
@@ -147,17 +142,17 @@ export function CollectionShareModal({
         </div>
 
         {createdUrl ? (
-          <div className="rounded-xl border border-white/10 bg-white/4 p-3">
-            <p className="text-xs font-medium text-white/45">Share this link</p>
+          <div className="ui-notice ui-notice--success">
+            <p className="text-xs font-medium text-[var(--ui-muted)]">Share this link</p>
             <a href={createdUrl} className="mt-1 block break-all text-sm text-[var(--accent)] hover:underline">
               {createdUrl}
             </a>
             <button
               type="button"
-              className="mt-2 text-xs font-medium text-white/70 hover:text-white"
-              onClick={() => {
-                void navigator.clipboard.writeText(createdUrl);
-                showToast({ message: "Link copied", variant: "success" });
+              className="mt-2 text-xs font-medium text-[var(--ui-accent)] hover:underline"
+              onClick={async () => {
+                try { await navigator.clipboard.writeText(createdUrl); showToast({ message: "Link copied", variant: "success" }); }
+                catch { showToast({ message: "Could not copy. Select and copy the link above.", variant: "error" }); }
               }}
             >
               Copy link
@@ -167,4 +162,8 @@ export function CollectionShareModal({
       </div>
     </Modal>
   );
+}
+
+export function CollectionShareModal(props: Parameters<typeof CollectionShareModalSession>[0]) {
+  return props.open ? <CollectionShareModalSession {...props} /> : null;
 }

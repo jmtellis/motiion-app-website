@@ -48,7 +48,7 @@ export function TalentWorkspace({
         ? "industry-studio-canvas workspace-talent-main--pane"
         : "industry-studio-canvas";
   return (
-    <WorkspaceNotificationsProvider userId={userId}>
+    <WorkspaceNotificationsProvider userId={userId} viewerRole={community ? "community" : "talent"}>
     <WorkspaceSidePanelHost value={shell}>
     <div
       ref={setShell}

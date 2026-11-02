@@ -21,8 +21,8 @@ export default async function BuyerHomePage() {
   return (
     <HomeFeed
       greeting={greeting}
-      listingsSlot={<HomeListings activities={activities} />}
-      discoverySlot={<HomeDiscovery navigatorHref="/talent" upcomingSlot={<HomeUpcomingActivities events={calendar} calendarHref="/events" />} />}
+      listingsSlot={<HomeListings activities={activities.activities} error={activities.error} />}
+      discoverySlot={<HomeDiscovery navigatorHref="/talent" upcomingSlot={<HomeUpcomingActivities events={calendar.events} error={calendar.error} calendarHref="/events" />} />}
     />
   );
 }

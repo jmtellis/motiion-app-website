@@ -17,7 +17,6 @@ import {
   Ellipsis,
   Handshake,
   Palette,
-  Pencil,
   PersonStanding,
   Search,
   UsersRound,
@@ -151,7 +150,7 @@ const stepCopy: Record<TalentBuyerOnboardingStep, { title: string; subtitle?: st
   },
   success: {
     title: "Your workspace is ready.",
-    subtitle: "Start free, or try Pro free for 60 days.",
+    subtitle: "Start free, or upgrade to Industry Pro.",
   },
 };
 
@@ -176,7 +175,7 @@ export function TalentBuyerOnboardingFlow({
   const [organizationImageUrl, setOrganizationImageUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [pendingMode, setPendingMode] = useState<"free" | "trial" | null>(null);
+  const [pendingMode, setPendingMode] = useState<"free" | "upgrade" | null>(null);
   const [stepDirection, setStepDirection] = useState<"forward" | "back">("forward");
 
   const progress = useMemo(() => getTalentBuyerFlowProgress(draft.currentStep), [draft.currentStep]);
@@ -287,8 +286,8 @@ export function TalentBuyerOnboardingFlow({
     });
   }
 
-  function handleStartTrial() {
-    setPendingMode("trial");
+  function handleUpgrade() {
+    setPendingMode("upgrade");
     setError(null);
     startTransition(async () => {
       const result = await completeTalentBuyerOnboarding(buildCompletionPayload());
@@ -518,7 +517,7 @@ export function TalentBuyerOnboardingFlow({
             pending={isPending}
             pendingMode={pendingMode}
             onContinueFree={handleContinueFree}
-            onStartTrial={handleStartTrial}
+            onUpgrade={handleUpgrade}
           />
         </div>
       </SignupSplitShell>

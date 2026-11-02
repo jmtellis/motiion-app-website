@@ -56,9 +56,8 @@ function CarouselMedia({ image }: { image: NonNullable<FeatureCarouselSlide["ima
       src={image.src}
       alt={image.alt}
       className="feature-carousel__media"
-      loading="eager"
-      decoding="sync"
-      fetchPriority="high"
+      loading="lazy"
+      decoding="async"
     />
   );
 }
@@ -143,7 +142,7 @@ function initialTrackIndex(canLoop: boolean, useFlankPlaceholders: boolean) {
   return 0;
 }
 
-export function FeatureCarousel({
+function FeatureCarouselSession({
   title,
   slides,
   onActiveIndexChange,
@@ -201,8 +200,7 @@ export function FeatureCarousel({
   const [layout, setLayout] = useState<CarouselLayout>({ slideWidth: 0, gap: 16, viewportWidth: 0 });
   const x = useMotionValue(0);
 
-  trackIndexRef.current = trackIndex;
-  layoutRef.current = layout;
+  useLayoutEffect(() => { trackIndexRef.current = trackIndex; layoutRef.current = layout; }, [trackIndex, layout]);
 
   const activeIndex = canLoop
     ? logicalIndexForTrack(trackIndex, slideCount, canLoop)
@@ -213,14 +211,6 @@ export function FeatureCarousel({
   useEffect(() => {
     onActiveIndexChange?.(activeIndex);
   }, [activeIndex, onActiveIndexChange]);
-
-  useEffect(() => {
-    slides.forEach((slide) => {
-      if (!slide.image || slide.image.kind === "video") return;
-      const image = new window.Image();
-      image.src = slide.image.src;
-    });
-  }, [slides]);
 
   const measure = useCallback(() => {
     const viewport = viewportRef.current;
@@ -243,7 +233,6 @@ export function FeatureCarousel({
   }, []);
 
   useEffect(() => {
-    measure();
     const viewport = viewportRef.current;
     if (!viewport) return;
 
@@ -251,13 +240,6 @@ export function FeatureCarousel({
     observer.observe(viewport);
     return () => observer.disconnect();
   }, [measure, trackSlides.length]);
-
-  useEffect(() => {
-    const nextIndex = initialTrackIndex(canLoop, useFlankPlaceholders);
-    trackIndexRef.current = nextIndex;
-    setTrackIndex(nextIndex);
-    setCenteredIndex(nextIndex);
-  }, [canLoop, slideCount, useFlankPlaceholders]);
 
   const syncCenteredIndex = useCallback((xValue: number) => {
     const nextCentered = centeredIndexForX(xValue, layoutRef.current);
@@ -291,13 +273,11 @@ export function FeatureCarousel({
     if (skipNextAnimationRef.current) {
       skipNextAnimationRef.current = false;
       x.set(target);
-      setCenteredIndex(trackIndex);
       return;
     }
 
     if (reduceMotion) {
       x.set(target);
-      setCenteredIndex(trackIndex);
       return;
     }
 
@@ -365,22 +345,6 @@ export function FeatureCarousel({
     setTrackIndex((index) => index - 1);
   }, [canLoop]);
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        goPrev();
-      }
-      if (event.key === "ArrowRight") {
-        event.preventDefault();
-        goNext();
-      }
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [goNext, goPrev]);
-
   if (!slides.length) return null;
 
   const activeSlide = slides[activeIndex];
@@ -400,6 +364,11 @@ export function FeatureCarousel({
       className={sectionClassName}
       aria-roledescription="carousel"
       aria-label={title ?? "Carousel"}
+      onKeyDown={event => {
+        if ((event.target as HTMLElement).closest("input, textarea, select, [contenteditable=true]")) return;
+        if (event.key === "ArrowLeft") { event.preventDefault(); goPrev(); }
+        if (event.key === "ArrowRight") { event.preventDefault(); goNext(); }
+      }}
     >
       {title ? (
         <div className="feature-carousel__header">
@@ -412,7 +381,7 @@ export function FeatureCarousel({
           <div ref={viewportRef} className="feature-carousel__viewport">
             <motion.div ref={trackRef} className="feature-carousel__track" style={{ x }}>
               {trackSlides.map((slide, index) => {
-                const isActive = index === centeredIndex && !slide.isPlaceholder;
+                const isActive = index === (reduceMotion ? trackIndex : centeredIndex) && !slide.isPlaceholder;
 
                 return (
                   <div key={slide.id} className="feature-carousel__slide">
@@ -473,4 +442,8 @@ export function FeatureCarousel({
       </div>
     </section>
   );
+}
+
+export function FeatureCarousel(props: Parameters<typeof FeatureCarouselSession>[0]) {
+  return <FeatureCarouselSession key={`${props.flankWithPlaceholders}:${props.slides.map(slide => slide.id).join("|")}`} {...props} />;
 }

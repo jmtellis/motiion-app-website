@@ -3,7 +3,7 @@ import {
   fetchTalentCalendarEvents,
   type TalentScheduleFilter,
 } from "@/lib/app/schedule";
-import { requireTalentAccount } from "@/lib/auth/session";
+import { requireCommunityOrTalentAccount } from "@/lib/auth/session";
 
 const FILTERS = new Set<TalentScheduleFilter>(["all", "classes", "sessions", "events"]);
 
@@ -12,13 +12,13 @@ export default async function SchedulePage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const profile = await requireTalentAccount();
+  const profile = await requireCommunityOrTalentAccount();
   const params = await searchParams;
   const rawFilter = typeof params.filter === "string" ? params.filter : "all";
   const filter = FILTERS.has(rawFilter as TalentScheduleFilter)
     ? (rawFilter as TalentScheduleFilter)
     : "all";
-  const events = await fetchTalentCalendarEvents(profile.id);
+  const { events, error } = await fetchTalentCalendarEvents(profile.id);
 
-  return <TalentScheduleCalendar events={events} filter={filter} />;
+  return <TalentScheduleCalendar key={profile.id} events={events} error={error} filter={filter} />;
 }

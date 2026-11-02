@@ -3,12 +3,11 @@
 import { ChevronsUpDown, Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { WorkspaceAccountMenu } from "@/components/workspace/WorkspaceAccountMenu";
 import type { ShellMenuAction } from "@/lib/auth/profile";
-import { createClientSupabaseClient } from "@/lib/supabase/client";
+import { useSignOut } from "@/hooks/use-sign-out";
 
 export type AccountPillUser = {
   fullName: string;
@@ -58,11 +57,10 @@ export function AccountPill({
   workspaceLabel?: string;
   shellAction?: ShellMenuAction | null;
 }) {
-  const router = useRouter();
   const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
+  const { signOut, pending: signingOut, error } = useSignOut();
 
   useEffect(() => {
     if (!open || placement === "sidebar") return;
@@ -84,17 +82,6 @@ export function AccountPill({
       document.removeEventListener("keydown", handleEscape);
     };
   }, [open, placement]);
-
-  async function handleSignOut() {
-    setSigningOut(true);
-    const supabase = createClientSupabaseClient();
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
-    setOpen(false);
-    router.push("/");
-    router.refresh();
-  }
 
   if (placement === "sidebar") {
     return (
@@ -152,11 +139,12 @@ export function AccountPill({
             type="button"
             role="menuitem"
             className="block w-full px-4 py-2.5 text-left text-sm font-medium text-[#eaeaea] transition hover:bg-[#1e1e1e] disabled:opacity-50"
-            onClick={handleSignOut}
+            onClick={signOut}
             disabled={signingOut}
           >
             {signingOut ? "Signing out…" : "Sign out"}
           </button>
+          {error ? <p className="px-4 py-2 text-sm text-rose-300" role="alert">{error}</p> : null}
         </div>
       ) : null}
     </div>

@@ -1,380 +1,146 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Motiion — Design System</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-<style>
-  :root {
-    /* Colors */
-    --color-background: #0A0A0A;
-    --color-surface: #151515;
-    --color-surface-raised: #1E1E1E;
-    --color-overlay: #000000;
-    --color-border: #262626;
-    --color-border-strong: #3A3A3A;
-    --color-primary: #FAFAFA;
-    --color-on-primary: #0A0A0A;
-    --color-accent: #2DD4BF;
-    --color-on-accent: #04231E;
-    --color-accent-soft: #0C2A26;
-    --color-on-background: #FAFAFA;
-    --color-on-surface: #EAEAEA;
-    --color-muted: #8A8A8A;
-    --color-subtle: #5A5A5A;
-    --color-success: #3FB950;
-    --color-warning: #E3A008;
-    --color-error: #F04438;
-    --color-info: #4A9EFF;
-    --color-on-success: #0A0A0A;
-    --color-on-warning: #0A0A0A;
-    --color-on-error: #0A0A0A;
-    --color-on-info: #0A0A0A;
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Motiion · Design system</title><style>/* Motiion web foundations. Semantic values, independent of native appearance.
+   Existing ds/buyer/industry names are compatibility aliases, not new systems. */
+:root {
+  --ui-canvas: #f5f6f5;
+  --ui-surface: #ffffff;
+  --ui-surface-soft: #eef2f1;
+  --ui-surface-hover: #e7eeec;
+  --ui-text: #1c292a;
+  --ui-muted: #536366;
+  --ui-subtle: #667679;
+  --ui-border: #d4dedc;
+  --ui-control-border: #7d9091;
+  --ui-accent: #006b75;
+  --ui-accent-hover: #00535d;
+  --ui-accent-soft: #def3f1;
+  --ui-on-accent: #ffffff;
+  --ui-focus: #007b87;
+  --ui-success: #19643a;
+  --ui-success-soft: #e2f4e8;
+  --ui-warning: #78500b;
+  --ui-warning-soft: #fff3d6;
+  --ui-danger: #ad243e;
+  --ui-danger-soft: #ffedf0;
+  --ui-info: #205f91;
+  --ui-info-soft: #eaf3fc;
+  --ui-disabled: #6c7779;
+  --ui-radius-control: 10px;
+  --ui-radius-card: 16px;
+  --ui-radius-panel: 20px;
+  --ui-radius-pill: 999px;
+  --ui-shadow-card: 0 1px 2px #12302e08, 0 4px 16px #12302e05;
+  --ui-shadow-overlay: 0 16px 64px #10242230;
+  --ui-space-1: 4px;
+  --ui-space-2: 8px;
+  --ui-space-3: 12px;
+  --ui-space-4: 16px;
+  --ui-space-5: 20px;
+  --ui-space-6: 24px;
+  --ui-space-8: 32px;
+  --ui-space-12: 48px;
+  --ui-control-height: 44px;
+  --ui-content-width: 1280px;
+  --ui-reading-width: 680px;
+  --ui-font: var(--font-geist-sans), system-ui, sans-serif;
+  --ui-duration: 160ms;
+  --ui-z-sticky: 20;
+  --ui-z-panel: 80;
+  --ui-z-dialog: 100;
+  --ui-z-toast: 200;
+}
+.ui-button, .ui-icon-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: var(--ui-control-height); padding: 10px 16px;
+  border: 1px solid transparent; border-radius: var(--ui-radius-control);
+  font: 600 14px/1.4 var(--ui-font); cursor: pointer; text-decoration: none;
+  background: var(--ui-accent); color: var(--ui-on-accent);
+  transition: background-color var(--ui-duration), border-color var(--ui-duration), opacity var(--ui-duration);
+}
+.ui-button:hover { background: var(--ui-accent-hover); }
+.ui-button--secondary, .ui-icon-button { background: var(--ui-surface); color: var(--ui-text); border-color: var(--ui-border); }
+.ui-button--secondary:hover, .ui-icon-button:hover { background: var(--ui-surface-soft); border-color: var(--ui-control-border); }
+.ui-button--danger { background: var(--ui-danger); color: white; }
+.ui-button:disabled, .ui-icon-button:disabled { cursor: not-allowed; opacity: .55; }
+.ui-icon-button { width: 44px; padding: 10px; flex-shrink: 0; }
+:is(.ui-button,.ui-icon-button,.ui-dialog button,.ui-dialog a,.ui-dialog input,.ui-dialog select,.ui-dialog textarea):focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 3px; }
+.ui-state { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:40px 24px; text-align:center; border:1px solid var(--ui-border); border-radius:var(--ui-radius-card); background:var(--ui-surface); color:var(--ui-text); }
+.ui-state__icon { display:grid; place-items:center; width:48px; height:48px; background:var(--ui-accent-soft); color:var(--ui-accent); border-radius:14px; }
+.ui-state h2, .ui-state h3 { font:600 18px/1.4 var(--ui-font); margin:0; text-wrap:balance; }
+.ui-state p { max-width:440px; margin:0; color:var(--ui-muted); font:400 14px/1.65 var(--ui-font); text-wrap:pretty; }
+.ui-state__action { margin-top:8px; }
+.ui-state--error .ui-state__icon { background:var(--ui-danger-soft); color:var(--ui-danger); }
+.ui-notice { padding:12px 16px; display:flex; align-items:flex-start; gap:10px; background:var(--ui-info-soft); border:1px solid currentColor; border-radius:var(--ui-radius-control); color:var(--ui-info); font:400 14px/1.5 var(--ui-font); }
+.ui-notice[data-tone=error] { background:var(--ui-danger-soft); color:var(--ui-danger); }
+.ui-notice[data-tone=success] { background:var(--ui-success-soft); color:var(--ui-success); }
+.ui-notice[data-tone=warning] { background:var(--ui-warning-soft); color:var(--ui-warning); }
+.ui-notice svg { flex-shrink:0; width:18px; height:18px; margin-top:2px; }
+.ui-dialog.ui-dialog { position:fixed; inset:0; width:100%; height:100%; max-width:none; max-height:none; margin:0; padding:24px; border:0; background:transparent; color:var(--ui-text); overflow:hidden; font-family:var(--ui-font); }
+.ui-dialog:not([open]) { display:none !important; }
+.ui-dialog[open] { display:flex; align-items:center; justify-content:center; }
+.ui-dialog::backdrop { background:rgb(12 25 27 / .6); }
+.ui-dialog-panel { display:flex; flex-direction:column; width:min(100%,520px); max-height:calc(100dvh - 48px); overflow:hidden; border:1px solid var(--ui-border); border-radius:var(--ui-radius-panel); background:var(--ui-surface); box-shadow:var(--ui-shadow-overlay); }
+.ui-dialog-header { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 24px; border-bottom:1px solid var(--ui-border); }
+.ui-dialog-header h2 { margin:0; font-size:18px; font-weight:600; line-height:1.4; overflow-wrap:anywhere; }
+.ui-dialog-body { padding:24px; overflow:auto; overscroll-behavior:contain; }
+.ui-dialog[open] > :first-child { animation:ui-dialog-enter var(--ui-duration) ease-out; }
+@keyframes ui-dialog-enter { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.ui-field { display:flex; flex-direction:column; gap:8px; min-width:0; font:400 14px/1.5 var(--ui-font); color:var(--ui-text); }
+.ui-field__label { font-weight:550; }
+.ui-field__hint { color:var(--ui-muted); font-size:13px; }
+.ui-field__error { color:var(--ui-danger); font-size:13px; }
+.ui-field input:not([type=checkbox]):not([type=radio]), .ui-field textarea, .ui-field select { min-height:44px; padding:10px 12px; border:1px solid var(--ui-control-border); background:var(--ui-surface); color:var(--ui-text); border-radius:var(--ui-radius-control); font:inherit; }
+.ui-field [aria-invalid=true] { border-color:var(--ui-danger); }
+.ui-field :is(input,textarea,select):focus-visible { outline:2px solid var(--ui-focus); outline-offset:2px; }
+.ui-field :is(input,textarea,select):disabled { background:var(--ui-surface-soft); color:var(--ui-disabled); cursor:not-allowed; }
+.ui-field textarea { min-height:110px; resize:vertical; }
+.ui-tabs { display:flex; gap:4px; overflow-x:auto; scrollbar-width:thin; }
+.ui-tabs [role=tab] { position:relative; flex-shrink:0; min-height:44px; padding:10px 14px; border:0; border-radius:0; background:transparent; color:var(--ui-muted); font:500 14px/1.4 var(--ui-font); white-space:nowrap; cursor:pointer; }
+.ui-tabs [role=tab]:hover { color:var(--ui-text); }
+.ui-tabs [role=tab][aria-selected=true] { color:var(--ui-accent); font-weight:600; }
+.ui-tabs [role=tab][aria-selected=true]::after { content:""; position:absolute; bottom:0; left:14px; right:14px; height:2px; background:var(--ui-accent); border-radius:2px; }
+.ui-tabs [role=tab]:focus-visible { outline:2px solid var(--ui-focus); outline-offset:-3px; }
+@media(max-width:639px) {
+  .ui-dialog.ui-dialog { padding:12px; }
+  .ui-dialog--responsive.ui-dialog { align-items:flex-end; padding:0; }
+  .ui-dialog--responsive .ui-dialog-panel { width:100%; max-height:92dvh; border-radius:20px 20px 0 0; padding-bottom:env(safe-area-inset-bottom); }
+  .ui-dialog-header, .ui-dialog-body { padding:16px; }
+  .ui-state { padding:32px 20px; }
+  .ui-field input:not([type=checkbox]):not([type=radio]), .ui-field textarea, .ui-field select { font-size:16px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .ui-dialog[open] > :first-child { animation:none; }
+  .ui-button, .ui-icon-button { transition:none; }
+}
 
-    /* Typography families */
-    --font-sans: "Geist", system-ui, -apple-system, sans-serif;
-    --font-mono: "Geist Mono", ui-monospace, "SF Mono", monospace;
+/* On phones an inspection pane becomes a full-height native dialog, keeping the
+   list mounted behind it while the browser makes the background inert. */
+.ui-dialog.workspace-panel-dialog { padding:0; }
+.ui-dialog.workspace-panel-dialog > .workspace-side-frame { position:relative; inset:auto; width:100%; height:100%; margin:0; border:0; border-radius:0; transform:none; opacity:1; visibility:visible; }
+.workspace-panel-dialog .workspace-side-panel { min-width:0; padding-bottom:env(safe-area-inset-bottom); }
+.workspace-panel-dialog .workspace-side-panel__header { min-height:64px; }
 
-    /* Type scale */
-    --type-display-size: 3.5rem; --type-display-weight: 600; --type-display-lh: 1.05; --type-display-ls: -0.03em;
-    --type-h1-size: 2.5rem; --type-h1-weight: 600; --type-h1-lh: 1.1; --type-h1-ls: -0.02em;
-    --type-h2-size: 1.75rem; --type-h2-weight: 600; --type-h2-lh: 1.15; --type-h2-ls: -0.02em;
-    --type-h3-size: 1.25rem; --type-h3-weight: 500; --type-h3-lh: 1.25; --type-h3-ls: -0.01em;
-    --type-body-lg-size: 1.125rem; --type-body-lg-weight: 400; --type-body-lg-lh: 1.5;
-    --type-body-size: 1rem; --type-body-weight: 400; --type-body-lh: 1.5;
-    --type-body-sm-size: 0.875rem; --type-body-sm-weight: 400; --type-body-sm-lh: 1.5;
-    --type-caption-size: 0.75rem; --type-caption-weight: 500; --type-caption-lh: 1.4;
-    --type-mono-label-size: 0.75rem; --type-mono-label-weight: 500; --type-mono-label-lh: 1.4; --type-mono-label-ls: 0.08em;
-    --type-mono-size: 0.875rem; --type-mono-weight: 400; --type-mono-lh: 1.5;
+/* Profile actions and media share the same native focus/scroll behavior. */
+.ui-dialog.profile-sheet-dialog { align-items: end; justify-content: end; }
+.profile-sheet-dialog .profile-sheet__card { width: min(100%, 520px); max-height: min(80dvh, 680px); margin: 16px; border-radius: var(--ui-radius-panel); color: var(--ui-text); background: var(--ui-surface); }
+.profile-sheet-dialog .profile-sheet__header { padding: 16px 20px; }
+.profile-sheet-dialog .profile-sheet__header h3 { margin: 0; font-size: 18px; }
+.headshot-dialog .headshot-viewer__thumbs button[aria-pressed="true"] { border-color: white; opacity: 1; }
+.headshot-dialog .headshot-viewer__actions :is(button, a) { min-width: 44px; min-height: 44px; }
+@media (max-width: 640px) {
+  .profile-sheet-dialog .profile-sheet__card { margin: 0; width: 100%; border-radius: 20px 20px 0 0; }
+}
 
-    /* Radius */
-    --rounded-none: 0px;
-    --rounded-sm: 6px;
-    --rounded-md: 8px;
-    --rounded-lg: 14px;
-    --rounded-xl: 20px;
-    --rounded-full: 9999px;
-
-    /* Spacing */
-    --space-0: 0px;
-    --space-1: 4px;
-    --space-2: 8px;
-    --space-3: 12px;
-    --space-4: 16px;
-    --space-5: 24px;
-    --space-6: 32px;
-    --space-7: 48px;
-    --space-8: 64px;
-    --space-9: 96px;
-  }
-
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--color-background);
-    color: var(--color-on-background);
-    font-family: var(--font-sans);
-    font-size: var(--type-body-size);
-    line-height: var(--type-body-lh);
-    -webkit-font-smoothing: antialiased;
-  }
-  .wrap { max-width: 1080px; margin: 0 auto; padding: var(--space-8) var(--space-5); }
-  header.page { border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-6); margin-bottom: var(--space-8); }
-  header.page h1 { font-size: var(--type-display-size); font-weight: var(--type-display-weight); line-height: var(--type-display-lh); letter-spacing: var(--type-display-ls); margin: 0 0 var(--space-3); }
-  header.page p { color: var(--color-muted); font-size: var(--type-body-lg-size); margin: 0 0 var(--space-2); max-width: 60ch; }
-  .mirror-note { font-family: var(--font-mono); font-size: var(--type-mono-label-size); letter-spacing: var(--type-mono-label-ls); text-transform: uppercase; color: var(--color-subtle); }
-  section { margin-bottom: var(--space-9); }
-  section > h2 { font-size: var(--type-h2-size); font-weight: var(--type-h2-weight); letter-spacing: var(--type-h2-ls); margin: 0 0 var(--space-5); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-border); }
-  .label { font-family: var(--font-mono); font-size: var(--type-mono-label-size); letter-spacing: var(--type-mono-label-ls); text-transform: uppercase; color: var(--color-muted); }
-  .grid { display: grid; gap: var(--space-4); }
-
-  /* Colors */
-  .swatches { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
-  .swatch { border: 1px solid var(--color-border); border-radius: var(--rounded-lg); overflow: hidden; }
-  .swatch .chip-color { height: 88px; display: flex; align-items: flex-end; padding: var(--space-3); }
-  .swatch .chip-color span { font-size: var(--type-caption-size); }
-  .swatch .meta { padding: var(--space-3); background: var(--color-surface); }
-  .swatch .meta .name { font-family: var(--font-mono); font-size: var(--type-mono-size); color: var(--color-on-surface); }
-  .swatch .meta .hex { font-family: var(--font-mono); font-size: var(--type-mono-label-size); color: var(--color-muted); }
-
-  /* Typography specimens */
-  .specimen { border-bottom: 1px solid var(--color-border); padding: var(--space-4) 0; display: flex; justify-content: space-between; gap: var(--space-5); align-items: baseline; flex-wrap: wrap; }
-  .specimen .spec-meta { font-family: var(--font-mono); font-size: var(--type-mono-label-size); color: var(--color-muted); white-space: nowrap; }
-
-  /* Spacing */
-  .space-row { display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-2); }
-  .space-bar { background: var(--color-accent); height: 16px; border-radius: var(--rounded-sm); }
-  .space-row .label { min-width: 120px; }
-
-  /* Radius */
-  .radius-row { display: flex; gap: var(--space-5); flex-wrap: wrap; }
-  .radius-box { width: 96px; height: 96px; background: var(--color-surface-raised); border: 1px solid var(--color-border-strong); display: flex; align-items: flex-end; justify-content: center; padding: var(--space-2); }
-  .radius-box span { font-family: var(--font-mono); font-size: var(--type-mono-label-size); color: var(--color-muted); }
-
-  /* Elevation */
-  .elev-row { display: flex; gap: var(--space-5); flex-wrap: wrap; }
-  .elev-card { width: 220px; padding: var(--space-5); border-radius: var(--rounded-lg); background: var(--color-surface); }
-  .elev-1 { border: 1px solid var(--color-border); }
-  .elev-2 { background: var(--color-surface-raised); border: 1px solid var(--color-border-strong); }
-  .elev-glow { position: relative; border: 1px solid var(--color-border); overflow: hidden; }
-  .elev-glow::before { content: ""; position: absolute; inset: -40% -20% auto -20%; height: 140px; background: radial-gradient(closest-side, rgba(45,212,191,0.45), transparent); filter: blur(12px); }
-  .elev-card .label { position: relative; }
-
-  /* Components */
-  .comp-block { border: 1px solid var(--color-border); border-radius: var(--rounded-lg); padding: var(--space-5); background: var(--color-surface); margin-bottom: var(--space-4); }
-  .comp-block .label { display: block; margin-bottom: var(--space-4); }
-  .row { display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; }
-
-  .btn { font-family: var(--font-sans); font-size: var(--type-body-sm-size); font-weight: 500; border: none; cursor: pointer; height: 40px; padding: 12px 20px; border-radius: var(--rounded-md); display: inline-flex; align-items: center; }
-  .btn-primary { background: var(--color-primary); color: var(--color-on-primary); }
-  .btn-primary:hover, .btn-primary.is-hover { background: #E6E6E6; }
-  .btn-secondary { background: var(--color-surface-raised); color: var(--color-on-surface); }
-  .btn-secondary:hover, .btn-secondary.is-hover { background: #2A2A2A; color: var(--color-on-background); }
-  .btn-ghost { background: transparent; color: var(--color-muted); padding: 12px 16px; }
-  .btn-ghost:hover, .btn-ghost.is-hover { background: var(--color-surface); color: var(--color-on-surface); }
-  .btn-accent { background: var(--color-accent); color: var(--color-on-accent); }
-  .btn-disabled { background: var(--color-surface); color: var(--color-subtle); cursor: not-allowed; }
-
-  .input { background: var(--color-surface); color: var(--color-on-surface); font-family: var(--font-sans); font-size: var(--type-body-sm-size); height: 40px; padding: 10px 14px; border: 1px solid var(--color-border); border-radius: var(--rounded-md); width: 260px; }
-  .input::placeholder { color: var(--color-subtle); }
-  .input.is-focus { background: var(--color-surface-raised); border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(45,212,191,0.25); outline: none; }
-
-  .chip { font-family: var(--font-sans); font-size: var(--type-caption-size); font-weight: 500; height: 28px; padding: 6px 12px; border-radius: var(--rounded-full); display: inline-flex; align-items: center; }
-  .chip-default { background: var(--color-surface-raised); color: var(--color-muted); }
-  .chip-active { background: var(--color-primary); color: var(--color-on-primary); }
-
-  .badge-verified { font-family: var(--font-mono); font-size: var(--type-mono-label-size); letter-spacing: var(--type-mono-label-ls); text-transform: uppercase; background: var(--color-accent-soft); color: var(--color-accent); padding: 4px 10px; border-radius: var(--rounded-full); display: inline-flex; align-items: center; }
-  .badge-meta { font-family: var(--font-mono); font-size: var(--type-mono-label-size); letter-spacing: var(--type-mono-label-ls); color: var(--color-muted); padding: 2px 6px; border-radius: var(--rounded-sm); }
-
-  .card-talent { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--rounded-lg); padding: var(--space-4); width: 240px; }
-  .card-talent .thumb { height: 160px; border-radius: var(--rounded-md); background: linear-gradient(150deg, #2a2a2a, #171717); margin-bottom: var(--space-3); }
-  .card-talent .name { font-size: var(--type-h3-size); font-weight: var(--type-h3-weight); margin: 0 0 var(--space-2); }
-  .card-project { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--rounded-lg); padding: var(--space-5); width: 300px; }
-  .card-project h4 { font-size: var(--type-h3-size); margin: 0 0 var(--space-2); }
-  .card-project p { color: var(--color-muted); font-size: var(--type-body-sm-size); margin: 0; }
-
-  .nav-tabs { display: inline-flex; gap: var(--space-1); background: var(--color-background); border: 1px solid var(--color-border); border-radius: var(--rounded-md); padding: var(--space-1); }
-  .nav-tab { font-family: var(--font-sans); font-size: var(--type-body-sm-size); color: var(--color-muted); padding: 8px 12px; border-radius: var(--rounded-md); cursor: pointer; }
-  .nav-tab.active { background: var(--color-surface); color: var(--color-on-background); }
-
-  .modal-demo { position: relative; background: var(--color-overlay); border-radius: var(--rounded-lg); padding: var(--space-6); display: flex; justify-content: center; }
-  .modal { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--rounded-xl); padding: var(--space-6); width: 360px; }
-  .modal h4 { font-size: var(--type-h3-size); margin: 0 0 var(--space-3); }
-  .modal p { color: var(--color-muted); font-size: var(--type-body-sm-size); margin: 0 0 var(--space-5); }
-
-  kbd.kbd { font-family: var(--font-mono); font-size: var(--type-mono-label-size); background: var(--color-surface-raised); color: var(--color-muted); border: 1px solid var(--color-border-strong); padding: 2px 6px; border-radius: var(--rounded-sm); }
-
-  /* Do / Don't */
-  .dd { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); }
-  .dd ul { list-style: none; padding: 0; margin: 0; }
-  .dd li { padding: var(--space-3) 0; border-bottom: 1px solid var(--color-border); font-size: var(--type-body-sm-size); display: flex; gap: var(--space-2); }
-  .dd .do h3 { color: var(--color-success); }
-  .dd .dont h3 { color: var(--color-error); }
-  .dd .mark { font-family: var(--font-mono); }
-  .dd .do .mark { color: var(--color-success); }
-  .dd .dont .mark { color: var(--color-error); }
-  @media (max-width: 720px) { .dd { grid-template-columns: 1fr; } }
-</style>
-</head>
-<body>
-<div class="wrap">
-<header class="page">
-  <h1>Motiion Design System</h1>
-  <p>A dark, editorial, keyboard-first design system for professional creative software serving the dance industry.</p>
-  <p class="mirror-note">Human-readable mirror of docs/design.md — the source of truth.</p>
-</header>
-
-<section>
-  <h2>Colors</h2>
-  <div class="grid swatches">
-    <div class="swatch"><div class="chip-color" style="background:var(--color-background);color:var(--color-on-background)"><span>on-background</span></div><div class="meta"><div class="name">background</div><div class="hex">#0A0A0A</div></div></div>
-    <div class="swatch"><div class="chip-color" style="background:var(--color-surface);color:var(--color-on-surface)"><span>on-surface</span></div><div class="meta"><div class="name">surface</div><div class="hex">#151515</div></div></div>
-    <div class="swatch"><div class="chip-color" style="background:var(--color-surface-raised);color:var(--color-on-surface)"><span>on-surface</span></div><div class="meta"><div class="name">surface-raised</div><div class="hex">#1E1E1E</div></div></div>
-    <div class="swatch"><div class="chip-color" style="background:var(--color-border);color:var(--color-on-surface)"><span>border</span></div><div class="meta"><div class="name">border</div><div class="hex">#262626</div></div></div>
-    <div class="swatch"><div class="chip-color" style="background:var(--color-border-strong);color:var(--color-on-surface)"><span>border-strong</span></div><div class="meta"><div class="name">border-strong</div><div class="hex">#3A3A3A</div></div></div>
-    <div class="swatch"><div class="chip-color" style="background:var(--color-primary);color:var(--color-on-primary)"><span>on-primary</span></div><div class="meta"><div class="name">primary</div><div class="hex">#FAFAFA</div></div></div>
-    <div class="swatch"><div class="chip-color" style="background:var(--color-accent);color:var(--color-on-accent)"><span>on-accent</span></div><div class="meta"><div class="name">accent</div><div class="hex">#2DD4BF</div></div></div>
-    <div class="swatch"><div class="chip-color" style="background:var(--color-accent-soft);color:var(--color-accent)"><span>accent</span></div><div class="meta"><div class="name">accent-soft</div><div class="hex">#0C2A26</div></div></div>
-    <div class="swatch"><div class="chip-color" style="background:var(--color-muted);color:var(--color-background)"><span>text</span></div><div class="meta"><div class="name">muted</div><div class="hex">#8A8A8A</div></div></div>
-    <div class="swatch"><div class="chip-color" style="background:var(--color-subtle);color:var(--color-background)"><span>text</span></div><div class="meta"><div class="name">subtle</div><div class="hex">#5A5A5A</div></div></div>
-  </div>
-  <p class="label" style="margin:var(--space-5) 0 var(--space-3)">Semantic states</p>
-  <div class="grid swatches">
-    <div class="swatch"><div class="chip-color" style="background:var(--color-success);color:var(--color-on-success)"><span>on-success</span></div><div class="meta"><div class="name">success</div><div class="hex">#3FB950</div></div></div>
-    <div class="swatch"><div class="chip-color" style="background:var(--color-warning);color:var(--color-on-warning)"><span>on-warning</span></div><div class="meta"><div class="name">warning</div><div class="hex">#E3A008</div></div></div>
-    <div class="swatch"><div class="chip-color" style="background:var(--color-error);color:var(--color-on-error)"><span>on-error</span></div><div class="meta"><div class="name">error</div><div class="hex">#F04438</div></div></div>
-    <div class="swatch"><div class="chip-color" style="background:var(--color-info);color:var(--color-on-info)"><span>on-info</span></div><div class="meta"><div class="name">info</div><div class="hex">#4A9EFF</div></div></div>
-  </div>
-</section>
-
-<section>
-  <h2>Typography</h2>
-  <div class="specimen"><span style="font-family:var(--font-sans);font-size:var(--type-display-size);font-weight:var(--type-display-weight);line-height:var(--type-display-lh);letter-spacing:var(--type-display-ls)">Get seen for the work</span><span class="spec-meta">display · Geist 600 · 3.5rem · -0.03em</span></div>
-  <div class="specimen"><span style="font-family:var(--font-sans);font-size:var(--type-h1-size);font-weight:var(--type-h1-weight);line-height:var(--type-h1-lh);letter-spacing:var(--type-h1-ls)">The operating system for dance</span><span class="spec-meta">h1 · Geist 600 · 2.5rem · -0.02em</span></div>
-  <div class="specimen"><span style="font-family:var(--font-sans);font-size:var(--type-h2-size);font-weight:var(--type-h2-weight);line-height:var(--type-h2-lh);letter-spacing:var(--type-h2-ls)">Find verified talent, fast</span><span class="spec-meta">h2 · Geist 600 · 1.75rem · -0.02em</span></div>
-  <div class="specimen"><span style="font-family:var(--font-sans);font-size:var(--type-h3-size);font-weight:var(--type-h3-weight);line-height:var(--type-h3-lh);letter-spacing:var(--type-h3-ls)">Contemporary · Commercial</span><span class="spec-meta">h3 · Geist 500 · 1.25rem · -0.01em</span></div>
-  <div class="specimen"><span style="font-family:var(--font-sans);font-size:var(--type-body-lg-size);font-weight:var(--type-body-lg-weight);line-height:var(--type-body-lg-lh)">Larger lead paragraph for intros and hero support copy.</span><span class="spec-meta">body-lg · Geist 400 · 1.125rem</span></div>
-  <div class="specimen"><span style="font-family:var(--font-sans);font-size:var(--type-body-size);font-weight:var(--type-body-weight);line-height:var(--type-body-lh)">Default body text used across the interface for readable content.</span><span class="spec-meta">body · Geist 400 · 1rem</span></div>
-  <div class="specimen"><span style="font-family:var(--font-sans);font-size:var(--type-body-sm-size);font-weight:var(--type-body-sm-weight);line-height:var(--type-body-sm-lh)">Dense-UI default for tables, filters, and cards.</span><span class="spec-meta">body-sm · Geist 400 · 0.875rem</span></div>
-  <div class="specimen"><span style="font-family:var(--font-sans);font-size:var(--type-caption-size);font-weight:var(--type-caption-weight);line-height:var(--type-caption-lh)">Caption and chip helper text</span><span class="spec-meta">caption · Geist 500 · 0.75rem</span></div>
-  <div class="specimen"><span style="font-family:var(--font-mono);font-size:var(--type-mono-label-size);font-weight:var(--type-mono-label-weight);line-height:var(--type-mono-label-lh);letter-spacing:var(--type-mono-label-ls);text-transform:uppercase">SAG-AFTRA · 5'7" · AVAILABLE</span><span class="spec-meta">mono-label · Geist Mono 500 · 0.75rem · 0.08em</span></div>
-  <div class="specimen"><span style="font-family:var(--font-mono);font-size:var(--type-mono-size);font-weight:var(--type-mono-weight);line-height:var(--type-mono-lh)">ID 7824-1198-8307</span><span class="spec-meta">mono · Geist Mono 400 · 0.875rem</span></div>
-</section>
-
-<section>
-  <h2>Spacing</h2>
-  <div class="space-row"><span class="label">space-1 · 4px</span><div class="space-bar" style="width:var(--space-1)"></div></div>
-  <div class="space-row"><span class="label">space-2 · 8px</span><div class="space-bar" style="width:var(--space-2)"></div></div>
-  <div class="space-row"><span class="label">space-3 · 12px</span><div class="space-bar" style="width:var(--space-3)"></div></div>
-  <div class="space-row"><span class="label">space-4 · 16px</span><div class="space-bar" style="width:var(--space-4)"></div></div>
-  <div class="space-row"><span class="label">space-5 · 24px</span><div class="space-bar" style="width:var(--space-5)"></div></div>
-  <div class="space-row"><span class="label">space-6 · 32px</span><div class="space-bar" style="width:var(--space-6)"></div></div>
-  <div class="space-row"><span class="label">space-7 · 48px</span><div class="space-bar" style="width:var(--space-7)"></div></div>
-  <div class="space-row"><span class="label">space-8 · 64px</span><div class="space-bar" style="width:var(--space-8)"></div></div>
-  <div class="space-row"><span class="label">space-9 · 96px</span><div class="space-bar" style="width:var(--space-9)"></div></div>
-</section>
-
-<section>
-  <h2>Radius</h2>
-  <div class="radius-row">
-    <div class="radius-box" style="border-radius:var(--rounded-none)"><span>none · 0</span></div>
-    <div class="radius-box" style="border-radius:var(--rounded-sm)"><span>sm · 6</span></div>
-    <div class="radius-box" style="border-radius:var(--rounded-md)"><span>md · 8</span></div>
-    <div class="radius-box" style="border-radius:var(--rounded-lg)"><span>lg · 14</span></div>
-    <div class="radius-box" style="border-radius:var(--rounded-xl)"><span>xl · 20</span></div>
-    <div class="radius-box" style="border-radius:var(--rounded-full)"><span>full</span></div>
-  </div>
-</section>
-
-<section>
-  <h2>Elevation &amp; Depth</h2>
-  <div class="elev-row">
-    <div class="elev-card elev-1"><span class="label">surface + hairline</span></div>
-    <div class="elev-card elev-2"><span class="label">raised + strong border</span></div>
-    <div class="elev-card elev-glow"><span class="label">accent glow (ambient)</span></div>
-  </div>
-  <p style="color:var(--color-muted);font-size:var(--type-body-sm-size);margin-top:var(--space-4)">Depth is contrast + hairline borders, never drop-shadows. The only glow is a soft radial wash of accent behind hero moments.</p>
-</section>
-
-<section>
-  <h2>Components</h2>
-
-  <div class="comp-block">
-    <span class="label">Buttons</span>
-    <div class="row">
-      <button class="btn btn-primary">Primary</button>
-      <button class="btn btn-primary is-hover">Primary · hover</button>
-      <button class="btn btn-secondary">Secondary</button>
-      <button class="btn btn-secondary is-hover">Secondary · hover</button>
-      <button class="btn btn-ghost">Ghost</button>
-      <button class="btn btn-ghost is-hover">Ghost · hover</button>
-      <button class="btn btn-accent">Accent</button>
-      <button class="btn btn-disabled" disabled>Disabled</button>
-    </div>
-  </div>
-
-  <div class="comp-block">
-    <span class="label">Input</span>
-    <div class="row">
-      <input class="input" placeholder="Search talent…" />
-      <input class="input is-focus" value="contemporary, LA" />
-    </div>
-  </div>
-
-  <div class="comp-block">
-    <span class="label">Chips &amp; Filter Pills</span>
-    <div class="row">
-      <span class="chip chip-default">Contemporary</span>
-      <span class="chip chip-default">Los Angeles</span>
-      <span class="chip chip-active">Available · March</span>
-      <span class="chip chip-active">Commercial</span>
-    </div>
-  </div>
-
-  <div class="comp-block">
-    <span class="label">Badges &amp; Metadata</span>
-    <div class="row">
-      <span class="badge-verified">✦ Verified</span>
-      <span class="badge-meta">SAG-AFTRA</span>
-      <span class="badge-meta">5'7"</span>
-      <span class="badge-meta">AVAILABLE</span>
-      <span>Press <kbd class="kbd">⌘</kbd> <kbd class="kbd">K</kbd> to search</span>
-    </div>
-  </div>
-
-  <div class="comp-block">
-    <span class="label">Cards</span>
-    <div class="row" style="align-items:flex-start">
-      <div class="card-talent">
-        <div class="thumb"></div>
-        <div class="name">Maya R.</div>
-        <div class="row" style="gap:var(--space-1)"><span class="badge-verified">✦ Verified</span><span class="badge-meta">LA</span></div>
-      </div>
-      <div class="card-project">
-        <h4>Nike — Spring Campaign</h4>
-        <p>2 castings · 8 dancers invited · Active</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="comp-block">
-    <span class="label">Nav Tabs</span>
-    <div class="row">
-      <div class="nav-tabs">
-        <span class="nav-tab active">Home</span>
-        <span class="nav-tab">Discover</span>
-        <span class="nav-tab">Inbox</span>
-        <span class="nav-tab">Portfolio</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="comp-block">
-    <span class="label">Modal</span>
-    <div class="modal-demo">
-      <div class="modal">
-        <h4>Invite to casting</h4>
-        <p>Add Maya R. to “Nike — Spring Campaign” and send an invitation.</p>
-        <div class="row">
-          <button class="btn btn-primary">Send invite</button>
-          <button class="btn btn-ghost">Cancel</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section>
-  <h2>Do's and Don'ts</h2>
-  <div class="dd">
-    <div class="do">
-      <h3 class="label">✓ Do</h3>
-      <ul>
-        <li><span class="mark">✓</span> Let the dark canvas and talent media carry the color; keep chrome neutral.</li>
-        <li><span class="mark">✓</span> Use white (primary) for the main action; reserve accent teal for glows, verified badge, and focus.</li>
-        <li><span class="mark">✓</span> Express depth with hairline borders and one-step-lighter surfaces.</li>
-        <li><span class="mark">✓</span> Use Geist Mono for technical metadata and keyboard shortcuts.</li>
-        <li><span class="mark">✓</span> Make focus states unmistakable — the product is keyboard-first.</li>
-        <li><span class="mark">✓</span> Keep to the 4px spacing scale and defined radius steps.</li>
-      </ul>
-    </div>
-    <div class="dont">
-      <h3 class="label">✗ Don't</h3>
-      <ul>
-        <li><span class="mark">✗</span> Look like a job board or listing site — no dense generic listings.</li>
-        <li><span class="mark">✗</span> Use soft grey drop-shadows, glossy gradients, or material elevation.</li>
-        <li><span class="mark">✗</span> Flood the UI with color, emoji, or multiple accents.</li>
-        <li><span class="mark">✗</span> Introduce a serif, a third sans, or essential text below body-sm.</li>
-        <li><span class="mark">✗</span> Fill primary buttons with accent by default; amber is emphasis.</li>
-        <li><span class="mark">✗</span> Improvise off-scale spacing or radii for one-off layouts.</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-</div>
-</body>
-</html>
+:root{--ui-font:system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:var(--ui-canvas);color:var(--ui-text);font:16px/1.5 var(--ui-font)}main{max-width:1200px;margin:auto;padding:40px 24px}section{margin:48px 0}h1{font-size:40px;line-height:1.15;letter-spacing:-.03em}h2{font-size:24px}h3{font-size:18px}p{max-width:76ch}small,code{font-size:12px;color:var(--ui-muted)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px}.row{display:flex;gap:16px;flex-wrap:wrap;align-items:center}.swatch{background:var(--ui-surface);border:1px solid var(--ui-border);border-radius:var(--ui-radius-control);overflow:hidden}.swatch>div{height:72px}.swatch strong,.swatch code{display:block;padding:4px 12px}.card{padding:24px;background:var(--ui-surface);border:1px solid var(--ui-border);border-radius:var(--ui-radius-card)}.ui-notice{margin:12px 0}.ui-field{max-width:400px;margin-bottom:20px}.badge{padding:4px 10px;border-radius:var(--ui-radius-pill);background:var(--ui-accent-soft);color:var(--ui-accent);font-size:13px}.skeleton{width:240px;height:16px;background:var(--ui-surface-soft);border-radius:8px}a{color:var(--ui-accent)}.avatar{width:48px;height:48px;display:grid;place-items:center;background:var(--ui-accent-soft);color:var(--ui-accent);border-radius:50%}.preview-focus{outline:2px solid var(--ui-focus);outline-offset:3px}@media(max-width:640px){main{padding:24px 16px}h1{font-size:30px}}
+</style><main><header><span class="badge">Motiion / Product foundations</span><h1>Room to focus.<br>Clarity to move.</h1><p>A practical visual and interaction system for talent and industry workspaces. Human-readable mirror of <a href="design.md">design.md</a>. Production components are exercised in <code>/admin/design-system</code>; this offline reference uses the same CSS values with system-font fallback.</p></header>
+<section><h2>Colors</h2><p>Teal signals action; semantic state colors always accompany readable status text.</p><div class="grid"><article class="swatch"><div style="background:var(--ui-canvas)"></div><strong>canvas</strong><code>#f5f6f5</code></article><article class="swatch"><div style="background:var(--ui-surface)"></div><strong>surface</strong><code>#ffffff</code></article><article class="swatch"><div style="background:var(--ui-surface-soft)"></div><strong>surface-soft</strong><code>#eef2f1</code></article><article class="swatch"><div style="background:var(--ui-surface-hover)"></div><strong>surface-hover</strong><code>#e7eeec</code></article><article class="swatch"><div style="background:var(--ui-text)"></div><strong>text</strong><code>#1c292a</code></article><article class="swatch"><div style="background:var(--ui-muted)"></div><strong>muted</strong><code>#536366</code></article><article class="swatch"><div style="background:var(--ui-subtle)"></div><strong>subtle</strong><code>#667679</code></article><article class="swatch"><div style="background:var(--ui-border)"></div><strong>border</strong><code>#d4dedc</code></article><article class="swatch"><div style="background:var(--ui-control-border)"></div><strong>control-border</strong><code>#7d9091</code></article><article class="swatch"><div style="background:var(--ui-accent)"></div><strong>accent</strong><code>#006b75</code></article><article class="swatch"><div style="background:var(--ui-accent-hover)"></div><strong>accent-hover</strong><code>#00535d</code></article><article class="swatch"><div style="background:var(--ui-accent-soft)"></div><strong>accent-soft</strong><code>#def3f1</code></article><article class="swatch"><div style="background:var(--ui-on-accent)"></div><strong>on-accent</strong><code>#ffffff</code></article><article class="swatch"><div style="background:var(--ui-focus)"></div><strong>focus</strong><code>#007b87</code></article><article class="swatch"><div style="background:var(--ui-success)"></div><strong>success</strong><code>#19643a</code></article><article class="swatch"><div style="background:var(--ui-success-soft)"></div><strong>success-soft</strong><code>#e2f4e8</code></article><article class="swatch"><div style="background:var(--ui-warning)"></div><strong>warning</strong><code>#78500b</code></article><article class="swatch"><div style="background:var(--ui-warning-soft)"></div><strong>warning-soft</strong><code>#fff3d6</code></article><article class="swatch"><div style="background:var(--ui-danger)"></div><strong>danger</strong><code>#ad243e</code></article><article class="swatch"><div style="background:var(--ui-danger-soft)"></div><strong>danger-soft</strong><code>#ffedf0</code></article><article class="swatch"><div style="background:var(--ui-info)"></div><strong>info</strong><code>#205f91</code></article><article class="swatch"><div style="background:var(--ui-info-soft)"></div><strong>info-soft</strong><code>#eaf3fc</code></article><article class="swatch"><div style="background:var(--ui-disabled)"></div><strong>disabled</strong><code>#6c7779</code></article></div></section>
+<section><h2>Typography</h2><p>Geist in the product, system sans here for a dependency-free reference.</p><p style="font-size:32px;font-weight:600;line-height:1.2">page: Find the right people for the next project <small>32px / 600</small></p><p style="font-size:24px;font-weight:600;line-height:1.3">section: Find the right people for the next project <small>24px / 600</small></p><p style="font-size:18px;font-weight:600;line-height:1.4">card: Find the right people for the next project <small>18px / 600</small></p><p style="font-size:16px;font-weight:400;line-height:1.5">body: Find the right people for the next project <small>16px / 400</small></p><p style="font-size:14px;font-weight:600;line-height:1.4">control: Find the right people for the next project <small>14px / 600</small></p><p style="font-size:13px;font-weight:400;line-height:1.5">metadata: Find the right people for the next project <small>13px / 400</small></p></section>
+<section><h2>Spacing & layout</h2><div class="row"><div><span style="display:block;width:4px;height:24px;background:var(--ui-accent)"></span><code>1: 4px</code></div><div><span style="display:block;width:8px;height:24px;background:var(--ui-accent)"></span><code>2: 8px</code></div><div><span style="display:block;width:12px;height:24px;background:var(--ui-accent)"></span><code>3: 12px</code></div><div><span style="display:block;width:16px;height:24px;background:var(--ui-accent)"></span><code>4: 16px</code></div><div><span style="display:block;width:20px;height:24px;background:var(--ui-accent)"></span><code>5: 20px</code></div><div><span style="display:block;width:24px;height:24px;background:var(--ui-accent)"></span><code>6: 24px</code></div><div><span style="display:block;width:32px;height:24px;background:var(--ui-accent)"></span><code>8: 32px</code></div><div><span style="display:block;width:48px;height:24px;background:var(--ui-accent)"></span><code>12: 48px</code></div></div><p>1280px content, 680px reading width. 16px mobile gutters, 24–32px desktop. Preserve the underlying list and scroll when drilling into profiles.</p></section>
+<section><h2>Radii</h2><div class="row"><div style="border:1px solid var(--ui-control-border);border-radius:10px;padding:24px">control<br><code>10px</code></div><div style="border:1px solid var(--ui-control-border);border-radius:16px;padding:24px">card<br><code>16px</code></div><div style="border:1px solid var(--ui-control-border);border-radius:20px;padding:24px">panel<br><code>20px</code></div><div style="border:1px solid var(--ui-control-border);border-radius:999px;padding:24px">pill<br><code>999px</code></div></div></section>
+<section><h2>Elevation & depth</h2><div class="grid"><div class="card">Bordered surface</div><div class="card" style="box-shadow:var(--ui-shadow-card)">Card elevation</div><div class="card" style="box-shadow:var(--ui-shadow-overlay)">Overlay elevation</div></div></section>
+<section><h2>Components & states</h2><h3>Actions</h3><div class="row"><button class="ui-button">Publish casting</button><button class="ui-button ui-button--secondary">Save draft</button><button class="ui-button ui-button--danger">Remove</button><button class="ui-button" disabled>Saving…</button><button class="ui-button preview-focus">Keyboard focus</button></div>
+<h3>Fields, validation and selection</h3><label class="ui-field"><span class="ui-field__label">Project name</span><input value="Autumn tour"><span class="ui-field__hint">A clear name helps your team find it.</span></label><label class="ui-field"><span class="ui-field__label">Email</span><input value="jay@" aria-invalid="true" aria-describedby="email-error"><span id="email-error" class="ui-field__error">Enter a complete email address.</span></label><div class="row"><label><input type="checkbox" checked> Selected talent</label><label><input type="radio" name="visibility" checked> Public</label><label><input type="radio" name="visibility">Private</label></div>
+<h3>Statuses</h3><div class="ui-notice" data-tone="success">Changes saved. Your team sees the updated schedule.</div><div class="ui-notice" data-tone="warning">Application awaiting additional information.</div><div class="ui-notice" data-tone="error">Couldn’t refresh. Your previous results are still shown. <button class="ui-button ui-button--secondary">Retry</button></div><div class="ui-notice">Listening… You can cancel and type your search instead.</div>
+<h3>Tabs, identity and cards</h3><div class="row"><span class="badge">Active</span><button class="ui-button ui-button--secondary">Drafts</button><button class="ui-button ui-button--secondary">Archived</button></div><div class="card" style="margin-top:20px"><div class="row"><span class="avatar" aria-label="Profile initials">AJ</span><div><strong>Alex Jordan</strong><br><small>Dancer · Los Angeles</small></div><span class="badge">Available</span></div></div>
+<h3>Empty and loading</h3><div class="ui-state"><h3>Your roster starts here</h3><p>Save talent from Discover, then bring people together for a project.</p><button class="ui-button">Discover talent</button></div><div class="card" aria-label="Loading profile" aria-busy="true" style="margin-top:16px"><div class="skeleton"></div><div class="skeleton" style="margin-top:12px;width:180px"></div></div>
+<h3>Dialog</h3><button class="ui-button ui-button--secondary" onclick="document.querySelector('dialog').showModal()">Review dialog and keyboard focus</button><dialog class="ui-dialog"><section class="ui-dialog-panel"><header class="ui-dialog-header"><h2>Discard changes?</h2><button class="ui-icon-button" aria-label="Close" onclick="this.closest('dialog').close()">×</button></header><div class="ui-dialog-body"><p>Your saved version will remain available.</p><div class="row"><button class="ui-button ui-button--secondary" onclick="this.closest('dialog').close()">Keep editing</button><button class="ui-button ui-button--danger" onclick="this.closest('dialog').close()">Discard changes</button></div></div></section></dialog><p>Native top-layer focus containment, Escape and inert background. Product wrapper also restores focus and locks body scrolling. Mobile inspection panels use the full viewport.</p></section>
+<section><h2>Do’s and don’ts</h2><div class="grid"><div class="card"><h3>Do</h3><ul><li>Preserve drafts and context.</li><li>Use shared tokens and controls.</li><li>Give failures a useful recovery action.</li><li>Keep approval, email, identity and plans distinct.</li><li>Check keyboard, mobile and long content.</li></ul></div><div class="card"><h3>Don’t</h3><ul><li>Use color as the only signal.</li><li>Stack drawers or sticky regions.</li><li>Turn backend failures into empty states.</li><li>Reintroduce booking contracts or payments.</li><li>Add motion that delays work.</li></ul></div></div><p>160ms purposeful motion. Reduced motion disables nonessential animation. Focus ring: 2px, visible on every control. Touch targets: 44px minimum.</p></section></main></html>

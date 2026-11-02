@@ -29,7 +29,7 @@ export type CastingCandidateSource =
 
 export type CastingProjectStatus = "draft" | "published" | "paused" | "closed" | "archived";
 
-export type CastingVisibility = "private" | "invitation_only" | "public";
+export type CastingVisibility = "private" | "invitation_only" | "unlisted" | "public";
 
 export type CastingRoleStatus = "draft" | "published" | "paused" | "filled" | "closed";
 
@@ -126,6 +126,15 @@ export interface CastingRole {
   gender?: string;
   heightMinDisplay?: string;
   heightMaxDisplay?: string;
+  agencyRequired?: boolean;
+  slateRequired?: boolean;
+  maxSubmissionLinks?: number;
+  submissionLimit?: number;
+  talentPaysTravel?: boolean;
+  visibility?: import("@/types/casting").ProjectVisibility;
+  cardColorPreset?: import("@/types/casting").CardColorPreset;
+  coverImageUrl?: string;
+  clientMatchFilters?: Record<string, unknown> | null;
   requiredMedia?: string[];
   requiredAvailability?: string[];
   compensationOverride?: string;

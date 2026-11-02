@@ -1,3 +1,4 @@
+import { safeAuthReturnPath } from "./redirects";
 import type { User } from "@supabase/supabase-js";
 
 export type OAuthFlow = "login" | "signup";
@@ -10,13 +11,15 @@ export type OAuthSignupIntent = {
   talentSubtype?: string;
   nonTalentType?: string;
   companyName?: string;
+  returnTo?: string;
+  provider?: "google" | "apple";
 };
 
 /** Persisted on auth.users.raw_user_meta_data so email-confirm survives lost query params. */
 export const SIGNUP_META_ACCOUNT_TYPE = "motiion_account_type";
 export const SIGNUP_META_FLOW = "motiion_signup_flow";
 
-function resolveBrowserOrigin(): string {
+export function resolveBrowserOrigin(): string {
   // Prefer the origin the user is actually on so OAuth always returns to the
   // current host (prod ↔ local), even if NEXT_PUBLIC_SITE_URL is mis-set.
   if (typeof window !== "undefined" && window.location?.origin) {
@@ -38,6 +41,7 @@ export function buildOAuthRedirectUrl(intent: OAuthSignupIntent): string {
     flow: intent.flow,
     account_type: intent.accountType,
   });
+  if (intent.provider) params.set("provider", intent.provider);
 
   if (intent.talentSubtype) {
     params.set("talent_subtype", intent.talentSubtype);
@@ -49,14 +53,24 @@ export function buildOAuthRedirectUrl(intent: OAuthSignupIntent): string {
     params.set("company_name", intent.companyName);
   }
 
+  const returnTo = safeAuthReturnPath(intent.returnTo);
+  if (returnTo) params.set("next", returnTo);
   return `${origin}/auth/callback?${params.toString()}`;
 }
 
+/** A generic expired-link page does not know the signup role; metadata owns it. */
+export function buildEmailConfirmationRedirectUrl(accountType?: OAuthAccountType, returnTo?: string): string {
+  return accountType
+    ? buildOAuthRedirectUrl({ flow: "signup", accountType, returnTo })
+    : `${resolveBrowserOrigin()}/auth/callback?flow=signup`;
+}
+
 /** Metadata written at email/password signup so confirm + first login keep the lane. */
-export function buildSignupUserMetadata(accountType: OAuthAccountType) {
+export function buildSignupUserMetadata(accountType: OAuthAccountType, returnTo?: string | null) {
   return {
     [SIGNUP_META_ACCOUNT_TYPE]: accountType,
     [SIGNUP_META_FLOW]: "signup",
+    ...(safeAuthReturnPath(returnTo) ? { motiion_return_to: safeAuthReturnPath(returnTo) } : {}),
   } as const;
 }
 
@@ -140,6 +154,12 @@ export function oauthErrorMessage(code: string | null): string | null {
   if (!code) return null;
 
   switch (code) {
+    case "access_denied":
+      return "Sign-in was cancelled or permission was not granted. Try again or use another sign-in method.";
+    case "email_link_expired":
+      return "This email link has expired or has already been used. Log in if you already confirmed, or request a new link.";
+    case "email_link_browser":
+      return "Your email may already be confirmed. Log in to continue on this device.";
     case "auth_callback_failed":
       return "We could not finish signing you in. Please try again.";
     case "auth_callback_missing_code":

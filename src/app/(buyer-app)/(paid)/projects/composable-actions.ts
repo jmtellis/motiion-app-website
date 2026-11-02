@@ -1,5 +1,7 @@
 "use server";
 
+import { normalizeProjectContract } from "@/lib/talent-buyers/project-contract";
+import { requireIndustryApproval } from "@/lib/talent-buyers/require-industry-approval";
 import { revalidatePath } from "next/cache";
 
 import { trackServerEvent } from "@/lib/analytics/track-server";
@@ -25,6 +27,9 @@ type ComposableRow = {
   title: string | null;
   enabled_modules: unknown;
   project_configuration: Record<string, unknown> | null;
+  is_composable?: boolean;
+  is_active?: boolean;
+  project_abilities?: { ability: string }[];
 };
 
 export type ComposableActionResult = { ok: true } | { ok: false; error: string };
@@ -49,21 +54,24 @@ async function requireSession() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false as const, error: "You must be signed in to manage projects." };
+  const approval = await requireIndustryApproval(user.id);
+  if (!approval.ok) return approval;
   return { ok: true as const, supabase, userId: user.id };
 }
 
 async function loadOwnedComposableProject(supabase: ServerSupabase, projectId: string, userId: string) {
   const { data, error } = await supabase
     .from("projects")
-    .select("id, title, enabled_modules, project_configuration")
+    .select("id, title, is_composable, is_active, project_abilities(ability), enabled_modules, project_configuration")
     .eq("id", projectId)
     .eq("poster_id", userId)
     .maybeSingle<ComposableRow>();
 
   if (error || !data) return null;
-  const composable = parseComposableConfig(data.project_configuration);
+  const normalized = normalizeProjectContract(data);
+  const composable = parseComposableConfig(normalized.project_configuration);
   if (!composable) return null;
-  return { row: data, composable };
+  return { row: normalized, composable };
 }
 
 function withComposable(
@@ -102,34 +110,16 @@ export async function createComposableProject(payload: unknown): Promise<CreateC
 
   const session = await requireSession();
   if (!session.ok) return { ok: false, error: session.error };
-  const { supabase, userId } = session;
+  const { supabase } = session;
   const shell = parsed.data;
 
-  const composable = buildComposableConfig(null, { created_via: "web_thin_create" });
-  const { data, error } = await supabase
-    .from("projects")
-    .insert({
-      poster_id: userId,
-      title: shell.name,
-      location: nullableTrim(shell.location),
-      start_date: nullableTrim(shell.startDate),
-      end_date: nullableTrim(shell.endDate),
-      cover_image_url: nullableTrim(shell.coverImageUrl),
-      project_type: "production",
-      enabled_modules: { casting: false, activities: false, roster: false, classes: false },
-      project_configuration: { attachments: [], composer_draft: false, composable },
-      is_active: true,
-      visibility: "private",
-      casting_configuration: { schema_version: 7, composer_draft: true },
-    })
-    .select("id")
-    .single();
-
-  if (error || !data?.id) {
-    return { ok: false, error: error?.message ?? "Couldn't create the project." };
-  }
-
-  const projectId = data.id as string;
+  const { data, error } = await supabase.rpc("create_project_shell", {
+    p_title: shell.name, p_location: nullableTrim(shell.location),
+    p_start_date: nullableTrim(shell.startDate), p_end_date: nullableTrim(shell.endDate),
+    p_request_id: shell.requestId ?? null,
+  });
+  if (error || typeof data !== "string") return { ok: false, error: error?.message ?? "Couldn't create the project." };
+  const projectId = data;
   await trackServerEvent("project_created", {
     project_id: projectId,
     composable: true,
@@ -172,9 +162,12 @@ export async function enableProjectAbilities(input: {
     paused: project.composable.paused.filter((id) => !abilities.includes(id)),
   });
 
+  const enabled = await supabase.rpc("enable_project_abilities", { p_project_id: input.projectId, p_abilities: abilities });
+  if (enabled.error) return { ok: false, error: enabled.error.message };
   const { error } = await supabase
     .from("projects")
     .update({
+      is_composable: true,
       enabled_modules: nextModules,
       project_configuration: withComposable(project.row.project_configuration, composable),
     })
@@ -184,7 +177,8 @@ export async function enableProjectAbilities(input: {
   if (error) return { ok: false, error: error.message };
 
   if (abilities.includes("casting")) {
-    await ensurePrimaryCastingDraft(input.projectId, userId, project.row.title ?? "");
+    const castingId = await ensurePrimaryCastingDraft(input.projectId, userId, project.row.title ?? "");
+    if (!castingId) return { ok: false, error: "Casting was enabled but its workspace could not be prepared. Please retry." };
   }
 
   for (const ability of newlyEnabled) {
@@ -222,6 +216,10 @@ export async function setProjectAbilityPaused(input: {
   if (input.paused) paused.add(input.ability);
   else paused.delete(input.ability);
 
+  const abilityResult = input.paused
+    ? await supabase.rpc("disable_project_ability", { p_project_id: input.projectId, p_ability: input.ability })
+    : await supabase.rpc("enable_project_abilities", { p_project_id: input.projectId, p_abilities: [input.ability] });
+  if (abilityResult.error) return { ok: false, error: abilityResult.error.message };
   const composable = buildComposableConfig(project.composable, { paused: [...paused] });
   const { error } = await supabase
     .from("projects")
@@ -273,17 +271,9 @@ export async function updateComposableProjectShell(input: {
   if (!project) return { ok: false, error: "Project not found." };
 
   const shell = parsed.data;
-  const { error } = await supabase
-    .from("projects")
-    .update({
-      title: shell.name,
-      location: nullableTrim(shell.location),
-      start_date: nullableTrim(shell.startDate),
-      end_date: nullableTrim(shell.endDate),
-      cover_image_url: nullableTrim(shell.coverImageUrl),
-    })
-    .eq("id", input.projectId)
-    .eq("poster_id", userId);
+  const updated = await supabase.rpc("update_project_shell", { p_project_id: input.projectId, p_title: shell.name, p_location: nullableTrim(shell.location), p_start_date: nullableTrim(shell.startDate), p_end_date: nullableTrim(shell.endDate) });
+  if (updated.error) return { ok: false, error: updated.error.message };
+  const { error } = await supabase.from("projects").update({ cover_image_url: nullableTrim(shell.coverImageUrl) }).eq("id", input.projectId).eq("poster_id", userId);
 
   if (error) return { ok: false, error: error.message };
   revalidateComposable(input.projectId);
@@ -307,11 +297,25 @@ export async function setComposableProjectArchived(input: {
   });
   const { error } = await supabase
     .from("projects")
-    .update({ project_configuration: withComposable(project.row.project_configuration, composable) })
+    .update({ is_active: !input.archived, project_configuration: withComposable(project.row.project_configuration, composable) })
     .eq("id", input.projectId)
     .eq("poster_id", userId);
 
   if (error) return { ok: false, error: error.message };
   revalidateComposable(input.projectId);
   return { ok: true };
+}
+
+/** Notes use the same ability settings as the current iOS project home. */
+export async function saveProjectNotes(projectId: string, body: string): Promise<ComposableActionResult> {
+  if (typeof body !== "string" || body.length > 50000) return { ok: false, error: "Keep project notes under 50,000 characters." };
+  const session = await requireSession();
+  if (!session.ok) return session;
+  const project = await loadOwnedComposableProject(session.supabase, projectId, session.userId);
+  if (!project) return { ok: false, error: "Only the project owner can edit notes." };
+  const enabled = await session.supabase.rpc("enable_project_abilities", { p_project_id: projectId, p_abilities: ["notes"] });
+  if (enabled.error) return { ok: false, error: "Could not prepare project notes. Please try again." };
+  const result = await session.supabase.rpc("update_project_ability_settings", { p_project_id: projectId, p_ability: "notes", p_settings: { body } });
+  if (result.error) return { ok: false, error: "Could not save notes. Your changes are still here." };
+  revalidateComposable(projectId); return { ok: true };
 }

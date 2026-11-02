@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { MapPin, Plus, X } from "lucide-react";
+import { useDebouncedSearch } from "@/hooks/use-debounced-search";
 
 const MAX_OTHER_LOCATIONS = 4;
 const MIN_SEARCH_LENGTH = 3;
@@ -11,6 +12,13 @@ type PlacePrediction = {
   description: string;
   placeId: string;
 };
+
+async function searchLocations(query: string, signal: AbortSignal) {
+  const response = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(query.trim())}&mode=cities`, { signal });
+  const payload = await response.json() as { predictions?: PlacePrediction[]; error?: string; provider?: string };
+  if (!response.ok) throw new Error(payload.error ?? "Location search failed.");
+  return payload;
+}
 
 function LocationSelector({
   label,
@@ -24,17 +32,12 @@ function LocationSelector({
   onChange: (value: string) => void;
 }) {
   const inputId = useId();
-  const [provider, setProvider] = useState("nominatim");
-  const [query, setQuery] = useState(value);
-  const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
+  const query = value;
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { data, loading, error } = useDebouncedSearch(query, open && query.trim().length >= MIN_SEARCH_LENGTH, searchLocations, SEARCH_DEBOUNCE_MS);
+  const predictions = data?.predictions ?? [];
+  const provider = data?.provider ?? "nominatim";
   const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setQuery(value);
-  }, [value]);
 
   useEffect(() => {
     function handleClick(event: MouseEvent) {
@@ -47,52 +50,6 @@ function LocationSelector({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  useEffect(() => {
-    if (!open || query.trim().length < MIN_SEARCH_LENGTH) {
-      setPredictions([]);
-      setLoading(false);
-      return;
-    }
-
-    const controller = new AbortController();
-    const timeout = window.setTimeout(async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(query.trim())}&mode=cities`, {
-          signal: controller.signal,
-        });
-        const payload = (await response.json()) as {
-          predictions?: PlacePrediction[];
-          error?: string;
-          provider?: string;
-        };
-
-        if (!response.ok) {
-          setError(payload.error ?? "Location search failed.");
-          setPredictions([]);
-          return;
-        }
-
-        setProvider(payload.provider ?? "nominatim");
-        setPredictions(payload.predictions ?? []);
-      } catch (fetchError) {
-        if (controller.signal.aborted) return;
-        setError(fetchError instanceof Error ? fetchError.message : "Location search failed.");
-        setPredictions([]);
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => {
-      controller.abort();
-      window.clearTimeout(timeout);
-    };
-  }, [open, query]);
 
   return (
     <div ref={containerRef} className="space-y-2">
@@ -107,7 +64,6 @@ function LocationSelector({
             aria-label={label ?? "Working location"}
             value={query}
             onChange={(event) => {
-              setQuery(event.target.value);
               setOpen(true);
               onChange(event.target.value);
             }}
@@ -127,7 +83,6 @@ function LocationSelector({
                 type="button"
                 onClick={() => {
                   onChange(prediction.description);
-                  setQuery(prediction.description);
                   setOpen(false);
                 }}
                 className="block w-full px-4 py-3 text-left text-sm text-[var(--ink)] hover:bg-[var(--tone)]"

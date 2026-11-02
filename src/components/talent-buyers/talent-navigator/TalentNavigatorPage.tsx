@@ -10,7 +10,6 @@ import {
   listBuyerCastingTargets,
   listBuyerOpenRoles,
   saveTalentForBuyer,
-  saveTalentToRoster,
   type CastingInviteTarget,
 } from "@/app/(buyer-app)/(paid)/talent/actions";
 import type { BuyerOpenRole } from "@/lib/talent-navigator/open-roles";
@@ -25,6 +24,7 @@ import { EMPTY_NAVIGATOR_FILTERS } from "@/lib/talent-navigator/types";
 import { startConversationWith } from "@/lib/app/conversations";
 import type { DashboardProfile } from "@/types/database";
 
+import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 import { ActiveTalentPanel } from "./ActiveTalentPanel";
 import { AnimatedGridBackground } from "./AnimatedGridBackground";
 import {
@@ -73,6 +73,9 @@ export function TalentNavigatorPage({
     ...initialFilters,
   });
   const [talentPool, setTalentPool] = useState(initialData.talent);
+  const [searchError, setSearchError] = useState<string | null>(initialData.source === "unavailable" ? "Talent search is temporarily unavailable. Please retry." : null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [retrySearch, setRetrySearch] = useState(0);
   // Keep the server-provided salt for the whole visit so SSR/hydration match and filters don't reshuffle.
   const [shuffleSalt] = useState(() => initialData.shuffleSalt ?? "");
   const skipInitialFetchRef = useRef(true);
@@ -80,15 +83,15 @@ export function TalentNavigatorPage({
   const [savedSearches, setSavedSearches] = useState<SavedSearchRow[]>(initialSavedSearches ?? []);
   const [savedSearchId, setSavedSearchId] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<NavigatorViewMode>(initialView);
+  const [requestedViewMode, setViewMode] = useState<NavigatorViewMode>(initialView);
   const [chatSessionActive, setChatSessionActive] = useState(false);
   /** Chat overlay dismissed → show Discover navigator without Pro Browse gate. */
   const [chatOverlayDismissed, setChatOverlayDismissed] = useState(false);
   const [openRoles, setOpenRoles] = useState<BuyerOpenRole[]>([]);
   const [selectedOpenRoleId, setSelectedOpenRoleId] = useState(initialOpenRoleId);
-  const appliedInitialOpenRoleRef = useRef(false);
   const { showToast } = useToast();
   const { requirePro, hasIndustryPro, openUpgrade } = useIndustryProOptional();
+  const viewMode = requestedViewMode === "browse" && !hasIndustryPro ? "discover" : requestedViewMode;
 
   const navigatorViewOptions = useMemo(
     () => [
@@ -124,14 +127,19 @@ export function TalentNavigatorPage({
   );
 
   useEffect(() => {
+    let cancelled = false;
     void listBuyerOpenRoles().then((result) => {
+      if (cancelled) return;
       if (result.error) {
         showToast(result.error);
         return;
       }
       setOpenRoles(result.roles);
+      const initialRole = result.roles.find((role) => role.id === initialOpenRoleId);
+      if (initialRole) setFilters(mapOpenRoleToNavigatorFilters(initialRole));
     });
-  }, [showToast]);
+    return () => { cancelled = true; };
+  }, [showToast, initialOpenRoleId]);
 
   const {
     activeRowIndex: clampedRowIndex,
@@ -162,16 +170,9 @@ export function TalentNavigatorPage({
       setFilters(mapOpenRoleToNavigatorFilters(role));
       resetNavigation();
     },
-    [openRoles, resetNavigation],
+    [openRoles, resetNavigation, initialFilters],
   );
 
-  useEffect(() => {
-    if (appliedInitialOpenRoleRef.current || !initialOpenRoleId || !openRoles.length) return;
-    const role = openRoles.find((item) => item.id === initialOpenRoleId);
-    if (!role) return;
-    appliedInitialOpenRoleRef.current = true;
-    applyOpenRole(initialOpenRoleId, openRoles);
-  }, [applyOpenRole, initialOpenRoleId, openRoles]);
 
   const currentRow = rows[clampedRowIndex];
   const clampedColIndex = currentRow?.talent.length
@@ -188,19 +189,27 @@ export function TalentNavigatorPage({
     const requestId = searchRequestRef.current + 1;
     searchRequestRef.current = requestId;
     const handle = window.setTimeout(async () => {
+      setSearchLoading(true);
       try {
         const data = await fetchNavigatorTalent(filters);
         if (searchRequestRef.current !== requestId) return;
+        if (data.source === "unavailable") {
+          setSearchError("Talent search couldn't be refreshed. Your previous results are still available.");
+          return;
+        }
+        setSearchError(null);
         setTalentPool(data.talent);
         resetNavigation();
       } catch {
         if (searchRequestRef.current !== requestId) return;
-        showToast("Could not refresh talent results");
+        setSearchError("Talent search couldn't be refreshed. Check your connection and retry.");
+      } finally {
+        if (searchRequestRef.current === requestId) setSearchLoading(false);
       }
     }, 350);
 
-    return () => window.clearTimeout(handle);
-  }, [filters, resetNavigation, showToast]);
+    return () => { window.clearTimeout(handle); searchRequestRef.current += 1; };
+  }, [filters, resetNavigation, retrySearch]);
 
   const setNavigatorViewMode = useCallback(
     (mode: NavigatorViewMode) => {
@@ -227,10 +236,8 @@ export function TalentNavigatorPage({
   }, []);
 
   useEffect(() => {
-    if (hasIndustryPro || viewMode !== "browse") return;
-    openUpgrade("view_talent_profile");
-    setViewMode("discover");
-  }, [hasIndustryPro, openUpgrade, viewMode]);
+    if (!hasIndustryPro && requestedViewMode === "browse") openUpgrade("view_talent_profile");
+  }, [hasIndustryPro, openUpgrade, requestedViewMode]);
 
   const openProfile = useCallback(
     (talent: Talent) => {
@@ -257,11 +264,9 @@ export function TalentNavigatorPage({
     [openCover, openProfile, viewMode],
   );
 
-  const [savePickerOpen, setSavePickerOpen] = useState(false);
-
-  useEffect(() => {
-    setSavePickerOpen(false);
-  }, [activeTalent?.id]);
+  const [savePickerFor, setSavePickerFor] = useState<string | null>(null);
+  const savePickerOpen = Boolean(activeTalent && savePickerFor === activeTalent.id);
+  const setSavePickerOpen = useCallback((open: boolean) => setSavePickerFor(open ? activeTalent?.id ?? null : null), [activeTalent?.id]);
 
   const [invitePicker, setInvitePicker] = useState<{
     talent: Talent;
@@ -304,22 +309,30 @@ export function TalentNavigatorPage({
     [showToast],
   );
 
-  const contactTalent = useCallback(
-    (talent: Talent) => {
-      void startConversationWith({ targetUserId: talent.id, initialMessage: "Hi!" }).then((result) => {
-        if (result.conversationId) {
-          router.push(`/messages?conversation=${result.conversationId}`);
-          return;
-        }
-        if (result.pendingRequest) {
-          showToast(`Message request sent to ${talent.name}`);
-          return;
-        }
-        showToast(result.error ?? "Could not start a conversation");
-      });
-    },
-    [router, showToast],
-  );
+  const [contactDraft, setContactDraft] = useState<{ talent: Talent; body: string; error: string | null; pending: boolean } | null>(null);
+  const contactTalent = useCallback((talent: Talent) => {
+    setContactDraft({ talent, body: "", error: null, pending: false });
+  }, []);
+  const sendingContact = useRef(false);
+  async function sendContactMessage() {
+    if (!contactDraft?.body.trim() || sendingContact.current) return;
+    sendingContact.current = true;
+    setContactDraft((current) => current ? { ...current, pending: true, error: null } : null);
+    try {
+      const result = await startConversationWith({ targetUserId: contactDraft.talent.id, contextType: "agency", initialMessage: contactDraft.body });
+      if (result.conversationId) {
+        setContactDraft(null);
+        router.push(`/messages?conversation=${result.conversationId}`);
+      } else if (result.pendingRequest) {
+        showToast(`Message request sent to ${contactDraft.talent.name}`);
+        setContactDraft(null);
+      } else {
+        setContactDraft((current) => current ? { ...current, error: result.error ?? "Could not send your message.", pending: false } : null);
+      }
+    } catch {
+      setContactDraft((current) => current ? { ...current, error: "Couldn't confirm your message. Check your connection and retry.", pending: false } : null);
+    } finally { sendingContact.current = false; }
+  }
 
   const [projectPicker, setProjectPicker] = useState<{
     talent: Talent;
@@ -522,6 +535,7 @@ export function TalentNavigatorPage({
     openInvitePicker,
     openProfile,
     rows.length,
+    setSavePickerOpen,
     viewMode,
   ]);
 
@@ -588,6 +602,7 @@ export function TalentNavigatorPage({
           : ""
       }`}
       tabIndex={-1}
+      aria-busy={searchLoading}
     >
       <div
         className={`talent-navigator__stage${filtersOpen ? " talent-navigator__stage--filters-open" : ""}`}
@@ -628,6 +643,10 @@ export function TalentNavigatorPage({
           </div>
         </div>
 
+        {searchError ? <div role="status" className="relative z-10 mx-4 rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface)] p-3 text-sm">
+          {searchError} <button type="button" className="underline underline-offset-4" disabled={searchLoading} onClick={() => setRetrySearch((value) => value + 1)}>{searchLoading ? "Retrying…" : "Retry search"}</button>
+        </div> : null}
+        {searchLoading ? <span className="sr-only" role="status">Refreshing talent results</span> : null}
         {viewMode === "saved" ? (
           <div className="talent-navigator__saved">
             <SavedTalentView
@@ -791,6 +810,22 @@ export function TalentNavigatorPage({
         </div>
       ) : null}
 
+      <Modal open={Boolean(contactDraft)} onClose={() => { if (!sendingContact.current) setContactDraft(null); }}
+        title={`Message ${contactDraft?.talent.name ?? "talent"}`}
+        description="Introduce yourself and what you'd like to work on. Your message may be delivered as a request."
+        placement="drawer">
+        <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void sendContactMessage(); }}>
+          <label className="block text-sm font-medium" htmlFor="navigator-contact-message">Message</label>
+          <textarea id="navigator-contact-message" rows={5} maxLength={10000} autoFocus
+            className="w-full rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface)] p-3 text-[var(--ds-text-default)]"
+            value={contactDraft?.body ?? ""} disabled={contactDraft?.pending}
+            onChange={(event) => setContactDraft((current) => current ? { ...current, body: event.target.value } : null)} />
+          {contactDraft?.error ? <p role="alert" className="text-sm text-[var(--ds-muted)]">{contactDraft.error}</p> : null}
+          <button type="submit" className="bd-btn-accent" disabled={!contactDraft?.body.trim() || contactDraft.pending}>
+            {contactDraft?.pending ? "Sending…" : "Send message"}
+          </button>
+        </form>
+      </Modal>
       {invitePicker ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <button

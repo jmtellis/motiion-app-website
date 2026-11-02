@@ -24,6 +24,9 @@ export type ComposableWorkspaceMeta = {
 };
 
 export type ProjectWorkspaceMeta = {
+  notes?: string;
+  isOwner?: boolean;
+  canReviewCasting?: boolean;
   id: string;
   title: string;
   coverImageUrl: string | null;

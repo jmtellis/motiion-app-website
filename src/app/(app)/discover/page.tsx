@@ -1,6 +1,6 @@
 import { TalentDiscovery } from "@/components/app/TalentDiscovery";
 import { DiscoverView } from "@/components/app/DiscoverView";
-import { requireTalentAccount } from "@/lib/auth/session";
+import { requireCommunityOrTalentAccount } from "@/lib/auth/session";
 import { loadDiscoverCanvas } from "@/lib/app/discover-canvas";
 import { redirect } from "next/navigation";
 
@@ -9,12 +9,16 @@ export default async function DiscoverPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireTalentAccount();
-  const canvas = await loadDiscoverCanvas(await searchParams, "/discover");
+  const profile = await requireCommunityOrTalentAccount();
+  const params = await searchParams;
+  const canvas = await loadDiscoverCanvas(params, "/discover");
   if ("redirectTo" in canvas) redirect(canvas.redirectTo);
 
   return (
     <TalentDiscovery
+      key={profile.id}
+      currentUserId={profile.id}
+      initialMode={params.view === "explore" || params.view === "discover" ? "discover" : params.view === "saved" ? "saved" : "browse"}
       collectionTitle={canvas.collectionTitle}
       initialData={canvas.initialData}
       keyword={canvas.filters.keyword ?? ""}

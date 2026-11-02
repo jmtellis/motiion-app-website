@@ -15,27 +15,19 @@ export function DemoTypewriter({
   charMs?: number;
   className?: string;
 }) {
-  const [value, setValue] = useState(reduceMotion ? text : "");
-
+  const [count, setCount] = useState(0);
+  const [previousInput, setPreviousInput] = useState({ active, text });
+  if (previousInput.active !== active || previousInput.text !== text) {
+    setPreviousInput({ active, text }); setCount(0);
+  }
+  const value = reduceMotion ? text : active ? text.slice(0, count) : "";
   useEffect(() => {
-    if (reduceMotion) {
-      setValue(text);
-      return;
-    }
-
-    if (!active) {
-      setValue("");
-      return;
-    }
-
-    setValue("");
+    if (reduceMotion || !active) return;
     let index = 0;
     const id = window.setInterval(() => {
-      index += 1;
-      setValue(text.slice(0, index));
+      index += 1; setCount(index);
       if (index >= text.length) window.clearInterval(id);
     }, charMs);
-
     return () => window.clearInterval(id);
   }, [active, text, charMs, reduceMotion]);
 

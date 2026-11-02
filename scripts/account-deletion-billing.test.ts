@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import { subscriptionPreventsAccountDeletion } from '../src/lib/billing/account-deletion-state';
+test('renewable and pending Stripe states preserve the account until billing is resolved',()=>{for(const status of ['active','trialing','paused','past_due','unpaid','incomplete','unknown'])assert.equal(subscriptionPreventsAccountDeletion({status}),true,status);});
+test('ended and explicitly scheduled cancellations permit deletion without canceling again',()=>{for(const status of ['canceled','incomplete_expired'])assert.equal(subscriptionPreventsAccountDeletion({status}),false);for(const status of ['active','trialing','paused']){assert.equal(subscriptionPreventsAccountDeletion({status,cancel_at_period_end:true}),false);assert.equal(subscriptionPreventsAccountDeletion({status,cancel_at:2000000000}),false);}});
+test('a future cancellation does not hide unresolved debt or an incomplete payment',()=>{for(const status of ['past_due','unpaid','incomplete'])assert.equal(subscriptionPreventsAccountDeletion({status,cancel_at_period_end:true,cancel_at:2000000000}),true);});

@@ -73,7 +73,7 @@ export function HighlightsPanel({ owner, actionsHost, onDirtyChange, onSaved }: 
     }));
   }, [owner.experiences]);
 
-  const reorder = usePointerReorder({
+  const { containerRef: reorderContainerRef, bind: bindReorder } = usePointerReorder({
     axis: "x",
     onTap: (index) => setSelected(index),
     onReorder: (from, to) => {
@@ -124,6 +124,7 @@ export function HighlightsPanel({ owner, actionsHost, onDirtyChange, onSaved }: 
           return { ...item, image_url: url, pending: undefined, preview: undefined, source: undefined };
         }),
       );
+      setItems(uploaded); // Keep completed uploads for a retry if the profile save fails.
       const result = await savePortfolioHighlights(
         uploaded.map((item) => ({
           id: item.id,
@@ -360,7 +361,7 @@ export function HighlightsPanel({ owner, actionsHost, onDirtyChange, onSaved }: 
 
       <section className="portfolio-strip-section">
         <StripHeading title="Uploads" count={`${items.length}/${cap}`} hint="Drag to reorder how highlights appear on your profile." />
-        <div className="portfolio-strip" ref={reorder.containerRef}>
+        <div className="portfolio-strip" ref={reorderContainerRef}>
           <AddTile
             label="Add highlight"
             locked={items.length >= unlocked}
@@ -381,7 +382,7 @@ export function HighlightsPanel({ owner, actionsHost, onDirtyChange, onSaved }: 
                 className="portfolio-thumb portfolio-media-card"
                 aria-label={`Highlight ${index + 1}, ${item.title}`}
                 aria-pressed={index === selected}
-                {...reorder.bind(index)}
+                {...bindReorder(index)}
                 onClick={(event) => event.detail === 0 && setSelected(index)}
                 onKeyDown={(event) => {
                   if (!event.altKey || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;

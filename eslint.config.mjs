@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Private, disposable integration harnesses are not shipped product source.
+    ".staging/**",
+    // Vendored browser library; reviewed through the dependency audit.
+    "public/shared-roster/lenis.min.js",
   ]),
 ]);
 

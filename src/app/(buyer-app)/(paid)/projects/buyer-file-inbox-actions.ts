@@ -1,31 +1,31 @@
 "use server";
 
+import { requireIndustryApproval } from "@/lib/talent-buyers/require-industry-approval";
+import { readPagedRows } from "@/lib/supabase/read-pages";
 import { revalidatePath } from "next/cache";
 
 import { FREE_INBOX_STORAGE_BYTES, formatBytes } from "@/lib/billing/freemium-limits";
 import { hasIndustryProAccess } from "@/lib/billing/gate";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
-  extractStorageObjectFromPublicUrl,
   sanitizeAttachmentFileName,
 } from "@/lib/talent-buyers/project-attachments";
 import { resolveWorkspaceProjectType } from "@/lib/talent-buyers/project-abilities";
+import { assignOwnedInboxFileToProject } from "@/lib/talent-buyers/project-file-inbox";
+import { normalizeProjectContract } from "@/lib/talent-buyers/project-contract";
 import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
 import type { BuyerInboxFile } from "@/types/buyer-file-inbox";
 import type { ProjectAttachment } from "@/types/project";
 
 const PROJECT_MEDIA_BUCKET = "project-media";
-const CASTING_DOCUMENTS_BUCKET = "casting-project-documents";
 const MAX_INBOX_BYTES = 20 * 1024 * 1024;
 
 async function getInboxUsageBytes(
   supabase: NonNullable<Awaited<ReturnType<typeof createServerSupabaseClient>>>,
   userId: string,
 ): Promise<number> {
-  const { data } = await supabase
-    .from("buyer_file_inbox")
-    .select("size_bytes")
-    .eq("owner_id", userId);
+  const { data, error } = await readPagedRows((from, to) => supabase.from("buyer_file_inbox").select("size_bytes").eq("owner_id", userId).order("id").range(from, to));
+  if (error) throw new Error("Could not check your file storage. Please retry.");
   return (data ?? []).reduce((sum, row) => sum + (Number(row.size_bytes) || 0), 0);
 }
 
@@ -56,6 +56,8 @@ async function requireUserId() {
     throw new Error("You must be signed in to manage files.");
   }
 
+  const approval = await requireIndustryApproval(user.id);
+  if (!approval.ok) throw new Error(approval.error);
   return { supabase, userId: user.id };
 }
 
@@ -111,13 +113,13 @@ function revalidateInboxPaths(projectId?: string) {
 export async function listInboxFiles(): Promise<ListInboxResult> {
   try {
     const { supabase, userId } = await requireUserId();
-    const { data, error } = await supabase
+    const { data, error } = await readPagedRows((from, to) => supabase
       .from("buyer_file_inbox")
       .select(
         "id, owner_id, title, file_name, content_type, file_url, storage_path, size_bytes, created_at",
       )
       .eq("owner_id", userId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }).order("id").range(from, to));
 
     if (error) return { ok: false, error: error.message };
     return { ok: true, files: (data ?? []).map(mapInboxRow) };
@@ -136,11 +138,14 @@ export async function fetchProjectAttachmentsForHub(
     const { supabase, userId } = await requireUserId();
     const { data: project, error } = await supabase
       .from("projects")
-      .select("id, project_type, enabled_modules, project_configuration, casting_configuration")
+      .select("id, updated_at, is_composable, project_abilities(ability), project_type, enabled_modules, project_configuration, casting_configuration")
       .eq("id", projectId)
       .eq("poster_id", userId)
       .maybeSingle<{
         id: string;
+        updated_at: string | null;
+        is_composable: boolean;
+        project_abilities: { ability: string }[];
         project_type: string | null;
         enabled_modules: unknown;
         project_configuration: Record<string, unknown> | null;
@@ -151,7 +156,8 @@ export async function fetchProjectAttachmentsForHub(
       return { ok: false, error: "Project not found." };
     }
 
-    const isCasting = getNormalizedProjectType(resolveWorkspaceProjectType(project)) === "casting";
+    const workspaceProject = normalizeProjectContract(project);
+    const isCasting = getNormalizedProjectType(resolveWorkspaceProjectType(workspaceProject)) === "casting";
     const config = isCasting
       ? ((project.casting_configuration ?? project.project_configuration ?? {}) as Record<
           string,
@@ -163,7 +169,7 @@ export async function fetchProjectAttachmentsForHub(
     return {
       ok: true,
       attachments: normalizeAttachmentList(raw),
-      projectType: resolveWorkspaceProjectType(project),
+      projectType: resolveWorkspaceProjectType(workspaceProject),
     };
   } catch (error) {
     return {
@@ -286,138 +292,13 @@ export async function deleteInboxFile(fileId: string): Promise<ActionResult> {
   }
 }
 
-export async function assignInboxFileToProject(
-  fileId: string,
-  projectId: string,
-): Promise<ActionResult> {
+export async function assignInboxFileToProject(fileId: string, projectId: string): Promise<ActionResult> {
   try {
     const { supabase, userId } = await requireUserId();
-
-    const { data: inboxFile, error: inboxError } = await supabase
-      .from("buyer_file_inbox")
-      .select(
-        "id, owner_id, title, file_name, content_type, file_url, storage_path, size_bytes, created_at",
-      )
-      .eq("id", fileId)
-      .eq("owner_id", userId)
-      .maybeSingle();
-
-    if (inboxError || !inboxFile) {
-      return { ok: false, error: "File not found." };
-    }
-
-    const { data: project, error: projectError } = await supabase
-      .from("projects")
-      .select("id, project_type, enabled_modules, project_configuration, casting_configuration")
-      .eq("id", projectId)
-      .eq("poster_id", userId)
-      .maybeSingle<{
-        id: string;
-        project_type: string | null;
-        enabled_modules: unknown;
-        project_configuration: Record<string, unknown> | null;
-        casting_configuration: Record<string, unknown> | null;
-      }>();
-
-    if (projectError || !project) {
-      return { ok: false, error: "Project not found." };
-    }
-
-    const isCasting = getNormalizedProjectType(resolveWorkspaceProjectType(project)) === "casting";
-    let attachmentUrl = inboxFile.file_url as string;
-    let attachmentFileName = inboxFile.file_name as string;
-    let attachmentContentType = (inboxFile.content_type as string | null) ?? "application/octet-stream";
-
-    if (isCasting) {
-      const extracted = extractStorageObjectFromPublicUrl(inboxFile.file_url);
-      const sourcePath = extracted?.path ?? (inboxFile.storage_path as string);
-      const destPath = `${projectId.toLowerCase()}/${inboxFile.id.toLowerCase()}/${attachmentFileName}`;
-
-      const { data: blob, error: downloadError } = await supabase.storage
-        .from(PROJECT_MEDIA_BUCKET)
-        .download(sourcePath);
-
-      if (downloadError || !blob) {
-        return { ok: false, error: downloadError?.message ?? "Could not copy file for casting." };
-      }
-
-      const bytes = Buffer.from(await blob.arrayBuffer());
-      const upload = await supabase.storage.from(CASTING_DOCUMENTS_BUCKET).upload(destPath, bytes, {
-        contentType: attachmentContentType,
-        upsert: true,
-      });
-
-      if (upload.error) {
-        return { ok: false, error: upload.error.message };
-      }
-
-      const { data: publicUrl } = supabase.storage
-        .from(CASTING_DOCUMENTS_BUCKET)
-        .getPublicUrl(destPath);
-      attachmentUrl = publicUrl.publicUrl;
-
-      await supabase.storage.from(PROJECT_MEDIA_BUCKET).remove([sourcePath]);
-    }
-
-    const attachment: ProjectAttachment = {
-      id: inboxFile.id as string,
-      title: (inboxFile.title as string) || attachmentFileName,
-      file_url_string: attachmentUrl,
-      file_name: attachmentFileName,
-      content_type: attachmentContentType,
-      uploaded_at_iso8601: (inboxFile.created_at as string) || new Date().toISOString(),
-    };
-
-    if (isCasting) {
-      const existingConfig = (project.casting_configuration ?? {}) as Record<string, unknown>;
-      const existing = Array.isArray(existingConfig.attachments)
-        ? (existingConfig.attachments as ProjectAttachment[])
-        : [];
-      const { error } = await supabase
-        .from("projects")
-        .update({
-          casting_configuration: {
-            ...existingConfig,
-            attachments: normalizeAttachmentList([...existing, attachment]),
-          },
-        })
-        .eq("id", projectId);
-
-      if (error) return { ok: false, error: error.message };
-    } else {
-      const existingConfig = (project.project_configuration ?? {}) as Record<string, unknown>;
-      const existing = Array.isArray(existingConfig.attachments)
-        ? (existingConfig.attachments as ProjectAttachment[])
-        : [];
-      const { error } = await supabase
-        .from("projects")
-        .update({
-          project_configuration: {
-            ...existingConfig,
-            attachments: normalizeAttachmentList([...existing, attachment]),
-          },
-        })
-        .eq("id", projectId);
-
-      if (error) return { ok: false, error: error.message };
-    }
-
-    const { error: deleteError } = await supabase
-      .from("buyer_file_inbox")
-      .delete()
-      .eq("id", fileId)
-      .eq("owner_id", userId);
-
-    if (deleteError) {
-      return { ok: false, error: deleteError.message };
-    }
-
-    revalidateInboxPaths(projectId);
-    return { ok: true };
+    const result = await assignOwnedInboxFileToProject(supabase, userId, fileId, projectId);
+    if (result.ok) revalidateInboxPaths(projectId);
+    return result;
   } catch (error) {
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : "Could not assign file.",
-    };
+    return { ok: false, error: error instanceof Error ? error.message : "Could not assign file." };
   }
 }

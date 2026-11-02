@@ -6,10 +6,12 @@ import type { CastingProjectStatus } from "@/lib/talent-buyers/casting/casting-t
 export function CastingProjectChromeActions({
   projectId,
   status,
+  finalized,
   onEditProject,
 }: {
   projectId: string;
   status: CastingProjectStatus | null | undefined;
+  finalized?: boolean;
   onEditProject: () => void;
 }) {
   return (
@@ -17,7 +19,7 @@ export function CastingProjectChromeActions({
       <button type="button" className="buyer-chrome-bar__edit-link" onClick={onEditProject}>
         Edit Project
       </button>
-      <CastingStatusActionButton projectId={projectId} status={status} />
+      <CastingStatusActionButton projectId={projectId} status={status} finalized={finalized} />
     </>
   );
 }

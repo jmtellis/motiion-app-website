@@ -1,32 +1,24 @@
-# Industry bookings rollout
+# Project coordination
 
-Implemented in the website:
-- White industry workspace canvas with a dark resizable sidebar.
-- Owner-authorized Excel and PDF roster exports from the active collection screen.
-- Bookings navigation hub and project-level Bookings tab.
-- Internal booking stages: draft, negotiating, confirmed, work completed, cancelled.
-- Fee, currency, work dates, billing contact, negotiation notes and editable job outlines.
-- Draft text download. No document is represented as signed or sent.
+Booking contracts and booking payments are retired from the website. Global `/bookings`, `/deal-memos`, composer, payout and individual memo URLs display a retirement notice; they cannot create, sign, request payment, or charge. Historical shared backend records and iOS-compatible structures remain intact. Subscription, identity verification and class enrollment billing remain separate and supported.
 
-## Activation
-The Supabase CLI is connected. Migration `20260925000000_project_bookings.sql` was applied to the app’s linked database on September 25, 2026 using an isolated copy of its remote migration history. The dry run listed only this migration; no unrelated local migrations were pushed. The booking table is available through the API.
+## Supported workflow
 
-Row-level security restricts bookings to the owner of the associated project. Server actions also require a hiring account and check project ownership. Cross-owner access and create/update should be verified after applying the migration.
+`/projects/:id/coordination` contains two distinct sections:
 
-## Remaining end-to-end work
-The current booking tracker is internal coordination, not a completed transaction system. It does not send offers, obtain signatures, collect money, or transfer funds.
+- **Confirmations**: explicitly move a role's saved final selections into coordination, request dated availability, see the response, place/release a hold, request confirmation, and reschedule or close unconfirmed coordination. These are real, authorized shared backend commands. Moving final selections alone sends no availability request. External applicants require direct contact and are reported accurately.
+- **Internal notes**: names, roles, date ranges, status, and private notes from historical `project_bookings`. These never represent a sent request or a talent-confirmed state. Accepted fields exclude fees, currency, payer details, and agreement terms; saving leaves historical financial fields untouched.
 
-1. Talent identity: link bookings to a professional profile or invited external recipient, with invitation acceptance and agency representation.
-2. Negotiation: versioned offers, recipient access, accept/counter/decline, immutable offer history, explicit notifications and messaging integration.
-3. Contracts: legally reviewed templates per job type and jurisdiction, version locking, signing-provider integration, webhook verification and signed-file storage. Current outlines are job-detail prompts only.
-4. Payment model decision: direct charges per dancer versus one project charge with separate transfers. The latter supports a single payer covering multiple dancers but makes platform fee/refund/dispute handling part of Motiion's operations.
-5. Stripe Connect recipient onboarding and verified capabilities before transfers. Keep subscription billing separate from job payments.
-6. Payer requests: authenticated, expiring request links; server-priced immutable line items; allow an external billing contact to pay without granting project access.
-7. Payment ledger: request, pending, funded, allocated, transferred, failed, reversed and refunded states. Track each recipient independently; never mark every dancer paid from the project charge alone. Distinguish transfers from bank payouts.
-8. Durable idempotent checkout/transfer operations, signed webhook ingestion, retries, reconciliation, partial failures and refund/transfer reversals.
-9. Define supported countries, currencies, fees, cancellation terms, tax reporting and whether payroll is required for the engagement before launch.
+The legacy project `/bookings` route redirects to `/coordination`. Composable projects and legacy casting workspaces both expose Coordination navigation. The `bookings` domain table and `project_abilities.booking` database names continue to support legitimate confirmations; they are not booking-payment features.
 
-References: https://docs.stripe.com/connect/direct-charges and https://docs.stripe.com/connect/separate-charges-and-transfers
+## Authorization and historical safety
 
-## Checks
-Focused lint passed. Export checks cover Excel round-trip, formula-like names stored as text, accented names, multi-page PDF generation and booking schema validation (negative fees, unsupported paid status, date order, email format). Run `npx tsx scripts/industry-booking-exports.test.ts` from the website root. The existing full TypeScript check reports unrelated errors in older scripts; no new source errors were found.
+Confirmations use current industry approval plus the trusted `is_project_operator` check before commands; database RPCs independently validate the actor. The internal notes table retains owner RLS. Unauthorized talent updates were denied in staging. Records with a legacy agreement pointer or agreement-stage state are displayed for reference without current coordination mutation actions. Shared historical agreement/payment protections remain in backend resolution commands.
+
+Request idempotency is owned by the existing availability/confirmation RPCs. Rescheduling and closing use a stable UUID per editor session; retries do not duplicate requests. Dates expand to date-only calendar entries without local-time conversion, with a validated IANA time zone. A reschedule cancels obsolete pending requests and requires a new availability response.
+
+## Evidence and rollout
+
+See [projects parity and verification](parity-projects.md), including deployed-versus-prepared migrations. `scripts/project-confirmations.test.ts` covers exact handoff identity, state semantics, date validation and daylight-saving date ranges. `scripts/booking-scope.test.ts` covers obsolete financial-field rejection and legacy links. `scripts/industry-booking-exports.test.ts` still verifies legitimate collection Excel/PDF exports.
+
+Do not deploy historical contract/payment functions from old implementation notes as part of this product scope.

@@ -1,3 +1,4 @@
+import { friendlyRequestSchedule } from "./reliability";
 import type { HomePendingRequest, InboxConversation } from "@/types/app";
 
 export type ChatInboxFilter = "primary" | "general" | "requests";
@@ -147,7 +148,7 @@ export function mapPendingRequestsToChatRows(
   return requests.map((item) => ({
     id: item.id,
     title: item.title || item.header_text || "Request",
-    detail: item.detail_text || item.inviter_name || requestKindLabel(item.request_kind),
+    detail: friendlyRequestSchedule(item.detail_text) || item.detail_text || item.inviter_name || requestKindLabel(item.request_kind),
     kind: item.request_kind,
     coverUrl: item.cover_url ?? item.inviter_avatar_url,
     href: item.ref_activity_id

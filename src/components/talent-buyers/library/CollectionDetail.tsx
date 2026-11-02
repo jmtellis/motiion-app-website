@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { CollectionProfilePanel } from "./CollectionProfilePanel";
 
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
@@ -25,6 +26,7 @@ import {
 import { AddTalentModal } from "./AddTalentModal";
 import { CollectionFormModal } from "./CollectionFormModal";
 import { CollectionShareModal } from "./CollectionShareModal";
+import { RosterAccessButton } from "./RosterAccessButton";
 import { LibraryEmptyState } from "./LibraryEmptyState";
 import { LibrarySharesRail } from "./LibrarySharesRail";
 import { LibraryTalentCard } from "./LibraryTalentCard";
@@ -39,13 +41,17 @@ export function CollectionDetail({
   savedTalent,
   allCollections,
   shares: initialShares,
+  loadError,
 }: {
   collection: LibraryCollectionDetail;
   savedTalent: LibraryTalent[];
   allCollections: LibraryCollectionSummary[];
   shares: CollectionShareSummary[];
+  loadError?: string | null;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const inspectedSlug = searchParams.get("profile");
   const { showToast } = useToast();
   const { requirePro } = useIndustryProOptional();
   const [collection, setCollection] = useState(initialCollection);
@@ -58,16 +64,34 @@ export function CollectionDetail({
   const [moveOpen, setMoveOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [, startTransition] = useTransition();
+  const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
+  function inspectProfile(slug: string) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("profile", slug);
+    const state = { motiionCollectionPanel: collection.id };
+    if (inspectedSlug) window.history.replaceState(state, "", url);
+    else window.history.pushState(state, "", url);
+  }
+  function closeProfile() {
+    if (window.history.state?.motiionCollectionPanel === collection.id) { window.history.back(); return; }
+    const url = new URL(window.location.href);
+    url.searchParams.delete("profile");
+    window.history.replaceState(null, "", url);
+  }
+
+  const [lastSnapshot, setLastSnapshot] = useState(initialCollection);
+  if (lastSnapshot !== initialCollection) {
+    setLastSnapshot(initialCollection);
     setCollection(initialCollection);
     setMembers(initialCollection.members);
-  }, [initialCollection]);
+  }
 
-  useEffect(() => {
+  const [lastShares, setLastShares] = useState(initialShares);
+  if (lastShares !== initialShares) {
+    setLastShares(initialShares);
     setShares(initialShares);
-  }, [initialShares]);
+  }
 
   useRegisterBuyerChrome({
     breadcrumbs: [
@@ -95,6 +119,7 @@ export function CollectionDetail({
   function handleUpdate(input: { name: string; description: string }) {
     return new Promise<void>((resolve, reject) => {
       startTransition(async () => {
+        try {
         const result = await updateCollection({
           collectionId: collection.id,
           name: input.name,
@@ -112,12 +137,14 @@ export function CollectionDetail({
         showToast({ message: "Collection updated", variant: "success" });
         router.refresh();
         resolve();
+        } catch { reject(new Error("The connection was interrupted. Your edits are still here; please try again.")); }
       });
     });
   }
 
   function handleDuplicate() {
     startTransition(async () => {
+      try {
       const result = await duplicateCollection(collection.id);
       if (!result.ok || !result.id) {
         showToast({ message: result.error ?? "Could not duplicate", variant: "error" });
@@ -125,11 +152,13 @@ export function CollectionDetail({
       }
       showToast({ message: "Collection duplicated", variant: "success" });
       router.push(`/library/${result.id}`);
+      } catch { showToast({ message: "The connection was interrupted. Please try again.", variant: "error" }); }
     });
   }
 
   function handleDelete() {
     startTransition(async () => {
+      try {
       const result = await deleteCollection(collection.id);
       if (!result.ok) {
         showToast({ message: result.error ?? "Could not delete", variant: "error" });
@@ -137,11 +166,14 @@ export function CollectionDetail({
       }
       showToast({ message: "Collection deleted", variant: "success" });
       router.push("/library");
+      } catch { showToast({ message: "The connection was interrupted. Please try again.", variant: "error" }); }
     });
   }
 
   function handleRemove(profileIds: string[]) {
+    if (pending) return;
     startTransition(async () => {
+      try {
       const result = await removeTalentFromCollection({
         collectionId: collection.id,
         profileIds,
@@ -158,6 +190,7 @@ export function CollectionDetail({
       }));
       showToast({ message: "Removed from collection", variant: "success" });
       router.refresh();
+      } catch { showToast({ message: "The connection was interrupted. Please try again.", variant: "error" }); }
     });
   }
 
@@ -165,6 +198,7 @@ export function CollectionDetail({
     <div className="library-page">
       <div className="library-page__shell">
         <div className="library-page__main">
+          {loadError ? <div className="ui-notice" data-tone="error" role="alert">Some roster tools could not load. {loadError} <button type="button" className="ui-button ui-button--secondary" onClick={() => router.refresh()}>Try again</button></div> : null}
           <div className="library-collection-detail__header">
             <RosterMosaic
               people={members.slice(0, MOSAIC_COUNT).map((member) => ({
@@ -194,9 +228,10 @@ export function CollectionDetail({
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+            <RosterAccessButton listId={collection.id} listName={collection.name} />
             <a className="bd-btn-secondary" href={`/api/rosters/${collection.id}/export?format=xlsx`}>Export Excel</a>
             <a className="bd-btn-secondary" href={`/api/rosters/${collection.id}/export?format=pdf`}>Export PDF</a>
-            <button type="button" className="buyer-chrome-bar__cta" onClick={() => setAddOpen(true)}>
+            <button type="button" className="buyer-chrome-bar__cta" onClick={() => setAddOpen(true)} disabled={pending || Boolean(loadError)}>
               Add Talent
             </button>
             </div>
@@ -210,6 +245,7 @@ export function CollectionDetail({
                   onChange={(event) => setQuery(event.target.value)}
                   className="library-search"
                   placeholder="Search this collection"
+                  aria-label="Search this collection"
                 />
               </div>
 
@@ -223,6 +259,7 @@ export function CollectionDetail({
                       selected={selected.includes(talent.profileId)}
                       onToggleSelect={() => toggleSelected(talent.profileId)}
                       onRemove={() => handleRemove([talent.profileId])}
+                      onInspect={() => inspectProfile(talent.userId || talent.slug || talent.profileId)}
                     />
                   ))}
                 </div>
@@ -241,7 +278,7 @@ export function CollectionDetail({
                 actions={[
                   {
                     label: "Add to collection",
-                    onClick: () => setMoveOpen(true),
+                    onClick: () => { if (!loadError) setMoveOpen(true); },
                   },
                   {
                     label: "Remove from collection",
@@ -269,10 +306,12 @@ export function CollectionDetail({
           collectionScoped
           onCreateShare={() => {
             if (!requirePro("roster_write")) return;
-            setShareOpen(true);
+            if (!loadError) setShareOpen(true);
           }}
         />
       </div>
+
+      <CollectionProfilePanel slug={inspectedSlug} userId={members.find(member => [member.slug, member.profileId, member.userId].includes(inspectedSlug))?.userId ?? undefined} onClose={closeProfile} />
 
       <AddTalentModal
         open={addOpen}
@@ -285,8 +324,7 @@ export function CollectionDetail({
             collectionIds: [collection.id],
           });
           if (!result.ok) {
-            showToast({ message: result.error ?? "Could not add talent", variant: "error" });
-            return;
+            throw new Error(result.error ?? "Could not add talent");
           }
           const added = savedTalent.filter((person) => profileIds.includes(person.profileId));
           setMembers((current) => {
@@ -295,7 +333,7 @@ export function CollectionDetail({
           });
           setCollection((current) => ({
             ...current,
-            talentCount: current.talentCount + added.length,
+            talentCount: members.length + added.filter((person) => !members.some((member) => member.profileId === person.profileId)).length,
           }));
           showToast({ message: "Talent added", variant: "success" });
           router.refresh();
@@ -324,22 +362,23 @@ export function CollectionDetail({
 
       <Modal
         open={deleteOpen}
-        onClose={() => setDeleteOpen(false)}
+        alert
+        onClose={() => { if (!pending) setDeleteOpen(false); }}
         title={`Delete “${collection.name}”?`}
-        description="This will delete the roster. People you saved stay on Discover."
+        description="This permanently deletes the roster and its share links. Saved talent and project rosters stay in place."
         size="sm"
         footer={
           <div className="flex justify-end gap-2">
             <button type="button" className="bd-btn-secondary" onClick={() => setDeleteOpen(false)}>
-              Cancel
+              Keep roster
             </button>
-            <button type="button" className="buyer-chrome-bar__cta" onClick={handleDelete}>
-              Delete Collection
+            <button type="button" className="ui-button ui-button--danger" disabled={pending} onClick={handleDelete}>
+              {pending ? "Deleting…" : "Delete collection"}
             </button>
           </div>
         }
       >
-        <p className="text-sm text-white/50">You can recreate this collection later if needed.</p>
+        <p className="text-sm text-[var(--ui-muted)]">This cannot be undone. Export a copy before deleting if you may need it later.</p>
       </Modal>
 
       <PickCollectionModal
@@ -352,8 +391,7 @@ export function CollectionDetail({
             collectionIds,
           });
           if (!result.ok) {
-            showToast({ message: result.error ?? "Could not add to collection", variant: "error" });
-            return;
+            throw new Error(result.error ?? "Could not add to collection");
           }
           showToast({ message: "Added to collection", variant: "success" });
           setSelected([]);

@@ -1,14 +1,5 @@
-import { MarketingStubPage, marketingStubViewport } from "@/components/landing/MarketingStubPage";
-
-export const viewport = marketingStubViewport;
-
+import { redirect } from "next/navigation";
+/** Workshops and intensives use the supported class catalog; no separate program workflow. */
 export default function ProgramsPage() {
-  return (
-    <MarketingStubPage
-      eyebrow="Community"
-      title="Programs"
-      description="Explore intensives, workshops, and development programs. Program listings are coming soon."
-      cta={{ label: "Create an account", href: "/signup" }}
-    />
-  );
+  redirect("/community/classes");
 }

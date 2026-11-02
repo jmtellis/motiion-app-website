@@ -1,4 +1,6 @@
-# Booking deal memos (MOT-94)
+# Historical booking deal memos (retired)
+
+> **Retired on the website, November 2, 2026.** This document preserves the historical shared data and financial contract for support and compatibility. It is not the current product specification or a deployment instruction. Website contract creation, signing, payout setup, and booking payment controls have been removed. Existing links show a retirement notice. See [Project coordination](industry-bookings.md) for the supported selection, availability, and confirmation workflow. Historical records, shared functions, and unrelated subscriptions/class billing have not been deleted.
 
 Linear: [MOT-94 Booking deal memo + Connect payment](https://linear.app/motiion-app/issue/MOT-94)
 

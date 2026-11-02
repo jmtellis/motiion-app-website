@@ -22,33 +22,29 @@ function castingReferralPath(url: string): string | null {
 export function MessageLinkBubble({
   payload,
   isMine,
-  variant = "default",
 }: {
   payload: MessagingLinkPayload;
   isMine: boolean;
   variant?: "default" | "dashboard";
 }) {
-  const isDashboard = variant === "dashboard";
   const inAppReferralPath = useMemo(() => castingReferralPath(payload.url), [payload.url]);
 
   const className = `block w-[min(280px,100%)] overflow-hidden rounded-2xl border text-left transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2dd4bf] ${
     isMine
-      ? "border-[#fafafa]/20 bg-[#fafafa] text-[#0a0a0a]"
-      : isDashboard
-        ? "border-white/10 bg-white/8 text-white/90"
-        : "border-[#2a2a2a] bg-[#1e1e1e] text-[#eaeaea]"
+      ? "border-[var(--ui-accent)] bg-[var(--ui-accent)] text-[var(--ui-on-accent)]"
+      : "border-[var(--ui-border)] bg-[var(--ui-surface-soft)] text-[var(--ui-text)]"
   }`;
 
   const content = (
     <>
       <div
         className={`flex items-center gap-3 px-3.5 py-3 ${
-          isMine ? "bg-black/[0.04]" : isDashboard ? "bg-white/[0.04]" : "bg-white/[0.03]"
+          isMine ? "bg-black/[0.04]" : "bg-[var(--ui-surface-soft)]"
         }`}
       >
         <div
           className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
-            isMine ? "bg-[#0a0a0a]/08 text-[#0a0a0a]" : "bg-[#2dd4bf]/15 text-[#2dd4bf]"
+            isMine ? "bg-white/15 text-[var(--ui-on-accent)]" : "bg-[var(--ui-accent-soft)] text-[var(--ui-accent)]"
           }`}
         >
           <Link2 className="size-5" aria-hidden />
@@ -58,7 +54,7 @@ export function MessageLinkBubble({
           {payload.subtitle ? (
             <p
               className={`mt-0.5 truncate text-xs ${
-                isMine ? "text-black/50" : isDashboard ? "text-white/45" : "text-[var(--ink-soft)]"
+                isMine ? "text-[var(--ui-on-accent)]/80" : "text-[var(--ui-muted)]"
               }`}
             >
               {payload.subtitle}
@@ -66,14 +62,14 @@ export function MessageLinkBubble({
           ) : null}
         </div>
         <ExternalLink
-          className={`size-4 shrink-0 ${isMine ? "text-black/40" : isDashboard ? "text-white/40" : "text-[var(--ink-soft)]"}`}
+          className={`size-4 shrink-0 ${isMine ? "text-[var(--ui-on-accent)]/80" : "text-[var(--ui-muted)]"}`}
           aria-hidden
         />
       </div>
       <div className="px-3.5 py-2">
         <p
           className={`truncate text-xs ${
-            isMine ? "text-black/45" : isDashboard ? "text-white/40" : "text-[var(--ink-soft)]"
+            isMine ? "text-[var(--ui-on-accent)]/80" : "text-[var(--ui-muted)]"
           }`}
         >
           {payload.preview_label || "Tap to open"}

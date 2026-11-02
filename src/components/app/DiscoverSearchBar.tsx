@@ -1,5 +1,6 @@
 "use client";
 
+import { VoiceSearchControl } from "./VoiceSearchControl";
 import { Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
@@ -11,28 +12,32 @@ import { clearRecentlyViewed } from "@/lib/talent/referrer-lists";
 
 const RECENT_SEARCHES_KEY = "motiion.recentSearchQueries";
 
-function readRecentSearches(): string[] {
+function readRecentSearches(userId: string): string[] {
   try {
-    const parsed = JSON.parse(localStorage.getItem(RECENT_SEARCHES_KEY) ?? "[]");
+    const parsed = JSON.parse(sessionStorage.getItem(`${RECENT_SEARCHES_KEY}:${userId}`) ?? "[]");
     return Array.isArray(parsed) ? parsed.filter((item) => typeof item === "string").slice(0, 3) : [];
   } catch {
     return [];
   }
 }
 
-function writeRecentSearch(query: string) {
-  const next = [query, ...readRecentSearches().filter((item) => item.toLowerCase() !== query.toLowerCase())].slice(0, 3);
-  localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
+function writeRecentSearch(query: string, userId: string) {
+  const next = [query, ...readRecentSearches(userId).filter((item) => item.toLowerCase() !== query.toLowerCase())].slice(0, 3);
+  try { sessionStorage.setItem(`${RECENT_SEARCHES_KEY}:${userId}`, JSON.stringify(next)); } catch { /* Search remains available without browser storage. */ }
   return next;
 }
 
 export function DiscoverSearchBar({
   keyword,
   credit,
+  basePath = "/discover",
+  currentUserId,
   recentlyViewed,
   onOpenTalent,
   onRecentlyViewedChange,
 }: {
+  basePath?: string;
+  currentUserId: string;
   keyword: string;
   credit: string;
   recentlyViewed: Talent[];
@@ -42,23 +47,29 @@ export function DiscoverSearchBar({
   const router = useRouter();
   const listId = useId();
   const rootRef = useRef<HTMLFormElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const requestVersion = useRef(0);
   const queryKey = `${credit}\n${keyword}`;
   const [draft, setDraft] = useState<{ key: string; value: string } | null>(null);
   const value = draft?.key === queryKey ? draft.value : credit || keyword;
   function updateValue(next: string) {
+    requestVersion.current += 1;
     setDraft({ key: queryKey, value: next });
   }
   const [open, setOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
+  useEffect(() => () => { requestVersion.current += 1; }, [queryKey]);
+
   useEffect(() => {
     const fragment = explicitWorkedWith(value) ?? value;
     if (fragment.trim().length < 2) return;
+    let cancelled = false;
     const handle = window.setTimeout(() => {
-      void suggestCreditCollaborators(fragment).then(setSuggestions);
+      void suggestCreditCollaborators(fragment).then((names) => { if (!cancelled) setSuggestions(names); }).catch(() => { if (!cancelled) setSuggestions([]); });
     }, 180);
-    return () => window.clearTimeout(handle);
+    return () => { cancelled = true; window.clearTimeout(handle); };
   }, [value]);
 
   useEffect(() => {
@@ -71,31 +82,34 @@ export function DiscoverSearchBar({
   }, [open]);
 
   function remember(query: string) {
-    setRecentSearches(writeRecentSearch(query));
+    setRecentSearches(writeRecentSearch(query, currentUserId));
   }
 
   function goToCredit(name: string) {
     remember(name);
     setOpen(false);
-    router.push(`/discover?credit=${encodeURIComponent(name)}`);
+    requestVersion.current += 1;
+    router.push(`${basePath}?view=explore&credit=${encodeURIComponent(name)}`);
   }
 
   async function submit(raw: string) {
+    const id = ++requestVersion.current;
     const trimmed = raw.trim();
     setOpen(false);
     if (!trimmed) {
-      router.push("/discover");
+      router.push(`${basePath}?view=explore`);
       return;
     }
     remember(trimmed);
     const explicit = explicitWorkedWith(trimmed);
-    const names = explicit ? [] : await suggestCreditCollaborators(trimmed);
+    const names = explicit ? [] : await suggestCreditCollaborators(trimmed).catch(() => []);
+    if (id !== requestVersion.current) return;
     const creditName = explicit ?? pickCreditRewrite(trimmed, names);
     if (creditName) {
-      router.push(`/discover?credit=${encodeURIComponent(creditName)}`);
+      router.push(`${basePath}?view=explore&credit=${encodeURIComponent(creditName)}`);
       return;
     }
-    router.push(`/discover?keyword=${encodeURIComponent(trimmed)}`);
+    router.push(`${basePath}?view=explore&keyword=${encodeURIComponent(trimmed)}`);
   }
 
   const showSuggestions = suggestions.length > 0 && value.trim().length >= 2;
@@ -132,7 +146,7 @@ export function DiscoverSearchBar({
                   type="button"
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => {
-                    localStorage.removeItem(RECENT_SEARCHES_KEY);
+                    try { sessionStorage.removeItem(`${RECENT_SEARCHES_KEY}:${currentUserId}`); } catch { /* Optional storage. */ }
                     setRecentSearches([]);
                   }}
                 >
@@ -184,6 +198,8 @@ export function DiscoverSearchBar({
       ) : null}
       <Search size={18} aria-hidden />
       <input
+        ref={inputRef}
+        onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); }}
         className="workspace-bare-input"
         value={value}
         onChange={(event) => {
@@ -194,7 +210,7 @@ export function DiscoverSearchBar({
         }}
         onFocus={() => {
           setOpen(true);
-          setRecentSearches(readRecentSearches());
+          setRecentSearches(readRecentSearches(currentUserId));
         }}
         placeholder="Find dancers, styles, or who they've worked with"
         aria-label="Search talent"
@@ -211,12 +227,13 @@ export function DiscoverSearchBar({
           aria-label="Clear search"
           onClick={() => {
           updateValue("");
-            router.push("/discover");
+            router.push(`${basePath}?view=explore`);
           }}
         >
           <X size={16} aria-hidden />
         </button>
       ) : null}
+      <VoiceSearchControl onTranscript={(text) => { updateValue(text); inputRef.current?.focus(); }} />
       <button type="submit">Search</button>
     </form>
   );

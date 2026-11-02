@@ -21,6 +21,7 @@ export type TalentRoleSubmission = {
 };
 
 export type TalentCastingDetail = {
+  userId: string;
   casting: PublicCasting;
   questions: CastingQuestion[];
   submissionsByRoleId: Record<string, TalentRoleSubmission>;
@@ -29,6 +30,8 @@ export type TalentCastingDetail = {
   hasAgency: boolean;
   deadlinePassed: boolean;
   agencyRequiredByRoleId: Record<string, boolean>;
+  materialsByRoleId: Record<string, { slateRequired: boolean; maxLinks: number }>;
+  deadlinePassedByRoleId: Record<string, boolean>;
   submitterPolicy: string | null;
   visibilityPresentation: string | null;
 };
@@ -47,7 +50,9 @@ export async function loadTalentCastingDetail(
   } = await supabase.auth.getUser();
   if (!user) return { detail: null, error: "Sign in to view this casting." };
 
-  const loaded = await fetchSignedInCasting(trimmed);
+  let loaded;
+  try { loaded = await fetchSignedInCasting(trimmed); }
+  catch (error) { return { detail: null, error: error instanceof Error ? error.message : "Could not load casting details. Please retry." }; }
   if (!loaded) return { detail: null, error: "This casting is no longer available." };
   const { casting, configuration } = loaded;
 
@@ -71,6 +76,9 @@ export async function loadTalentCastingDetail(
   ]);
 
   const submissionsByRoleId: Record<string, TalentRoleSubmission> = {};
+  if (submissions.error || invites.error || passes.error || profile.error) {
+    return { detail: null, error: "Could not load your submission and invitation status. Please retry." };
+  }
   const now = Date.now();
   const deadlinePassed = Boolean(casting.deadline) && new Date(casting.deadline ?? "").getTime() < now;
   for (const row of submissions.data ?? []) {
@@ -87,7 +95,7 @@ export async function loadTalentCastingDetail(
       outcome: resolveTalentCastingOutcome({
         isCastingFinalized: finalized,
         isActive: active,
-        deadlinePassed,
+        deadlinePassed: role?.deadlinePassed ?? deadlinePassed,
         submissionId: id,
         finalSelectIds: role?.finalSelectIds ?? [],
       }),
@@ -103,8 +111,12 @@ export async function loadTalentCastingDetail(
   }
 
   const agencyRequiredByRoleId: Record<string, boolean> = {};
+  const materialsByRoleId: TalentCastingDetail["materialsByRoleId"] = {};
+  const deadlinePassedByRoleId: Record<string, boolean> = {};
   for (const role of loaded.roles) {
     agencyRequiredByRoleId[role.id] = role.agencyRequired;
+    materialsByRoleId[role.id] = { slateRequired: role.slateRequired, maxLinks: role.maxSubmissionLinks };
+    deadlinePassedByRoleId[role.id] = role.deadlinePassed;
   }
 
   const representation = text(asRecord(profile.data)?.representation);
@@ -112,6 +124,7 @@ export async function loadTalentCastingDetail(
 
   return {
     detail: {
+      userId: user.id,
       casting,
       questions: questionsFrom(configuration),
       submissionsByRoleId,
@@ -123,6 +136,8 @@ export async function loadTalentCastingDetail(
       hasAgency: Boolean(representation || agent),
       deadlinePassed,
       agencyRequiredByRoleId,
+      materialsByRoleId,
+      deadlinePassedByRoleId,
       submitterPolicy: text(configuration?.submitter_policy_raw),
       visibilityPresentation: text(configuration?.visibility_presentation_raw),
     },
@@ -146,6 +161,8 @@ export async function respondToCastingRequest(
 
   revalidatePath("/opportunities");
   revalidatePath("/home");
+  revalidatePath("/inbox");
+  revalidatePath("/messages");
   return { ok: true };
 }
 

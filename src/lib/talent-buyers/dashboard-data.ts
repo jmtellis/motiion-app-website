@@ -9,7 +9,6 @@ export const buyerMenuNavItems = [
   { href: "/dashboard", label: "Home", segment: "home" },
   { href: "/talent", label: "Discover", segment: "talent" },
   { href: "/projects", label: "Projects", segment: "projects" },
-  { href: "/bookings", label: "Bookings", segment: "bookings" },
   { href: "/messages", label: "Inbox", segment: "messages" },
   { href: "/events", label: "Calendar", segment: "events" },
   { href: "/library", label: "Roster", segment: "library" },

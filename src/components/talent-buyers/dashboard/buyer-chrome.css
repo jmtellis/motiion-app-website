@@ -387,6 +387,20 @@
   color: var(--buyer-text, #fafafa);
 }
 
+.ui-dialog.buyer-sidebar-dialog {
+  padding: 0;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+.ui-dialog.buyer-sidebar-dialog > .buyer-sidebar {
+  position: relative;
+  inset: auto;
+  width: min(100%, 17.5rem);
+  height: 100%;
+  transform: none;
+}
+
 .buyer-sidebar__body {
   display: flex;
   min-height: 0;
@@ -947,4 +961,27 @@
     border-radius: 0;
     border-right: 1px solid rgb(255 255 255 / 0.1);
   }
+}
+
+/* Project identity and actions occupy separate rows on narrow screens. */
+@media (max-width: 767px) {
+  .workspace-shell--industry:has(.project-workspace) .buyer-chrome-bar--dashboard {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.625rem;
+    padding: 0.75rem 1rem;
+  }
+  .workspace-shell--industry:has(.project-workspace) .buyer-chrome-bar__start,
+  .workspace-shell--industry:has(.project-workspace) .buyer-chrome-bar__end {
+    width: 100%;
+    justify-self: stretch;
+    min-width: 0;
+  }
+  .workspace-shell--industry:has(.project-workspace) .buyer-chrome-bar__start > button { flex-shrink: 0; }
+  .workspace-shell--industry:has(.project-workspace) .buyer-chrome-bar__title-block { flex: 1; }
+  .workspace-shell--industry:has(.project-workspace) .buyer-chrome-bar__title-text { flex: 1; overflow: hidden; }
+  .workspace-shell--industry:has(.project-workspace) .buyer-chrome-bar__project-title { font-size: 1rem; }
+  .workspace-shell--industry:has(.project-workspace) .buyer-chrome-bar__end { flex-wrap: wrap; gap: 0.5rem; }
+  .workspace-shell--industry:has(.project-workspace) .buyer-chrome-bar__end > :is(button, a) { min-height: 2.75rem; }
+  .workspace-shell--industry:has(.project-workspace) .composable-chrome__abilities { display: none; }
+  .workspace-shell--industry:has(.project-workspace) .buyer-chrome-bar__cover-avatar { background: var(--ui-surface-soft); border-color: var(--ui-border); }
 }

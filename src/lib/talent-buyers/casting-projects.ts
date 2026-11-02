@@ -1,3 +1,8 @@
+import { normalizeProjectContract } from "./project-contract";
+import { readWorkspaceProjects } from "./project-workspace-read";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { fetchAccessibleProjectRecord } from "./projects";
+import { readPagedRows } from "@/lib/supabase/read-pages";
 import {
   fetchTalentProfileBundles,
   isGenericApplicantName,
@@ -30,31 +35,39 @@ function projectStatus(project: CastingProjectRecord): BuyerProjectSummary["stat
   return "archived";
 }
 
-export async function fetchPosterCastingSummaries(posterId: string): Promise<BuyerProjectSummary[]> {
+export async function fetchPosterCastingSummaries(posterId: string, options: { strict?: boolean; includeMemberships?: boolean } = {}): Promise<BuyerProjectSummary[]> {
   const supabase = await createServerSupabaseClient();
-  if (!supabase) return [];
-
-  const { data: projects, error } = await supabase
-    .from("projects")
-    .select(
-      "id, title, is_active, updated_at, created_at, casting_configuration, project_configuration, poster_id, cover_image_url, production_company_logo_url, project_type, enabled_modules, location, start_date, end_date",
-    )
-    .eq("poster_id", posterId)
-    .order("updated_at", { ascending: false });
-
-  if (error || !projects?.length) {
-    if (error) console.debug("fetchPosterCastingSummaries:", error.message);
+  if (!supabase) {
+    if (options.strict) throw new Error("Projects are temporarily unavailable.");
     return [];
   }
 
+  let projects;
+  try {
+    projects = options.includeMemberships
+      ? await readWorkspaceProjects(supabase, createAdminSupabaseClient, posterId)
+      : await (async () => {
+          const result = await readPagedRows((from, to) => supabase.from("projects")
+            .select("*,project_abilities(ability,settings)").eq("poster_id", posterId)
+            .order("updated_at", { ascending: false }).order("id").range(from, to));
+          if (result.error) throw new Error("Could not load your projects. Please try again.");
+          return (result.data ?? []).map(normalizeProjectContract);
+        })();
+  } catch (error) {
+    if (options.strict) throw error;
+    return [];
+  }
+  if (!projects.length) return [];
+
   const projectIds = projects.map((project) => project.id as string);
-  const { data: roles } = await supabase
+  const { data: roles, error: rolesError } = await supabase
     .from("roles")
     .select("id, project_id")
     .in("project_id", projectIds);
 
+  if (rolesError && options.strict) throw new Error("Could not load project roles. Please try again.");
   const roleIds = (roles ?? []).map((role) => role.id as string);
-  const submissionCounts = await fetchSubmissionCounts(roleIds);
+  const submissionCounts = await fetchSubmissionCounts(roleIds, options.strict);
 
   return projects.map((project) => {
     const projectRoles = (roles ?? []).filter((role) => role.project_id === project.id);
@@ -85,7 +98,7 @@ export async function fetchPosterCastingSummaries(posterId: string): Promise<Buy
   });
 }
 
-async function fetchSubmissionCounts(roleIds: string[]) {
+async function fetchSubmissionCounts(roleIds: string[], strict = false) {
   if (!roleIds.length) return {} as Record<string, number>;
 
   const supabase = await createServerSupabaseClient();
@@ -95,6 +108,7 @@ async function fetchSubmissionCounts(roleIds: string[]) {
     p_role_ids: roleIds,
   });
 
+  if (error && strict) throw new Error("Could not load project submission counts. Please try again.");
   if (error || !data || typeof data !== "object" || Array.isArray(data)) {
     if (error) console.debug("list_role_submission_counts:", error.message);
     return {};
@@ -115,17 +129,8 @@ export async function fetchPosterCastingDetail(
   const supabase = await createServerSupabaseClient();
   if (!supabase) return null;
 
-  const { data: project, error: projectError } = await supabase
-    .from("projects")
-    .select("*")
-    .eq("id", projectId)
-    .eq("poster_id", posterId)
-    .maybeSingle<CastingProjectRecord>();
-
-  if (projectError || !project) {
-    if (projectError) console.debug("fetchPosterCastingDetail project:", projectError.message);
-    return null;
-  }
+  const project = await fetchAccessibleProjectRecord(projectId, posterId);
+  if (!project) return null;
 
   const { data: roles, error: rolesError } = await supabase
     .from("roles")
@@ -143,7 +148,7 @@ export async function fetchPosterCastingDetail(
   const submissionCounts = await fetchSubmissionCounts(roleIds);
 
   return {
-    project,
+    project: project as CastingProjectRecord,
     roles: roles ?? [],
     submissionCounts,
   };
@@ -171,18 +176,17 @@ export async function fetchCastingSubmissions(
   castingId: string,
   activeRoles: { id: string; title: string }[],
 ): Promise<ProjectSubmissionRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await readPagedRows((from, to) => supabase
     .from("submissions")
     .select(
       "id, role_id, talent_id, status, submitted_at, full_name, email, agency, headshot_url, link_url, roles!inner(id, title, casting_id)",
     )
     .eq("roles.casting_id", castingId)
     .order("submitted_at", { ascending: false })
-    .limit(200);
+    .order("id").range(from, to));
 
   if (error) {
-    console.debug("fetchCastingSubmissions:", error.message);
-    return fetchProjectSubmissions(activeRoles);
+    throw new Error("Could not load casting submissions. Please retry.");
   }
 
   const roleTitles = new Map(activeRoles.map((role) => [role.id, role.title]));
@@ -236,7 +240,7 @@ export async function fetchProjectSubmissions(
   if (!supabase) return [];
 
   const roleTitles = new Map(roleIdsWithTitles.map((role) => [role.id, role.title]));
-  const { data, error } = await supabase
+  const { data, error } = await readPagedRows((from, to) => supabase
     .from("submissions")
     .select("id, role_id, talent_id, status, submitted_at, full_name, email, agency, headshot_url, link_url")
     .in(
@@ -244,11 +248,10 @@ export async function fetchProjectSubmissions(
       roleIdsWithTitles.map((role) => role.id),
     )
     .order("submitted_at", { ascending: false })
-    .limit(200);
+    .order("id").range(from, to));
 
   if (error) {
-    console.debug("fetchProjectSubmissions:", error.message);
-    return [];
+    throw new Error("Could not load project submissions. Please retry.");
   }
 
   const talentIds = (data ?? [])

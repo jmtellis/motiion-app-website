@@ -17,7 +17,7 @@ export function SelectionActionBar({
         <p className="library-action-bar__count">
           {count} selected
         </p>
-        <button type="button" className="text-xs text-white/45 hover:text-white/75" onClick={onClear}>
+        <button type="button" className="ui-button ui-button--secondary" onClick={onClear}>
           Clear
         </button>
       </div>
@@ -26,7 +26,7 @@ export function SelectionActionBar({
           <button
             key={action.label}
             type="button"
-            className={action.danger ? "bd-btn-secondary text-red-200" : "bd-btn-secondary"}
+            className={action.danger ? "ui-button ui-button--secondary library-action-bar__danger" : "ui-button ui-button--secondary"}
             onClick={action.onClick}
           >
             {action.label}

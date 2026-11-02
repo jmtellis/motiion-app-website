@@ -1,7 +1,9 @@
 "use server";
 import { requireIndustryApproval } from "@/lib/talent-buyers/require-industry-approval";
+import { fetchAccessibleProjectRecord } from "@/lib/talent-buyers/projects";
 
-import { randomBytes } from "crypto";
+import { createHash, randomBytes } from "crypto";
+import { finalSubmissionIds } from "@/lib/talent-buyers/casting/final-selection";
 import { revalidatePath } from "next/cache";
 
 import { trackServerEvent } from "@/lib/analytics/track-server";
@@ -9,6 +11,7 @@ import { requireCastingOutreachAllowance } from "@/lib/billing/casting-outreach-
 import { requireIndustryProFeature } from "@/lib/billing/gate";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { fetchTalentProfileBundles } from "@/lib/talent-buyers/casting/submission-talent";
 import { requireIndustryIdentityVerified } from "@/lib/talent-buyers/require-industry-identity";
 import {
   candidateStatusToSubmissionStatus,
@@ -20,6 +23,7 @@ import type {
   CastingCandidateStatus,
   CastingRecommendation,
 } from "@/lib/talent-buyers/casting/casting-types";
+import { saveDiscoveredCastingCandidate } from "@/lib/talent-buyers/casting/save-candidate";
 import { bridgeWebInviteToMobile } from "@/lib/talent-buyers/casting/bridge-mobile-invite";
 import { activatePublishedCasting } from "@/lib/talent-buyers/casting/activate-published-casting";
 import { closePublishedCasting } from "@/lib/talent-buyers/casting/close-published-casting";
@@ -51,24 +55,10 @@ async function requireProjectAccess(projectId: string, userId: string) {
   const supabase = await createServerSupabaseClient();
   if (!supabase) return { ok: false as const, error: "Supabase is not configured." };
 
-  const { data: project } = await supabase
-    .from("projects")
-    .select("id, poster_id, title")
-    .eq("id", projectId)
-    .maybeSingle();
-
+  const project = await fetchAccessibleProjectRecord(projectId, userId);
   if (!project) return { ok: false as const, error: "Project not found." };
-
-  if (project.poster_id !== userId) {
-    const { data: member } = await supabase
-      .from("project_members")
-      .select("id")
-      .eq("project_id", projectId)
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (!member) return { ok: false as const, error: "Access denied." };
-  }
-
+  const operator = await supabase.rpc("is_project_operator", { p_project_id: projectId, p_user_id: userId });
+  if (operator.error || !operator.data) return { ok: false as const, error: "Only the project owner or an approved admin can change casting decisions." };
   return { ok: true as const, supabase, project };
 }
 
@@ -76,11 +66,19 @@ function revalidateProject(projectId: string) {
   revalidatePath(`/projects/${projectId}`);
   revalidatePath(`/projects/${projectId}/overview`);
   revalidatePath(`/projects/${projectId}/workspace/breakdown`);
-  revalidatePath(`/projects/${projectId}/workspace/breakdown`);
   revalidatePath(`/projects/${projectId}/workspace/review`);
   revalidatePath(`/projects/${projectId}/workspace/cast`);
   revalidatePath(`/projects/${projectId}/workspace/talent-search`);
   revalidatePath(`/projects/${projectId}/workspace/client-review`);
+  revalidatePath(`/projects/${projectId}/roster`);
+  revalidatePath("/projects");
+  revalidatePath("/dashboard");
+  revalidatePath("/opportunities");
+  revalidatePath("/home");
+  revalidatePath("/schedule");
+  revalidatePath("/events");
+  revalidatePath("/inbox");
+  revalidatePath("/messages");
 }
 
 async function resolveProfessionalProfileId(
@@ -176,6 +174,7 @@ export async function updateCastingCandidateStatus(input: {
   status: CastingCandidateStatus;
   notifyTalent?: boolean;
 }): Promise<{ ok: boolean; error?: string }> {
+  if (input.status === "availability_requested") return requestCastingAvailability(input);
   const supabase = await createServerSupabaseClient();
   if (!supabase) return { ok: false, error: "Supabase is not configured." };
   const {
@@ -183,7 +182,7 @@ export async function updateCastingCandidateStatus(input: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "You must be signed in." };
 
-  if (input.notifyTalent || input.status === "availability_requested") {
+  if (input.notifyTalent) {
     const pro = await requireIndustryProFeature(user.id, "talent_outreach");
     if (!pro.ok) {
       return { ok: false, error: "Industry Pro is required to reach talent." };
@@ -230,18 +229,26 @@ export async function updateCastingCandidateStatus(input: {
 
   const { data: candidate } = await supabase
     .from("casting_candidates")
-    .select("id, status, submission_id")
+    .select("id, status, submission_id, role_ids")
     .eq("id", input.candidateId)
     .eq("project_id", input.projectId)
     .maybeSingle();
 
   if (!candidate) return { ok: false, error: "Candidate not found." };
 
+  const { data: lockedRoles, error: lockError } = await supabase.from("roles")
+    .select("id").in("id", candidate.role_ids ?? []).eq("is_casting_finalized", true);
+  if (lockError || lockedRoles?.length) return { ok: false, error: "This selection is finalized. Reopen the role before changing it." };
+
   const current = normalizeCandidateStatus(candidate.status as string);
   if (!isCastingStatusTransitionAllowed(current, input.status)) {
     return { ok: false, error: `Cannot move from ${current} to ${input.status}.` };
   }
 
+  if (candidate.submission_id) {
+    const syncError = await syncSubmissionStatus(supabase, candidate.submission_id, input.status);
+    if (syncError) return { ok: false, error: syncError };
+  }
   const { error } = await supabase
     .from("casting_candidates")
     .update({ status: input.status, updated_at: new Date().toISOString() })
@@ -249,13 +256,6 @@ export async function updateCastingCandidateStatus(input: {
 
   if (error) return { ok: false, error: error.message };
 
-  const submissionStatus = candidateStatusToSubmissionStatus(input.status);
-  if (submissionStatus && candidate.submission_id) {
-    await supabase
-      .from("submissions")
-      .update({ status: submissionStatus, reviewed_at: new Date().toISOString() })
-      .eq("id", candidate.submission_id);
-  }
 
   const eventMap: Partial<Record<CastingCandidateStatus, string>> = {
     shortlisted: "casting_candidate_shortlisted",
@@ -279,6 +279,73 @@ export async function updateCastingCandidateStatus(input: {
   return { ok: true };
 }
 
+/** Creates an actual inbox request before moving the casting pipeline. */
+async function requestCastingAvailability(input: { projectId: string; candidateId: string }): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createServerSupabaseClient();
+  if (!supabase) return { ok: false, error: "Supabase is not configured." };
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "You must be signed in." };
+  const access = await requireProjectAccess(input.projectId, user.id);
+  if (!access.ok) return { ok: false, error: access.error };
+  const pro = await requireIndustryProFeature(user.id, "talent_outreach");
+  if (!pro.ok) return { ok: false, error: "Industry Pro is required to request availability." };
+  let candidateId = input.candidateId;
+  if (candidateId.startsWith("submission-")) {
+    const promoted = await ensureCandidateFromSubmission({ supabase, projectId: input.projectId, submissionId: candidateId.slice("submission-".length), status: "selected", userId: user.id });
+    if (!promoted.ok) return promoted;
+    candidateId = promoted.candidateId;
+  }
+  const { data: candidate, error: candidateError } = await supabase.from("casting_candidates")
+    .select("id, status, submission_id, talent_profile_id, updated_at, role_ids")
+    .eq("id", candidateId).eq("project_id", input.projectId).maybeSingle();
+  if (candidateError || !candidate) return { ok: false, error: "Could not load this candidate. Refresh and try again." };
+  if (!["selected", "availability_requested"].includes(candidate.status)) return { ok: false, error: "Select this person before requesting availability." };
+  const { data: lockedRoles, error: lockError } = await supabase.from("roles").select("id")
+    .in("id", candidate.role_ids ?? []).eq("is_casting_finalized", true);
+  if (lockError || lockedRoles?.length) return { ok: false, error: "Reopen the role before sending a new availability request." };
+
+  const [profileResult, projectResult] = await Promise.all([
+    candidate.talent_profile_id ? supabase.from("professional_profiles").select("user_id").eq("id", candidate.talent_profile_id).maybeSingle() : Promise.resolve({ data: null, error: null }),
+    supabase.from("projects").select("title, start_date, end_date").eq("id", input.projectId).single(),
+  ]);
+  let talentId = profileResult.data?.user_id;
+  if (!talentId && candidate.submission_id) {
+    const { data: submission } = await supabase.from("submissions").select("talent_id").eq("id", candidate.submission_id).maybeSingle();
+    talentId = submission?.talent_id;
+  }
+  if (!talentId) return { ok: false, error: "This person does not have a connected Motiion account. Use Contact to coordinate directly." };
+  if (projectResult.error || !projectResult.data) return { ok: false, error: "Could not load the project dates. Try again." };
+  const project = projectResult.data;
+  const { data: existing, error: existingError } = await supabase.from("availability_check_requests")
+    .select("id").eq("project_id", input.projectId).eq("requester_id", user.id).eq("talent_id", talentId)
+    .eq("status", "pending").order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (existingError) return { ok: false, error: "Could not check existing availability requests. Try again." };
+  if (!existing) {
+    const { error } = await supabase.from("availability_check_requests").insert({
+      requester_id: user.id, talent_id: talentId, project_id: input.projectId,
+      title: `Availability for ${project.title}`, project_name: project.title,
+      message: "Please confirm your availability and note any scheduling conflicts.",
+      date_ranges: project.start_date ? [{ start: project.start_date, end: project.end_date || project.start_date }] : [],
+      status: "pending", idempotency_key: `web:casting:${candidate.id}:${candidate.updated_at}`,
+    });
+    if (error && error.code !== "23505") return { ok: false, error: "Could not send the availability request. Please try again." };
+  }
+  const { error } = await supabase.from("casting_candidates").update({ status: "availability_requested", updated_at: new Date().toISOString() })
+    .eq("id", candidate.id).eq("project_id", input.projectId);
+  revalidateProject(input.projectId);
+  if (error) return { ok: false, error: "The availability request was sent, but the casting list could not refresh. Reload to see the latest status." };
+  return { ok: true };
+}
+
+/** Save review eligibility before updating pipeline presentation. A failed review
+ * write must never display a successful final selection. Withdrawals stay final. */
+async function syncSubmissionStatus(db: NonNullable<Awaited<ReturnType<typeof createServerSupabaseClient>>>, submissionId: string, status: CastingCandidateStatus): Promise<string | null> {
+  const next = candidateStatusToSubmissionStatus(status);
+  if (!next) return null;
+  const result = await db.from("submissions").update({ status: next, reviewed_at: new Date().toISOString() }).eq("id", submissionId).neq("status", "withdrawn").select("id").maybeSingle();
+  return result.error || !result.data ? "This application changed or its review could not be saved. Refresh before trying again." : null;
+}
+
 type EnsureCandidateFromSubmissionResult =
   | { ok: true; candidateId: string }
   | { ok: false; error: string };
@@ -291,6 +358,13 @@ async function ensureCandidateFromSubmission(input: {
   userId: string;
 }): Promise<EnsureCandidateFromSubmissionResult> {
   const { supabase, projectId, submissionId, status, userId } = input;
+  const { data: source, error: sourceError } = await supabase.from("submissions")
+    .select("id, roles!inner(project_id, is_casting_finalized)").eq("id", submissionId).maybeSingle();
+  const joined = source?.roles;
+  const sourceRole = (Array.isArray(joined) ? joined[0] : joined) as { project_id?: string; is_casting_finalized?: boolean } | null;
+  if (sourceError || !sourceRole || sourceRole.project_id !== projectId) return { ok: false, error: "Submission not found in this project." };
+  if (sourceRole.is_casting_finalized) return { ok: false, error: "This selection is finalized. Reopen the role before changing it." };
+
 
   const { data: existingBySubmission } = await supabase
     .from("casting_candidates")
@@ -305,19 +379,14 @@ async function ensureCandidateFromSubmission(input: {
       return { ok: false, error: `Cannot move from ${current} to ${status}.` };
     }
 
+    const syncError = await syncSubmissionStatus(supabase, submissionId, status);
+    if (syncError) return { ok: false, error: syncError };
     const { error } = await supabase
       .from("casting_candidates")
       .update({ status, updated_at: new Date().toISOString() })
       .eq("id", existingBySubmission.id);
     if (error) return { ok: false, error: error.message };
 
-    const submissionStatus = candidateStatusToSubmissionStatus(status);
-    if (submissionStatus) {
-      await supabase
-        .from("submissions")
-        .update({ status: submissionStatus, reviewed_at: new Date().toISOString() })
-        .eq("id", submissionId);
-    }
 
     return { ok: true, candidateId: existingBySubmission.id as string };
   }
@@ -347,29 +416,15 @@ async function ensureCandidateFromSubmission(input: {
     return { ok: false, error: "Submission does not belong to this project." };
   }
 
-  let talentProfileId: string | null = null;
-  let profileAgency: string | null = null;
+  let profile: Awaited<ReturnType<typeof fetchTalentProfileBundles>> extends Map<string, infer T> ? T | undefined : never;
   if (submission.talent_id) {
-    const { data: profile } = await supabase
-      .from("professional_profiles")
-      .select("id")
-      .eq("user_id", submission.talent_id as string)
-      .maybeSingle();
-    talentProfileId = (profile?.id as string | null) ?? null;
-
-    const { data: userProfile } = await supabase
-      .from("profiles")
-      .select("representation, agent")
-      .eq("user_id", submission.talent_id as string)
-      .maybeSingle();
-    profileAgency =
-      (userProfile?.representation as string | null)?.trim() ||
-      (userProfile?.agent as string | null)?.trim() ||
-      null;
+    try {
+      profile = (await fetchTalentProfileBundles(supabase, [submission.talent_id as string])).get(submission.talent_id as string);
+    } catch { return { ok: false, error: "Could not load this applicant's profile. Please retry." }; }
   }
-
-  const agency =
-    (submission.agency as string | null)?.trim() || profileAgency || null;
+  const talentProfileId = profile?.professionalProfileId ?? null;
+  const agency = (submission.agency as string | null)?.trim() || profile?.agency || null;
+  const displayName = (submission.full_name as string | null)?.trim() || profile?.fullName || "Applicant";
 
   if (talentProfileId) {
     const { data: existingByTalent } = await supabase
@@ -385,11 +440,14 @@ async function ensureCandidateFromSubmission(input: {
         return { ok: false, error: `Cannot move from ${current} to ${status}.` };
       }
 
+      const syncError = await syncSubmissionStatus(supabase, submissionId, status);
+      if (syncError) return { ok: false, error: syncError };
       const { error } = await supabase
         .from("casting_candidates")
         .update({
           status,
           submission_id: submissionId,
+          display_name: displayName,
           email: (submission.email as string | null) ?? undefined,
           agency: agency ?? undefined,
           headshot_url: (submission.headshot_url as string | null) ?? undefined,
@@ -398,13 +456,6 @@ async function ensureCandidateFromSubmission(input: {
         .eq("id", existingByTalent.id);
       if (error) return { ok: false, error: error.message };
 
-      const submissionStatus = candidateStatusToSubmissionStatus(status);
-      if (submissionStatus) {
-        await supabase
-          .from("submissions")
-          .update({ status: submissionStatus, reviewed_at: new Date().toISOString() })
-          .eq("id", submissionId);
-      }
 
       return { ok: true, candidateId: existingByTalent.id as string };
     }
@@ -420,6 +471,8 @@ async function ensureCandidateFromSubmission(input: {
     };
   }
 
+  const syncError = await syncSubmissionStatus(supabase, submissionId, status);
+  if (syncError) return { ok: false, error: syncError };
   const { data: inserted, error: insertError } = await supabase
     .from("casting_candidates")
     .insert({
@@ -430,7 +483,7 @@ async function ensureCandidateFromSubmission(input: {
       role_ids: roleIds,
       source: "public_submission",
       status,
-      display_name: ((submission.full_name as string | null)?.trim() || role?.title || "Candidate") as string,
+      display_name: displayName,
       email: (submission.email as string | null) ?? null,
       agency,
       headshot_url: (submission.headshot_url as string | null) ?? null,
@@ -444,13 +497,6 @@ async function ensureCandidateFromSubmission(input: {
     return { ok: false, error: insertError?.message ?? "Could not save candidate." };
   }
 
-  const submissionStatus = candidateStatusToSubmissionStatus(status);
-  if (submissionStatus) {
-    await supabase
-      .from("submissions")
-      .update({ status: submissionStatus, reviewed_at: new Date().toISOString() })
-      .eq("id", submissionId);
-  }
 
   return { ok: true, candidateId: inserted.id as string };
 }
@@ -496,8 +542,25 @@ export async function upsertCastingEvaluation(input: {
     return { ok: false, error: "Save candidate to pipeline before evaluating." };
   }
 
+  const candidate = await supabase.from("casting_candidates").select("id").eq("id", input.candidateId).eq("project_id", input.projectId).maybeSingle();
+  if (candidate.error || !candidate.data) return { ok: false, error: "Candidate not found in this project." };
+  if (input.roleId) {
+    const role = await supabase.from("roles").select("id").eq("id", input.roleId).eq("project_id", input.projectId).maybeSingle();
+    if (role.error || !role.data) return { ok: false, error: "Role not found in this project." };
+  }
+  const existingQuery = supabase.from("casting_evaluations").select("id")
+    .eq("casting_candidate_id", input.candidateId).eq("evaluator_id", user.id)
+    .order("updated_at", { ascending: false }).limit(1);
+  const existing = await (input.roleId ? existingQuery.eq("role_id", input.roleId) : existingQuery.is("role_id", null)).maybeSingle();
+  if (existing.error) return { ok: false, error: "Could not load your previous review. Please retry." };
+  // PostgreSQL's nullable role_id unique key does not deduplicate general notes.
+  // A stable primary ID also makes concurrent first-save retries converge.
+  const hex = createHash("sha256").update(`motiion:casting-evaluation:${input.candidateId}:${user.id}:${input.roleId || "general"}`).digest("hex").slice(0, 32);
+  const evaluationId = existing.data?.id ?? `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20)}`;
+
   const { error } = await supabase.from("casting_evaluations").upsert(
     {
+      id: evaluationId,
       casting_candidate_id: input.candidateId,
       evaluator_id: user.id,
       role_id: input.roleId ?? null,
@@ -506,7 +569,7 @@ export async function upsertCastingEvaluation(input: {
       private_notes: input.privateNotes ?? null,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: "casting_candidate_id,evaluator_id,role_id" },
+    { onConflict: "id" },
   );
 
   if (error) return { ok: false, error: error.message };
@@ -543,14 +606,17 @@ export async function addDiscoveredCandidates(input: {
 
   if (!castingId) return { ok: false, error: "Could not resolve casting." };
 
-  const { data: profiles } = await supabase
+  const { data: profiles, error: profilesError } = await supabase
     .from("professional_profiles")
     .select("id, slug")
     .in("id", input.profileIds);
 
+  if (profilesError) return { ok: false, error: "Could not load talent. Please retry." };
+  const roles = await supabase.from("roles").select("id").eq("project_id", input.projectId).eq("casting_id", castingId).in("id", input.roleIds);
+  if (roles.error || roles.data.length !== new Set(input.roleIds).size) return { ok: false, error: "Choose roles from this casting." };
   let count = 0;
   for (const profile of profiles ?? []) {
-    const { error } = await supabase.from("casting_candidates").upsert(
+    const saved = await saveDiscoveredCastingCandidate(supabase,
       {
         casting_id: castingId,
         project_id: input.projectId,
@@ -560,11 +626,9 @@ export async function addDiscoveredCandidates(input: {
         status: input.initialStatus ?? "discovered",
         display_name: (profile.slug as string).replace(/-/g, " "),
         created_by: user.id,
-        updated_at: new Date().toISOString(),
       },
-      { onConflict: "casting_id,talent_profile_id", ignoreDuplicates: false },
     );
-    if (!error) count += 1;
+    if (saved.ok) count += 1;
   }
 
   await trackServerEvent("casting_candidate_saved", {
@@ -573,7 +637,7 @@ export async function addDiscoveredCandidates(input: {
   });
 
   revalidateProject(input.projectId);
-  return { ok: true, count };
+  return count === new Set(input.profileIds).size ? { ok: true, count } : { ok: false, count, error: `${count} candidates saved. Some could not be saved; refresh and retry.` };
 }
 
 export async function addExternalCandidate(input: {
@@ -627,7 +691,7 @@ export async function addExternalCandidate(input: {
 
   if (extError || !external) return { ok: false, error: extError?.message ?? "Insert failed." };
 
-  await supabase.from("casting_candidates").insert({
+  const pipeline = await supabase.from("casting_candidates").insert({
     casting_id: castingId,
     project_id: input.projectId,
     external_candidate_id: external.id,
@@ -639,6 +703,12 @@ export async function addExternalCandidate(input: {
     headshot_url: input.headshotUrl,
     created_by: user.id,
   });
+  if (pipeline.error) {
+    const rollback = await supabase.from("casting_external_candidates").delete().eq("id", external.id).eq("project_id", input.projectId);
+    return { ok: false, error: rollback.error
+      ? "The contact was saved, but its review card could not be created. Refresh before trying again."
+      : "Could not save this candidate. Please retry." };
+  }
 
   revalidateProject(input.projectId);
   return { ok: true, id: external.id as string };
@@ -719,7 +789,7 @@ export async function createJobFromCasting(
   return { ok: true, jobId: result.job_id, jobProjectId: result.job_id };
 }
 
-const RESENDABLE_INVITATION_STATUSES = new Set(["withdrawn", "declined", "expired"]);
+const RESENDABLE_INVITATION_STATUSES = new Set(["pending", "withdrawn", "declined", "expired"]);
 
 export async function inviteCandidatesFromSearch(input: {
   projectId: string;
@@ -737,6 +807,8 @@ export async function inviteCandidatesFromSearch(input: {
   const access = await requireProjectAccess(input.projectId, user.id);
   if (!access.ok) return { ok: false, error: access.error };
 
+  const identity = await requireIndustryIdentityVerified(user.id);
+  if (!identity.ok) return { ok: false, error: identity.error };
   const castingId = await resolvePrimaryCastingId(input.projectId, user.id);
   if (!castingId) {
     return { ok: false, error: "Publish the casting before inviting talent." };
@@ -757,10 +829,13 @@ export async function inviteCandidatesFromSearch(input: {
     return { ok: false, error: allowance.error };
   }
 
+  const validRoles = await supabase.from("roles").select("id").eq("project_id", input.projectId).eq("casting_id", castingId).in("id", input.roleIds);
+  if (validRoles.error || validRoles.data.length !== new Set(input.roleIds).size || !input.roleIds.length) return { ok: false, error: "Choose roles from this casting." };
   let count = 0;
+  let failures = 0;
   for (const talentKey of input.profileIds) {
     const profileId = await resolveProfessionalProfileId(supabase, talentKey);
-    if (!profileId) continue;
+    if (!profileId) { failures++; continue; }
 
     const sentAt = new Date().toISOString();
     const { data: existing } = await supabase
@@ -780,10 +855,10 @@ export async function inviteCandidatesFromSearch(input: {
       const { data: updated, error: updateError } = await supabase
         .from("invitations")
         .update({
-          status: "sent",
+          status: "pending",
           message: input.message,
           role_ids: input.roleIds,
-          sent_at: sentAt,
+          sent_at: null,
           viewed_at: null,
           responded_at: null,
         })
@@ -791,7 +866,7 @@ export async function inviteCandidatesFromSearch(input: {
         .select("id")
         .single();
 
-      if (updateError || !updated) continue;
+      if (updateError || !updated) { failures++; continue; }
       invitationId = updated.id as string;
     } else {
       const { data: invitation, error } = await supabase
@@ -802,25 +877,27 @@ export async function inviteCandidatesFromSearch(input: {
           invited_profile_id: profileId,
           invited_by: user.id,
           kind: "casting",
-          status: "sent",
+          status: "pending",
           message: input.message,
           role_ids: input.roleIds,
-          sent_at: sentAt,
+          sent_at: null,
         })
         .select("id")
         .single();
 
-      if (error || !invitation) continue;
+      if (error || !invitation) { failures++; continue; }
       invitationId = invitation.id as string;
     }
 
+    const bridge = await bridgeWebInviteToMobile(supabase, { invitedProfileId: profileId, roleIds: input.roleIds, castingId });
+    if (bridge.errors.length || bridge.bridged === 0) { failures++; continue; }
     const { data: profile } = await supabase
       .from("professional_profiles")
       .select("slug")
       .eq("id", profileId)
       .maybeSingle();
 
-    await supabase.from("casting_candidates").upsert(
+    const saved = await saveDiscoveredCastingCandidate(supabase,
       {
         casting_id: castingId,
         project_id: input.projectId,
@@ -831,27 +908,22 @@ export async function inviteCandidatesFromSearch(input: {
         status: "invited",
         display_name: profile?.slug?.replace(/-/g, " ") ?? "Talent",
         created_by: user.id,
-        updated_at: new Date().toISOString(),
       },
-      { onConflict: "invitation_id", ignoreDuplicates: false },
     );
 
-    await bridgeWebInviteToMobile(supabase, {
-      invitedProfileId: profileId,
-      roleIds: input.roleIds,
-      castingId,
-    });
-
+    if (!saved.ok) { failures++; continue; }
+    const sent = await supabase.from("invitations").update({ status: "sent", sent_at: sentAt }).eq("id", invitationId);
+    if (sent.error) { failures++; continue; }
     count += 1;
   }
 
-  await trackServerEvent("casting_invitation_sent", {
+  if (count > 0) await trackServerEvent("casting_invitation_sent", {
     project_id: input.projectId,
     bulk_action_count: count,
   });
 
   revalidateProject(input.projectId);
-  return { ok: true, count };
+  return failures ? { ok: false, count, error: `${count} invitations sent; ${failures} could not be completed. Retry the pending invitations safely.` } : { ok: true, count };
 }
 
 export async function withdrawInvitationFromSearch(input: {
@@ -870,10 +942,10 @@ export async function withdrawInvitationFromSearch(input: {
 
   const { data: invitation, error: invitationError } = await supabase
     .from("invitations")
-    .select("id, casting_id, project_id, status")
+    .select("id, casting_id, project_id, status, role_ids, role_id, invited_profile_id")
     .eq("id", input.invitationId)
     .eq("project_id", input.projectId)
-    .maybeSingle<{ id: string; casting_id: string | null; project_id: string; status: string }>();
+    .maybeSingle<{ id: string; casting_id: string | null; project_id: string; status: string; role_ids: string[] | null; role_id: string | null; invited_profile_id: string }>();
 
   if (invitationError || !invitation) {
     return { ok: false, error: invitationError?.message ?? "Invitation not found." };
@@ -883,6 +955,19 @@ export async function withdrawInvitationFromSearch(input: {
     return { ok: true };
   }
 
+  if (access.project.poster_id !== user.id) return { ok: false, error: "Only the project owner can withdraw a talent invitation." };
+  const talent = await supabase.from("professional_profiles").select("user_id").eq("id", invitation.invited_profile_id).maybeSingle();
+  if (talent.error || !talent.data?.user_id) return { ok: false, error: "Could not resolve this invitation’s talent account." };
+  let roleIds = invitation.role_ids?.length ? invitation.role_ids : invitation.role_id ? [invitation.role_id] : [];
+  if (!roleIds.length && invitation.casting_id) {
+    const roles = await supabase.from("roles").select("id").eq("project_id", input.projectId).eq("casting_id", invitation.casting_id);
+    if (roles.error) return { ok: false, error: "Could not load the invited roles." };
+    roleIds = roles.data.map((role) => role.id);
+  }
+  if (roleIds.length) {
+    const revoked = await supabase.from("role_access").delete().eq("talent_id", talent.data.user_id).in("role_id", roleIds);
+    if (revoked.error) return { ok: false, error: "Could not withdraw casting access. Please retry." };
+  }
   const { error: updateError } = await supabase
     .from("invitations")
     .update({ status: "withdrawn" })
@@ -951,45 +1036,9 @@ export async function createCastingReferral(input: {
     return { ok: false, error: "You cannot refer yourself." };
   }
 
-  const roleIds = input.roleIds ?? [];
-  const referredUserId = referredProfile.user_id as string | null;
-  let displayName =
-    (referredProfile.slug as string | null)?.replace(/-/g, " ")?.trim() || "Talent";
-  let headshotUrl: string | null = null;
-
-  if (referredUserId) {
-    const { data: talentProfile } = await supabase
-      .from("profiles")
-      .select("display_name, first_name, last_name, headshot_urls")
-      .eq("user_id", referredUserId)
-      .maybeSingle();
-    const fromDisplay = (talentProfile?.display_name as string | null)?.trim();
-    const fromParts = [talentProfile?.first_name, talentProfile?.last_name]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-    if (fromDisplay) displayName = fromDisplay;
-    else if (fromParts) displayName = fromParts;
-
-    const urls = talentProfile?.headshot_urls;
-    if (Array.isArray(urls)) {
-      const first = urls.find((value) => typeof value === "string" && value.trim());
-      headshotUrl = typeof first === "string" ? first.trim() : null;
-    }
-  }
-
-  if (!headshotUrl) {
-    const { data: media } = await supabase
-      .from("media_assets")
-      .select("url")
-      .eq("profile_id", referredProfileId)
-      .eq("kind", "headshot")
-      .order("position", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    headshotUrl = (media?.url as string | null)?.trim() || null;
-  }
-
+  const roleIds = [...new Set(input.roleIds ?? [])];
+  const validRoles = await supabase.from("roles").select("id").eq("casting_id", input.castingId).in("id", roleIds);
+  if (validRoles.error || validRoles.data.length !== roleIds.length) return { ok: false, error: "Choose roles from this casting." };
   const { data: referral, error } = await supabase
     .from("casting_referrals")
     .insert({
@@ -1012,22 +1061,6 @@ export async function createCastingReferral(input: {
     return { ok: false, error: error.message };
   }
 
-  await supabase.from("casting_candidates").upsert(
-    {
-      casting_id: input.castingId,
-      project_id: casting.project_id as string,
-      talent_profile_id: referredProfileId,
-      role_ids: roleIds,
-      source: "referral",
-      status: "discovered",
-      display_name: displayName,
-      headshot_url: headshotUrl,
-      created_by: user.id,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "casting_id,talent_profile_id", ignoreDuplicates: false },
-  );
-
   await trackServerEvent("casting_referral_submitted", {
     casting_id: input.castingId,
     project_id: casting.project_id,
@@ -1039,7 +1072,33 @@ export async function createCastingReferral(input: {
   return { ok: true, referralId: referral.id as string };
 }
 
-const FINALIZE_CANDIDATE_STATUSES = ["selected", "confirmed", "accepted", "shortlisted"] as const;
+/** Mirrors current iOS RoleService.reopenCasting: preserve final IDs, People and coordination. */
+export async function reopenFinalizedCastingRole(input: {
+  projectId: string;
+  bridgedRoleId: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createServerSupabaseClient();
+  if (!supabase) return { ok: false, error: "Casting is unavailable right now." };
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sign in to reopen casting." };
+  const access = await requireProjectAccess(input.projectId, user.id);
+  if (!access.ok) return { ok: false, error: access.error };
+  const identity = await requireIndustryIdentityVerified(user.id);
+  if (!identity.ok) return { ok: false, error: identity.error };
+  const { data: role, error } = await supabase.from("roles").select("id, casting_id")
+    .eq("id", input.bridgedRoleId).eq("project_id", input.projectId).maybeSingle();
+  if (error || !role) return { ok: false, error: "Could not load the role to reopen. Please retry." };
+  if (role.casting_id) {
+    const casting = await supabase.from("castings").update({ status: "open", updated_at: new Date().toISOString() })
+      .eq("id", role.casting_id).eq("project_id", input.projectId);
+    if (casting.error) return { ok: false, error: "Could not reopen casting. Please retry." };
+  }
+  const reopened = await supabase.from("roles").update({ is_active: true, is_casting_finalized: false, updated_at: new Date().toISOString() })
+    .eq("id", role.id).eq("project_id", input.projectId).select("id").maybeSingle();
+  if (reopened.error || !reopened.data) return { ok: false, error: "Could not reopen this role. Existing selections are preserved; please retry." };
+  revalidateProject(input.projectId);
+  return { ok: true };
+}
 
 export async function finalizeCastingRole(input: {
   projectId: string;
@@ -1047,131 +1106,42 @@ export async function finalizeCastingRole(input: {
 }): Promise<{ ok: boolean; error?: string; finalizedCount?: number }> {
   const supabase = await createServerSupabaseClient();
   if (!supabase) return { ok: false, error: "Supabase is not configured." };
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "You must be signed in." };
-
   const access = await requireProjectAccess(input.projectId, user.id);
   if (!access.ok) return { ok: false, error: access.error };
 
-  const { data: role } = await supabase
-    .from("roles")
-    .select("id, casting_id, project_id, poster_id, is_casting_finalized")
-    .eq("id", input.bridgedRoleId)
-    .maybeSingle();
+  const { data: role, error: roleError } = await supabase.from("roles")
+    .select("id, casting_id, project_id, is_casting_finalized, final_select_ids")
+    .eq("id", input.bridgedRoleId).eq("project_id", input.projectId).maybeSingle();
+  if (roleError || !role) return { ok: false, error: "Could not load this role. Refresh and try again." };
 
-  if (!role) return { ok: false, error: "Role not found." };
-  if (role.project_id !== input.projectId) return { ok: false, error: "Role does not belong to this project." };
-  if (role.is_casting_finalized) return { ok: false, error: "This role has already been finalized." };
+  const [pipelineResult, submissionResult] = await Promise.all([
+    supabase.from("casting_candidates").select("submission_id, status, role_ids")
+      .eq("project_id", input.projectId),
+    supabase.from("submissions").select("id, talent_id, status").eq("role_id", input.bridgedRoleId),
+  ]);
+  if (pipelineResult.error || submissionResult.error) return { ok: false, error: "Could not load the latest selections. Nothing has been finalized. Try again." };
+  const submissions = submissionResult.data ?? [];
+  const finalSelectIds = finalSubmissionIds({ roleId: input.bridgedRoleId, submissions, candidates: pipelineResult.data ?? [], savedIds: role.final_select_ids });
+  if (!finalSelectIds.length) return { ok: false, error: "Select at least one submitted candidate before finalizing this role." };
 
-  const castingId = role.casting_id as string | null;
-  const submissionIds = new Set<string>();
-
-  if (castingId) {
-    const { data: pipelineCandidates } = await supabase
-      .from("casting_candidates")
-      .select("submission_id, status, role_ids")
-      .eq("casting_id", castingId);
-
-    for (const candidate of pipelineCandidates ?? []) {
-      const roleIds = (candidate.role_ids as string[] | null) ?? [];
-      if (!roleIds.includes(input.bridgedRoleId)) continue;
-      if (!FINALIZE_CANDIDATE_STATUSES.includes(candidate.status as (typeof FINALIZE_CANDIDATE_STATUSES)[number])) {
-        continue;
-      }
-      if (candidate.submission_id) submissionIds.add(candidate.submission_id as string);
-    }
-  }
-
-  const { data: submissionRows } = await supabase
-    .from("submissions")
-    .select("id, status")
-    .eq("role_id", input.bridgedRoleId);
-
-  for (const row of submissionRows ?? []) {
-    if (["approved", "callback"].includes(row.status as string)) {
-      submissionIds.add(row.id as string);
-    }
-  }
-
-  const finalSelectIds = [...submissionIds];
-
-  const { error } = await supabase
-    .from("roles")
-    .update({
-      is_casting_finalized: true,
-      is_review_complete: true,
-      is_active: false,
-      final_select_ids: finalSelectIds,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", input.bridgedRoleId);
-
-  if (error) return { ok: false, error: error.message };
-
-  const dancerUserIds: string[] = [];
-  if (finalSelectIds.length) {
-    const { data: submissionRowsWithTalent } = await supabase
-      .from("submissions")
-      .select("id, talent_id")
-      .in("id", finalSelectIds);
-    for (const row of submissionRowsWithTalent ?? []) {
-      if (row.talent_id) dancerUserIds.push(row.talent_id as string);
-    }
-
-    // Pipeline candidates may only have professional profile ids.
-    if (castingId) {
-      const { data: pipeline } = await supabase
-        .from("casting_candidates")
-        .select("talent_profile_id, submission_id, role_ids, status")
-        .eq("casting_id", castingId);
-      const profileIds: string[] = [];
-      for (const candidate of pipeline ?? []) {
-        const roleIds = (candidate.role_ids as string[] | null) ?? [];
-        if (!roleIds.includes(input.bridgedRoleId)) continue;
-        if (!FINALIZE_CANDIDATE_STATUSES.includes(candidate.status as (typeof FINALIZE_CANDIDATE_STATUSES)[number])) {
-          continue;
-        }
-        if (candidate.talent_profile_id) profileIds.push(candidate.talent_profile_id as string);
-      }
-      if (profileIds.length) {
-        const { data: profiles } = await supabase
-          .from("professional_profiles")
-          .select("user_id")
-          .in("id", profileIds);
-        for (const profile of profiles ?? []) {
-          if (profile.user_id) dancerUserIds.push(profile.user_id as string);
-        }
-      }
-    }
-  }
-
-  const uniqueDancers = [...new Set(dancerUserIds)];
-  const { data: roleTitleRow } = await supabase
-    .from("roles")
-    .select("title")
-    .eq("id", input.bridgedRoleId)
-    .maybeSingle();
-
-  await supabase.rpc("create_or_attach_production_job_from_casting", {
-    p_title: `${access.project.title}${roleTitleRow?.title ? ` — ${roleTitleRow.title}` : ""}`,
-    p_dancer_user_ids: uniqueDancers,
-    p_existing_job_id: null,
-    p_role_id: input.bridgedRoleId,
+  const { data: finalized, error } = await supabase.rpc("finalize_casting_role_selections", {
     p_project_id: input.projectId,
-    p_start_date: null,
-    p_end_date: null,
+    p_role_id: input.bridgedRoleId,
+    p_expected_submission_ids: finalSelectIds,
   });
+  if (error || !finalized?.ok) {
+    const missing = error?.code === "PGRST202" || error?.code === "42883";
+    return { ok: false, error: missing
+      ? "Casting finalization is awaiting a server update. Your selections are saved; please try again after the update."
+      : error?.code === "PT409"
+        ? "Selections changed while you were reviewing. Refresh and try again."
+        : "Could not finalize this role. No selections or project people were changed. Please try again." };
+  }
 
-  await trackServerEvent("casting_role_finalized", {
-    project_id: input.projectId,
-    role_id: input.bridgedRoleId,
-    selected_count: finalSelectIds.length,
-  });
-
+  await trackServerEvent("casting_role_finalized", { project_id: input.projectId, role_id: input.bridgedRoleId, selected_count: finalSelectIds.length });
   revalidateProject(input.projectId);
-  revalidatePath("/projects");
   return { ok: true, finalizedCount: finalSelectIds.length };
 }
 
@@ -1480,17 +1450,21 @@ export async function createAnonymousCastingReferral(input: {
   if (profileIds.length > 10) return { ok: false, error: "You can refer up to 10 dancers at a time." };
 
   const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-  const { count: recentCount } = await admin
+  const { count: recentCount, error: countError } = await admin
     .from("casting_referrals")
     .select("id", { count: "exact", head: true })
     .eq("referral_token_id", validated.tokenId)
     .gte("created_at", hourAgo);
 
+  if (countError) return { ok: false, error: "Could not check this referral link. Please retry." };
+
   if ((recentCount ?? 0) + profileIds.length > ANON_REFERRAL_HOURLY_LIMIT) {
     return { ok: false, error: "Referral limit reached for this link. Try again later." };
   }
 
-  const roleIds = input.roleIds ?? [];
+  const roleIds = [...new Set(input.roleIds ?? [])];
+  const validRoles = await admin.from("roles").select("id").eq("casting_id", validated.castingId).eq("project_id", validated.projectId).in("id", roleIds);
+  if (validRoles.error || validRoles.data.length !== roleIds.length) return { ok: false, error: "Choose roles from this casting." };
   const displayName = input.referrerDisplayName?.trim() || "Anonymous";
   let created = 0;
 
@@ -1502,47 +1476,18 @@ export async function createAnonymousCastingReferral(input: {
       .from("professional_profiles")
       .select("id, user_id, slug")
       .eq("id", referredProfileId)
+      .eq("is_verified", true)
       .maybeSingle();
 
     if (!referredProfile) continue;
-
-    const referredUserId = referredProfile.user_id as string | null;
-    let talentDisplayName =
-      (referredProfile.slug as string | null)?.replace(/-/g, " ")?.trim() || "Talent";
-    let headshotUrl: string | null = null;
-
-    if (referredUserId) {
-      const { data: talentProfile } = await admin
-        .from("profiles")
-        .select("display_name, first_name, last_name, headshot_urls")
-        .eq("user_id", referredUserId)
-        .maybeSingle();
-      const fromDisplay = (talentProfile?.display_name as string | null)?.trim();
-      const fromParts = [talentProfile?.first_name, talentProfile?.last_name]
-        .filter(Boolean)
-        .join(" ")
-        .trim();
-      if (fromDisplay) talentDisplayName = fromDisplay;
-      else if (fromParts) talentDisplayName = fromParts;
-
-      const urls = talentProfile?.headshot_urls;
-      if (Array.isArray(urls)) {
-        const first = urls.find((value) => typeof value === "string" && value.trim());
-        headshotUrl = typeof first === "string" ? first.trim() : null;
-      }
-    }
-
-    if (!headshotUrl) {
-      const { data: media } = await admin
-        .from("media_assets")
-        .select("url")
-        .eq("profile_id", referredProfileId)
-        .eq("kind", "headshot")
-        .order("position", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      headshotUrl = (media?.url as string | null)?.trim() || null;
-    }
+    // A public referral token grants permission to recommend discoverable talent,
+    // not to disclose a private profile through the service client.
+    const publicProfile = await admin.from("profiles").select("user_id")
+      .eq("user_id", referredProfile.user_id)
+      .or("is_private.is.null,is_private.eq.false")
+      .or("moderation_status.is.null,moderation_status.eq.active")
+      .maybeSingle();
+    if (publicProfile.error || !publicProfile.data) continue;
 
     const { error } = await admin.from("casting_referrals").insert({
       casting_id: validated.castingId,
@@ -1561,22 +1506,6 @@ export async function createAnonymousCastingReferral(input: {
       if (error.code === "23505") continue;
       return { ok: false, error: error.message };
     }
-
-    await admin.from("casting_candidates").upsert(
-      {
-        casting_id: validated.castingId,
-        project_id: validated.projectId,
-        talent_profile_id: referredProfileId,
-        role_ids: roleIds,
-        source: "referral",
-        status: "discovered",
-        display_name: talentDisplayName,
-        headshot_url: headshotUrl,
-        created_by: validated.tokenCreatedBy ?? null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "casting_id,talent_profile_id", ignoreDuplicates: false },
-    );
 
     created += 1;
   }

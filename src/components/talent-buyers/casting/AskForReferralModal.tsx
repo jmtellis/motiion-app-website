@@ -58,12 +58,11 @@ export function AskForReferralModal({
     };
   }, [open, castingId]);
 
-  useEffect(() => {
-    if (!open) {
-      setQuery("");
-      setUsers([]);
-    }
-  }, [open]);
+  const [previousOpen, setPreviousOpen] = useState(open);
+  if (previousOpen !== open) {
+    setPreviousOpen(open);
+    if (!open) { setQuery(""); setUsers([]); }
+  }
 
   async function runSearch() {
     const needle = query.trim();

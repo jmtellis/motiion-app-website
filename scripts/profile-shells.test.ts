@@ -10,9 +10,9 @@ test("talent without an industry shell can add one", () => {
     activeShell: "talent",
   });
   assert.deepEqual(action, {
-    kind: "passcode",
-    label: "Add profile",
-    href: "/talent-buyers/onboarding?addShell=industry",
+    kind: "link",
+    label: "Apply for industry access",
+    href: "/talent-buyers/application",
   });
 });
 

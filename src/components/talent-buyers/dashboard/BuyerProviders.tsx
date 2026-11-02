@@ -6,7 +6,6 @@ import { IndustryProProvider } from "@/components/talent-buyers/billing/Industry
 
 import { CommandPalette } from "./CommandPalette";
 import { BuyerPageChromeProvider } from "./BuyerPageChromeContext";
-import { ProjectsViewModeProvider } from "./ProjectsViewModeContext";
 import { ToastProvider } from "./ToastProvider";
 
 export function BuyerProviders({
@@ -20,10 +19,8 @@ export function BuyerProviders({
     <ToastProvider>
       <IndustryProProvider hasIndustryPro={hasIndustryPro}>
         <BuyerPageChromeProvider>
-          <ProjectsViewModeProvider>
             {children}
             <CommandPalette />
-          </ProjectsViewModeProvider>
         </BuyerPageChromeProvider>
       </IndustryProProvider>
     </ToastProvider>

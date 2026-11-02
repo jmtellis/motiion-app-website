@@ -18,10 +18,6 @@ function resolveEmailParam(value: string | undefined) {
 export default async function TalentBuyerSignupCheckEmailPage({ searchParams }: PageProps) {
   const profile = await getCurrentUserProfile();
 
-  if (profile?.accountType) {
-    redirect(getProfileDestination(profile));
-  }
-
   const params = await searchParams;
   const email = resolveEmailParam(params.email);
 
@@ -29,11 +25,15 @@ export default async function TalentBuyerSignupCheckEmailPage({ searchParams }: 
     redirect("/signup");
   }
 
+  if (profile?.accountType && profile.email?.toLowerCase() === email.toLowerCase()) {
+    redirect(getProfileDestination(profile));
+  }
+
   const shell = getSetupFlowShellProps({ audience: "industry", surface: "checkEmail" });
 
   return (
     <SignupSplitShell {...shell}>
-      <CheckEmailForm email={email} accountType="lookingForTalent" />
+      <CheckEmailForm email={email} signedInEmail={profile?.email ?? undefined} accountType="lookingForTalent" />
     </SignupSplitShell>
   );
 }

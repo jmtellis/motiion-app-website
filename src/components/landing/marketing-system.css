@@ -499,7 +499,7 @@
   }
 
   .landing-header.is-menu-open .landing-header__menu-panel {
-    max-height: 24rem;
+    max-height: 32rem;
     padding: 0.35rem 0 0.85rem;
     opacity: 1;
     transform: none;
@@ -553,7 +553,8 @@
     cursor: pointer;
   }
 
-  .landing-header__menu-item:hover {
+  .landing-header__menu-item:hover,
+  .landing-header__menu-item[aria-current="page"] {
     color: #eaeaea;
   }
 }

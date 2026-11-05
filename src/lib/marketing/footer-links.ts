@@ -1,3 +1,5 @@
+import { marketingPageLinks } from "@/lib/marketing/site-nav";
+
 export type FooterLink = {
   label: string;
   href: string;
@@ -23,8 +25,7 @@ export const footerColumns: FooterColumn[] = [
   {
     title: "Company",
     links: [
-      { label: "Services", href: "/services" },
-      { label: "Pricing", href: "/pricing" },
+      ...marketingPageLinks,
       { label: "Partnerships", href: "https://www.motiion.io/partnerships" },
       { label: "Contact", href: CONTACT_HREF },
     ],

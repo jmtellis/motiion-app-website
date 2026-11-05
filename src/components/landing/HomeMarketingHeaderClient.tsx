@@ -19,6 +19,7 @@ import {
   type MarketingHeaderTab,
 } from "@/lib/marketing/marketing-pages";
 import { scrollToSignupSection } from "@/lib/marketing/scroll-to-signup";
+import { marketingPageLinkCurrent, marketingPageLinks } from "@/lib/marketing/site-nav";
 
 function getHeaderSignupCta(activeTab: MarketingHeaderTab) {
   if (activeTab === "casting") return INDUSTRY_PRO_SIGNUP_CTA;
@@ -254,8 +255,9 @@ export function HomeMarketingHeaderClient({
                 <span className="sr-only">{menuOpen ? "Close menu" : "Open menu"}</span>
               </button>
               <nav id="landing-header-menu" aria-label="Main navigation" className="landing-header__menu-panel" inert={!menuOpen} aria-hidden={!menuOpen}>
-                <Link href="/services" aria-current={pathname === "/services" ? "page" : undefined} className="landing-header__menu-item" onClick={closeMenu}>Services</Link>
-                <Link href="/pricing" className="landing-header__menu-item" onClick={closeMenu}>Pricing</Link>
+                {marketingPageLinks.map((link) => (
+                  <Link key={link.href} href={link.href} aria-current={marketingPageLinkCurrent(pathname, link.href)} className="landing-header__menu-item" onClick={closeMenu}>{link.label}</Link>
+                ))}
                 {accountUser ? <AccountPill user={accountUser} /> : <>
                   <Link href="/login" className="landing-header__menu-item" onClick={closeMenu}>Login</Link>
                   <Link href="/signup" className="landing-header__menu-item" onClick={closeMenu}>Sign Up</Link>
@@ -265,8 +267,9 @@ export function HomeMarketingHeaderClient({
             </div>
           ) : (
             <div className="landing-header__end landing-header__desktop-actions">
-              <Link href="/services" aria-current={pathname === "/services" ? "page" : undefined} className="landing-header__pricing">Services</Link>
-              <Link href="/pricing" className="landing-header__pricing">Pricing</Link>
+              {marketingPageLinks.map((link) => (
+                <Link key={link.href} href={link.href} aria-current={marketingPageLinkCurrent(pathname, link.href)} className="landing-header__pricing">{link.label}</Link>
+              ))}
               <IosDownloadHeroButton label="Download" className="landing-header__download" />
               <span className="landing-header__action-divider" aria-hidden />
               {accountUser ? <AccountPill user={accountUser} /> : <>

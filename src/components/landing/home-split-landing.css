@@ -116,7 +116,8 @@ html:has(.home-split) .landing-audience-tabs__tab { font-size: 12px; min-height:
 
 .landing-header__signup { border-radius: 999px; }
 .landing-header__pricing { color: #d5d7d8; font-size: 12px; padding: 8px 10px; }
-.landing-header__pricing:hover { color: white; }
+.landing-header__pricing:hover,
+.landing-header__pricing[aria-current="page"] { color: white; }
 
 .landing-header__download { flex-direction: row-reverse; }
 

@@ -1,28 +1,7 @@
-import { HomeUpcomingActivities } from "@/components/app/HomeUpcomingActivities";
-import { fetchTalentCalendarEvents } from "@/lib/app/schedule";
-import { HomeDiscovery } from "@/components/app/HomeDiscovery";
-import { HomeListings } from "@/components/app/HomeListings";
-import { fetchUpcomingClassesAndSessions } from "@/lib/app/home-opportunities";
-import { HomeFeed } from "@/components/app/HomeFeed";
-import { requireHiringAccount } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 
-export default async function BuyerHomePage() {
-  const profile = await requireHiringAccount();
-  const [activities, calendar] = await Promise.all([fetchUpcomingClassesAndSessions(), fetchTalentCalendarEvents(profile.id)]);
-  const firstName = profile.fullName.split(" ")[0] || "there";
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12
-      ? `Good morning, ${firstName}`
-      : hour < 18
-        ? `Good afternoon, ${firstName}`
-        : `Good evening, ${firstName}`;
+import { BUYER_HOME_PATH } from "@/lib/talent-buyers/dashboard-data";
 
-  return (
-    <HomeFeed
-      greeting={greeting}
-      listingsSlot={<HomeListings activities={activities.activities} error={activities.error} />}
-      discoverySlot={<HomeDiscovery navigatorHref="/talent" upcomingSlot={<HomeUpcomingActivities events={calendar.events} error={calendar.error} calendarHref="/events" />} />}
-    />
-  );
+export default function BuyerHomePage() {
+  redirect(BUYER_HOME_PATH);
 }

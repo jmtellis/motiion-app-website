@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import {
   fetchHomeCollections,
   fetchHomeEvents,
-  fetchHomeCampaigns,
 } from "@/lib/app/home-discovery";
 
 import {
@@ -16,13 +15,13 @@ export async function HomeDiscovery({
   upcomingSlot,
   navigatorHref = "/discover",
 }: {
-  navigatorHref?: string;
+  /** `null` hides the Navigator link when already inside Discover. */
+  navigatorHref?: string | null;
   upcomingSlot?: ReactNode;
 } = {}) {
-  const [rawCollections, rawEvents, campaigns, blocked] = await Promise.all([
+  const [rawCollections, rawEvents, blocked] = await Promise.all([
     fetchHomeCollections(),
     fetchHomeEvents(),
-    fetchHomeCampaigns(),
     currentBlockedUsers(),
   ]);
   if (blocked.error) return <div className="ui-notice" data-tone="error" role="alert">{blocked.error}</div>;
@@ -68,7 +67,6 @@ export async function HomeDiscovery({
   return (
     <HomeDiscoveryView
       upcomingSlot={upcomingSlot}
-      campaigns={campaigns}
       cards={cards}
       sponsored={events.sponsored}
       cast={events.cast}

@@ -83,7 +83,7 @@ export function ProductionJobCreateForm() {
         <button
           type="submit"
           disabled={pending || !title.trim()}
-          className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          className="rounded-full bg-[var(--ui-button-primary)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
         >
           {pending ? "Creating…" : "Create"}
         </button>

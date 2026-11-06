@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowUpRight,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
   Sparkles,
@@ -19,7 +20,6 @@ import {
 } from "react";
 
 import { homeEventDateLabel } from "@/lib/app/home-event-copy";
-import type { HomeCampaign } from "@/lib/catalog/live-catalog";
 import type { HomeEvent } from "@/lib/app/home-discovery";
 import {
   refreshFeaturedHomeContent,
@@ -92,18 +92,16 @@ function cardDateLabel(date: string | null) {
 
 export function HomeDiscoveryView({
   upcomingSlot,
-  campaigns,
   cards,
   sponsored,
   cast,
   navigatorHref = "/discover",
 }: {
   upcomingSlot?: ReactNode;
-  campaigns: HomeCampaign[];
   cards: HomeCommunityCard[];
   sponsored: HomeEvent[];
   cast: HomeEvent[];
-  navigatorHref?: string;
+  navigatorHref?: string | null;
 }) {
   const router = useRouter();
   const notifications = useNotificationsPanel();
@@ -264,9 +262,11 @@ export function HomeDiscoveryView({
               <h2 id="home-community-title">Your community</h2>
               <p>People, inspiration, and what’s happening next.</p>
             </div>
-            <Link href={navigatorHref}>
-              Open Navigator <ArrowUpRight size={16} />
-            </Link>
+            {navigatorHref ? (
+              <Link href={navigatorHref}>
+                Open Navigator <ArrowUpRight size={16} />
+              </Link>
+            ) : null}
           </div>
           <div className="talent-discovery-cards">
             {cards.map((card, index) => (
@@ -319,47 +319,6 @@ export function HomeDiscoveryView({
           onOpen={openEvent}
           activeId={panel?.kind === "event" ? panel.eventId : null}
         />
-        {campaigns.length ? (
-          <section aria-labelledby="home-brands-title">
-            <div className="talent-section-heading">
-              <h2 id="home-brands-title">Featured Brands</h2>
-            </div>
-            <div className="home-campaign-rail">
-              {campaigns
-                .filter((campaign) => campaign.image_url)
-                .map((campaign) => {
-                  const safeUrl =
-                    campaign.cta_url && /^https?:\/\//i.test(campaign.cta_url)
-                      ? campaign.cta_url
-                      : null;
-                  const content = (
-                    <Image
-                      src={campaign.image_url!}
-                      alt={campaign.title}
-                      width={72}
-                      height={72}
-                      unoptimized
-                    />
-                  );
-                  return safeUrl ? (
-                    <a
-                      className="home-brand-logo"
-                      key={campaign.id}
-                      href={safeUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {content}
-                    </a>
-                  ) : (
-                    <article className="home-brand-logo" key={campaign.id}>
-                      {content}
-                    </article>
-                  );
-                })}
-            </div>
-          </section>
-        ) : null}
       </div>
 
       <WorkspaceSidePanel
@@ -509,60 +468,66 @@ function CoverRail({
         const people = event.people ?? [];
         const shown = people.slice(0, CAST_AVATAR_LIMIT);
         const extra = Math.max(0, people.length - shown.length);
+        const date = cardDateLabel(event.activity_date);
         return (
           <button
             type="button"
-            className="talent-cast-card"
+            className="ui-media-card"
             key={event.id}
             aria-expanded={activeId === event.id}
             aria-controls={PANEL_ID}
             onClick={() => onOpen(event.id, label)}
           >
-            {event.cover_image_url ? (
-              <Image
-                src={event.cover_image_url}
-                alt=""
-                fill
-                sizes="(max-width: 767px) 220px, 280px"
-                unoptimized
-              />
-            ) : null}
-            {sponsored ? (
-              <span className="talent-cast-card__chip">
-                <Sparkles size={12} aria-hidden />
-                Motiion
-              </span>
-            ) : null}
-            <div className="talent-cast-card__copy">
-              <p className="talent-cast-card__eyebrow">
-                {cardDateLabel(event.activity_date)}
-              </p>
-              <h3 className="talent-cast-card__title">{event.title}</h3>
-              {shown.length ? (
-                <div
-                  className="talent-cast-card__people"
-                  aria-label={people.map((person) => person.name).join(", ")}
-                >
-                  {shown.map((person) =>
-                    person.src ? (
-                      <Image
-                        key={person.userId}
-                        src={person.src}
-                        alt=""
-                        width={36}
-                        height={36}
-                        unoptimized
-                      />
-                    ) : (
-                      <span key={person.userId} aria-hidden>
-                        {person.name.charAt(0).toUpperCase()}
-                      </span>
-                    ),
-                  )}
-                  {extra > 0 ? <span aria-hidden>+{extra}</span> : null}
-                </div>
+            <span className="ui-media-card__media">
+              {event.cover_image_url ? (
+                <Image
+                  src={event.cover_image_url}
+                  alt=""
+                  fill
+                  sizes="(max-width: 767px) 240px, 296px"
+                  unoptimized
+                />
+              ) : (
+                <CalendarDays size={28} strokeWidth={1.6} aria-hidden />
+              )}
+              {sponsored ? (
+                <span className="ui-media-card__chip">
+                  <Sparkles size={12} aria-hidden />
+                  Motiion
+                </span>
               ) : null}
-            </div>
+            </span>
+            <span className="ui-media-card__body">
+              {date ? <span className="ui-media-card__eyebrow">{date}</span> : null}
+              <h3 className="ui-media-card__title">{event.title}</h3>
+              <span className="ui-media-card__footer">
+                <span className="ui-media-card__cta">{sponsored ? "View event" : "Meet the cast"}</span>
+                {shown.length ? (
+                  <span
+                    className="ui-media-card__people"
+                    aria-label={people.map((person) => person.name).join(", ")}
+                  >
+                    {shown.map((person) =>
+                      person.src ? (
+                        <Image
+                          key={person.userId}
+                          src={person.src}
+                          alt=""
+                          width={28}
+                          height={28}
+                          unoptimized
+                        />
+                      ) : (
+                        <span key={person.userId} aria-hidden>
+                          {person.name.charAt(0).toUpperCase()}
+                        </span>
+                      ),
+                    )}
+                    {extra > 0 ? <span aria-hidden>+{extra}</span> : null}
+                  </span>
+                ) : null}
+              </span>
+            </span>
           </button>
         );
       })}

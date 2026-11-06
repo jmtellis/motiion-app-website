@@ -12,6 +12,7 @@ import {
   House,
   Inbox,
   Search,
+  Settings,
   BadgeCheck,
 } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
@@ -19,6 +20,7 @@ import { Dialog } from "@/components/ui/Dialog";
 
 import { WorkspaceAccountMenu } from "@/components/workspace/WorkspaceAccountMenu";
 import { WorkspaceFooterNotices } from "@/components/workspace/WorkspaceFooterNotices";
+import { NotificationsButton } from "@/components/workspace/WorkspaceNotifications";
 import { WorkspaceSidebarHeader } from "@/components/workspace/WorkspaceSidebarHeader";
 import { getAccountSettingsHref, getProfileInitials } from "@/lib/auth/avatar";
 import { getShellMenuAction } from "@/lib/auth/profile";
@@ -98,17 +100,19 @@ function NavSection({
   collapsed,
   children,
 }: {
-  label: string;
+  label?: string;
   collapsed: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div className="buyer-sidebar__section">
-      <p
-        className={`buyer-sidebar__section-label ${collapsed ? "sr-only" : ""}`}
-      >
-        {label}
-      </p>
+      {label ? (
+        <p
+          className={`buyer-sidebar__section-label ${collapsed ? "sr-only" : ""}`}
+        >
+          {label}
+        </p>
+      ) : null}
       <div className="buyer-sidebar__section-links">{children}</div>
     </div>
   );
@@ -277,6 +281,7 @@ function SidebarContent({
   const { unreadCount: inboxUnread } = useBuyerInboxUnread(profile.id);
   const inboxBadge = formatBadge(inboxUnread);
   const initials = getProfileInitials(profile.fullName);
+  const settingsHref = getAccountSettingsHref(profile);
   const orgName = profile.organizationName || profile.companyName;
   const profileMeta = [orgName, planLabel(entitlement)]
     .filter(Boolean)
@@ -298,7 +303,7 @@ function SidebarContent({
       <WorkspaceSidebarHeader href={BUYER_HOME_PATH} collapsed={collapsed} expanded={Boolean(showExpanded)} mobile={isMobileDrawer} onToggle={onToggleSidebar} />
 
       <div className="buyer-sidebar__scroll buyer-dashboard-shell__sidebar-scroll">
-        <NavSection label="Workflow" collapsed={collapsed}>
+        <NavSection collapsed={collapsed}>
           {buyerMenuNavItems.map((item) => {
             const Icon = navIcons[item.segment as keyof typeof navIcons];
             return (
@@ -324,11 +329,22 @@ function SidebarContent({
           testEnvironment={testEnvironment}
         />
 
+        <div className="buyer-sidebar__section-links">
+          <NavLink
+            href={settingsHref}
+            label="Settings"
+            icon={Settings}
+            active={isNavActive(pathname, settingsHref)}
+            collapsed={collapsed}
+            onNavigate={onNavigate}
+          />
+        </div>
+
+        <div className="workspace-sidebar-user">
         <WorkspaceAccountMenu
           className="workspace-account-menu"
           buttonClassName={`buyer-sidebar__profile ${collapsed ? "buyer-sidebar__profile--collapsed" : ""}`}
           label={`Account menu for ${profile.fullName || "your profile"}`}
-          settingsHref={getAccountSettingsHref(profile)}
           shellAction={getShellMenuAction(profile)}
         >
           <span className="buyer-sidebar__avatar">
@@ -364,6 +380,8 @@ function SidebarContent({
             </>
           )}
         </WorkspaceAccountMenu>
+        <NotificationsButton placement="sidebar" />
+        </div>
       </div>
     </div>
   );

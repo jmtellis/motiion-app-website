@@ -32,6 +32,7 @@ import {
   renameDiscoverList,
   type ReferrerListSummary,
 } from "@/lib/talent/referrer-lists";
+import { ProductEmptyState } from "@/components/ui/EmptyState";
 
 type SavedTab = "mine" | "shared";
 type SavedCollection =
@@ -251,10 +252,12 @@ export function DiscoverSaved({
             />
           ))}
           {tab === "shared" && !rosters && shared.length === 0 ? (
-            <div className="discover-saved__empty">
-              <Users size={20} aria-hidden />
-              <p>{rosters ? "Rosters shared with you will show up here." : "Lists shared with you will show up here."}</p>
-            </div>
+            <ProductEmptyState
+              compact
+              illustration="people"
+              title="Nothing shared with you yet"
+              description={rosters ? "Rosters shared with you will show up here." : "Lists shared with you will show up here."}
+            />
           ) : null}
         </div>
       )}
@@ -474,10 +477,14 @@ function SavedCollectionPanel({
           {owned && rosters ? <RosterAccessButton listId={collection.id} listName={collection.name} /> : null}
           <p className="discover-saved-panel__count">{members === null ? "Loading…" : peopleCount(members.length)}</p>
           {members !== null && members.length === 0 ? (
-            <div className="discover-saved__empty">
-              <Users size={20} aria-hidden />
-              <p>{collection.kind === "list" ? `Add people to this ${noun} from their profile.` : "No one here yet."}</p>
-            </div>
+            <ProductEmptyState
+              compact
+              illustration="people"
+              title="No one here yet"
+              description={collection.kind === "list" ? `Add people to this ${noun} from their profile.` : "People added here will show up in this list."}
+              actionLabel="Browse talent"
+              actionHref="/discover"
+            />
           ) : null}
           {members?.length ? (
             <ul className="home-profile__menu discover-saved-panel__members">

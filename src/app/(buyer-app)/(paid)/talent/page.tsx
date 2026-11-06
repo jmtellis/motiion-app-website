@@ -1,4 +1,6 @@
-import { DiscoverSaved } from "@/components/app/DiscoverSaved";
+import { Suspense } from "react";
+
+import { DiscoverFeatured } from "@/components/app/DiscoverFeatured";
 import { DiscoverView } from "@/components/app/DiscoverView";
 import { TalentDiscovery } from "@/components/app/TalentDiscovery";
 import { requireHiringAccount } from "@/lib/auth/session";
@@ -16,7 +18,13 @@ export default async function BuyerTalentPage({
   if ("redirectTo" in canvas) redirect(canvas.redirectTo);
 
   const view = typeof params.view === "string" ? params.view : "";
-  const initialMode = view === "saved" ? "saved" : view === "discover" || view === "explore" ? "discover" : "browse";
+  const searching = Object.keys(params).some((key) => key !== "view");
+  const initialMode =
+    view === "discover" || view === "explore"
+      ? "discover"
+      : view === "browse" || (!view && searching)
+        ? "browse"
+        : "featured";
 
   return (
     <div className="talent-navigator-route">
@@ -30,7 +38,12 @@ export default async function BuyerTalentPage({
         keyword={canvas.filters.keyword ?? ""}
         credit={canvas.credit}
         recentlyViewed={canvas.recentlyViewed}
-        saved={<DiscoverSaved variant="rosters" />}
+        saved={null}
+        featured={
+          <Suspense fallback={<div className="talent-discovery-featured__loading" aria-busy="true" />}>
+            <DiscoverFeatured />
+          </Suspense>
+        }
       >
         <DiscoverView
           basePath="/talent"

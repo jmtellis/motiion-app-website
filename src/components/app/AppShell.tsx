@@ -5,6 +5,7 @@ import { AppTabNav } from "@/components/app/AppTabNav";
 import { AccountPill } from "@/components/auth/AccountPill";
 import { TalentWorkspace } from "@/components/workspace/TalentWorkspace";
 import { WorkspaceFooterNotices } from "@/components/workspace/WorkspaceFooterNotices";
+import { WorkspaceSidebarFooter } from "@/components/workspace/WorkspaceSidebarFooter";
 import { NavigationProgress } from "@/components/navigation/NavigationProgress";
 import { fetchInboxBundle } from "@/lib/app/inbox";
 import { inboxNavBadgeCount } from "@/lib/messaging/inbox-partition";
@@ -99,22 +100,27 @@ export async function AppShell({
                     }
               }
             />
-            <AccountPill
-            placement="sidebar"
-            workspaceLabel={
-              navVariant === "community"
-                ? "Community workspace"
-                : "Talent workspace"
-            }
-            shellAction={getShellMenuAction(profile)}
-            user={{
-              fullName: profile.fullName,
-              initials: getProfileInitials(profile.fullName),
-              avatarUrl: profile.avatarUrl ?? null,
-              profileHref: getAccountProfileHref(profile),
-              settingsHref: getAccountSettingsHref(profile),
-            }}
-          />
+            <WorkspaceSidebarFooter
+              settingsHref={getAccountSettingsHref(profile)}
+              account={
+                <AccountPill
+                  placement="sidebar"
+                  workspaceLabel={
+                    navVariant === "community"
+                      ? "Community workspace"
+                      : "Talent workspace"
+                  }
+                  shellAction={getShellMenuAction(profile)}
+                  user={{
+                    fullName: profile.fullName,
+                    initials: getProfileInitials(profile.fullName),
+                    avatarUrl: profile.avatarUrl ?? null,
+                    profileHref: getAccountProfileHref(profile),
+                    settingsHref: getAccountSettingsHref(profile),
+                  }}
+                />
+              }
+            />
           </>
         }
       >

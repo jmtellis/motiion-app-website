@@ -34,6 +34,7 @@ import type {
   InboxConversation,
   MessageRequest,
 } from "@/types/app";
+import { ProductEmptyState } from "@/components/ui/EmptyState";
 
 const EMPTY_PENDING: HomePendingRequest[] = [];
 const EMPTY_REQUESTS: MessageRequest[] = [];
@@ -472,11 +473,22 @@ function MessengerContents({
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
               {!filtered.length ? (
-                <p className="px-4 py-8 text-center text-sm text-[var(--ui-muted)]">
-                  {error ? "Your conversations are unavailable. Retry above." : query.trim() ? "No conversations match your search." : filter === "primary"
-                    ? "Activity and industry conversations will show up here."
-                    : "Messages from other talent will show up here."}
-                </p>
+                error ? (
+                  <p className="px-4 py-8 text-center text-sm text-[var(--ui-muted)]">Your conversations are unavailable. Retry above.</p>
+                ) : query.trim() ? (
+                  <p className="px-4 py-8 text-center text-sm text-[var(--ui-muted)]">No conversations match your search.</p>
+                ) : (
+                  <div className="messenger-list__empty">
+                    <ProductEmptyState
+                      compact
+                      illustration="inbox"
+                      title={filter === "primary" ? "No conversations yet" : "No messages from talent yet"}
+                      description={filter === "primary"
+                        ? "Activity and industry conversations will show up here."
+                        : "Messages from other talent will show up here."}
+                    />
+                  </div>
+                )
               ) : (
                 <ul>
                   {filtered.map((row) => {
@@ -643,10 +655,13 @@ function MessengerContents({
             />
           </div>
         ) : (
-          <div className="inbox-thread-content flex h-full items-center justify-center p-8 text-center">
-            <p className="text-sm text-[var(--ui-muted)]">
-              Select a conversation to read and reply.
-            </p>
+          <div className="inbox-thread-content inbox-thread-content--empty flex h-full items-center justify-center p-8 text-center">
+            <ProductEmptyState
+              compact
+              illustration="inbox"
+              title="Pick up a conversation"
+              description="Select a conversation to read and reply."
+            />
           </div>
         )}
       </WorkspaceSidePanel>

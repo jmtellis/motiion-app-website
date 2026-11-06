@@ -1,12 +1,11 @@
 /** Default landing route for industry professionals after auth. */
-export const BUYER_HOME_PATH = "/dashboard";
+export const BUYER_HOME_PATH = "/projects";
 
-/** Legacy dashboard path — redirects to home; settings still live under `/dashboard/settings`. */
+/** Legacy dashboard path — redirects to Projects; settings still live under `/dashboard/settings`. */
 export const BUYER_DASHBOARD_PATH = "/dashboard";
 
 /** Industry navigation matches the iOS workspace. */
 export const buyerMenuNavItems = [
-  { href: "/dashboard", label: "Home", segment: "home" },
   { href: "/talent", label: "Discover", segment: "talent" },
   { href: "/projects", label: "Projects", segment: "projects" },
   { href: "/messages", label: "Inbox", segment: "messages" },

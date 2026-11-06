@@ -151,6 +151,16 @@ html:has(.workspace-shell) body { overscroll-behavior: none; }
 .workspace-shared-brand { display:flex; align-items:center; min-width:0; }
 .workspace-shared-collapse { display:flex; align-items:center; justify-content:center; width:28px; height:28px; color:#a1a1a1; border-radius:999px; cursor:pointer; flex-shrink:0; }
 .workspace-shared-collapse:hover { background:#292929; color:white; }
+.workspace-shared-collapse--emblem { position:relative; width:36px; height:36px; border-radius:10px; }
+.workspace-shared-collapse__emblem,
+.workspace-shared-collapse__icon { position:absolute; inset:0; margin:auto; transition:opacity 140ms ease, transform 160ms cubic-bezier(.2,.8,.2,1); }
+.workspace-shared-collapse__emblem { display:grid; place-items:center; }
+.workspace-shared-collapse__icon { opacity:0; transform:scale(.85); }
+.workspace-shared-collapse--emblem:is(:hover,:focus-visible) .workspace-shared-collapse__emblem { opacity:0; transform:scale(.85); }
+.workspace-shared-collapse--emblem:is(:hover,:focus-visible) .workspace-shared-collapse__icon { opacity:1; transform:none; }
+@media (prefers-reduced-motion: reduce) {
+  .workspace-shared-collapse__emblem, .workspace-shared-collapse__icon { transition:none; }
+}
 
 .workspace-footer-notices {
   display: grid;

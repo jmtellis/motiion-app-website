@@ -35,10 +35,12 @@ export function SavedTalentView({
   talent: initialTalent,
   collections,
   onDiscover,
+  discoverHref,
 }: {
   talent: LibraryTalent[];
   collections: LibraryCollectionSummary[];
   onDiscover?: () => void;
+  discoverHref?: string;
 }) {
   const { showToast } = useToast();
   const [talent, setTalent] = useState(initialTalent);
@@ -194,6 +196,7 @@ export function SavedTalentView({
           title="No saved talent yet"
           body="Save people while you browse or discover, then come back to them here."
           primaryLabel="Discover talent"
+          primaryHref={discoverHref}
           primaryOnClick={onDiscover}
         />
       )}

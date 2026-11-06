@@ -8,6 +8,7 @@ import { ArrowRight, Megaphone } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { CastingDetailPanel } from "@/components/app/CastingDetailPanel";
+import { ProductEmptyState } from "@/components/ui/EmptyState";
 import { useNotificationsPanel } from "@/components/workspace/WorkspaceNotifications";
 import { groupOpportunityProjects as projectGroups } from "@/lib/app/opportunity-groups";
 import { outcomeLabel } from "@/lib/app/talent-casting-state";
@@ -112,7 +113,6 @@ export function OpportunitiesView({
         {tab === "open" ? (
           <CardGrid
             cards={opportunities.openCalls}
-            empty="No open calls right now. New public castings will show up here."
             onOpen={(card) => openCasting(card.roleId, false)}
           />
         ) : null}
@@ -138,9 +138,14 @@ export function OpportunitiesView({
               })}
             </ul>
           ) : (
-            <EmptyCopy>
-              Private castings you’re invited to submit for will show up here.
-            </EmptyCopy>
+            <ProductEmptyState
+              illustration="castings"
+              title="No invitations yet"
+              description="When a casting team invites you to a private casting, it will show up here. A complete portfolio helps them find you."
+              actionLabel="Update portfolio"
+              actionHref="/portfolio"
+              secondaryAction={{ label: "Browse open calls", onClick: () => selectTab("open") }}
+            />
           )
         ) : null}
 
@@ -186,11 +191,15 @@ export function OpportunitiesView({
                 })}
               </ul>
             ) : (
-              <EmptyCopy>
-                {roster === "closed"
-                  ? "Finalized castings will move here."
-                  : "Submit to an open call and it will show up here."}
-              </EmptyCopy>
+              <ProductEmptyState
+                illustration="castings"
+                title={roster === "closed" ? "No closed castings" : "No active submissions"}
+                description={roster === "closed"
+                  ? "Castings move here once they’re finalized, so you can look back at the outcome."
+                  : "Submit to an open call and you can follow its status here."}
+                actionLabel="Browse open calls"
+                onAction={() => selectTab("open")}
+              />
             )}
           </>
         ) : null}
@@ -211,14 +220,22 @@ export function OpportunitiesView({
 
 function CardGrid({
   cards,
-  empty,
   onOpen,
 }: {
   cards: TalentCastingCard[];
-  empty: string;
   onOpen: (card: TalentCastingCard) => void;
 }) {
-  if (!cards.length) return <EmptyCopy>{empty}</EmptyCopy>;
+  if (!cards.length) {
+    return (
+      <ProductEmptyState
+        illustration="castings"
+        title="No open calls right now"
+        description="New public castings show up here as soon as they’re posted. Keep your portfolio current so you’re ready to submit."
+        actionLabel="Update portfolio"
+        actionHref="/portfolio"
+      />
+    );
+  }
   return (
     <ul className="home-open-call-grid">
       {projectGroups(cards).map((group) => {
@@ -287,16 +304,5 @@ function CastingCard({
         </span>
       </div>
     </button>
-  );
-}
-
-function EmptyCopy({ children }: { children: string }) {
-  return (
-    <div className="home-listing-empty">
-      <Megaphone size={22} strokeWidth={1.6} aria-hidden />
-      <div>
-        <h3>{children}</h3>
-      </div>
-    </div>
   );
 }

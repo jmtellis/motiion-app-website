@@ -1,7 +1,7 @@
 /* Shared web controls. Explicit component classes preserve meaningful differences
    between fields, navigation, tabs, cards and compact status chips. */
 .workspace-shell {
-  --ds-radius-button: var(--ui-radius-control);
+  --ds-radius-button: var(--ui-radius-button);
   --ds-radius-input: var(--ui-radius-control);
   --ds-radius-pill: var(--ui-radius-pill);
 }
@@ -46,18 +46,19 @@
 .workspace-shell.workspace-shell :is(.bd-btn-primary,.bd-btn-secondary,.bd-btn-accent,.buyer-chrome-bar__cta) {
   display:inline-flex; align-items:center; justify-content:center; gap:8px;
   min-height:44px; padding:10px 16px; font-size:14px; font-weight:600; line-height:1.4;
-  border:1px solid transparent; border-radius:var(--ui-radius-control); cursor:pointer;
+  border:1px solid transparent; border-radius:var(--ui-radius-button); cursor:pointer;
   transition:background-color var(--ui-duration),border-color var(--ui-duration),opacity var(--ui-duration);
 }
-.workspace-shell.workspace-shell :is(.bd-btn-primary,.bd-btn-accent,.buyer-chrome-bar__cta) { background:var(--ui-accent); color:var(--ui-on-accent); box-shadow:none; }
-.workspace-shell.workspace-shell :is(.bd-btn-primary,.bd-btn-accent,.buyer-chrome-bar__cta):hover { background:var(--ui-accent-hover); color:var(--ui-on-accent); }
+.workspace-shell.workspace-shell :is(.bd-btn-primary,.bd-btn-accent,.buyer-chrome-bar__cta) { background:var(--ui-button-primary); color:#fff; box-shadow:none; }
+.workspace-shell.workspace-shell :is(.bd-btn-primary,.bd-btn-accent,.buyer-chrome-bar__cta):hover { background:var(--ui-button-primary-hover); color:#fff; }
 .workspace-shell.workspace-shell .bd-btn-secondary { background:var(--ui-surface); color:var(--ui-text); border-color:var(--ui-border); box-shadow:0 1px 2px #12302e08; }
 .workspace-shell.workspace-shell .bd-btn-secondary:hover { background:var(--ui-surface-soft); border-color:var(--ui-control-border); }
 .workspace-shell.workspace-shell :is(.bd-btn-primary,.bd-btn-secondary,.bd-btn-accent,.buyer-chrome-bar__cta):disabled { opacity:.5; cursor:not-allowed; }
 .workspace-shell :is(.workspace-nav-link,.buyer-sidebar__link) { min-height:40px; border-radius:10px; }
-.workspace-shell :is(.workspace-icon-button,.workspace-notifications__close,.buyer-modal-close) { min-width:40px; min-height:40px; border-radius:10px; }
+.workspace-shell :is(.workspace-icon-button,.workspace-notifications__close,.buyer-modal-close) { min-width:40px; min-height:40px; border-radius:var(--ui-radius-pill); }
 .workspace-shell :is(.workspace-nav-badge,.industry-badge) { border-radius:var(--ui-radius-pill); font-variant-numeric:tabular-nums; }
-:is(.workspace-shell--industry,.workspace-shell--talent) .workspace-frame :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),select,textarea) { border-radius:var(--ui-radius-control); min-height:44px; }
+/* :where keeps this a low-specificity default so component fields can size themselves. */
+:is(.workspace-shell--industry,.workspace-shell--talent) .workspace-frame :where(input:not([type=checkbox],[type=radio],[type=range],[type=file]),select,textarea) { border-radius:var(--ui-radius-control); min-height:44px; }
 /* Inputs inside a labelled field shell must not draw a second stroke. */
 :is(.workspace-shell--industry,.workspace-shell--talent) .workspace-frame input.workspace-bare-input:not([type=checkbox]):not([type=radio]):not([type=range]) { min-height:0; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; outline:none; }
 .workspace-shell :is(.library-search-wrap,.talent-navigator__search):focus-within { outline:2px solid var(--ui-focus); outline-offset:2px; }

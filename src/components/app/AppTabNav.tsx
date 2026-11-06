@@ -16,7 +16,6 @@ import { trackClientEvent } from "@/lib/analytics/track-client";
 
 /** Talent navigation matches the iOS workspace. */
 const talentTabs = [
-  { href: "/home", label: "Home", icon: House },
   { href: "/discover", label: "Discover", icon: Search },
   { href: "/opportunities", label: "Opportunities", icon: Megaphone },
   { href: "/inbox", label: "Inbox", icon: Inbox },

@@ -6,6 +6,7 @@ import { CalendarCheck } from "lucide-react";
 import { confirmationLabel, confirmationScope } from "@/lib/talent-buyers/confirmation-model";
 import type { TalentConfirmationData } from "@/lib/app/talent-confirmations";
 import "@/components/talent-buyers/project/project-confirmations.css";
+import { ProductEmptyState } from "@/components/ui/EmptyState";
 
 export function TalentConfirmations({ data, initialBooking = null }: { data: TalentConfirmationData; initialBooking?: string | null }) {
   const router = useRouter();
@@ -24,7 +25,7 @@ export function TalentConfirmations({ data, initialBooking = null }: { data: Tal
         <p>{record.dates.length ? record.dates.map((item) => new Date(`${item.date}T12:00:00Z`).toLocaleDateString(undefined, { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" })).join(" · ") : "Dates to confirm"}{record.timeZone && <small>{record.timeZone}</small>}</p>
         {record.responseNote && <blockquote>Your note: {record.responseNote}</blockquote>}
         {record.hasLegacyAgreement ? <Link href="/deal-memos">About previous agreements</Link> : record.confirmationStatus === "pending" || record.availabilityStatus === "pending" ? <Link href="/inbox?filter=requests" className="ui-btn ui-btn--primary">Review request</Link> : record.status === "confirmed" ? <Link href="/schedule" className="ui-btn ui-btn--secondary">View schedule</Link> : <p>{scope === "past" ? "This coordination is closed." : "You will see new requests in your inbox."}</p>}
-      </article>)}</div> : <div className="project-confirmations__empty"><CalendarCheck size={28} aria-hidden /><h3>{scope === "past" ? "No past confirmations" : "No project confirmations yet"}</h3><p>When a casting team moves you into project coordination, you can follow its status here.</p></div>}
+      </article>)}</div> : <ProductEmptyState illustration="events" title={scope === "past" ? "No past confirmations" : "No project confirmations yet"} description="When a casting team moves you into project coordination, you can follow its status here." actionLabel="Browse open calls" actionHref="/opportunities" />}
     </>}
   </section>;
 }

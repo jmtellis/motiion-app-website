@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { VoiceSearchControl } from "./VoiceSearchControl";
-import { BadgeCheck, ChevronDown, ChevronLeft, ChevronRight, MapPin, Search, SlidersHorizontal, X } from "lucide-react";
+import { BadgeCheck, Check, ChevronDown, ChevronLeft, ChevronRight, MapPin, Search, SlidersHorizontal, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, useTransition, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type RefObject } from "react";
 
 import { useDiscoverTalent } from "@/components/app/discover-selection";
 import { ChipGroup } from "@/components/ui/ChipGroup";
@@ -24,6 +23,7 @@ import {
 import { searchProfileToTalent } from "@/lib/talent-navigator/profile-adapter";
 import { suggestCreditCollaborators } from "@/lib/talent/discover-actions";
 import type { SearchFilters, SearchProfileRecord, SearchResult } from "@/types/search";
+import { ProductEmptyState } from "@/components/ui/EmptyState";
 
 type Attributes = {
   location: string;
@@ -115,6 +115,93 @@ function BrowseCard({ profile, onOpen }: { profile: SearchProfileRecord; onOpen:
   );
 }
 
+/** Closes a popover on outside pointer or Escape, returning focus to its trigger. */
+function useDismiss(open: boolean, rootRef: RefObject<HTMLDivElement | null>, close: () => void) {
+  useEffect(() => {
+    if (!open) return;
+    function onPointer(event: PointerEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) close();
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      close();
+      rootRef.current?.querySelector<HTMLElement>("[aria-expanded]")?.focus();
+    }
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, rootRef, close]);
+}
+
+const TYPE_OPTIONS = [{ value: "", label: "All talent" }, ...talentSubtypeOptions];
+
+function TypeFilter({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const selected = TYPE_OPTIONS.find((option) => option.value === value) ?? TYPE_OPTIONS[0];
+  useDismiss(open, rootRef, () => setOpen(false));
+
+  useEffect(() => {
+    if (open) menuRef.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus();
+  }, [open]);
+
+  function onMenuKey(event: ReactKeyboardEvent<HTMLDivElement>) {
+    const items = [...(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitemradio"]') ?? [])];
+    const index = items.indexOf(document.activeElement as HTMLElement);
+    const next =
+      event.key === "ArrowDown" ? (index + 1) % items.length
+        : event.key === "ArrowUp" ? (index - 1 + items.length) % items.length
+          : event.key === "Home" ? 0
+            : event.key === "End" ? items.length - 1
+              : -1;
+    if (next < 0) return;
+    event.preventDefault();
+    items[next]?.focus();
+  }
+
+  return (
+    <div className="discover-styles" ref={rootRef}>
+      <button
+        type="button"
+        className="ui-chip discover-styles__trigger"
+        aria-pressed={Boolean(value)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label={`Talent type: ${selected.label}`}
+        onClick={() => setOpen((current) => !current)}
+      >
+        {selected.label}
+        <ChevronDown size={14} aria-hidden className="discover-styles__chevron" />
+      </button>
+      {open ? (
+        <div ref={menuRef} className="discover-styles__popover discover-type-menu" role="menu" aria-label="Talent type" onKeyDown={onMenuKey}>
+          {TYPE_OPTIONS.map((option) => (
+            <button
+              key={option.value || "all"}
+              type="button"
+              role="menuitemradio"
+              aria-checked={option.value === value}
+              className="discover-type-menu__item"
+              onClick={() => {
+                setOpen(false);
+                if (option.value !== value) onChange(option.value);
+              }}
+            >
+              {option.label}
+              {option.value === value ? <Check size={15} aria-hidden /> : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function FilterPopover({
   label,
   icon,
@@ -142,26 +229,7 @@ function FilterPopover({
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const requestVersion = useRef(0);
-
-  useEffect(() => {
-    if (!open) return;
-    function onPointer(event: PointerEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
-    }
-    function onKey(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      setOpen(false);
-    }
-    document.addEventListener("pointerdown", onPointer);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onPointer);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  useDismiss(open, rootRef, () => setOpen(false));
 
   return (
     <div className="discover-styles" ref={rootRef}>
@@ -368,7 +436,6 @@ export function DiscoverView({
       <div className="discover-browse__toolbar">
         <form key={queryKey} className="discover-browse__filters" onSubmit={(event) => void onSearch(event)}>
           <label className="discover-browse__field discover-browse__field--search">
-            <Search size={15} aria-hidden />
             <input
               name="keyword"
               ref={searchInputRef}
@@ -381,11 +448,10 @@ export function DiscoverView({
             />
           </label>
           <VoiceSearchControl onTranscript={(text) => { updateSearch(text); searchInputRef.current?.focus(); }} />
-          <button type="submit" className="ui-button" disabled={pending}>Search</button>
-          <select className="discover-browse__type-select" aria-label="Talent type" value={current.subtype} onChange={(event) => go({ subtype: event.target.value })}>
-            <option value="">All talent</option>
-            {talentSubtypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
+          <button type="submit" className="discover-browse__submit" aria-label="Search" title="Search" disabled={pending}>
+            <Search size={16} aria-hidden />
+          </button>
+          <TypeFilter value={current.subtype} onChange={(subtype) => go({ subtype })} />
           <StylesFilter value={current.styles} onApply={(styles) => go({ styles })} />
           <AttributesFilter value={attributes} onApply={(next) => go(next)} />
         </form>
@@ -422,10 +488,14 @@ export function DiscoverView({
             ))}
           </div>
         ) : result.source !== "unavailable" ? (
-          <div key={queryKey} className="discover-browse__empty ui-swap">
-            <h2>No matches for this search</h2>
-            <p>{credit ? `No talent found who worked with ${credit}.` : "Try broadening location or removing a filter."}</p>
-            <Link href={basePath}>Clear filters</Link>
+          <div key={queryKey} className="ui-swap">
+            <ProductEmptyState
+              illustration="search"
+              title="No matches for this search"
+              description={credit ? `No talent found who worked with ${credit}.` : "Try broadening location or removing a filter."}
+              actionLabel="Clear filters"
+              actionHref={basePath}
+            />
           </div>
         ) : null}
       </div>

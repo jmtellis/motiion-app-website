@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CalendarEvent } from "@/app/(buyer-app)/(paid)/events/actions";
+import { ProductEmptyState } from "@/components/ui/EmptyState";
 
 export function HomeUpcomingActivities({
   events,
@@ -43,10 +44,14 @@ export function HomeUpcomingActivities({
           ))}
         </ul>
       ) : error ? null : (
-        <p className="home-panel-status">
-          Your upcoming activities will appear here when you join or host an
-          activity.
-        </p>
+        <ProductEmptyState
+          compact
+          illustration="calendar"
+          title="Nothing on your calendar yet"
+          description="Join a class, RSVP to an event, or host a session and it will show up here."
+          actionLabel="Open calendar"
+          actionHref={calendarHref}
+        />
       )}
     </section>
   );

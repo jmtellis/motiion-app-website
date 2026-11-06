@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { ActivityCreateWizard } from "@/components/talent-buyers/activities/ActivityCreateWizard";
+import { Banner } from "@/components/ui/Banner";
 import { EventsCalendar } from "@/components/talent-buyers/dashboard/calendar/EventsCalendar";
 import { useNotificationsPanel } from "@/components/workspace/WorkspaceNotifications";
 import { WorkspaceSidePanel } from "@/components/workspace/WorkspaceSidePanel";
@@ -100,11 +101,16 @@ export function TalentScheduleCalendar({
       </header>
 
       {error ? (
-        <div role="status" className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
-          <p>{error}</p>
-          <button type="button" className="mt-2 underline underline-offset-4" disabled={refreshing}
-            onClick={() => startRefresh(() => router.refresh())}>{refreshing ? "Refreshing…" : "Retry calendar"}</button>
-        </div>
+        <Banner
+          tone="warning"
+          title="Your calendar couldn’t be refreshed"
+          action={
+            <button type="button" className="ui-banner__action" disabled={refreshing}
+              onClick={() => startRefresh(() => router.refresh())}>{refreshing ? "Refreshing…" : "Retry calendar"}</button>
+          }
+        >
+          {error}
+        </Banner>
       ) : null}
       <EventsCalendar
         events={visible}

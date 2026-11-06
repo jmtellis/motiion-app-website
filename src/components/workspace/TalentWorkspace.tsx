@@ -18,6 +18,7 @@ import "./talent-studio.css";
 import "@/components/workspace/workspace-controls.css";
 import "@/components/ui/chips.css";
 import "@/components/ui/motion.css";
+import "@/components/ui/polish.css";
 
 export function TalentWorkspace({
   children,
@@ -37,6 +38,7 @@ export function TalentWorkspace({
   const sidebar = useWorkspaceSidebar("motiion-talent-sidebar-width");
   const pathname = usePathname();
   const mainRef = useRef<HTMLElement>(null);
+  const homeHref = community ? "/home" : "/discover";
   const [shell, setShell] = useState<HTMLDivElement | null>(null);
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0 });
@@ -62,11 +64,9 @@ export function TalentWorkspace({
         id="talent-workspace-sidebar"
         aria-label="Workspace navigation"
       >
-        <WorkspaceSidebarHeader href="/home" collapsed={sidebar.collapsed} onToggle={sidebar.toggle} />
+        <WorkspaceSidebarHeader href={homeHref} collapsed={sidebar.collapsed} onToggle={sidebar.toggle} />
         <div className="workspace-sidebar-navigation">
-          <p className="workspace-section-label">
-            {community ? "Community" : "Workflow"}
-          </p>
+          {community ? <p className="workspace-section-label">Community</p> : null}
           {navigation}
         </div>
         <div className="workspace-sidebar-account">{account}</div>
@@ -75,7 +75,7 @@ export function TalentWorkspace({
         sidebar={sidebar}
         controls="talent-workspace-sidebar"
       />
-      <TalentMobileHeader homeHref="/home" navigation={navigation} account={account} />
+      <TalentMobileHeader homeHref={homeHref} navigation={navigation} account={account} />
       <div className="workspace-frame">
         {progress}
         <main

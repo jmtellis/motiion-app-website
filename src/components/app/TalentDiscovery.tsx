@@ -21,8 +21,9 @@ import {
   type TalentNavigatorInitialData,
 } from "@/lib/talent-navigator/types";
 import "@/components/talent-buyers/talent-navigator/talent-navigator.css";
+import { ProductEmptyState } from "@/components/ui/EmptyState";
 
-type DiscoverMode = "discover" | "browse" | "saved";
+export type DiscoverMode = "featured" | "discover" | "browse" | "saved";
 
 /** Same discovery canvas as the industry workspace; no hiring-only actions. */
 export function TalentDiscovery({
@@ -36,6 +37,7 @@ export function TalentDiscovery({
   basePath = "/discover",
   initialMode = "browse",
   saved,
+  featured,
 }: {
   initialData: TalentNavigatorInitialData;
   currentUserId: string;
@@ -46,8 +48,10 @@ export function TalentDiscovery({
   collectionTitle?: string;
   basePath?: string;
   initialMode?: DiscoverMode;
-  /** Replaces the talent Saved tab. Industry passes rosters here. */
-  saved?: ReactNode;
+  /** Replaces the talent Saved tab; `null` hides it (industry keeps favorites in Roster). */
+  saved?: ReactNode | null;
+  /** Adds a leading Featured tab. */
+  featured?: ReactNode;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -92,9 +96,10 @@ export function TalentDiscovery({
           {collectionTitle ? <p className="talent-collection-title">{collectionTitle}</p> : null}
           <SegmentedControl
             options={[
+              ...(featured ? [{ value: "featured" as const, label: "Featured" }] : []),
               { value: "browse" as const, label: "Browse" },
               { value: "discover" as const, label: "Explore" },
-              { value: "saved" as const, label: "Saved" },
+              ...(saved === null ? [] : [{ value: "saved" as const, label: "Saved" }]),
             ]}
             value={mode}
             onChange={(next) => {
@@ -119,7 +124,11 @@ export function TalentDiscovery({
             </button>
           ) : null}
         </div>
-        {mode === "saved" ? (
+        {mode === "featured" && featured ? (
+          <div key="featured" className="talent-discovery-results talent-discovery-featured ui-swap">
+            {featured}
+          </div>
+        ) : mode === "saved" ? (
           <div key="saved" className="talent-discovery-results ui-swap">
             {saved ?? <DiscoverSaved />}
           </div>
@@ -164,11 +173,13 @@ export function TalentDiscovery({
                 </div>
               ) : (
                 <div className="talent-discovery-empty">
-                  <h1>No talent found</h1>
-                  <p>{emptyCopy}</p>
-                  <button type="button" onClick={() => router.push(basePath)}>
-                    Clear search
-                  </button>
+                  <ProductEmptyState
+                    illustration="search"
+                    title="No talent found"
+                    description={emptyCopy}
+                    actionLabel="Clear search"
+                    onAction={() => router.push(basePath)}
+                  />
                 </div>
               )}
               <DiscoverSearchBar

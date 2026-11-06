@@ -89,7 +89,6 @@ export function AccountPill({
         className="workspace-account-menu"
         buttonClassName="inline-flex w-full items-center gap-2.5 border border-[#262626] bg-[#171717] py-2 pl-3 pr-2.5 text-white transition hover:bg-[#222] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
         label={`Account menu for ${user.fullName}`}
-        settingsHref={user.settingsHref ?? "/settings"}
         shellAction={shellAction}
       >
         <AccountAvatar user={user} />

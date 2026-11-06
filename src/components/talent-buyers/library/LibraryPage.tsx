@@ -17,6 +17,9 @@ import {
   type LibraryCollectionSummary,
 } from "@/lib/talent-buyers/library";
 
+import { RosterStackTile } from "@/components/talent-buyers/project/composable/RosterStackTile";
+import type { RosterStackPerson } from "@/lib/talent-buyers/roster-stack";
+
 import { CollectionCard } from "./CollectionCard";
 import { CollectionFormModal } from "./CollectionFormModal";
 import { LibraryEmptyState } from "./LibraryEmptyState";
@@ -26,9 +29,11 @@ import "./library.css";
 
 export function LibraryPage({
   collections: initialCollections,
+  favorites,
   error,
 }: {
   collections: LibraryCollectionSummary[];
+  favorites?: { count: number; people: RosterStackPerson[] };
   error?: string | null;
 }) {
   const router = useRouter();
@@ -136,8 +141,8 @@ export function LibraryPage({
             <div className="library-pro-callout">
               <p className="library-pro-callout__title">More with Industry Pro</p>
               <p className="library-pro-callout__copy">
-                Free includes Saved Talent and three custom rosters. Upgrade for unlimited rosters
-                and sharing with collaborators.{" "}
+                Favorites is free. Creating rosters and sharing them with collaborators is part
+                of Industry Pro.{" "}
                 <button
                   type="button"
                   className="text-[color-mix(in_oklab,var(--accent)_85%,white)] underline-offset-2 hover:underline"
@@ -149,8 +154,18 @@ export function LibraryPage({
             </div>
           ) : null}
 
-          {collections.length ? (
+          {collections.length || favorites ? (
             <div className="library-collection-grid">
+              {favorites ? (
+                <RosterStackTile
+                  layout="mosaic"
+                  size="fluid"
+                  people={favorites.people}
+                  label="Favorites"
+                  sublabel={favorites.count === 1 ? "1 person" : `${favorites.count} people`}
+                  href="/library/favorites"
+                />
+              ) : null}
               {collections.map((collection) => (
                 <CollectionCard
                   key={collection.id}
@@ -168,15 +183,16 @@ export function LibraryPage({
                 />
               ))}
             </div>
-          ) : (
+          ) : null}
+          {collections.length ? null : (
             <LibraryEmptyState
               variant="collections"
               title="No rosters yet"
-              body="Create a roster to group people you have saved."
-              primaryLabel="Discover"
-              primaryHref="/talent"
-              secondaryLabel="Create roster"
-              secondaryOnClick={openCreate}
+              body="Create a roster to group the people you’ve saved to Favorites."
+              primaryLabel="Create roster"
+              primaryOnClick={openCreate}
+              secondaryLabel="Discover talent"
+              secondaryHref="/talent?view=browse"
             />
           )}
           <SharedRostersSection />

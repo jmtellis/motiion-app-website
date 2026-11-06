@@ -12,14 +12,12 @@ export function WorkspaceAccountMenu({
   className = "",
   buttonClassName,
   label,
-  settingsHref,
   shellAction,
   children,
 }: {
   className?: string;
   buttonClassName: string;
   label: string;
-  settingsHref: string;
   shellAction: ShellMenuAction | null;
   children: ReactNode;
 }) {
@@ -100,9 +98,6 @@ export function WorkspaceAccountMenu({
           data-placement={placement}
         >
             <>
-              <Link href={settingsHref} role="menuitem" onClick={close}>
-                Settings
-              </Link>
               {shellAction?.kind === "link" ? (
                 <Link href={shellAction.href} role="menuitem" onClick={close}>
                   {shellAction.label}

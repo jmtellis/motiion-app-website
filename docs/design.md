@@ -76,19 +76,19 @@ components:
     backgroundColor: "{colors.accent}"
     textColor: "{colors.on-accent}"
     typography: "{typography.control}"
-    rounded: "{rounded.control}"
+    rounded: "{rounded.pill}"
     height: 44px
   secondary-button:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.text}"
     typography: "{typography.control}"
-    rounded: "{rounded.control}"
+    rounded: "{rounded.pill}"
     height: 44px
   destructive-button:
     backgroundColor: "{colors.danger}"
     textColor: "{colors.on-accent}"
     typography: "{typography.control}"
-    rounded: "{rounded.control}"
+    rounded: "{rounded.pill}"
     height: 44px
   field:
     backgroundColor: "{colors.surface}"
@@ -129,11 +129,11 @@ Use the 4px spacing scale. Default page gutters are 24–32px desktop and 16px m
 
 ## Elevation & Depth
 
-Cards use a fine border and the small `--ui-shadow-card`; overlays use `--ui-shadow-overlay`. Surface color and borders establish hierarchy before shadows. Native dialogs enter the browser top layer, contain focus and make the background inert. Shared overlay code owns scroll locking and focus restoration. Desktop inspection panels allow interaction with the list; mobile panels are modal. Avoid nested drawers—use a compact action dialog or a distinct media viewer.
+Workspace cards and panels sit on the canvas with `--ui-elevation`: a 1px outer edge plus inset side, top and bottom lines that read as a slight bevel, so containers lift off the background without a heavy drop shadow. Interactive cards step up to `--ui-elevation-hover`. Overlays use `--ui-shadow-overlay`. Content nested inside an elevated surface stays flat. Native dialogs enter the browser top layer, contain focus and make the background inert. Shared overlay code owns scroll locking and focus restoration. Desktop inspection panels allow interaction with the list; mobile panels are modal. Avoid nested drawers—use a compact action dialog or a distinct media viewer.
 
 ## Shapes
 
-Controls use 10px radii, cards 16px and panels 20px. Fully rounded shapes are reserved for avatars, badges and compact status chips. Do not make every button a pill or infer shape using broad class-substring selectors. Icons are 18–20px beside labels and 20–24px for main navigation; icon-only controls need an accessible name and a 44px touch target.
+Every button is a pill (`--ui-radius-button`), including primary, secondary, compact toolbar buttons and round icon buttons. Fields use 10px radii; compact filter dropdowns (`select.ui-select`) are 34px pills with a chevron. Cards are 16px and panels 20px. Do not infer shape using broad class-substring selectors. Icons are 18–20px beside labels and 20–24px for main navigation; icon-only controls need an accessible name and a 44px touch target.
 
 ## Components
 
@@ -141,10 +141,12 @@ Controls use 10px radii, cards 16px and panels 20px. Fully rounded shapes are re
 |---|---|---|
 | Buttons and links | `.ui-button`, `.ui-button--secondary`, `.ui-button--danger`, `.ui-icon-button` | One primary action per group, pending label, disabled duplicate submits, 44px minimum target. Links navigate; buttons mutate/open. |
 | Forms | `ui/Field.tsx` | Label, hint and validation are associated; errors use `aria-invalid` and alert feedback. Preserve entered values after failures. |
-| Tabs | `dashboard/UnderlineTabs.tsx` | Roving tab stop, arrows/Home/End, selected state. Route-backed filters preserve browser navigation. |
+| Tabs and filters | `ui/chips.css` (`.ui-chip-row`, `.ui-chip`), `dashboard/SegmentedControl.tsx`, `dashboard/UnderlineTabs.tsx` | Tabs, segmented controls and filters render as pill chips; the selected chip is near-black with white text and may show a count. Switching swaps content with the `ui-swap` transition. Roving tab stop, arrows/Home/End. Route-backed filters preserve browser navigation. |
+| Banners | `ui/Banner.tsx` (`.ui-banner`) | Tones: info, success, warning, critical. Saturated tinted background, tone icon, title, short body and at most one tinted pill action. Critical uses `role=alert`. |
+| Media cards | `.ui-media-card` | White, elevated web card: image on top, eyebrow, title, one or two lines of copy and a footer with a pill action. Used for events, featured cast, classes and projects. |
 | Dialogs | `ui/Dialog.tsx`, dashboard `Modal`, talent `ResponsiveModal` | Native focus containment, Escape, backdrop, focus restoration and counted body-scroll lock. Caller blocks close during pending writes and confirms discarding meaningful drafts. |
 | Inspection | `workspace/WorkspaceSidePanel.tsx`, `CollectionProfilePanel` | Desktop context retained; mobile full height, deep-link query and browser-back close for roster profiles. |
-| Empty/error | `ui/EmptyState.tsx`, `.ui-notice` | Empty explains next action. Failure offers retry and preserves existing content. Permission failures never pretend to be empty. |
+| Empty/error | `ui/EmptyState.tsx` with `illustration`, `ui/EmptyIllustration.tsx`, `.ui-notice` | Empty states show a flat illustration, a title, one sentence and a clear primary action (optionally one secondary). Use `compact` inside sections. Failure offers retry and preserves existing content. Permission failures never pretend to be empty. |
 | Avatar/media | `ui/Avatar.tsx`, `ProfileOverlays` | Stable dimensions, initials on failed images, lazy list images. Media viewer has named controls and keyboard navigation. |
 | Profile | shared talent profile sheet, professional identity sections | Same surfaces/spacing, role-specific fields. Explicit visibility and editing feedback. |
 | Menus/search | roster menus, shared search/voice control | Named controls, Escape closes, keyboard access; listening/processing/cancel/retry states and editable typed alternative. |

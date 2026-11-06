@@ -99,47 +99,44 @@ export function ProjectCard({
   }
 
   if (isDashboard) {
+    const action = project.status === "draft" ? "Continue draft" : project.status === "archived" ? "View project" : "Open project";
     return (
-      <Link href={href} className="bd-visual-card bd-interactive-card bd-project-card group block">
-        <div className="bd-project-card__media">
+      <Link href={href} className="ui-media-card ui-project-card">
+        <span className="ui-media-card__media">
           <BuyerCoverImage
             src={coverSrc}
             alt=""
-            aspectRatio="16/9"
-            overlay
+            fill
             secondarySrc={project.productionCompanyLogoUrl}
             fallbackId={project.id}
             fallbackCategory={stockCategory}
             allowStockFallback={false}
           />
-
-          <span className="bd-visual-card__status"><IndustryBadge tone={project.status === "active" ? "success" : "neutral"}>{labelFromSnake(project.status)}</IndustryBadge></span>
-
-          <div className="bd-project-card__overlay">
-            <p className="bd-project-card__type-label">{typeLabel}</p>
-            <h3 className="bd-project-card__overlay-title">{project.title}</h3>
-          </div>
-        </div>
-
-        <div className="bd-project-card__footer">
-          <span
-            className={`bd-project-card__footer-icon bd-project-card__footer-icon--${typeAccent}`}
-            aria-hidden
-          >
-            {createElement(TypeIcon, { className: "size-3.5", strokeWidth: 2.25 })}
+          <span className="ui-project-card__status"><IndustryBadge tone={project.status === "active" ? "success" : "neutral"}>{labelFromSnake(project.status)}</IndustryBadge></span>
+        </span>
+        <span className="ui-media-card__body">
+          <span className="ui-media-card__eyebrow ui-project-card__type">
+            <span className={`ui-project-card__type-icon ui-project-card__type-icon--${typeAccent}`} aria-hidden>
+              {createElement(TypeIcon, { className: "size-3", strokeWidth: 2.4 })}
+            </span>
+            {typeLabel}
           </span>
-          <div className="bd-project-card__footer-copy">
-            <p className="bd-project-card__footer-title">{project.status === "draft" ? "Continue draft" : project.status === "archived" ? "View archived project" : `${project.talentCount} ${countLabel.toLowerCase()}`}</p>
-            <p className="bd-project-card__footer-meta">
-              {nextBeatLabel
-                ? `Next: ${nextBeatLabel}`
-                : `Edited ${formatBuyerRelativeDate(project.lastUpdated)}`}
-            </p>
-          </div>
-          {project.abilities?.length ? (
-            <AbilityIconRow abilities={project.abilities} className="bd-project-card__abilities" />
-          ) : null}
-        </div>
+          <h3 className="ui-media-card__title">{project.title}</h3>
+          <p className="ui-media-card__text">
+            {nextBeatLabel
+              ? `Next: ${nextBeatLabel}`
+              : `Edited ${formatBuyerRelativeDate(project.lastUpdated)}`}
+          </p>
+          <span className="ui-media-card__footer">
+            <span className="ui-media-card__cta">{action}</span>
+            <span className="ui-project-card__meta">
+              {project.abilities?.length ? (
+                <AbilityIconRow abilities={project.abilities} className="bd-project-card__abilities" />
+              ) : null}
+              {project.status === "draft" ? null : `${project.talentCount} ${countLabel.toLowerCase()}`}
+            </span>
+          </span>
+        </span>
       </Link>
     );
   }

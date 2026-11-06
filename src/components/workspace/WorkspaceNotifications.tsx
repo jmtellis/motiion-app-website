@@ -64,12 +64,13 @@ export function useWorkspaceViewerId() {
   return useWorkspaceNotifications().viewerId;
 }
 
-export function NotificationsButton() {
+export function NotificationsButton({ placement = "frame" }: { placement?: "frame" | "sidebar" } = {}) {
   const { open, setOpen, unreadCount } = useWorkspaceNotifications();
   return (
     <button
       type="button"
-      className="workspace-notifications-button"
+      className={`workspace-notifications-button${placement === "sidebar" ? " workspace-notifications-button--sidebar" : ""}`}
+      title={placement === "sidebar" ? "Notifications" : undefined}
       aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
       aria-expanded={open}
       aria-controls={PANEL_ID}

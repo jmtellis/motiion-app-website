@@ -1051,7 +1051,6 @@
 .library-action-bar__danger { color: var(--ui-danger); }
 .library-action-bar__actions > button { flex: 1 1 auto; }
 .library-shares-rail { display: flex; }
-.library-search:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 3px; }
 .library-talent-card__remove { min-height:44px; }
 @container library (max-width: 850px) {
   .library-page__shell { flex-direction: column; overflow-y: auto; gap: 24px; }

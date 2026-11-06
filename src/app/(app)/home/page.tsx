@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 import { CommunityFavorites } from "@/components/app/CommunityFavorites";
 import { loadCommunityFavorites } from "@/lib/app/community";
 import { isCommunityAccount } from "@/lib/auth/profile";
@@ -12,10 +14,11 @@ import { requireCommunityOrTalentAccount } from "@/lib/auth/session";
 
 export default async function HomePage() {
   const profile = await requireCommunityOrTalentAccount();
+  if (!isCommunityAccount(profile.accountType)) redirect("/discover");
   const [activities, calendar, community] = await Promise.all([
     fetchUpcomingClassesAndSessions(),
     fetchTalentCalendarEvents(profile.id),
-    isCommunityAccount(profile.accountType) ? loadCommunityFavorites() : Promise.resolve(null),
+    loadCommunityFavorites(),
   ]);
   const firstName = profile.fullName.split(" ")[0];
   const hour = new Date().getHours();
@@ -26,7 +29,7 @@ export default async function HomePage() {
     <HomeFeed
       greeting={greeting}
       discoverySlot={<HomeDiscovery upcomingSlot={<HomeUpcomingActivities events={calendar.events} error={calendar.error} />} />}
-      listingsSlot={<>{community ? <CommunityFavorites key={profile.id} initial={community} /> : null}<HomeListings activities={activities.activities} error={activities.error} /></>}
+      listingsSlot={<><CommunityFavorites key={profile.id} initial={community} /><HomeListings activities={activities.activities} error={activities.error} /></>}
     />
   );
 }

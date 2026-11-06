@@ -13,7 +13,7 @@ export const PRO_FEATURES = {
   roster_write: {
     key: "roster_write",
     title: "Build rosters with Industry Pro",
-    description: "Free includes unlimited Saved Talent and 3 custom rosters with unlimited talent. Industry Pro adds unlimited rosters and sharing, including expiring links.",
+    description: "Favorites is free and unlimited. Industry Pro lets you create rosters and share them, including with expiring links.",
   },
   casting_invite_limit: {
     key: "casting_invite_limit",

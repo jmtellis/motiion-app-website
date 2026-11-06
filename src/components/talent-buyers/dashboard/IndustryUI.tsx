@@ -1,5 +1,7 @@
 import type { HTMLAttributes, InputHTMLAttributes, ReactNode } from "react";
 
+import { EmptyIllustration, type EmptyIllustrationName } from "@/components/ui/EmptyIllustration";
+
 /** Shared light-workspace primitives. Keep photo overlays outside these surfaces. */
 export function IndustryCard({
   className = "",
@@ -77,22 +79,29 @@ export function IndustryPageHeader({
 
 export function IndustryEmptyState({
   icon,
+  illustration,
   title,
   description,
   actions,
   children,
 }: {
   icon?: ReactNode;
+  /** Spot illustration shown instead of the icon badge. */
+  illustration?: EmptyIllustrationName;
   title: string;
   description: string;
   actions?: ReactNode;
   children?: ReactNode;
 }) {
   return (
-    <section className="industry-empty">
-      <div className="industry-empty__symbol" aria-hidden>
-        {icon ?? "✦"}
-      </div>
+    <section className={`industry-empty${illustration ? " industry-empty--illustrated" : ""}`}>
+      {illustration ? (
+        <EmptyIllustration name={illustration} />
+      ) : (
+        <div className="industry-empty__symbol" aria-hidden>
+          {icon ?? "✦"}
+        </div>
+      )}
       <h2>{title}</h2>
       <p>{description}</p>
       {actions && <div className="industry-page-actions">{actions}</div>}

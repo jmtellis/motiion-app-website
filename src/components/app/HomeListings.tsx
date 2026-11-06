@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNotificationsPanel } from "@/components/workspace/WorkspaceNotifications";
 import { WorkspaceSidePanel } from "@/components/workspace/WorkspaceSidePanel";
 import type { PublicActivityItem } from "@/lib/app/home-opportunities";
+import { ProductEmptyState } from "@/components/ui/EmptyState";
 
 const PREVIEW_COUNT = 3;
 const STRIP_WEEKS = 13;
@@ -73,13 +74,14 @@ export function HomeListings({ activities, error }: { activities: PublicActivity
             ))}
           </ul>
         ) : !error ? (
-          <div className="home-listing-empty">
-            <CalendarDays size={22} strokeWidth={1.6} aria-hidden />
-            <div>
-              <h3>No upcoming classes or sessions</h3>
-              <p>New classes and sessions from the community will show up here.</p>
-            </div>
-          </div>
+          <ProductEmptyState
+            compact
+            illustration="calendar"
+            title="No upcoming classes or sessions"
+            description="New classes and sessions from the community will show up here. Hosting one? Create a session from your calendar."
+            actionLabel="Create a session"
+            actionHref="/schedule"
+          />
         ) : null}
       </section>
 
@@ -132,18 +134,25 @@ function SectionHeading({
 }
 
 function ActivityCard({ item }: { item: PublicActivityItem }) {
+  const kind = item.type === "class" ? "Class" : "Session";
   return (
-    <Link href={item.href} className="home-activity-card">
-      {item.cover_image_url ? (
-        <Image src={item.cover_image_url} alt="" fill sizes="(max-width: 767px) 90vw, 33vw" unoptimized />
-      ) : (
-        <CalendarDays size={40} strokeWidth={1.2} aria-hidden className="home-activity-card__icon" />
-      )}
-      <div className="home-activity-card__copy">
-        <span className="home-activity-card__chip">{item.type === "class" ? "Class" : "Session"}</span>
-        <h3>{item.title}</h3>
-        <p>{[scheduleLabel(item), item.location].filter(Boolean).join(" · ")}</p>
-      </div>
+    <Link href={item.href} className="ui-media-card">
+      <span className="ui-media-card__media">
+        {item.cover_image_url ? (
+          <Image src={item.cover_image_url} alt="" fill sizes="(max-width: 767px) 90vw, 33vw" unoptimized />
+        ) : (
+          <CalendarDays size={30} strokeWidth={1.5} aria-hidden />
+        )}
+        <span className="ui-media-card__chip">{kind}</span>
+      </span>
+      <span className="ui-media-card__body">
+        <span className="ui-media-card__eyebrow">{scheduleLabel(item)}</span>
+        <h3 className="ui-media-card__title">{item.title}</h3>
+        {item.location ? <p className="ui-media-card__text">{item.location}</p> : null}
+        <span className="ui-media-card__footer">
+          <span className="ui-media-card__cta">View {kind.toLowerCase()}</span>
+        </span>
+      </span>
     </Link>
   );
 }

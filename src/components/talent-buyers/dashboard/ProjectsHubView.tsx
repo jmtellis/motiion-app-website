@@ -91,6 +91,7 @@ export function ProjectsHubView({ userId, published, drafts, inboxFiles, inboxEr
       <p className="projects-hub__result-count" role="status">{visibleProjects.length} {visibleProjects.length === 1 ? "project" : "projects"}</p>
       <ProjectGridView projects={visibleProjects} nextBeatLabels={nextBeatLabels} />
     </> : <IndustryEmptyState
+      illustration={filtered ? "search" : "projects"}
       title={isEmpty ? "Your next project starts here" : filtered ? "No projects match your filters" : scope === "draft" ? "No drafts to finish" : scope === "archived" ? "No archived projects" : "No active projects yet"}
       description={isEmpty ? "Create a project, then add casting, a roster, or classes as you need them." : filtered ? "Try another name or project type." : scope === "draft" ? "Unpublished work stays here until you are ready to share it." : scope === "archived" ? "Archived work stays available here so you can return to it." : "Start a project or return to a draft to bring your next idea to life."}
       actions={filtered ? <button className="bd-btn-secondary" onClick={() => { setQuery(""); setWorkType("all"); }}>Clear filters</button> : <button className="buyer-chrome-bar__cta" onClick={() => setCreateOpen(true)}><Plus size={16} aria-hidden /> Create a project</button>} />}

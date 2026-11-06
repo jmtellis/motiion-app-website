@@ -23,7 +23,7 @@ export default async function BuyerCollectionDetailPage({
   ]);
 
   if (error === "favorites") {
-    redirect("/talent?view=saved");
+    redirect("/library/favorites");
   }
 
   if (error === "Collection not found") {

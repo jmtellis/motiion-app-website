@@ -75,6 +75,6 @@ export function useBuyerInboxUnread(userId: string) {
   }, [load, userId]);
 
   const unreadCount = snapshot.userId === userId
-    ? inboxNavBadgeCount(snapshot.conversations, snapshot.requests, snapshot.pending) : 0;
+    ? inboxNavBadgeCount(snapshot.conversations) : 0;
   return { unreadCount, refresh: load };
 }

@@ -1,17 +1,12 @@
 "use client";
 
-import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
-import { ActivityCreateWizard } from "@/components/talent-buyers/activities/ActivityCreateWizard";
 import { Banner } from "@/components/ui/Banner";
 import { EventsCalendar } from "@/components/talent-buyers/dashboard/calendar/EventsCalendar";
-import { useNotificationsPanel } from "@/components/workspace/WorkspaceNotifications";
-import { WorkspaceSidePanel } from "@/components/workspace/WorkspaceSidePanel";
 import type { CalendarEvent } from "@/app/(buyer-app)/(paid)/events/actions";
 import type { TalentScheduleFilter } from "@/lib/app/schedule";
-import { createDefaultActivityDraft } from "@/lib/talent-buyers/activities/defaults";
 import "@/components/talent-buyers/dashboard/buyer-chrome.css";
 
 const FILTERS: { value: TalentScheduleFilter; label: string }[] = [
@@ -42,7 +37,6 @@ export function TalentScheduleCalendar({
   filter: TalentScheduleFilter;
 }) {
   const router = useRouter();
-  const notifications = useNotificationsPanel();
   const [refreshing, startRefresh] = useTransition();
   const [lastGoodEvents, setLastGoodEvents] = useState(events);
   if (!error && lastGoodEvents !== events) setLastGoodEvents(events);
@@ -58,8 +52,6 @@ export function TalentScheduleCalendar({
   }, [router]);
   const [filter, setFilterState] = useState(initialFilter);
   const [syncedFilter, setSyncedFilter] = useState(initialFilter);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [wizardKey, setWizardKey] = useState(0);
 
   if (initialFilter !== syncedFilter) {
     setSyncedFilter(initialFilter);
@@ -80,24 +72,10 @@ export function TalentScheduleCalendar({
     router.replace(query ? `/schedule?${query}` : "/schedule", { scroll: false });
   }
 
-  function openCreate() {
-    notifications.setOpen(false);
-    setWizardKey((key) => key + 1);
-    setCreateOpen(true);
-  }
-
-  function closeCreate() {
-    setCreateOpen(false);
-  }
-
   return (
     <div className="talent-schedule buyer-dashboard buyer-calendar-page events-hub events-hub--schedule">
       <header className="talent-schedule__header">
         <h1>Calendar</h1>
-        <button type="button" className="talent-schedule__create" onClick={openCreate}>
-          <Plus size={16} aria-hidden />
-          Create session
-        </button>
       </header>
 
       {error ? (
@@ -133,29 +111,6 @@ export function TalentScheduleCalendar({
           </select>
         }
       />
-
-      <WorkspaceSidePanel
-        id="schedule-create-session"
-        open={createOpen && !notifications.open}
-        title="Create session"
-        onClose={closeCreate}
-      >
-        {createOpen ? (
-          <ActivityCreateWizard
-            key={wizardKey}
-            initialDraft={createDefaultActivityDraft("session", null)}
-            mode="create"
-            typeLocked
-            layout="panel"
-            initialConnectStatus={null}
-            onClose={closeCreate}
-            onPublished={() => {
-              closeCreate();
-              router.refresh();
-            }}
-          />
-        ) : null}
-      </WorkspaceSidePanel>
     </div>
   );
 }

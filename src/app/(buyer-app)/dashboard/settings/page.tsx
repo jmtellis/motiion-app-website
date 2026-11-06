@@ -1,6 +1,7 @@
 import { ReferralsPanel } from "@/components/settings/ReferralsPanel";
 import { NotificationSettingsSection } from "@/components/settings/NotificationSettingsSection";
 import { BlockedUsersSection } from "@/components/settings/BlockedUsersSection";
+import { NotifyMeSection } from "@/components/settings/NotifyMeSection";
 import { AccountSignInSettings } from "@/components/settings/AccountSignInSettings";
 import { BuyerAppPage } from "@/components/talent-buyers/dashboard/BuyerAppPage";
 import { BuyerBillingSection } from "@/components/talent-buyers/dashboard/BuyerBillingSection";
@@ -138,7 +139,7 @@ export default async function BuyerSettingsPage({
           {
             id: "privacy",
             label: "Privacy & support",
-            content: (<div className="talent-settings-stack"><ReferralsPanel key={profile.id} accountId={profile.id} username={profile.username} initialCode={params.referral} /><NotificationSettingsSection accountId={profile.id} retryPath="/dashboard/settings?section=privacy" /><BlockedUsersSection accountId={profile.id} /><section className="space-y-4 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 text-[var(--ui-text)]"><h2 className="text-lg font-semibold">Data & privacy</h2><p>Read how Motiion handles your information or contact support about your account data.</p><div className="flex flex-wrap gap-3"><a href="/privacy" className="ui-button ui-button--secondary">Privacy policy</a><a href="mailto:support@motiion.io" className="ui-button ui-button--secondary">Contact support</a></div></section></div>),
+            content: (<div className="talent-settings-stack"><ReferralsPanel key={profile.id} accountId={profile.id} username={profile.username} initialCode={params.referral} /><NotificationSettingsSection accountId={profile.id} retryPath="/dashboard/settings?section=privacy" /><NotifyMeSection accountId={profile.id} /><BlockedUsersSection accountId={profile.id} /><section className="space-y-4 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 text-[var(--ui-text)]"><h2 className="text-lg font-semibold">Data & privacy</h2><p>Read how Motiion handles your information or contact support about your account data.</p><div className="flex flex-wrap gap-3"><a href="/privacy" className="ui-button ui-button--secondary">Privacy policy</a><a href="mailto:support@motiion.io" className="ui-button ui-button--secondary">Contact support</a></div></section></div>),
           },
           {
             id: "security",

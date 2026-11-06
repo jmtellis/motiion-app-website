@@ -31,11 +31,7 @@ async function AppTabNavWithUnread({
     fetchInboxBundle(),
     variant === "talent" ? fetchPendingCastingInviteCount() : Promise.resolve(0),
   ]);
-  const inboxUnread = inboxNavBadgeCount(
-    bundle.conversations,
-    bundle.messageRequests.length,
-    bundle.pendingRequests.length,
-  );
+  const inboxUnread = inboxNavBadgeCount(bundle.conversations);
   return (
     <AppTabNav
       inboxUnread={inboxUnread}

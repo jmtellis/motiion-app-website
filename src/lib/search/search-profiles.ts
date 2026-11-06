@@ -506,7 +506,8 @@ export const searchTalentProfiles = cache(async (filters: SearchFilters): Promis
   return emptySearchResult(filters);
 });
 
-export const BROWSE_PAGE_SIZE = 24;
+/** Divisible by 2, 3, 5, and 6 so every grid width ends on a full row. */
+export const BROWSE_PAGE_SIZE = 30;
 
 /** Keys match `HEIGHT_OPTIONS`. */
 const BROWSE_HEIGHT_RANGES: Record<string, string[]> = {

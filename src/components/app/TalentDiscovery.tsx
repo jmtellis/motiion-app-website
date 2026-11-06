@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { DiscoverProfilePanel } from "@/components/app/DiscoverProfilePanel";
@@ -73,6 +73,25 @@ export function TalentDiscovery({
     return map;
   }, [initialData.talent]);
 
+  const navigate = slide.navigate;
+  const panelOpen = selected !== null;
+  useEffect(() => {
+    if (mode !== "discover" || panelOpen || !rows.length) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, [contenteditable='true'], [role='dialog'], [role='menu'], [role='listbox']")) return;
+      const direction = (
+        { ArrowLeft: "col-left", ArrowRight: "col-right", ArrowUp: "row-up", ArrowDown: "row-down" } as const
+      )[event.key as "ArrowLeft"];
+      if (!direction) return;
+      event.preventDefault();
+      navigate(direction);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mode, navigate, panelOpen, rows.length]);
+
   function openTalent(talent: Talent) {
     const known = talentById.get(talent.id) ?? talent;
     setSelected(known);
@@ -138,22 +157,6 @@ export function TalentDiscovery({
           <div
             className="talent-navigator ui-fade-in"
             aria-label="Discover"
-            tabIndex={0}
-            onKeyDown={(event) => {
-              if (event.target !== event.currentTarget) return;
-              const direction = (
-                {
-                  ArrowLeft: "col-left",
-                  ArrowRight: "col-right",
-                  ArrowUp: "row-up",
-                  ArrowDown: "row-down",
-                } as const
-              )[event.key as "ArrowLeft"];
-              if (direction) {
-                event.preventDefault();
-                slide.navigate(direction);
-              }
-            }}
           >
             <div className="talent-navigator__stage">
               {rows.length ? (

@@ -106,6 +106,9 @@
 .ui-banner__text { margin:0; color:#303030; }
 .ui-banner__text p { margin:0; }
 .ui-banner__actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.ui-banner[data-inline] { align-items:center; }
+.ui-banner[data-inline] > .ui-banner__actions { flex-shrink:0; margin-top:0; }
+@media (max-width:600px) { .ui-banner[data-inline] { flex-wrap:wrap; } .ui-banner[data-inline] > .ui-banner__actions { margin-left:32px; } }
 .ui-banner__action, .workspace-shell .workspace-frame .ui-banner__action { display:inline-flex; align-items:center; gap:6px; min-height:28px; padding:0 12px; border:0; border-radius:999px; background:var(--tone-action); color:#1f1f1f; font:600 12px/1 var(--ui-font); text-decoration:none; cursor:pointer; transition:background-color var(--ui-duration); }
 .ui-banner__action:hover, .workspace-shell .workspace-frame .ui-banner__action:hover { background:var(--tone-action-hover); color:#1f1f1f; }
 .ui-banner__action:focus-visible { outline:2px solid var(--tone-icon); outline-offset:2px; }

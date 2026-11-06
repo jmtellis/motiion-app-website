@@ -587,10 +587,12 @@ function ProfileActions({
               {notifying ? <BellOff size={16} aria-hidden /> : <Bell size={16} aria-hidden />}
               {notifying ? "Stop notifying" : "Notify me"}
             </button>
-            <button type="button" onClick={() => { setMenuOpen(false); onLists(); }}>
-              <ListPlus size={16} aria-hidden />
-              Save to {industry ? "roster" : "list"}
-            </button>
+            {industry ? (
+              <button type="button" onClick={() => { setMenuOpen(false); onLists(); }}>
+                <ListPlus size={16} aria-hidden />
+                Save to roster
+              </button>
+            ) : null}
             <button type="button" onClick={() => void copy()}>
               <Link2 size={16} aria-hidden />
               Copy profile link

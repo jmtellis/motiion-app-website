@@ -8,6 +8,7 @@ export function LaunchEventBanner() {
   return (
     <Banner
       tone="info"
+      inline
       icon={<Ticket size={16} strokeWidth={2.4} />}
       title="You’re invited to our launch event"
       action={

@@ -88,21 +88,12 @@ export function partitionUnreadCount(
   );
 }
 
-export function requestsChipCount(pendingCount: number, messageRequestCount: number) {
-  return pendingCount + messageRequestCount;
-}
-
-/** Unread threads + DM requests + home pending rows. Matches iOS InboxTabBadgeSupport. */
-export function inboxNavBadgeCount(
-  conversations: InboxConversation[],
-  messageRequestCount: number,
-  pendingCount: number,
-) {
-  const unread = conversationsWithInboxActivity(conversations).reduce(
+/** Unread threads only; requests are badged in Notifications. */
+export function inboxNavBadgeCount(conversations: InboxConversation[]) {
+  return conversationsWithInboxActivity(conversations).reduce(
     (sum, conversation) => sum + Number(conversation.unread_count ?? 0),
     0,
   );
-  return unread + messageRequestCount + pendingCount;
 }
 
 export function formatInboxTimestamp(value: string | null, now = new Date()) {

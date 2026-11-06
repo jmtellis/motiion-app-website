@@ -10,6 +10,7 @@ import {
   Megaphone,
   Settings,
   Search,
+  Ticket,
 } from "lucide-react";
 
 import { trackClientEvent } from "@/lib/analytics/track-client";
@@ -18,6 +19,7 @@ import { trackClientEvent } from "@/lib/analytics/track-client";
 const talentTabs = [
   { href: "/discover", label: "Discover", icon: Search },
   { href: "/opportunities", label: "Opportunities", icon: Megaphone },
+  { href: "/activities", label: "Activities", icon: Ticket },
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/schedule", label: "Calendar", icon: CalendarDays },
   { href: "/portfolio", label: "Portfolio", icon: Layers },

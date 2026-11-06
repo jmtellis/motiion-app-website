@@ -12,8 +12,7 @@ async function FeaturedListings() {
 export function DiscoverFeatured({ listings = false }: { listings?: boolean }) {
   return (
     <div className="talent-home talent-home--featured">
-      <LaunchEventBanner />
-      <HomeDiscovery navigatorHref={null} />
+      <HomeDiscovery navigatorHref={null} upcomingSlot={<LaunchEventBanner />} />
       {listings ? <FeaturedListings /> : null}
     </div>
   );

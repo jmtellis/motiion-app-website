@@ -97,7 +97,7 @@ test("confirmed project dates preserve project-local days, zone and overnight se
   assert.deepEqual(events.map((event) => event.date), ["2026-11-01", "2026-11-02", "2026-11-03"]);
   assert.equal(events[2].allDay, true);
   assert.equal(events[0].timeZone, "America/New_York");
-  assert.equal(events[0].href, `/opportunities?tab=confirmations&booking=${record.id}`);
+  assert.equal(events[0].href, `/activities?view=projects&booking=${record.id}`);
 });
 
 
@@ -112,7 +112,7 @@ test("confirmed schedules distinguish projects sharing the same role and link th
   const rows = ["Show A", "Show B"].map((projectTitle, index) => ({ id: `confirmation-${index}`, status: "confirmed", projectTitle, work_title: "Movement artist", date_ranges: [{ date: "2026-11-20" }] }));
   const events = buildConfirmedProjectEvents(rows);
   assert.deepEqual(events.map((row) => row.title), ["Show A · Movement artist", "Show B · Movement artist"]);
-  assert.deepEqual(events.map((row) => row.href), ["/opportunities?tab=confirmations&booking=confirmation-0", "/opportunities?tab=confirmations&booking=confirmation-1"]);
+  assert.deepEqual(events.map((row) => row.href), ["/activities?view=projects&booking=confirmation-0", "/activities?view=projects&booking=confirmation-1"]);
 });
 
 

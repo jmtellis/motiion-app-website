@@ -123,12 +123,12 @@ export function coordinationNotificationHref(
   const data = payload(row.data);
   const recipientRole = textValue(data?.recipient_role)?.toLowerCase();
   const role = viewerRole ?? recipientRole;
-  if (role === "community") return "/inbox?filter=requests";
+  if (role === "community") return "/inbox";
   if (role === "talent") {
     const bookingId = textValue(data?.booking_id ?? data?.bookingId);
-    const query = new URLSearchParams({ tab: "confirmations" });
+    const query = new URLSearchParams({ view: "projects" });
     if (bookingId && UUID_PATTERN.test(bookingId)) query.set("booking", bookingId);
-    return `/opportunities?${query}`;
+    return `/activities?${query}`;
   }
   const projectId = textValue(data?.project_id ?? data?.projectId);
   if (projectId && UUID_PATTERN.test(projectId)) return `/projects/${projectId}/coordination`;

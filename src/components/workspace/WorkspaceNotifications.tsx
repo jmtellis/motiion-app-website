@@ -14,6 +14,7 @@ import {
 } from "react";
 
 import { NotificationAvatar, useNotificationActors } from "@/components/workspace/NotificationAvatar";
+import { NotificationRequests } from "@/components/workspace/NotificationRequests";
 import { useBuyerNotifications } from "@/hooks/use-buyer-notifications";
 import { castingNotificationHref } from "@/lib/app/talent-casting-state";
 import { dealMemoNotificationHref } from "@/lib/booking/deal-memo-routes";
@@ -87,6 +88,7 @@ export function NotificationsPanel() {
     useWorkspaceNotifications();
   const closeRef = useRef<HTMLButtonElement>(null);
   const [saving, setSaving] = useState(false);
+  const [requestCount, setRequestCount] = useState(0);
   const actors = useNotificationActors(notifications);
 
   useEffect(() => {
@@ -140,6 +142,12 @@ export function NotificationsPanel() {
           </div>
         </header>
         <div className="workspace-notifications__body">
+          <NotificationRequests
+            open={open}
+            inboxHref={viewerRole === "industry" ? "/messages" : "/inbox"}
+            onNavigate={() => setOpen(false)}
+            onCount={setRequestCount}
+          />
           {error ? (
             <p role="alert" className="workspace-notifications__notice">
               {error}{" "}
@@ -150,7 +158,7 @@ export function NotificationsPanel() {
           ) : null}
           {isLoading ? (
             <p className="workspace-notifications__notice">Loading…</p>
-          ) : !notifications.length && !error ? (
+          ) : !notifications.length && !error ? (requestCount ? null :
             <div className="workspace-notifications__empty">
               <Bell size={24} strokeWidth={1.5} aria-hidden />
               <p>A little quiet, for now</p>

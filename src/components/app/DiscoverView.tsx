@@ -435,6 +435,9 @@ export function DiscoverView({
 
       <div className="discover-browse__toolbar">
         <form key={queryKey} className="discover-browse__filters" onSubmit={(event) => void onSearch(event)}>
+          <TypeFilter value={current.subtype} onChange={(subtype) => go({ subtype })} />
+          <StylesFilter value={current.styles} onApply={(styles) => go({ styles })} />
+          <AttributesFilter value={attributes} onApply={(next) => go(next)} />
           <label className="discover-browse__field discover-browse__field--search">
             <input
               name="keyword"
@@ -451,9 +454,6 @@ export function DiscoverView({
           <button type="submit" className="discover-browse__submit" aria-label="Search" title="Search" disabled={pending}>
             <Search size={16} aria-hidden />
           </button>
-          <TypeFilter value={current.subtype} onChange={(subtype) => go({ subtype })} />
-          <StylesFilter value={current.styles} onApply={(styles) => go({ styles })} />
-          <AttributesFilter value={attributes} onApply={(next) => go(next)} />
         </form>
       </div>
 

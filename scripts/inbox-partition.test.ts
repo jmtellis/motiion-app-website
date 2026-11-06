@@ -12,7 +12,6 @@ import {
   isMotiionBrandedThread,
   isOneWayMotiionThread,
   partitionUnreadCount,
-  requestsChipCount,
 } from "../src/lib/messaging/inbox-partition";
 import type { InboxConversation } from "../src/types/app";
 
@@ -124,8 +123,7 @@ describe("conversation partitions", () => {
     );
     assert.equal(partitionUnreadCount([visible, empty], "general"), 2);
     assert.equal(partitionUnreadCount([visible, empty], "primary"), 0);
-    assert.equal(requestsChipCount(3, 1), 4);
-    assert.equal(inboxNavBadgeCount([visible, empty], 1, 3), 6);
+    assert.equal(inboxNavBadgeCount([visible, empty]), 2);
   });
 });
 

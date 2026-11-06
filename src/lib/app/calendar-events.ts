@@ -120,7 +120,7 @@ export function buildConfirmedProjectEvents(records: CalendarConfirmation[]): Ca
       return [{ activity_id: record.id, day_date: range.date, start_time: typeof range.start_time === "string" ? range.start_time : null, end_time: typeof range.end_time === "string" ? range.end_time : null }];
     }) : [];
     const entries = buildCalendarActivityEvents([{ id: record.id, title: [record.projectTitle, record.work_title].filter(Boolean).join(" · ") || "Confirmed project", type: "event", status: "active", activity_date: null, start_time: null, end_time: null, location: "Project schedule" }], days);
-    for (const entry of entries) events.push({ ...entry, activityId: undefined, id: `confirmation:${entry.id}`, href: `/opportunities?tab=confirmations&booking=${encodeURIComponent(record.id)}`, timeZone: record.timezone || undefined });
+    for (const entry of entries) events.push({ ...entry, activityId: undefined, id: `confirmation:${entry.id}`, href: `/activities?view=projects&booking=${encodeURIComponent(record.id)}`, timeZone: record.timezone || undefined });
   }
   return events;
 }

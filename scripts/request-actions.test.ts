@@ -37,7 +37,7 @@ test("request review shows every unique date in civil order with overnight timin
 test("resolved coordination notifications land in the correct role workspace", async () => {
   const { coordinationNotificationHref } = await import("../src/lib/app/notification-inbox");
   const project_id = "11111111-1111-4111-8111-111111111111";
-  assert.equal(coordinationNotificationHref({ type: "booking_status_changed", data: { project_id, recipient_role: "talent" } }), "/opportunities?tab=confirmations");
+  assert.equal(coordinationNotificationHref({ type: "booking_status_changed", data: { project_id, recipient_role: "talent" } }), "/activities?view=projects");
   assert.equal(coordinationNotificationHref({ type: "request_resolved_availability", data: { project_id } }), `/projects/${project_id}/coordination`);
   assert.equal(coordinationNotificationHref({ type: "request_resolved_booking_confirm", data: { project_id: "../../other" } }), "/messages");
   assert.equal(coordinationNotificationHref({ type: "message" }), null);
@@ -49,12 +49,12 @@ test("legacy handoff and hold notifications use the current workspace and preser
   const booking_id = "22222222-2222-4222-8222-222222222222";
   const project_id = "11111111-1111-4111-8111-111111111111";
   for (const type of ["booking_hold_placed", "booking_hold_released", "booking_handoff", "booking_status_changed"]) {
-    assert.equal(coordinationNotificationHref({ type, data: { booking_id, project_id } }, "talent"), `/opportunities?tab=confirmations&booking=${booking_id}`);
+    assert.equal(coordinationNotificationHref({ type, data: { booking_id, project_id } }, "talent"), `/activities?view=projects&booking=${booking_id}`);
     assert.equal(coordinationNotificationHref({ type, data: { booking_id, project_id } }, "industry"), `/projects/${project_id}/coordination`);
   }
-  assert.equal(coordinationNotificationHref({ type: "booking_status_changed", data: { recipient_role: "industry", project_id } }, "talent"), "/opportunities?tab=confirmations");
-  assert.equal(coordinationNotificationHref({ type: "booking_handoff", data: { booking_id: "../../elsewhere" } }, "talent"), "/opportunities?tab=confirmations");
-  assert.equal(coordinationNotificationHref({ type: "booking_handoff" }, "community"), "/inbox?filter=requests");
+  assert.equal(coordinationNotificationHref({ type: "booking_status_changed", data: { recipient_role: "industry", project_id } }, "talent"), "/activities?view=projects");
+  assert.equal(coordinationNotificationHref({ type: "booking_handoff", data: { booking_id: "../../elsewhere" } }, "talent"), "/activities?view=projects");
+  assert.equal(coordinationNotificationHref({ type: "booking_handoff" }, "community"), "/inbox");
 });
 
 test("confirmation links select history for cancelled or unavailable coordination", async () => {

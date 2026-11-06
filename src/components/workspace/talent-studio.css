@@ -1006,7 +1006,7 @@ span.home-panel-row__avatar { display:grid; place-items:center; }
 /* Portfolio: fixed identity bar above its own scroll area. */
 .workspace-shell--talent .workspace-frame .workspace-talent-main--pane { display:flex; flex-direction:column; padding:0; overflow:hidden; }
 .workspace-shell--talent .workspace-talent-main--pane > .portfolio-page { max-width:none; margin:0; flex:1; min-height:0; display:flex; flex-direction:column; }
-.workspace-shell--talent .workspace-talent-main--pane > .talent-schedule { max-width:none; margin:0; flex:1; min-height:0; display:flex; flex-direction:column; gap:20px; padding:24px 32px 32px; }
+.workspace-shell--talent .workspace-talent-main--pane > .talent-schedule { max-width:none; margin:0; flex:1; min-height:0; display:flex; flex-direction:column; gap:20px; padding:28px max(32px, calc((100% - 1280px) / 2)) 32px; }
 @media (max-width: 720px) {
   .workspace-shell--talent .workspace-talent-main--pane > .talent-schedule { gap:16px; padding:16px 16px 24px; }
 }
@@ -1102,7 +1102,26 @@ span.notification-avatar { display:grid; place-items:center; }
 
 .inbox-page { display:flex; flex-direction:column; gap:20px; }
 .workspace-shell--talent .workspace-talent-main > .inbox-page { height:100%; min-height:520px; }
-.inbox-page__panes { flex:1; min-height:420px; }
+.inbox-page--workspace { flex:1; min-height:0; }
+.inbox-page[data-view="conversation"] { gap:0; }
+.inbox-page__toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.inbox-page__toolbar .home-browser__filters { margin:0; }
+.inbox-page__toolbar .inbox-search { flex:0 1 320px; }
+.inbox-page__empty { display:flex; flex:1; align-items:center; justify-content:center; padding:48px 16px; }
+.inbox-list ul { margin:0; padding:0; list-style:none; }
+.inbox-list li { display:flex; align-items:stretch; border-top:1px solid #ececec; }
+.inbox-list li:last-child { border-bottom:1px solid #ececec; }
+.inbox-list__row { display:flex; flex:1; min-width:0; align-items:flex-start; gap:12px; padding:14px 12px; border-radius:0; text-align:left; transition:background-color .15s ease; }
+.inbox-list__row:hover { background:#f6f6f6; }
+.inbox-list__select { display:flex; align-items:center; padding:0 4px 0 12px; }
+.inbox-list__notice { margin:0; padding:40px 16px; text-align:center; color:#767676; font-size:14px; }
+.inbox-list__actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:10px 4px; }
+.inbox-conversation { --ink:#242424; --ink-soft:#616161; --line:#e2e2e2; --ds-subtle:#767676; display:flex; flex:1; min-height:0; flex-direction:column; }
+.workspace-shell--talent .workspace-talent-main > .inbox-page[data-view="conversation"] { height:calc(100dvh - 48px); }
+.inbox-conversation__back { display:inline-flex; align-self:flex-start; align-items:center; gap:6px; margin:0 0 8px; padding:6px 10px 6px 6px; border-radius:999px; color:#616161; font-size:13px; font-weight:550; }
+.inbox-conversation__back:hover { background:#f2f2f2; color:#242424; }
+.inbox-conversation__back svg { width:16px; height:16px; }
+.inbox-conversation__pane { display:flex; flex:1; min-height:0; flex-direction:column; overflow:hidden; border-top:1px solid #ececec; }
 .inbox-page__header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
 .workspace-shell--talent .inbox-page__header h1 { margin:0; font-size:28px; line-height:1.15; letter-spacing:-0.03em; font-weight:620; }
 .inbox-page__edit { display:inline-flex; align-items:center; gap:6px; min-height:40px; padding:8px 16px; border:0; border-radius:999px; background:#171717; color:#fff; font-size:14px; font-weight:550; cursor:pointer; }
@@ -1338,10 +1357,6 @@ span.notification-avatar { display:grid; place-items:center; }
 .home-brand-logo { display:flex; align-items:center; justify-content:center; flex:0 0 72px; width:72px; height:72px; }
 .home-brand-logo img { width:72px; height:72px; object-fit:contain; filter:grayscale(1) brightness(0.25); }
 .deal-memo.bookings-page { padding:0; background:transparent; min-height:0; overflow:visible; }
-.messenger-list { display:flex; flex-direction:column; flex:1; border:0; border-radius:0; }
-.messenger-list > aside { display:flex; flex:1; min-height:0; border-right:0; }
-.workspace-side-panel__body:has(> .inbox-thread-content) { display:flex; flex-direction:column; overflow:hidden; }
-.inbox-thread-content { flex:1; min-height:0; }
 .casting-identity { display:flex; flex-direction:column; align-items:center; text-align:center; gap:12px; padding:12px 0 24px; }
 .casting-identity > img, .casting-identity__mark { width:80px; height:80px; object-fit:contain; border-radius:16px; }
 .casting-identity__mark { display:grid; place-items:center; background:#171717; color:#fff; }
@@ -1361,8 +1376,12 @@ span.notification-avatar { display:grid; place-items:center; }
   .workspace-side-panel .home-panel-people--portraits { grid-template-columns:1fr; }
 }
 
-#inbox-thread-panel { --ink:#242424; --ink-soft:#616161; --line:#e2e2e2; --ds-subtle:#767676; }
-
 .workspace-shell--talent .opportunities-submit input[type="url"] { width:100%; min-height:44px; padding:10px 12px; border:1px solid var(--ui-border); border-radius:var(--ui-radius-control); background:var(--ui-surface); color:var(--ui-text); font:inherit; font-weight:450; }
 .workspace-shell--talent .opportunities-submit input[type="url"]:focus-visible { outline:none; border-color:#9a9a9a; }
 .opportunities-submit small { color:var(--ui-muted); font-size:12px; font-weight:400; line-height:1.45; }
+.workspace-notifications__requests { padding:14px 0 6px; border-bottom:1px solid #ececec; }
+.workspace-notifications__requests > div { overflow:visible; }
+.workspace-notifications__requests section > h2 { margin:0; padding:0 20px; font-size:11px; letter-spacing:.06em; }
+.workspace-notifications__body .workspace-notifications__requests ul { padding:0; border:0; border-radius:0; background:transparent; }
+.workspace-notifications__body .workspace-notifications__requests li { display:block; padding:12px 20px; }
+.workspace-notifications__body .workspace-notifications__requests li p + p { font-size:12px; }

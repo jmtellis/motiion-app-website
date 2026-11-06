@@ -141,8 +141,6 @@
   .ui-media-card:hover .ui-media-card__media > img { transform: none; }
 }
 
-/* Inbox list reads as one surface beside the conversation pane. */
-.workspace-shell .workspace-frame .messenger-list.messenger-list { overflow: hidden; border-radius: 16px; background: #fff; box-shadow: var(--ui-elevation); }
 
 /* Empty states: illustration, one clear next step, lifted like any other card. */
 .workspace-shell .workspace-frame .industry-empty--illustrated { gap: 10px; border: 0; background: #fff; box-shadow: var(--ui-elevation); }
@@ -151,8 +149,7 @@
 .workspace-shell .workspace-frame .ui-state__actions .ui-button:not(.ui-button--secondary):hover { background: #303030; }
 .workspace-shell .workspace-frame .ui-state__actions .ui-button--secondary { border-color: #e2e2e2; }
 /* Already inside a surface: no second card. */
-.workspace-shell :is(.workspace-side-panel, .messenger-list, .inbox-thread-content, .home-panel) .ui-state { border: 0; background: transparent; box-shadow: none; }
-.messenger-list__empty { padding: 8px 4px; }
+.workspace-shell :is(.workspace-side-panel, .inbox-page, .home-panel) .ui-state { border: 0; background: transparent; box-shadow: none; }
 
 @media (prefers-reduced-motion: reduce) {
   :root .workspace-shell :is(.ui-tabs, .portfolio-tabs, .project-workspace-tabs__scroller) [role=tab] { transition: none; }
@@ -233,3 +230,13 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) :is(.buyer-m
 .workspace-sidebar-user .workspace-account-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .talent-discovery-modes { width: max-content; max-width: calc(100% - 24px); }
 .talent-discovery-modes nav { flex-wrap: nowrap; white-space: nowrap; }
+
+/* Scroll rails clip on both axes; leave room for hover lift and shadow. */
+.workspace-shell .talent-discovery-cards { padding-block: 10px 24px; margin-block: -10px -24px; }
+.workspace-shell .talent-cast-rail { padding-top: 10px; padding-bottom: 24px; margin-top: -10px; margin-bottom: -12px; }
+@container (min-width: 1041px) {
+  .workspace-shell .talent-discovery-cards { width: calc(100% + 24px); margin-inline: -12px; padding-inline: 12px; scroll-padding-inline: 12px; }
+}
+
+/* Browse filters sit left of search, so their menus open from the chip's left edge. */
+.discover-browse__filters .discover-styles__popover { right: auto; left: 0; transform-origin: top left; }

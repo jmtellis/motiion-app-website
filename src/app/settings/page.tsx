@@ -7,6 +7,7 @@ import { TalentAdminPanel } from "@/components/settings/TalentAdminPanel";
 import { ReferralsPanel } from "@/components/settings/ReferralsPanel";
 import { NotificationSettingsSection } from "@/components/settings/NotificationSettingsSection";
 import { BlockedUsersSection } from "@/components/settings/BlockedUsersSection";
+import { NotifyMeSection } from "@/components/settings/NotifyMeSection";
 import { TalentResourcesPanel } from "@/components/settings/TalentResourcesPanel";
 import { TalentVerificationPanel } from "@/components/settings/TalentVerificationPanel";
 import { IndustryPageHeader } from "@/components/talent-buyers/dashboard/IndustryUI";
@@ -150,7 +151,7 @@ export default async function SettingsPage({
     id: "resources",
     label: "Privacy & support",
     content: (
-      <div className="talent-settings-stack"><ReferralsPanel key={profile.id} accountId={profile.id} username={profile.username} initialCode={params.referral} /><NotificationSettingsSection accountId={profile.id} community={isCommunity} retryPath="/settings?section=resources" /><BlockedUsersSection accountId={profile.id} /><TalentResourcesPanel planLabel={plan.label} canManageBilling={plan.canManageBilling} /></div>
+      <div className="talent-settings-stack"><ReferralsPanel key={profile.id} accountId={profile.id} username={profile.username} initialCode={params.referral} /><NotificationSettingsSection accountId={profile.id} community={isCommunity} retryPath="/settings?section=resources" /><NotifyMeSection accountId={profile.id} /><BlockedUsersSection accountId={profile.id} /><TalentResourcesPanel planLabel={plan.label} canManageBilling={plan.canManageBilling} /></div>
     ),
   });
 

@@ -1,8 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { TalentConfirmations } from "./TalentConfirmations";
-import type { TalentConfirmationData } from "@/lib/app/talent-confirmations";
 import { useSearchParams } from "next/navigation";
 import { ArrowRight, Megaphone } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -18,30 +16,26 @@ import type {
   TalentSubmissionCard,
 } from "@/lib/app/talent-castings";
 
-type Tab = "open" | "invited" | "submitted" | "confirmations";
+type Tab = "open" | "invited" | "submitted";
 type Roster = "active" | "closed";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "open", label: "Open calls" },
   { id: "invited", label: "Invited" },
   { id: "submitted", label: "Submitted" },
-  { id: "confirmations", label: "Confirmations" },
 ];
 
 export function OpportunitiesView({
   opportunities,
-  confirmations,
 }: {
   opportunities: TalentOpportunities;
-  confirmations: TalentConfirmationData;
 }) {
   const searchParams = useSearchParams();
   const notifications = useNotificationsPanel();
   const requestedTab = searchParams.get("tab");
-  const tab: Tab = requestedTab === "invited" || requestedTab === "submitted" || requestedTab === "confirmations" ? requestedTab : "open";
+  const tab: Tab = requestedTab === "invited" || requestedTab === "submitted" ? requestedTab : "open";
   const [roster, setRoster] = useState<Roster>("active");
   const castingRoleId = searchParams.get("casting")?.trim() || null;
-  const initialBooking = searchParams.get("booking");
   const preferRole = searchParams.get("view") === "role" || (searchParams.get("view") !== "project" && tab !== "open");
 
   const submitted = useMemo(
@@ -55,7 +49,6 @@ export function OpportunitiesView({
     open: projectGroups(opportunities.openCalls).length,
     invited: projectGroups(opportunities.invited).length,
     submitted: projectGroups(opportunities.submitted).length,
-    confirmations: confirmations.records.length,
   };
 
   function openCasting(roleId: string, roleView: boolean) {
@@ -109,7 +102,6 @@ export function OpportunitiesView({
       </div>
 
       <div key={tab} className="opportunities-page__lens ui-swap">
-        {tab === "confirmations" && <TalentConfirmations key={initialBooking ?? "all"} data={confirmations} initialBooking={initialBooking} />}
         {tab === "open" ? (
           <CardGrid
             cards={opportunities.openCalls}

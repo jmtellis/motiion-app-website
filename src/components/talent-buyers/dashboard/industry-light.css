@@ -163,7 +163,7 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .buyer-modal
 .industry-badge--attention { background:#fff0b0; color:#614900; }
 
 /* Photo content has its own contrast context, separate from the light canvas. */
-:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(.industry-photo-surface,.bd-project-card__overlay,.project-workspace__cover,.talent-navigator__card-overlay-content) :is(h1,h2,h3,p,span,dt,dd) { color:#fff; }
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(.industry-photo-surface,.bd-project-card__overlay,.project-workspace__cover,.talent-navigator__card-overlay-content,.talent-discovery-card) :is(h1,h2,h3,p,span,dt,dd) { color:#fff; }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame :is(.bd-project-card__footer,.bd-visual-card) { background:#fff; border-color:#d5d8da; }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .bd-project-card { border-radius:18px; box-shadow:var(--industry-shadow); }
 :is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .bd-project-card__footer { padding:1rem; }

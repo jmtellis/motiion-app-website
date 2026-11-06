@@ -259,8 +259,8 @@ export function HomeDiscoveryView({
         <section aria-labelledby="home-community-title">
           <div className="talent-section-heading">
             <div>
-              <h2 id="home-community-title">Your community</h2>
-              <p>People, inspiration, and what’s happening next.</p>
+              <h2 id="home-community-title">Talent</h2>
+              <p>Discover the talent on Motiion.</p>
             </div>
             {navigatorHref ? (
               <Link href={navigatorHref}>
@@ -310,7 +310,7 @@ export function HomeDiscoveryView({
         {upcomingSlot}
         <EventRail
           events={sponsored}
-          label="Motiion Events"
+          label="Featured events"
           onOpen={openEvent}
           activeId={panel?.kind === "event" ? panel.eventId : null}
         />
@@ -404,13 +404,13 @@ function CastRail({
     <section aria-labelledby="home-cast-title">
       <div className="talent-section-heading">
         <div>
-          <h2 id="home-cast-title">Meet the Cast</h2>
+          <h2 id="home-cast-title">Featured cast</h2>
           <p>Explore the people behind upcoming and featured events.</p>
         </div>
       </div>
       <CoverRail
         events={events}
-        label="Meet the Cast"
+        label="Featured cast"
         onOpen={onOpen}
         activeId={activeId}
       />
@@ -434,7 +434,7 @@ function EventRail({
     <section aria-labelledby="home-events-title">
       <div className="talent-section-heading">
         <div>
-          <h2 id="home-events-title">Motiion Events</h2>
+          <h2 id="home-events-title">Featured events</h2>
           <p>Get together with the Motiion community.</p>
         </div>
       </div>

@@ -4,7 +4,6 @@ import { MessengerShell } from "@/components/messaging/MessengerShell";
 import { BuyerAppPage } from "@/components/talent-buyers/dashboard/BuyerAppPage";
 import { fetchInboxBundle } from "@/lib/app/inbox";
 import { requireHiringAccount } from "@/lib/auth/session";
-import type { ChatInboxFilter } from "@/lib/messaging/inbox-partition";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { projectWorkspacePath } from "@/lib/talent-buyers/project-routes";
 
@@ -41,28 +40,22 @@ export default async function BuyerMessagesPage({
   }
 
   const rawFilter = params.filter ?? "primary";
-  const initialFilter: ChatInboxFilter =
-    rawFilter === "general" || rawFilter === "requests" || rawFilter === "primary"
-      ? rawFilter
-      : "primary";
-  const { conversations, error, pendingRequests, messageRequests, pendingError, messageRequestsError } = await fetchInboxBundle();
+  const initialFilter =
+    rawFilter === "general" ? "general" : "primary";
+  const { conversations, error } = await fetchInboxBundle();
 
   return (
     <BuyerAppPage fullWidth className="buyer-messages-page !space-y-0 flex min-h-0 flex-1 flex-col">
       <MessengerShell
       key={profile.id}
-      pendingError={pendingError}
-      messageRequestsError={messageRequestsError}
         conversations={conversations}
-        messageRequests={messageRequests}
-        currentUserId={profile.id}
+          currentUserId={profile.id}
         error={error}
         variant="dashboard"
         layout="workspace"
         initialConversationId={params.conversation ?? null}
         projectFilterTitle={params.title ?? (params.project ? "Project" : null)}
-        pendingRequests={pendingRequests}
-        initialFilter={initialFilter}
+          initialFilter={initialFilter}
       />
     </BuyerAppPage>
   );

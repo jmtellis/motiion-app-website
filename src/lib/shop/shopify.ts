@@ -55,53 +55,40 @@ export type StorefrontProductNode = {
   description?: string | null;
   availableForSale?: boolean | null;
   featuredImage?: ImageNode | null;
+  images?: { nodes?: (ImageNode | null)[] | null } | null;
   priceRange?: { minVariantPrice?: Money | null; maxVariantPrice?: Money | null } | null;
   options?: { name?: string | null; values?: (string | null)[] | null }[] | null;
   variants?: { nodes?: StorefrontVariantNode[] | null } | null;
 };
 
-const PRODUCTS_QUERY = `query ShopProducts($first: Int!) {
-  products(first: $first) {
+const PRODUCT_SELECTION = `
+  id
+  handle
+  title
+  description
+  availableForSale
+  featuredImage { url altText width height }
+  images(first: 50) { nodes { url altText width height } }
+  priceRange { minVariantPrice { amount currencyCode } maxVariantPrice { amount currencyCode } }
+  options { name values }
+  variants(first: 100) {
     nodes {
       id
-      handle
-      title
-      description
       availableForSale
-      featuredImage { url altText width height }
-      priceRange { minVariantPrice { amount currencyCode } maxVariantPrice { amount currencyCode } }
-      options { name values }
-      variants(first: 100) {
-        nodes {
-          id
-          availableForSale
-          selectedOptions { name value }
-          price { amount currencyCode }
-        }
-      }
+      selectedOptions { name value }
+      price { amount currencyCode }
     }
+  }
+`;
+
+const PRODUCTS_QUERY = `query ShopProducts($first: Int!) {
+  products(first: $first) {
+    nodes { ${PRODUCT_SELECTION} }
   }
 }`;
 
 const PRODUCT_QUERY = `query ShopProduct($handle: String!) {
-  product(handle: $handle) {
-    id
-    handle
-    title
-    description
-    availableForSale
-    featuredImage { url altText width height }
-    priceRange { minVariantPrice { amount currencyCode } maxVariantPrice { amount currencyCode } }
-    options { name values }
-    variants(first: 100) {
-      nodes {
-        id
-        availableForSale
-        selectedOptions { name value }
-        price { amount currencyCode }
-      }
-    }
-  }
+  product(handle: $handle) { ${PRODUCT_SELECTION} }
 }`;
 
 const CART_CREATE = `mutation ShopCartCreate($merchandiseId: ID!, $quantity: Int!) {
@@ -187,6 +174,34 @@ function shopImage(image: ImageNode | null | undefined, fallbackAlt: string): Sh
   return { src, alt: image?.altText?.trim() || fallbackAlt, width, height };
 }
 
+function imageIdentity(src: string): string {
+  try {
+    const url = new URL(src);
+    return `${url.origin}${url.pathname}`;
+  } catch {
+    return src;
+  }
+}
+
+/** Position order from Shopify, front first. The featured image fills in when the list is empty. */
+export function shopImagesFromProduct(node: StorefrontProductNode): ShopImage[] {
+  const fallbackAlt = node.title?.trim() || "Product photo";
+  const seen = new Set<string>();
+  const images: ShopImage[] = [];
+  const push = (image: ImageNode | null | undefined) => {
+    const mapped = shopImage(image, fallbackAlt);
+    if (!mapped) return;
+    const key = imageIdentity(mapped.src);
+    if (seen.has(key)) return;
+    seen.add(key);
+    images.push(mapped);
+  };
+
+  for (const image of node.images?.nodes ?? []) push(image);
+  if (images.length === 0) push(node.featuredImage);
+  return images;
+}
+
 function mapVariant(node: StorefrontVariantNode): ShopVariant | null {
   if (!node.id || !VARIANT_GID.test(node.id)) return null;
   const selectedOptions = (node.selectedOptions ?? [])
@@ -215,13 +230,15 @@ export function mapShopifyProduct(node: StorefrontProductNode): ShopListing | nu
   const variants = (node.variants?.nodes ?? [])
     .map(mapVariant)
     .filter((variant): variant is ShopVariant => variant !== null);
+  const images = shopImagesFromProduct(node);
 
   return {
     id: node.id,
     handle: node.handle,
     title: node.title,
     description: node.description?.trim() || "Motiion merch.",
-    image: shopImage(node.featuredImage, node.title),
+    image: images[0] ?? null,
+    images,
     priceLabel: priceLabelFromRange(node.priceRange?.minVariantPrice, node.priceRange?.maxVariantPrice),
     placeholder: false,
     availableForSale: Boolean(node.availableForSale),

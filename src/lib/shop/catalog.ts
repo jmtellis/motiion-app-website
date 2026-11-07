@@ -17,6 +17,14 @@ export const placeholderListings: ShopListing[] = [
       width: 1024,
       height: 1024,
     },
+    images: [
+      {
+        src: "/shop/motiion-wordmark-tee.jpg",
+        alt: "Placeholder photo of a black t-shirt with the white Motiion wordmark centered on the chest.",
+        width: 1024,
+        height: 1024,
+      },
+    ],
     priceLabel: null,
     placeholder: true,
     availableForSale: false,

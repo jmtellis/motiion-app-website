@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ShopProductGallery } from "@/components/shop/ShopProductGallery";
 import { ShopPurchaseForm } from "@/components/shop/ShopPurchaseForm";
 import { ShopShell } from "@/components/shop/ShopShell";
 import { loadShopProduct } from "@/lib/shop/shopify";
@@ -47,17 +47,7 @@ export default async function ShopProductPage({ params, searchParams }: ShopProd
         <div className="mkt-container">
           <p className="shop-eyebrow">Merch</p>
           <article className="shop-detail">
-            <div className="shop-detail__media">
-              {product.image ? (
-                <Image
-                  src={product.image.src}
-                  alt={product.image.alt}
-                  fill
-                  sizes="(max-width: 767px) 100vw, 56vw"
-                  priority
-                />
-              ) : null}
-            </div>
+            <ShopProductGallery key={product.id} images={product.images} title={product.title} />
             <div className="shop-detail__copy">
               {product.placeholder ? <p className="shop-kicker">Placeholder</p> : null}
               <h1>{product.title}</h1>

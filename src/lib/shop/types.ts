@@ -23,7 +23,10 @@ export type ShopListing = {
   handle: string;
   title: string;
   description: string;
+  /** Featured photo used on catalog cards. This is the first gallery image, which is the front. */
   image: ShopImage | null;
+  /** Every Shopify product image, front first. A one-photo product has a single entry. */
+  images: ShopImage[];
   priceLabel: string | null;
   placeholder: boolean;
   availableForSale: boolean;

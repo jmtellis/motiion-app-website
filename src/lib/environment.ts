@@ -37,10 +37,47 @@ export function getAppEnvironment(): AppEnvironment {
   });
 }
 
-export function assertSupabaseIsolation(url: string, environment: AppEnvironment) {
+/**
+ * Explicit `process.env.NEXT_PUBLIC_*` reads so Next can inline them into the
+ * browser bundle. Passing `process.env` as an object does not work on the client.
+ */
+function localProductionEnv(env?: Environment): Environment {
+  return (
+    env ?? {
+      NEXT_PUBLIC_MOTIION_LOCAL_PRODUCTION: process.env.NEXT_PUBLIC_MOTIION_LOCAL_PRODUCTION,
+      MOTIION_LOCAL_PRODUCTION: process.env.MOTIION_LOCAL_PRODUCTION,
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL_ENV: process.env.VERCEL_ENV,
+      NEXT_PUBLIC_VERCEL_ENV: process.env.NEXT_PUBLIC_VERCEL_ENV,
+    }
+  );
+}
+
+/**
+ * Local-only escape hatch for reading production Supabase while keeping
+ * `NEXT_PUBLIC_APP_ENV=staging` (test Stripe, email allowlist). Ignored on Vercel.
+ */
+export function allowsLocalProductionSupabase(env?: Environment) {
+  const source = localProductionEnv(env);
+  const enabled =
+    source.NEXT_PUBLIC_MOTIION_LOCAL_PRODUCTION === "1" ||
+    source.MOTIION_LOCAL_PRODUCTION === "1";
+  return (
+    enabled &&
+    source.NODE_ENV === "development" &&
+    !source.VERCEL_ENV &&
+    !source.NEXT_PUBLIC_VERCEL_ENV
+  );
+}
+
+export function assertSupabaseIsolation(
+  url: string,
+  environment: AppEnvironment,
+  env?: Environment,
+) {
   const host = new URL(url).hostname.replace(/^www\./, "");
   const production = PRODUCTION_API_HOSTS.includes(host);
-  if (environment !== "production" && production) {
+  if (environment !== "production" && production && !allowsLocalProductionSupabase(env)) {
     throw new Error("Testing is blocked: this website is connected to production Supabase. Configure staging credentials before continuing.");
   }
   if (environment === "production" && !production) {
@@ -165,7 +202,7 @@ export function previewPublicEnvOverrides(env: Environment): Record<string, stri
 export function assertDeploymentIsolation(env: Environment) {
   const environment = resolveAppEnvironment(env);
   const url = env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  if (url) assertSupabaseIsolation(url, environment);
+  if (url) assertSupabaseIsolation(url, environment, env);
   if (environment === "staging" && !url) {
     const disconnectedPreview = env.VERCEL_ENV === "preview" && env[PREVIEW_DISCONNECTED_ENV] === "1";
     if (!disconnectedPreview) throw new Error("Staging requires its own Supabase URL.");

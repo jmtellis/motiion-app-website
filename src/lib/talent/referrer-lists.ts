@@ -59,15 +59,36 @@ async function hydrateUserIdsAsTalent(
   // Use the public talent contract: a saved ID is not permission to read a private profile.
   const people = new Map<string, Talent>();
   for (let offset = 0; offset < uniqueIds.length; offset += 200) {
-    const { data, error } = await supabase.from("talent").select("id,username,full_name,headshot_url,headshot_urls,styles,location,representation")
+    const { data, error } = await supabase.from("talent")
+      .select("id,username,full_name,headshot_url,headshot_urls,styles,skills,talent_types,location,representation,gender,ethnicity,height,union_status,hair_color,eye_color")
       .in("id", uniqueIds.slice(offset, offset + 200));
     if (error) throw new Error("Saved profiles could not be loaded. Please retry.");
     for (const row of data ?? []) {
       const name = row.full_name?.trim() || "Talent";
-      people.set(row.id, { id: row.id, slug: row.username || row.id, name,
+      const styles = Array.isArray(row.styles) ? row.styles.filter((value): value is string => typeof value === "string") : [];
+      const skills = Array.isArray(row.skills) ? row.skills.filter((value): value is string => typeof value === "string") : [];
+      const talentTypes = Array.isArray(row.talent_types)
+        ? row.talent_types.filter((value): value is string => typeof value === "string")
+        : [];
+      people.set(row.id, {
+        id: row.id,
+        slug: row.username || row.id,
+        name,
         imageUrl: row.headshot_url || getProfileAvatarUrl(row.headshot_urls) || placeholderImage(name),
-        location: row.location || undefined, styles: Array.isArray(row.styles) ? row.styles : [],
-        represented: Boolean(row.representation), isVerified: false });
+        location: row.location || undefined,
+        styles,
+        skills,
+        talentTypes,
+        gender: row.gender || undefined,
+        ethnicity: typeof row.ethnicity === "string" ? row.ethnicity : Array.isArray(row.ethnicity) ? row.ethnicity.filter((value): value is string => typeof value === "string").join(", ") : undefined,
+        height: row.height || undefined,
+        unionStatus: row.union_status || undefined,
+        hairColor: row.hair_color || undefined,
+        eyeColor: row.eye_color || undefined,
+        agency: row.representation || undefined,
+        represented: Boolean(row.representation?.trim()),
+        isVerified: false,
+      });
     }
   }
   return uniqueIds.flatMap(id => people.has(id) ? [people.get(id)!] : []);

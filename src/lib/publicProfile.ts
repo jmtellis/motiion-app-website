@@ -1,5 +1,6 @@
 import { cache } from "react";
-import { buildProfileCredits } from "@/lib/profile/profile-credits";
+import { enrichProfileCreditMedia } from "@/lib/profile/enrich-credit-images";
+import { buildProfileCredits, type ProfileCreditPageLayout } from "@/lib/profile/profile-credits";
 import {
   normalizeProfileExperiences,
   normalizeProfileHighlights,
@@ -36,6 +37,7 @@ const TALENT_SELECT = [
   "resume_url",
   "instagram_url",
   "youtube_url",
+  "credit_page_layout",
 ].join(",");
 
 type TalentRow = PublicTalentProfile;
@@ -47,11 +49,18 @@ function parseStringArray(raw: unknown): string[] {
     .filter(Boolean);
 }
 
-function normalizeTalentRow(row: TalentRow): PublicTalentProfile {
+async function normalizeTalentRow(row: TalentRow): Promise<PublicTalentProfile> {
   const experiences = normalizeProfileExperiences(row.experiences);
+  const creditPageLayout = parseCreditPageLayout(row.credit_page_layout);
+  const baseCredits = buildProfileCredits(experiences);
+  const enriched = await enrichProfileCreditMedia({
+    experiences,
+    credits: baseCredits,
+    layout: creditPageLayout,
+  });
   const profileHighlights = normalizeProfileHighlights(row.profile_highlights).map((highlight) => ({
     ...highlight,
-    image_url: resolveHighlightImageUrl(highlight, experiences),
+    image_url: resolveHighlightImageUrl(highlight, enriched.experiences),
   }));
 
   return {
@@ -67,12 +76,26 @@ function normalizeTalentRow(row: TalentRow): PublicTalentProfile {
     skills: parseStringArray(row.skills),
     styles: parseStringArray(row.styles),
     talent_types: parseStringArray(row.talent_types),
-    experiences,
+    experiences: enriched.experiences,
     profile_highlights: profileHighlights,
-    credits: buildProfileCredits(experiences),
+    credits: enriched.credits,
+    credit_page_layout: creditPageLayout,
     training: Array.isArray(row.training) ? row.training : [],
     profile_visuals: Array.isArray(row.profile_visuals) ? row.profile_visuals : [],
   };
+}
+
+function parseCreditPageLayout(raw: unknown): ProfileCreditPageLayout | null {
+  if (!raw || typeof raw !== "object") return null;
+  const record = raw as Record<string, unknown>;
+  const visible = Array.isArray(record.visible_keys)
+    ? record.visible_keys.filter((value): value is string => typeof value === "string" && Boolean(value.trim()))
+    : [];
+  const hidden = Array.isArray(record.hidden_keys)
+    ? record.hidden_keys.filter((value): value is string => typeof value === "string" && Boolean(value.trim()))
+    : [];
+  if (!visible.length && !hidden.length) return null;
+  return { visible_keys: visible, hidden_keys: hidden };
 }
 
 export const fetchPublicTalentProfile = cache(async (slug: string): Promise<PublicTalentProfile | null> => {
@@ -91,9 +114,9 @@ export const fetchPublicTalentProfile = cache(async (slug: string): Promise<Publ
     { revalidate: 0 },
   );
 
-  if (rows?.length) return normalizeTalentRow(rows[0]);
+  if (rows?.length) return await normalizeTalentRow(rows[0]);
   const live = await readLiveTalentRow<TalentRow>(filter, TALENT_SELECT);
-  if (live) return normalizeTalentRow(live);
+  if (live) return await normalizeTalentRow(live);
   if (rows === null) throw new Error("Couldn’t load this profile. Please try again.");
   return null;
 });

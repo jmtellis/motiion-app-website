@@ -9,6 +9,8 @@ type TalentCardProps = {
   talent: Talent;
   active: boolean;
   distance?: number;
+  /** Preview panel is open for this talent. */
+  panelOpen?: boolean;
   onClick?: () => void;
   onDoubleClick?: () => void;
   onMouseEnter?: () => void;
@@ -33,6 +35,7 @@ export function TalentCard({
   talent,
   active,
   distance = active ? 0 : 1,
+  panelOpen = false,
   onClick,
   onDoubleClick,
   onMouseEnter,
@@ -49,13 +52,14 @@ export function TalentCard({
   return (
     <button
       type="button"
-      className={`talent-navigator__card w-full text-left ${active ? "talent-navigator__card--active" : ""}${distance <= 1 ? " talent-navigator__card--near" : ""}`}
+      className={`talent-navigator__card w-full text-left ${active ? "talent-navigator__card--active" : ""}${distance <= 1 ? " talent-navigator__card--near" : ""}${panelOpen ? " talent-navigator__card--panel-open" : ""}`}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       onMouseEnter={onMouseEnter}
       tabIndex={tabIndex}
       aria-label={ariaLabel ?? `${talent.name}${active ? ", active" : ""}`}
       aria-current={active ? "true" : undefined}
+      aria-pressed={panelOpen || undefined}
       style={
         {
           "--tn-card-scale": visuals.scale,

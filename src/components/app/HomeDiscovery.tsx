@@ -14,10 +14,14 @@ import {
 export async function HomeDiscovery({
   upcomingSlot,
   navigatorHref = "/discover",
+  detailBasePath = "/discover",
+  from = "discover",
 }: {
   /** `null` hides the Navigator link when already inside Discover. */
   navigatorHref?: string | null;
   upcomingSlot?: ReactNode;
+  detailBasePath?: "/discover" | "/talent";
+  from?: string;
 } = {}) {
   const [rawCollections, rawEvents, blocked] = await Promise.all([
     fetchHomeCollections(),
@@ -71,6 +75,8 @@ export async function HomeDiscovery({
       sponsored={events.sponsored}
       cast={events.cast}
       navigatorHref={navigatorHref}
+      detailBasePath={detailBasePath}
+      from={from}
     />
   );
 }

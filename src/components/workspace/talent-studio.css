@@ -117,6 +117,29 @@
   --tn-bg: #f6f6f6;
   background: var(--tn-bg);
 }
+.talent-discovery-chrome {
+  pointer-events: none;
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 9;
+  height: 88px;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.talent-discovery--scrolled .talent-discovery-chrome {
+  opacity: 1;
+}
+.talent-discovery-chrome__bar {
+  height: 100%;
+  background: rgb(246 246 246 / 0.82);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  border-bottom: 1px solid rgb(0 0 0 / 0.06);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.04);
+}
+.talent-discovery--featured .talent-discovery-chrome__bar {
+  background: rgb(241 241 241 / 0.88);
+}
 .talent-discovery-modes {
   position: absolute;
   top: 24px;
@@ -133,11 +156,31 @@
   border-radius: 99px;
   box-shadow: 0 1px 6px #0001;
 }
+.talent-discovery-layout-toggle {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 10;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #ededed;
+  color: #242424;
+  box-shadow: 0 1px 6px #0001;
+  cursor: pointer;
+}
+.talent-discovery-layout-toggle:hover {
+  background: #e4e4e4;
+}
 .talent-discovery-results {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 24px 32px 48px;
+  padding: 84px 32px 48px;
   container-type: inline-size;
 }
 .talent-discovery-search {
@@ -363,10 +406,17 @@
     font-size: 28px;
   }
   .talent-discovery-results {
-    padding: 72px 16px 32px;
+    padding: 76px 16px 32px;
   }
   .talent-discovery-modes {
     top: 16px;
+  }
+  .talent-discovery-layout-toggle {
+    top: 16px;
+    right: 16px;
+  }
+  .talent-discovery-chrome {
+    height: 76px;
   }
 }
 .workspace-shell--talent .workspace-frame {
@@ -628,7 +678,7 @@ html:has(.workspace-shell--talent) .staging-environment-badge {
 }
 :is(.workspace-shell--talent, .workspace-shell--industry)
   :is(.workspace-talent-main--navigator, .buyer-dashboard-shell__main)
-  :is(.talent-discovery--browse, .talent-discovery--saved) {
+  :is(.talent-discovery--browse, .talent-discovery--list, .talent-discovery--saved) {
   background: #f1f1f1;
 }
 html:has(.workspace-shell--talent) .staging-environment-badge { translate: none !important; transform: none !important; left: 12px !important; }
@@ -660,11 +710,17 @@ html:has(.workspace-shell--talent) .staging-environment-badge { translate: none 
     right: 0;
     left: 0;
     z-index: 40;
-    background: rgb(17 17 17 / 0.42);
-    color: #fafafa;
-    border-bottom: 1px solid rgb(255 255 255 / 0.08);
-    -webkit-backdrop-filter: blur(22px) saturate(1.4);
-    backdrop-filter: blur(22px) saturate(1.4);
+    /* Match Discover / side-panel light chrome — one continuous frosted bar on mobile. */
+    background: rgb(246 246 246 / 0.88);
+    color: #242424;
+    border-bottom: 1px solid rgb(0 0 0 / 0.06);
+    box-shadow: none;
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
+  }
+  /* Discover continues the same surface into the tab row — drop the seam between them. */
+  .workspace-shell--talent:has(.talent-discovery) .talent-mobile-header {
+    border-bottom: 0;
   }
   html:has(.staging-environment-badge) .workspace-shell--talent .talent-mobile-header { top: 24px; }
   .workspace-shell--talent .workspace-talent-main { --home-inline-pad: 16px; padding-top: calc(3.25rem + 16px); }
@@ -685,12 +741,12 @@ html:has(.workspace-shell--talent) .staging-environment-badge { translate: none 
     border: 0;
     border-radius: 0.5rem;
     background: transparent;
-    color: #fafafa;
+    color: #242424;
     cursor: pointer;
   }
   .talent-mobile-header__toggle svg { width: 1.25rem; height: 1.25rem; }
   .talent-mobile-header__toggle:focus-visible {
-    outline: 2px solid #ffffff;
+    outline: 2px solid #242424;
     outline-offset: 2px;
   }
   .talent-mobile-header__brand {
@@ -698,6 +754,8 @@ html:has(.workspace-shell--talent) .staging-environment-badge { translate: none 
     display: inline-flex;
     align-items: center;
   }
+  /* Header wordmark asset is white-on-transparent; invert for the light bar. */
+  .talent-mobile-header__brand img { filter: invert(1); }
   .talent-mobile-header__brand:hover { opacity: 0.8; }
   .talent-mobile-header__panel {
     position: absolute;
@@ -711,11 +769,12 @@ html:has(.workspace-shell--talent) .staging-environment-badge { translate: none 
     max-height: calc(100dvh - 5.5rem);
     overflow: auto;
     padding: 0.25rem 0.85rem 1rem;
-    border-top: 1px solid rgb(255 255 255 / 0.08);
-    background: rgb(17 17 17 / 0.88);
-    box-shadow: 0 18px 40px rgb(0 0 0 / 0.28);
-    -webkit-backdrop-filter: blur(22px) saturate(1.4);
-    backdrop-filter: blur(22px) saturate(1.4);
+    border-top: 1px solid #e5e5e5;
+    background: rgb(255 255 255 / 0.96);
+    color: #242424;
+    box-shadow: 0 18px 40px rgb(0 0 0 / 0.12);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
   }
   .talent-mobile-header__panel[hidden] { display: none; }
   .talent-mobile-header__nav .workspace-nav-link {
@@ -723,6 +782,15 @@ html:has(.workspace-shell--talent) .staging-environment-badge { translate: none 
     padding: 10px 12px;
     border-radius: 10px;
     font-size: 16px;
+    color: #424242;
+  }
+  .talent-mobile-header__nav .workspace-nav-link:hover {
+    background: #f1f1f1;
+    color: #242424;
+  }
+  .talent-mobile-header__nav .workspace-nav-link[aria-current="page"] {
+    background: #ededed;
+    color: #242424;
   }
   .talent-mobile-header__account {
     display: grid;
@@ -740,6 +808,67 @@ html:has(.workspace-shell--talent) .staging-environment-badge { translate: none 
     width: 100%;
     min-height: 56px;
     border-radius: 12px;
+    background: #f1f1f1;
+    color: #242424;
+  }
+  .talent-mobile-header .workspace-account-copy small { color: #616161; }
+  .talent-mobile-header .workspace-account-menu [role="menu"] {
+    background: #fff;
+    border-color: #e5e5e5;
+  }
+  .talent-mobile-header .workspace-account-menu [role="menu"] :is(a, button) {
+    color: #242424;
+  }
+
+  /*
+   * Discover: continue the same frosted surface under the app bar so brand +
+   * Featured/Explore/Saved read as one header. No seam line between them.
+   */
+  .workspace-shell--talent .workspace-talent-main--navigator .talent-discovery-chrome {
+    position: fixed;
+    top: 3.25rem;
+    left: 0;
+    right: 0;
+    z-index: 39;
+    height: 56px;
+    opacity: 1;
+  }
+  html:has(.staging-environment-badge) .workspace-shell--talent .workspace-talent-main--navigator .talent-discovery-chrome {
+    top: calc(24px + 3.25rem);
+  }
+  .workspace-shell--talent .workspace-talent-main--navigator .talent-discovery-chrome__bar {
+    background: rgb(246 246 246 / 0.88);
+    border-bottom: 1px solid rgb(0 0 0 / 0.06);
+    box-shadow: none;
+  }
+  .workspace-shell--talent:has(.talent-discovery--featured) .talent-mobile-header,
+  .workspace-shell--talent .workspace-talent-main--navigator .talent-discovery--featured .talent-discovery-chrome__bar {
+    background: rgb(241 241 241 / 0.88);
+  }
+  .workspace-shell--talent .workspace-talent-main--navigator .talent-discovery--scrolled .talent-discovery-chrome__bar {
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.04);
+  }
+  .workspace-shell--talent .workspace-talent-main--navigator .talent-discovery-modes {
+    position: fixed;
+    top: calc(3.25rem + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 40;
+  }
+  html:has(.staging-environment-badge) .workspace-shell--talent .workspace-talent-main--navigator .talent-discovery-modes {
+    top: calc(24px + 3.25rem + 10px);
+  }
+  .workspace-shell--talent .workspace-talent-main--navigator .talent-discovery-layout-toggle {
+    position: fixed;
+    top: calc(3.25rem + 10px);
+    right: 16px;
+    z-index: 40;
+  }
+  html:has(.staging-environment-badge) .workspace-shell--talent .workspace-talent-main--navigator .talent-discovery-layout-toggle {
+    top: calc(24px + 3.25rem + 10px);
+  }
+  .workspace-shell--talent .workspace-talent-main--navigator .talent-discovery-results {
+    padding-top: 64px;
   }
 }
 
@@ -749,7 +878,7 @@ html:has(.workspace-shell--talent) .staging-environment-badge { translate: none 
 .talent-section-heading > a { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:550; white-space:nowrap; }
 .talent-discovery-cards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
 .talent-discovery-card { position:relative; min-height:240px; border-radius:20px; overflow:hidden; background:#354b45; color:white; display:flex; align-items:flex-end; box-shadow:0 2px 5px #0001; transition:transform 180ms,box-shadow 180ms; }
-button.talent-discovery-card { width:100%; padding:0; border:0; font:inherit; text-align:left; cursor:pointer; color:#fff; }
+:is(button, a).talent-discovery-card { width:100%; padding:0; border:0; font:inherit; text-align:left; text-decoration:none; cursor:pointer; color:#fff; }
 .talent-discovery-card--1 { background:#494759; }
 .talent-discovery-card--2 { background:#634c3c; }
 .talent-discovery-card > img { object-fit:cover; }
@@ -876,7 +1005,7 @@ button.talent-cast-card { border:0; font:inherit; text-align:left; cursor:pointe
 
 /* Home listings: open calls (iOS job card) and classes & sessions. */
 .talent-section-heading:has(> .home-view-all) { flex-wrap:nowrap; }
-.workspace-shell--talent .home-view-all { flex:none; height:34px; padding:0 14px; border:1px solid #e2e2e2; background:#fff; color:#242424; font-size:13px; font-weight:560; transition:background 150ms; }
+.workspace-shell--talent .home-view-all { flex:none; display:inline-flex; align-items:center; height:34px; padding:0 14px; border:1px solid #e2e2e2; border-radius:999px; background:#fff; color:#242424; font-size:13px; font-weight:560; text-decoration:none; transition:background 150ms; }
 .workspace-shell--talent .home-view-all:hover, .workspace-shell--talent .home-view-all[aria-expanded="true"] { background:#f2f2f2; }
 .home-open-call-grid, .home-activity-grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px; }
 .home-open-call-grid > li, .home-activity-grid > li { min-width:0; }
@@ -976,6 +1105,9 @@ button.home-open-call-card { width:100%; text-align:left; cursor:pointer; font:i
 
 /* Page-owned side panel: same column and motion as notifications, wider for editing. */
 .workspace-side-panel { display:flex; flex-direction:column; width:100%; min-width:340px; height:100%; min-height:0; background:#fff; color:#242424; }
+.workspace-side-panel--flush { padding-top:0; }
+.workspace-side-panel--flush .workspace-side-panel__body { padding:0; }
+.workspace-side-panel--flush .talent-profile__close { top:calc(12px + env(safe-area-inset-top, 0px)); }
 .workspace-side-panel__header { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:60px; padding:10px 12px 10px 20px; border-bottom:1px solid #e5e5e5; flex-shrink:0; }
 .workspace-side-panel__title { display:flex; align-items:center; gap:8px; min-width:0; }
 :is(.workspace-shell--talent, .workspace-shell--industry) .workspace-side-panel__header h2 { margin:0; font-size:16px; font-weight:600; letter-spacing:-0.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#242424; }
@@ -1225,6 +1357,8 @@ span.notification-avatar { display:grid; place-items:center; }
   .discover-styles__popover { right: auto; left: 0; transform-origin: top left; }
 }
 .discover-browse__notice { margin: 0; padding: 10px 14px; border-radius: 12px; background: #fff6e0; color: #8a5a00; font-size: 13px; }
+.discover-detail,
+.discover-browse__grid { --talent-card-radius: 16px; }
 .discover-browse__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 24px 16px; }
 @media (min-width: 360px) and (max-width: 600px) {
   .discover-browse__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; }
@@ -1233,13 +1367,25 @@ span.notification-avatar { display:grid; place-items:center; }
   .discover-browse-card .discover-browse-card__photo img { transition: none; }
   .discover-browse-card:hover .discover-browse-card__photo img { transform: none; }
 }
-:is(.workspace-shell--talent, .workspace-shell--industry) button.discover-browse-card { display: grid; gap: 10px; width: 100%; padding: 0; border: 0; background: transparent; color: #242424; font: inherit; text-align: left; cursor: pointer; }
+:is(.workspace-shell--talent, .workspace-shell--industry) :is(button, a, div).discover-browse-card { display: grid; gap: 10px; width: 100%; padding: 0; border: 0; background: transparent; color: #242424; font: inherit; text-align: left; }
+:is(.workspace-shell--talent, .workspace-shell--industry) :is(button, a).discover-browse-card { cursor: pointer; }
 .discover-browse-card__photo { position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden; border-radius: var(--talent-card-radius); background: #e4e4e4; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.04); }
 .discover-browse-card__photo img { width: 100%; height: 100%; object-fit: cover; object-position: center top; transition: transform 300ms ease; }
 .discover-browse-card:hover .discover-browse-card__photo img { transform: scale(1.03); }
 .discover-browse-card:focus-visible .discover-browse-card__photo { outline: 2px solid #242424; outline-offset: 3px; }
 .discover-browse-card__initial { display: grid; place-items: center; height: 100%; color: #9a9a9a; font-size: 40px; font-weight: 600; }
 .discover-browse-card__verified { position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 999px; background: rgb(255 255 255 / 0.92); color: #242424; box-shadow: 0 1px 4px rgb(0 0 0 / 0.12); }
+.discover-browse-card--active .discover-browse-card__photo::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #171717;
+  box-shadow: 0 0 0 3px rgb(255 255 255 / 0.92), 0 1px 4px rgb(0 0 0 / 0.18);
+}
 .discover-browse-card__copy { display: grid; gap: 3px; min-width: 0; padding: 0 2px; }
 .discover-browse-card__copy strong { overflow: hidden; font-size: 15px; font-weight: 620; letter-spacing: -0.01em; text-overflow: ellipsis; white-space: nowrap; }
 .discover-browse-card__copy small { display: flex; align-items: center; gap: 4px; overflow: hidden; color: #616161; font-size: 13px; white-space: nowrap; }

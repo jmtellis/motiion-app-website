@@ -75,7 +75,7 @@ function personFromTalent(node: PublicFeaturedTalent, places: Map<string, Talent
     name: node.displayName,
     avatarUrl: node.headshotUrl,
     role: role || null,
-    location: place?.location ?? null,
+    location: node.location?.trim() || place?.location || null,
     slug: node.username?.trim() || place?.slug || node.userId || null,
   };
 }
@@ -88,6 +88,27 @@ function collectSlugs(nodes: PublicFeaturedTalent[]): string[] {
   return nodes.flatMap((node) => [node.username?.trim() || "", ...collectSlugs(node.children ?? [])].filter(Boolean));
 }
 
+function enrichFeaturedWithPlaces(
+  nodes: PublicFeaturedTalent[],
+  places: Map<string, TalentPlace>,
+): PublicFeaturedTalent[] {
+  return nodes.map((node) => {
+    const place =
+      (node.userId ? places.get(node.userId) : undefined) ??
+      (node.username ? places.get(node.username) : undefined);
+    return {
+      ...node,
+      location: node.location?.trim() || place?.location || null,
+      talentTypes: node.talentTypes?.length
+        ? node.talentTypes
+        : place?.role
+          ? [place.role]
+          : node.talentTypes ?? null,
+      children: enrichFeaturedWithPlaces(node.children ?? [], places),
+    };
+  });
+}
+
 async function lookupTalentPlaces(userIds: string[], slugs: string[]) {
   const places = new Map<string, TalentPlace>();
   const ids = [...new Set(userIds.filter(Boolean))];
@@ -96,7 +117,9 @@ async function lookupTalentPlaces(userIds: string[], slugs: string[]) {
   const supabase = createAdminSupabaseClient() ?? (await createServerSupabaseClient());
   if (!supabase) return places;
 
-  const [{ data: profiles }, { data: byUser }, { data: bySlug }] = await Promise.all([
+  // Public cards read `talent.location` (profiles.working_locations). City/region on
+  // professional_profiles is often empty, so prefer the talent view.
+  const [{ data: profiles }, { data: byUser }, { data: bySlug }, { data: talentRows }] = await Promise.all([
     ids.length
       ? supabase.from("profiles").select("user_id, username, talent_types").in("user_id", ids)
       : Promise.resolve({ data: [] }),
@@ -106,17 +129,32 @@ async function lookupTalentPlaces(userIds: string[], slugs: string[]) {
     names.length
       ? supabase.from("professional_profiles").select("user_id, location_city, location_region, slug").in("slug", names)
       : Promise.resolve({ data: [] }),
+    ids.length
+      ? supabase.from("talent").select("id, username, location, talent_types").in("id", ids)
+      : Promise.resolve({ data: [] }),
   ]);
   const professional = [...(byUser ?? []), ...(bySlug ?? [])];
   const professionalById = new Map(professional.map((row) => [row.user_id as string, row]));
-  const keys = [...new Set([...ids, ...professional.map((row) => row.user_id as string)])];
+  const talentById = new Map((talentRows ?? []).map((row) => [row.id as string, row]));
+  const keys = [...new Set([...ids, ...professional.map((row) => row.user_id as string), ...talentById.keys()])];
   for (const id of keys) {
     const profile = (profiles ?? []).find((row) => row.user_id === id);
     const work = professionalById.get(id);
-    const role = formatTalentTypeDisplayLine(profile?.talent_types as string[] | null, "").trim();
+    const talent = talentById.get(id);
+    const role =
+      formatTalentTypeDisplayLine(
+        (talent?.talent_types as string[] | null) ?? (profile?.talent_types as string[] | null),
+        "",
+      ).trim();
     const place: TalentPlace = {
-      location: placeLine(work?.location_city as string | null, work?.location_region as string | null),
-      slug: (typeof profile?.username === "string" && profile.username.trim()) || (typeof work?.slug === "string" && work.slug.trim()) || null,
+      location:
+        (typeof talent?.location === "string" && talent.location.trim()) ||
+        placeLine(work?.location_city as string | null, work?.location_region as string | null),
+      slug:
+        (typeof talent?.username === "string" && talent.username.trim()) ||
+        (typeof profile?.username === "string" && profile.username.trim()) ||
+        (typeof work?.slug === "string" && work.slug.trim()) ||
+        null,
       role: role || null,
     };
     places.set(id, place);
@@ -148,6 +186,26 @@ export async function loadHomeProfile(
   return { profile };
 }
 
+async function withResolvedPlaces(people: HomeRosterPerson[]): Promise<HomeRosterPerson[]> {
+  const missing = people.filter((person) => !person.location?.trim());
+  if (!missing.length) return people;
+  const places = await lookupTalentPlaces(
+    missing.map((person) => person.id),
+    missing.flatMap((person) => (person.slug ? [person.slug] : [])),
+  );
+  return people.map((person) => {
+    if (person.location?.trim()) return person;
+    const place = places.get(person.id) ?? (person.slug ? places.get(person.slug) : undefined);
+    if (!place?.location) return person;
+    return {
+      ...person,
+      location: place.location,
+      role: person.role || place.role,
+      slug: person.slug || place.slug,
+    };
+  });
+}
+
 export async function loadCommunityRoster(input: {
   talentIds: string[];
   subtype: CommunitySubtype | null;
@@ -159,24 +217,41 @@ export async function loadCommunityRoster(input: {
   if (talentIds.length) {
     const result = await searchCuratedTalent(talentIds);
     if (result.source === "unavailable") return { people: [], error: "Could not load this list." };
-    return { people: result.items.map(personFromProfile), error: null };
+    return { people: await withResolvedPlaces(result.items.map(personFromProfile)), error: null };
   }
 
   if (!subtype) return { people: [], error: null };
   const result = await searchTalentProfiles({ subtype, navigator: true });
   if (result.source === "unavailable") return { people: [], error: "Could not load this list." };
-  return { people: result.items.slice(0, 48).map(personFromProfile), error: null };
+  return {
+    people: await withResolvedPlaces(result.items.slice(0, 48).map(personFromProfile)),
+    error: null,
+  };
+}
+
+/** Public activity payload for the light Discover event showcase. */
+export async function loadDiscoverEventActivity(
+  eventId: string,
+): Promise<{ activity: PublicActivity | null; error: string | null }> {
+  await requireCompleteProfile();
+  const id = eventId.trim();
+  if (!id) return { activity: null, error: "Event not found." };
+  const activity = (await fetchPublicActivity(id)) ?? (await loadLocalPublicEvent(id));
+  if (!activity) return { activity: null, error: "This event could not be opened." };
+  const roots = activity.featuredTalent ?? [];
+  if (!roots.length) return { activity, error: null };
+  const places = await lookupTalentPlaces(collectUserIds(roots), collectSlugs(roots));
+  return {
+    activity: { ...activity, featuredTalent: enrichFeaturedWithPlaces(roots, places) },
+    error: null,
+  };
 }
 
 export async function loadHomeEventDetail(
   eventId: string,
 ): Promise<{ event: HomeEventDetail | null; error: string | null }> {
-  await requireCompleteProfile();
-  const id = eventId.trim();
-  if (!id) return { event: null, error: "Event not found." };
-
-  const activity = (await fetchPublicActivity(id)) ?? (await loadLocalPublicEvent(id));
-  if (!activity) return { event: null, error: "This event could not be opened." };
+  const { activity, error } = await loadDiscoverEventActivity(eventId);
+  if (!activity) return { event: null, error: error ?? "This event could not be opened." };
 
   const appearance = resolveTalentAppearance(activity);
   const roots = activity.featuredTalent ?? [];

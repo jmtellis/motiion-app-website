@@ -21,12 +21,23 @@ export function PanelSheet({
 }) {
   return (
     <Dialog open onClose={onClose} label={title} className="profile-sheet-dialog">
-      <section className="profile-sheet__card" data-portfolio-dialog>
-        <header className="profile-sheet__header">
-          <h3>{title}</h3>
-          <button type="button" className="ui-button ui-button--secondary" onClick={onClose}>Done</button>
+      <section className="profile-sheet__card workspace-side-panel" data-portfolio-dialog>
+        <header className="profile-sheet__header workspace-side-panel__header">
+          <div className="workspace-side-panel__title">
+            <h3>{title}</h3>
+          </div>
+          <div className="workspace-side-panel__actions">
+            <button
+              type="button"
+              className="workspace-notifications__close"
+              aria-label={`Close ${title.toLowerCase()}`}
+              onClick={onClose}
+            >
+              <X size={18} aria-hidden />
+            </button>
+          </div>
         </header>
-        <div className="profile-sheet__body">{children}</div>
+        <div className="profile-sheet__body workspace-side-panel__body">{children}</div>
         {footer ? <footer className="profile-sheet__footer">{footer}</footer> : null}
       </section>
     </Dialog>
@@ -186,6 +197,109 @@ export function HeadshotViewer({
       ) : null}
       {notice ? <p className="headshot-viewer__notice" role="status">{notice}</p> : null}
     </div>
+    </Dialog>
+  );
+}
+
+export type ProfileVideoClip = {
+  id: string;
+  url: string;
+  label: string;
+};
+
+/** Full-screen focused video viewer — same chrome pattern as HeadshotViewer. */
+export function VideoViewer({
+  clips,
+  name,
+  initialIndex,
+  onClose,
+}: {
+  clips: ProfileVideoClip[];
+  name: string;
+  initialIndex: number;
+  onClose: () => void;
+}) {
+  const [index, setIndex] = useState(Math.min(Math.max(initialIndex, 0), Math.max(clips.length - 1, 0)));
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const clip = clips[index];
+  const count = clips.length;
+
+  useEffect(() => {
+    closeRef.current?.focus();
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "ArrowRight" && count > 1) {
+        setIndex((current) => (current + 1) % count);
+      } else if (event.key === "ArrowLeft" && count > 1) {
+        setIndex((current) => (current - 1 + count) % count);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [count]);
+
+  useEffect(() => {
+    const node = videoRef.current;
+    if (!node) return;
+    node.load();
+    void node.play().catch(() => {
+      /* Autoplay may be blocked; controls remain available. */
+    });
+  }, [clip?.url]);
+
+  if (!clip) return null;
+
+  return (
+    <Dialog open onClose={onClose} label={`${name} visuals`} className="headshot-dialog">
+      <div className="headshot-viewer video-viewer" data-portfolio-dialog>
+        <header className="headshot-viewer__bar">
+          <p>
+            <strong>{clip.label}</strong>
+            {count > 1 ? <span>{index + 1} of {count}</span> : null}
+          </p>
+          <div className="headshot-viewer__actions">
+            <button ref={closeRef} type="button" className="headshot-viewer__close" onClick={onClose} aria-label="Close visuals">
+              <X size={18} aria-hidden />
+            </button>
+          </div>
+        </header>
+        <div className="headshot-viewer__stage video-viewer__stage" onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+          {count > 1 ? (
+            <button type="button" className="headshot-viewer__nav headshot-viewer__nav--prev" aria-label="Previous video" onClick={() => setIndex((index - 1 + count) % count)}>
+              <ChevronLeft size={22} aria-hidden />
+            </button>
+          ) : null}
+          <video
+            key={clip.url}
+            ref={videoRef}
+            className="video-viewer__player"
+            src={clip.url}
+            controls
+            playsInline
+            autoPlay
+          />
+          {count > 1 ? (
+            <button type="button" className="headshot-viewer__nav headshot-viewer__nav--next" aria-label="Next video" onClick={() => setIndex((index + 1) % count)}>
+              <ChevronRight size={22} aria-hidden />
+            </button>
+          ) : null}
+        </div>
+        {count > 1 ? (
+          <div className="headshot-viewer__thumbs video-viewer__thumbs" role="group" aria-label="Visuals">
+            {clips.map((item, itemIndex) => (
+              <button
+                key={item.id}
+                type="button"
+                aria-pressed={itemIndex === index}
+                aria-label={item.label}
+                onClick={() => setIndex(itemIndex)}
+              >
+                <video src={item.url} muted playsInline preload="metadata" />
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
     </Dialog>
   );
 }

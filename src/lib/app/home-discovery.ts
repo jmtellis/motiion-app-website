@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { liveCatalogEnabled, readLiveHomeCampaigns, type HomeCampaign, readLiveFeaturedCollections, readLiveHomeEvents, type LiveCastPerson } from "@/lib/catalog/live-catalog";
+import { allowsLocalProductionSupabase } from "@/lib/environment";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type FeaturedCollection = { id: string; eyebrow: string | null; headline: string; image_url: string | null; talent_ids: string[] };
@@ -14,11 +15,18 @@ export type HomeEvent = {
   sponsored_by_motiion: boolean;
   show_in_meet_the_cast: boolean;
   people: HomeEventPerson[];
+  event_type?: string | null;
+  event_type_data?: Record<string, unknown> | null;
 };
+
+/** When the app already points at production, skip the catalog overlay so Featured is not fetched twice. */
+function useLiveCatalogOverlay() {
+  return liveCatalogEnabled() && !allowsLocalProductionSupabase();
+}
 
 /** Same curated source as FeaturedCarouselRepository on iOS. No CMS writes on page load. */
 export const fetchHomeCollections = cache(async (): Promise<FeaturedCollection[]> => {
-  if (liveCatalogEnabled()) {
+  if (useLiveCatalogOverlay()) {
     const live = await readLiveFeaturedCollections();
     if (live.length) return live;
   }
@@ -35,7 +43,7 @@ export const fetchHomeCollections = cache(async (): Promise<FeaturedCollection[]
 
 /** Local Motiion events are merged in so staging-only sponsored events show next to the live catalog. */
 export const fetchHomeEvents = cache(async () => {
-  const [live, local] = await Promise.all([liveCatalogEnabled() ? readLiveHomeEvents() : null, fetchLocalHomeEvents()]);
+  const [live, local] = await Promise.all([useLiveCatalogOverlay() ? readLiveHomeEvents() : null, fetchLocalHomeEvents()]);
   if (!live || !(live.sponsored.length || live.cast.length)) return local;
   const liveIds = new Set(live.sponsored.map(event => event.id));
   const sponsored = [...live.sponsored, ...local.sponsored.filter(event => !liveIds.has(event.id))]
@@ -48,7 +56,7 @@ async function fetchLocalHomeEvents(): Promise<{ sponsored: HomeEvent[]; cast: H
   if (!client) return { sponsored: [], cast: [] };
   const today = new Date().toISOString().slice(0, 10);
   const end = new Date(); end.setUTCFullYear(end.getUTCFullYear() + 1);
-  const select = "id,creator_id,title,activity_date,start_time,cover_image_url,sponsored_by_motiion,show_in_meet_the_cast";
+  const select = "id,creator_id,title,activity_date,start_time,cover_image_url,sponsored_by_motiion,show_in_meet_the_cast,event_type,event_type_data";
   const base = () => client.from("activities").select(select).eq("type", "event").eq("status", "active").eq("is_private", false);
   const [pinned, upcoming] = await Promise.all([
     base().eq("show_in_meet_the_cast", true).eq("sponsored_by_motiion", false).order("activity_date", { ascending: false }).limit(50),
@@ -79,7 +87,7 @@ async function fetchLocalHomeEvents(): Promise<{ sponsored: HomeEvent[]; cast: H
 
 /** Featured Brands uses the same active Notion campaign feed as iOS. */
 export const fetchHomeCampaigns = cache(async (): Promise<HomeCampaign[]> => {
-  if (liveCatalogEnabled()) return readLiveHomeCampaigns();
+  if (useLiveCatalogOverlay()) return readLiveHomeCampaigns();
   const client = await createServerSupabaseClient();
   if (!client) return [];
   const now = new Date().toISOString();

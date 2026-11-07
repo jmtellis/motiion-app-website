@@ -9,6 +9,10 @@ export type Talent = {
   location?: string;
   agency?: string;
   styles: string[];
+  /** Talent type chips (dancer, choreographer, …) when available for client filters. */
+  talentTypes?: string[];
+  /** Skill tags when available for client filters. */
+  skills?: string[];
   height?: string;
   availability?: string;
   unionStatus?: string;

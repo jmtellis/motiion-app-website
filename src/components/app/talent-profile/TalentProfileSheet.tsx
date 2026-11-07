@@ -10,7 +10,6 @@ import {
   Bell,
   BellOff,
   Check,
-  ChevronLeft,
   ChevronRight,
   ExternalLink,
   Heart,
@@ -35,7 +34,6 @@ import { useIndustryProOptional, useIsIndustryWorkspace } from "@/components/tal
 import { fetchIndustryTalentSaveState, setIndustryTalentSaved, setIndustryRosterMembership, createIndustryRosterForTalent } from "@/lib/talent-buyers/roster-profile-actions";
 import { loadHomeProfile } from "@/app/(app)/home/actions";
 import { useWorkspaceViewerId } from "@/components/workspace/WorkspaceNotifications";
-import { getProfileInitials } from "@/lib/auth/avatar";
 import { primaryTalentLabel } from "@/lib/app/talent-label";
 import { startConversationWith } from "@/lib/app/conversations";
 import type { CreditChipItem } from "@/lib/profile/profile-credits";
@@ -49,23 +47,29 @@ import {
   toggleNotifyMe,
   type TalentSaveState,
 } from "@/lib/talent/referrer-lists";
-import type { ProfileExperience, ProfileVisual, PublicTalentProfile } from "@/types/public";
+import type { PublicTalentProfile } from "@/types/public";
 
 import { HeadshotViewer, PanelSheet } from "./ProfileOverlays";
+import {
+  CreditAvatar,
+  ExperienceDetail,
+  ExperienceThumb,
+  HeroPager,
+  HighlightCard,
+  SkillsPage,
+  VisualPlayer,
+  displayName,
+} from "./ProfileParts";
 import {
   SECTION_LABEL,
   categoryLabel,
   creditChips,
-  embedUrl,
-  experienceFacts,
-  experienceImage,
   experienceIndexForHighlight,
   experienceIndexesForChip,
   hasWorkDetails,
   headshots,
   publicRepresentation,
   sectionAvailable,
-  skillVisuals,
   socialLinks,
   visualOf,
   type ProfileSection,
@@ -93,12 +97,21 @@ export function TalentProfileSheet({
   userId,
   onChrome,
   matchReason,
+  variant = "sheet",
+  onOpenFullProfile,
+  onClose,
 }: {
   slug: string;
   userId?: string;
   onChrome: (chrome: TalentProfileChrome) => void;
   matchReason?: string | null;
+  /** Preview: actions, highlights, socials — no deep portfolio drill-in. */
+  variant?: "sheet" | "preview";
+  onOpenFullProfile?: (profile: PublicTalentProfile) => void;
+  /** Overlay close control on the hero (headerless side panels). */
+  onClose?: () => void;
 }) {
+  const preview = variant === "preview";
   const viewerId = useWorkspaceViewerId();
   const industryWorkspace = useIsIndustryWorkspace();
   const [blocked, setBlocked] = useState<{ slug: string; name: string } | null>(null);
@@ -137,10 +150,10 @@ export function TalentProfileSheet({
 
   useEffect(() => {
     onChrome({
-      title,
-      pop: stack.length ? () => setStack((current) => current.slice(0, -1)) : null,
+      title: preview ? null : title,
+      pop: preview || !stack.length ? null : () => setStack((current) => current.slice(0, -1)),
     });
-  }, [onChrome, stack.length, title]);
+  }, [onChrome, preview, stack.length, title]);
 
   useEffect(() => {
     scrollAnchor.current?.closest(".workspace-side-panel__body")?.scrollTo({ top: 0 });
@@ -167,7 +180,7 @@ export function TalentProfileSheet({
 
   return (
     <div className="talent-profile" ref={scrollAnchor}>
-      {page ? (
+      {page && !preview ? (
         <ProfileDestination
           profile={profile}
           page={page}
@@ -178,6 +191,8 @@ export function TalentProfileSheet({
         <ProfileHome
           profile={profile}
           matchReason={matchReason}
+          preview={preview}
+          onClose={onClose}
           actions={isSelf ? null : (
             <ProfileActions
               profile={profile}
@@ -185,15 +200,27 @@ export function TalentProfileSheet({
               onBlocked={() => { setBlocked({ slug, name: displayName(profile) }); setStack([]); setOverlay(null); setViewer(null); }}
               onLists={() => setOverlay({ kind: "lists" })}
               onMessage={() => setOverlay({ kind: "message" })}
+              onOpenFullProfile={onOpenFullProfile ? () => onOpenFullProfile(profile) : undefined}
             />
           )}
-          onOpen={open}
-          onCredit={openCredit}
+          onOpen={preview ? () => undefined : open}
+          onCredit={preview ? () => undefined : openCredit}
           onHeadshot={setViewer}
+          footer={
+            preview && onOpenFullProfile ? (
+              <button
+                type="button"
+                className="talent-profile__full-profile"
+                onClick={() => onOpenFullProfile(profile)}
+              >
+                View full profile
+              </button>
+            ) : null
+          }
         />
       )}
 
-      {overlay?.kind === "credit" ? (
+      {overlay?.kind === "credit" && !preview ? (
         <CreditSheet
           profile={profile}
           chip={overlay.chip}
@@ -223,10 +250,6 @@ export function TalentProfileSheet({
   );
 }
 
-function displayName(profile: PublicTalentProfile) {
-  return profile.full_name?.trim() || "Talent";
-}
-
 function pageTitle(profile: PublicTalentProfile, page: ProfilePage) {
   if (page.kind === "section") return SECTION_LABEL[page.section];
   return profile.experiences?.[page.index]?.title?.trim() || "Experience";
@@ -253,6 +276,9 @@ function ProfileHome({
   onOpen,
   onCredit,
   onHeadshot,
+  preview = false,
+  footer = null,
+  onClose,
 }: {
   profile: PublicTalentProfile;
   matchReason?: string | null;
@@ -260,6 +286,9 @@ function ProfileHome({
   onOpen: (page: ProfilePage) => void;
   onCredit: (chip: CreditChipItem) => void;
   onHeadshot: (index: number) => void;
+  preview?: boolean;
+  footer?: ReactNode;
+  onClose?: () => void;
 }) {
   const name = displayName(profile);
   const meta = [primaryTalentLabel(profile.talent_types), profile.location].filter(Boolean).join(" · ");
@@ -271,10 +300,10 @@ function ProfileHome({
   const union = profile.union_status?.trim();
 
   const mediaRows: ReactNode[] = [];
-  if (sectionAvailable(profile, "headshots")) {
+  if (!preview && sectionAvailable(profile, "headshots")) {
     mediaRows.push(<MenuRow key="headshots" icon={<ImageIcon size={16} aria-hidden />} label="Headshots" detail={String(shots.length)} onClick={() => onOpen({ kind: "section", section: "headshots" })} />);
   }
-  if (sectionAvailable(profile, "reel")) {
+  if (!preview && sectionAvailable(profile, "reel")) {
     mediaRows.push(<MenuRow key="reel" icon={<Play size={16} aria-hidden />} label="Reel" onClick={() => onOpen({ kind: "section", section: "reel" })} />);
   }
   if (hasWorkDetails(profile)) {
@@ -295,7 +324,7 @@ function ProfileHome({
     );
   }
   const moreRows: ReactNode[] = [];
-  if (sectionAvailable(profile, "slate")) {
+  if (!preview && sectionAvailable(profile, "slate")) {
     moreRows.push(<MenuRow key="slate" icon={<Mic size={16} aria-hidden />} label="Slate" onClick={() => onOpen({ kind: "section", section: "slate" })} />);
   }
   if (socials.length) {
@@ -313,13 +342,13 @@ function ProfileHome({
       </div>,
     );
   }
-  if (sectionAvailable(profile, "skills")) {
+  if (!preview && sectionAvailable(profile, "skills")) {
     moreRows.push(<MenuRow key="skills" icon={<Sparkles size={16} aria-hidden />} label="Skills" onClick={() => onOpen({ kind: "section", section: "skills" })} />);
   }
 
   return (
     <>
-      <HeroPager name={name} meta={meta} shots={shots} onOpen={onHeadshot} />
+      <HeroPager name={name} meta={meta} shots={shots} onOpen={onHeadshot} onClose={onClose} />
       {actions}
       <div className="talent-profile__body">
         {matchReason ? <p className="talent-profile__match">Why this matched: {matchReason}</p> : null}
@@ -327,7 +356,7 @@ function ProfileHome({
           <section>
             <div className="talent-profile__section-head">
               <h4>Credits</h4>
-              {chips.length > CREDIT_RAIL_LIMIT ? (
+              {!preview && chips.length > CREDIT_RAIL_LIMIT ? (
                 <button type="button" onClick={() => onOpen({ kind: "section", section: "credits" })}>
                   See all {chips.length}
                 </button>
@@ -336,7 +365,7 @@ function ProfileHome({
             <ul className="talent-profile__credit-rail">
               {chips.slice(0, CREDIT_RAIL_LIMIT).map((chip) => (
                 <li key={chip.id}>
-                  <CreditAvatar chip={chip} onClick={() => onCredit(chip)} />
+                  <CreditAvatar chip={chip} onClick={preview ? undefined : () => onCredit(chip)} />
                 </li>
               ))}
             </ul>
@@ -349,19 +378,11 @@ function ProfileHome({
               {highlights.map((item) => {
                 const index = experienceIndexForHighlight(profile, item);
                 return (
-                  <button
+                  <HighlightCard
                     key={item.id}
-                    type="button"
-                    className="talent-profile__highlight-card"
-                    disabled={index === null}
-                    onClick={() => index !== null && onOpen({ kind: "experience", index })}
-                  >
-                    {item.image_url ? <Image src={item.image_url} alt="" width={148} height={196} unoptimized /> : <span aria-hidden />}
-                    <span className="talent-profile__highlight-copy">
-                      <small>{item.subtitle?.trim() || "Studio"}</small>
-                      <strong>{item.title}</strong>
-                    </span>
-                  </button>
+                    highlight={item}
+                    onClick={preview || index === null ? undefined : () => onOpen({ kind: "experience", index })}
+                  />
                 );
               })}
             </div>
@@ -369,53 +390,9 @@ function ProfileHome({
         ) : null}
         {mediaRows.length ? <div className="home-profile__menu">{mediaRows}</div> : null}
         {moreRows.length ? <div className="home-profile__menu">{moreRows}</div> : null}
+        {footer}
       </div>
     </>
-  );
-}
-
-function HeroPager({
-  name,
-  meta,
-  shots,
-  onOpen,
-}: {
-  name: string;
-  meta: string;
-  shots: string[];
-  onOpen: (index: number) => void;
-}) {
-  const [index, setIndex] = useState(0);
-  const count = shots.length;
-  const current = shots[index];
-
-  return (
-    <div className="talent-profile__hero">
-      {current ? (
-        <button type="button" className="talent-profile__hero-card" aria-label={`Open ${name}'s headshots`} onClick={() => onOpen(index)}>
-          <Image key={current} src={current} alt="" fill sizes="480px" unoptimized />
-        </button>
-      ) : (
-        <span className="talent-profile__hero-initials" aria-hidden>{getProfileInitials(name) || "?"}</span>
-      )}
-      {count > 1 ? (
-        <>
-          <button type="button" className="talent-profile__hero-nav talent-profile__hero-nav--prev" aria-label="Previous headshot" onClick={() => setIndex((index - 1 + count) % count)}>
-            <ChevronLeft size={18} aria-hidden />
-          </button>
-          <button type="button" className="talent-profile__hero-nav talent-profile__hero-nav--next" aria-label="Next headshot" onClick={() => setIndex((index + 1) % count)}>
-            <ChevronRight size={18} aria-hidden />
-          </button>
-          <span className="talent-profile__hero-dots" aria-hidden>
-            {shots.map((shot, dot) => <i key={shot} data-on={dot === index} />)}
-          </span>
-        </>
-      ) : null}
-      <div className="talent-profile__identity">
-        <h3>{name}</h3>
-        {meta ? <p>{meta}</p> : null}
-      </div>
-    </div>
   );
 }
 
@@ -430,33 +407,22 @@ function MenuRow({ icon, label, detail, onClick }: { icon: ReactNode; label: str
   );
 }
 
-function CreditAvatar({ chip, onClick }: { chip: CreditChipItem; onClick: () => void }) {
-  return (
-    <button type="button" className="talent-profile__credit" onClick={onClick}>
-      {chip.imageUrl ? (
-        <Image src={chip.imageUrl} alt="" width={72} height={72} unoptimized />
-      ) : (
-        <span className="talent-profile__credit-initials" aria-hidden>{getProfileInitials(chip.title) || "?"}</span>
-      )}
-      <span className="talent-profile__credit-name">{chip.title}</span>
-    </button>
-  );
-}
-
 /* ─── Actions ──────────────────────────────────────────────────────────── */
 
-function ProfileActions({
+export function ProfileActions({
   profile,
   onNotice,
   onLists,
   onMessage,
   onBlocked,
+  onOpenFullProfile,
 }: {
   profile: PublicTalentProfile;
   onNotice: (message: string) => void;
   onLists: () => void;
   onMessage: () => void;
   onBlocked: () => void;
+  onOpenFullProfile?: () => void;
 }) {
   const industry = useIsIndustryWorkspace();
   const viewerId = useWorkspaceViewerId();
@@ -558,9 +524,15 @@ function ProfileActions({
     <>
     {state?.error ? <p className="ui-notice" data-tone="error" role="alert">{state.error} <button type="button" onClick={() => setLoadAttempt(value => value + 1)}>Retry</button></p> : null}
     <div className="talent-profile__actions">
-      <button type="button" className="talent-profile__action" aria-pressed={favorited} disabled={Boolean(busy) || !state || Boolean(state.error)} onClick={() => void favorite()}>
-        <Heart size={16} aria-hidden fill={favorited ? "currentColor" : "none"} />
-        {favorited ? "Favorited" : "Favorite"}
+      <button
+        type="button"
+        className="talent-profile__action talent-profile__action--favorite"
+        aria-pressed={favorited}
+        disabled={Boolean(busy) || !state || Boolean(state.error)}
+        onClick={() => void favorite()}
+      >
+        <Heart size={16} aria-hidden className="talent-profile__favorite-icon" fill={favorited ? "currentColor" : "none"} />
+        Favorite
       </button>
       <button type="button" className="talent-profile__action" onClick={() => void share()}>
         <Share size={16} aria-hidden />
@@ -601,10 +573,17 @@ function ProfileActions({
               <button type="button" onClick={() => { setMenuOpen(false); setReportOpen(true); }}><Flag size={16} aria-hidden />Report profile</button>
               <button type="button" onClick={() => { setMenuOpen(false); setConfirmBlock(true); setBlockError(null); }}><ShieldOff size={16} aria-hidden />Block person</button>
             </> : null}
-            <a href={path} target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>
-              <ExternalLink size={16} aria-hidden />
-              Open full profile
-            </a>
+            {onOpenFullProfile ? (
+              <button type="button" onClick={() => { setMenuOpen(false); onOpenFullProfile(); }}>
+                <ExternalLink size={16} aria-hidden />
+                Open full profile
+              </button>
+            ) : (
+              <a href={path} target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>
+                <ExternalLink size={16} aria-hidden />
+                Open full profile
+              </a>
+            )}
           </div>
         ) : null}
       </div>
@@ -654,7 +633,7 @@ function CreditSheet({
   );
 }
 
-function ListsSheet({
+export function ListsSheet({
   profile,
   onClose,
   onNotice,
@@ -758,7 +737,7 @@ function ListsSheet({
   );
 }
 
-function MessageSheet({
+export function MessageSheet({
   profile,
   onClose,
   onNotice,
@@ -852,107 +831,4 @@ function ProfileDestination({
     case "skills":
       return <SkillsPage profile={profile} />;
   }
-}
-
-function ExperienceDetail({ experience }: { experience: ProfileExperience }) {
-  const image = experienceImage(experience);
-  const facts = experienceFacts(experience);
-  const embed = embedUrl(experience.link_url);
-  return (
-    <article className="talent-profile__experience">
-      <header className="talent-profile__experience-head">
-        {image ? (
-          <Image className="talent-profile__experience-thumb" src={image} alt="" width={64} height={64} unoptimized />
-        ) : (
-          <span className="talent-profile__experience-thumb" aria-hidden>{experience.title.charAt(0)}</span>
-        )}
-        <div>
-          <p>{categoryLabel(experience)}</p>
-          <h3>{experience.title}</h3>
-          {experience.role ? <span>{experience.role}</span> : null}
-        </div>
-      </header>
-      {embed ? (
-        <div className="talent-profile__embed">
-          <iframe src={embed} title={experience.title} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen loading="lazy" />
-        </div>
-      ) : experience.link_url ? (
-        <a className="talent-profile__link-card" href={experience.link_url} target="_blank" rel="noopener noreferrer">
-          <span className="home-profile-row__icon"><Play size={16} aria-hidden /></span>
-          <span className="home-profile-row__copy">
-            <span className="home-profile-row__label">Watch</span>
-            <span className="talent-profile__link-host">{hostOf(experience.link_url)}</span>
-          </span>
-          <ExternalLink size={16} aria-hidden />
-        </a>
-      ) : null}
-      {facts.length ? (
-        <dl className="talent-profile__facts">
-          {facts.map((fact) => (
-            <div key={fact.label}>
-              <dt>{fact.label}</dt>
-              <dd>{fact.value}</dd>
-            </div>
-          ))}
-        </dl>
-      ) : null}
-    </article>
-  );
-}
-
-function hostOf(url: string) {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return url;
-  }
-}
-
-function VisualPlayer({ visual }: { visual: ProfileVisual | null }) {
-  if (!visual?.url) return <p className="home-panel-status">Nothing here yet.</p>;
-  return (
-    <div className="talent-profile__player">
-      <video src={visual.url} controls playsInline autoPlay />
-    </div>
-  );
-}
-
-function SkillsPage({ profile }: { profile: PublicTalentProfile }) {
-  const visuals = skillVisuals(profile);
-  const shown = new Set(visuals.map((item) => item.ref?.trim().toLowerCase()).filter(Boolean));
-  const styles = (profile.styles ?? []).filter((tag) => !shown.has(tag.toLowerCase()));
-  const skills = (profile.skills ?? []).filter((tag) => !shown.has(tag.toLowerCase()));
-  return (
-    <div className="talent-profile__body">
-      {visuals.length ? (
-        <div className="talent-profile__clips">
-          {visuals.map((item) => (
-            <figure key={item.id}>
-              <video src={item.url} controls playsInline muted preload="metadata" />
-              {item.ref ? <figcaption>{item.ref}</figcaption> : null}
-            </figure>
-          ))}
-        </div>
-      ) : null}
-      {styles.length ? <TagGroup title="Styles" tags={styles} /> : null}
-      {skills.length ? <TagGroup title="Skills" tags={skills} /> : null}
-    </div>
-  );
-}
-
-function TagGroup({ title, tags }: { title: string; tags: string[] }) {
-  return (
-    <section>
-      <div className="talent-profile__section-head"><h4>{title}</h4></div>
-      <div className="talent-profile__tags">
-        {tags.map((tag) => <span key={tag}>{tag}</span>)}
-      </div>
-    </section>
-  );
-}
-
-function ExperienceThumb({ experience }: { experience: ProfileExperience }) {
-  const src = experienceImage(experience);
-  if (!src) return <span className="home-profile-row__thumb" aria-hidden>{experience.title.charAt(0)}</span>;
-  return <Image className="home-profile-row__thumb" src={src} alt="" width={44} height={44} unoptimized />;
 }

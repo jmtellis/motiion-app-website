@@ -29,6 +29,12 @@ export function getSupabaseEnv() {
     throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.");
   }
 
-  assertSupabaseIsolation(supabaseUrl, getAppEnvironment());
+  assertSupabaseIsolation(supabaseUrl, getAppEnvironment(), {
+    NEXT_PUBLIC_MOTIION_LOCAL_PRODUCTION: process.env.NEXT_PUBLIC_MOTIION_LOCAL_PRODUCTION,
+    MOTIION_LOCAL_PRODUCTION: process.env.MOTIION_LOCAL_PRODUCTION,
+    NODE_ENV: process.env.NODE_ENV,
+    VERCEL_ENV: process.env.VERCEL_ENV,
+    NEXT_PUBLIC_VERCEL_ENV: process.env.NEXT_PUBLIC_VERCEL_ENV,
+  });
   return { supabaseUrl, supabaseAnonKey };
 }

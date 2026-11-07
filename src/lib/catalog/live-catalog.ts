@@ -34,6 +34,8 @@ export type LiveHomeEvent = {
   cover_image_url: string | null;
   sponsored_by_motiion: boolean;
   show_in_meet_the_cast: boolean;
+  event_type?: string | null;
+  event_type_data?: Record<string, unknown> | null;
   people: LiveCastPerson[];
 };
 
@@ -112,7 +114,7 @@ export async function readLiveFeaturedCollections(): Promise<LiveCollection[]> {
   });
 }
 
-const EVENT_SELECT = "id,creator_id,title,activity_date,start_time,cover_image_url,sponsored_by_motiion,show_in_meet_the_cast";
+const EVENT_SELECT = "id,creator_id,title,activity_date,start_time,cover_image_url,sponsored_by_motiion,show_in_meet_the_cast,event_type,event_type_data";
 
 export async function readLiveHomeEvents(): Promise<{ sponsored: LiveHomeEvent[]; cast: LiveHomeEvent[] } | null> {
   if (!config()) return null;

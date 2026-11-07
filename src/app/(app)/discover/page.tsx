@@ -1,5 +1,3 @@
-import { Suspense } from "react";
-
 import { DiscoverFeatured } from "@/components/app/DiscoverFeatured";
 import { TalentDiscovery } from "@/components/app/TalentDiscovery";
 import { DiscoverView } from "@/components/app/DiscoverView";
@@ -19,33 +17,29 @@ export default async function DiscoverPage({
   if ("redirectTo" in canvas) redirect(canvas.redirectTo);
   const featured = !isCommunityAccount(profile.accountType);
   const view = typeof params.view === "string" ? params.view : undefined;
-  const searching = Object.keys(params).some((key) => key !== "view");
+  const layout = typeof params.layout === "string" ? params.layout : undefined;
+  const searching = Object.keys(params).some((key) => key !== "view" && key !== "layout");
+  const listLayout = view === "browse" || layout === "list";
   const initialMode =
-    view === "explore" || view === "discover"
-      ? "discover"
-      : view === "saved"
-        ? "saved"
-        : view === "browse" || searching || !featured
-          ? "browse"
-          : "featured";
+    view === "saved"
+      ? "saved"
+      : view === "explore" || view === "discover" || view === "browse" || searching || !featured
+        ? "discover"
+        : "featured";
+  const initialLayout = listLayout ? "list" : "navigator";
 
   return (
     <TalentDiscovery
       key={profile.id}
       currentUserId={profile.id}
       initialMode={initialMode}
+      initialLayout={initialLayout}
       collectionTitle={canvas.collectionTitle}
       initialData={canvas.initialData}
       keyword={canvas.filters.keyword ?? ""}
       credit={canvas.credit}
       recentlyViewed={canvas.recentlyViewed}
-      featured={
-        featured ? (
-          <Suspense fallback={<div className="talent-discovery-featured__loading" aria-busy="true" />}>
-            <DiscoverFeatured listings />
-          </Suspense>
-        ) : undefined
-      }
+      featured={featured ? <DiscoverFeatured listings /> : undefined}
     >
       <DiscoverView filters={canvas.filters} result={canvas.result} credit={canvas.credit} />
     </TalentDiscovery>

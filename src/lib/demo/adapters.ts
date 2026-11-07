@@ -72,6 +72,7 @@ export function toPublicTalentProfile(dancer: DemoDancer): PublicTalentProfile {
       image_url: dancer.imageUrl,
     })),
     credits: { artists: [], companies: [] },
+    credit_page_layout: null,
     experiences: dancer.credits.map((credit, index) => ({
       id: `${dancer.id}-exp-${index}`,
       title: credit.artist,

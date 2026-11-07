@@ -73,6 +73,11 @@ export function normalizeProfileExperience(raw: unknown): ProfileExperience | nu
     assistants: readStringArray(raw, "assistants") ?? undefined,
     live_stage_subtype: readString(raw, "live_stage_subtype", "liveStageSubtype"),
     entity_image_status: readString(raw, "entity_image_status", "entityImageStatus"),
+    public_credit_kind: (() => {
+      const value = readString(raw, "public_credit_kind", "publicCreditKind");
+      if (value === "mainTalent" || value === "studioOrCompany" || value === "tmdbProject") return value;
+      return null;
+    })(),
   };
 }
 

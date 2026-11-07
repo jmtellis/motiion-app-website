@@ -1,52 +1,596 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
-
 import Link from "next/link";
-import { Avatar } from "@/components/ui/Avatar";
-import { publicWebUrl } from "@/lib/links/external-url";
-import { getIosAppStoreUrl } from "@/lib/referrals/app-store";
-import "./public-profile.css";
+import { Apple, ChevronDown, Download, Share } from "lucide-react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+
 import { PublicPageAnalytics } from "@/components/analytics/PublicPageAnalytics";
+import { DiscoverBackHeader } from "@/components/app/DiscoverBackHeader";
+import {
+  HeadshotViewer,
+  PanelSheet,
+  VideoViewer,
+  type ProfileVideoClip,
+} from "@/components/app/talent-profile/ProfileOverlays";
+import {
+  ListsSheet,
+  MessageSheet,
+  ProfileActions,
+} from "@/components/app/talent-profile/TalentProfileSheet";
+import {
+  CreditAvatar,
+  ExperienceDetail,
+  HeroPager,
+  HighlightCard,
+  TagGroup,
+  displayName,
+} from "@/components/app/talent-profile/ProfileParts";
+import { ProfileWorkBadges } from "@/components/app/talent-profile/ProfileWorkBadges";
+import {
+  creditChips,
+  experienceImage,
+  experienceIndexForHighlight,
+  experienceIndexesForChip,
+  headshots,
+  skillVisuals,
+  visualOf,
+} from "@/components/app/talent-profile/profile-model";
+import "@/components/app/talent-profile/talent-profile.css";
+import "@/components/ui/chips.css";
 import { ProductShell } from "@/components/product/ProductShell";
-import type {
-  ProfileExperience,
-  ProfileHighlight,
-  ProfileVisual,
-  PublicTalentProfile,
-} from "@/types/public";
+import { WorkspaceSidePanel } from "@/components/workspace/WorkspaceSidePanel";
+import { primaryTalentLabel } from "@/lib/app/talent-label";
+import { publicWebUrl } from "@/lib/links/external-url";
+import type { CreditChipItem } from "@/lib/profile/profile-credits";
+import {
+  RESUME_EXPERIENCE_CATEGORIES,
+  experienceDisplayTitle,
+  parseResumeExperienceCategory,
+} from "@/lib/profile/resume-experience";
+import { getIosAppStoreUrl } from "@/lib/referrals/app-store";
+import type { ProfileExperience, PublicTalentProfile } from "@/types/public";
 
-type ProfileTab = "about" | "resume" | "visuals";
+import "./public-profile.css";
 
-const TABS: { id: ProfileTab; label: string }[] = [
-  { id: "about", label: "About" },
-  { id: "resume", label: "Resume" },
-  { id: "visuals", label: "Visuals" },
-];
+const CREDIT_RAIL_LIMIT = 10;
+const PROFILE_SIDE_PANEL_ID = "public-talent-detail-panel";
 
-const monoLabelStyle: React.CSSProperties = {
-  fontFamily: "var(--font-mono), monospace",
-  fontSize: 11,
-  fontWeight: 500,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
-  color: "var(--ui-muted)",
-};
+type Overlay =
+  | { kind: "credit"; chip: CreditChipItem }
+  | { kind: "credits" }
+  | { kind: "experience"; index: number }
+  | { kind: "message" }
+  | { kind: "lists" };
 
-export default function ProfilePageClient({ profile, viewerNavigation = null }: {
+type RightTab = "resume" | "visuals";
+
+export default function ProfilePageClient({
+  profile,
+  viewerNavigation = null,
+  embedded = false,
+  backHref = null,
+}: {
   profile: PublicTalentProfile;
   viewerNavigation?: { href: string; label: string } | null;
+  /** Inside the signed-in Discover/Talent full profile — no public chrome or join footer. */
+  embedded?: boolean;
+  /** When embedded, render Discover back chrome inside this client (so tabs can live in the header). */
+  backHref?: string | null;
 }) {
-  const [tab, setTab] = useState<ProfileTab>("about");
+  const router = useRouter();
+  const shellRef = useRef<HTMLDivElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [overlay, setOverlay] = useState<Overlay | null>(null);
+  const [viewer, setViewer] = useState<number | null>(null);
+  const [videoIndex, setVideoIndex] = useState<number | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const tabId = useId();
 
-  const displayName = profile.full_name?.trim() || "Talent profile";
-  const headshot = profile.headshot_url;
+  const name = displayName(profile);
+  const firstName = name.split(" ")[0] || name;
+  const meta = [primaryTalentLabel(profile.talent_types), profile.location].filter(Boolean).join(" · ");
+  const shots = headshots(profile);
+  const chips = creditChips(profile);
   const highlights = profile.profile_highlights ?? [];
-  const styleTags = useMemo(
-    () => uniqueTags([...profile.styles, ...profile.talent_types]),
-    [profile.styles, profile.talent_types],
+  const reel = visualOf(profile, "reel");
+  const slate = visualOf(profile, "slate");
+  const skillsMedia = skillVisuals(profile);
+  const resumeUrl = publicWebUrl(profile.resume_url);
+  const experiences = profile.experiences ?? [];
+  const training = (profile.training ?? []).filter(
+    (row) => Boolean(row.title?.trim() || row.organization?.trim() || row.year?.trim()),
   );
+  const resumeSections = useMemo(() => buildResumeSections(experiences), [experiences]);
+
+  const shownSkillRefs = new Set(
+    skillsMedia.map((item) => item.ref?.trim().toLowerCase()).filter(Boolean),
+  );
+  const styleTags = (profile.styles ?? []).filter((tag) => !shownSkillRefs.has(tag.toLowerCase()));
+  const skillTags = (profile.skills ?? []).filter((tag) => !shownSkillRefs.has(tag.toLowerCase()));
+
+  const visualClips = useMemo<ProfileVideoClip[]>(() => {
+    const clips: ProfileVideoClip[] = [];
+    if (reel?.url) clips.push({ id: reel.id || "reel", url: reel.url, label: "Reel" });
+    if (slate?.url) clips.push({ id: slate.id || "slate", url: slate.url, label: "Slate" });
+    for (const item of skillsMedia) {
+      if (!item.url) continue;
+      clips.push({
+        id: item.id,
+        url: item.url,
+        label: item.ref?.trim() || (item.kind === "style" ? "Style" : "Skill"),
+      });
+    }
+    return clips;
+  }, [reel, slate, skillsMedia]);
+
+  const hasVisuals = visualClips.length > 0;
+  const [tab, setTab] = useState<RightTab>("resume");
+  const [collapsedResumeSections, setCollapsedResumeSections] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!hasVisuals && tab === "visuals") setTab("resume");
+  }, [hasVisuals, tab]);
+
+  const toggleResumeSection = useCallback((key: string) => {
+    setCollapsedResumeSections((current) => ({ ...current, [key]: !current[key] }));
+  }, []);
+
+  useEffect(() => {
+    if (!notice) return;
+    const handle = window.setTimeout(() => setNotice(null), 2600);
+    return () => window.clearTimeout(handle);
+  }, [notice]);
+
+  // Only the right column scrolls — gutters, header, and left column must not move the page.
+  useEffect(() => {
+    const shell = shellRef.current;
+    const scroll = scrollRef.current;
+    if (!shell) return;
+    const onWheel = (event: WheelEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        event.preventDefault();
+        return;
+      }
+      if (scroll?.contains(target)) return;
+      event.preventDefault();
+    };
+    shell.addEventListener("wheel", onWheel, { passive: false });
+    return () => shell.removeEventListener("wheel", onWheel);
+  }, []);
+
+  const openExperience = useCallback((index: number) => {
+    setOverlay({ kind: "experience", index });
+  }, []);
+
+  const openCredit = useCallback((chip: CreditChipItem) => {
+    const indexes = experienceIndexesForChip(profile, chip);
+    if (!indexes.length) {
+      setNotice("There's no experience tied to this credit.");
+      return;
+    }
+    if (indexes.length === 1) {
+      setOverlay({ kind: "experience", index: indexes[0] });
+      return;
+    }
+    setOverlay({ kind: "credit", chip });
+  }, [profile]);
+
+  async function share() {
+    const path = `/profile/${encodeURIComponent(profile.username || profile.id)}`;
+    const url = typeof window !== "undefined" ? `${window.location.origin}${path}` : path;
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: name, url });
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setNotice("Profile link copied.");
+    } catch {
+      setNotice("Copy is unavailable in this browser.");
+    }
+  }
+
+  const sectionTabs = hasVisuals ? (
+    <div className="public-talent__tabs" role="tablist" aria-label="Profile sections">
+      <button
+        type="button"
+        role="tab"
+        id={`${tabId}-resume`}
+        aria-selected={tab === "resume"}
+        aria-controls={`${tabId}-panel`}
+        data-active={tab === "resume"}
+        onClick={() => setTab("resume")}
+      >
+        Resume
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id={`${tabId}-visuals`}
+        aria-selected={tab === "visuals"}
+        aria-controls={`${tabId}-panel`}
+        data-active={tab === "visuals"}
+        onClick={() => setTab("visuals")}
+      >
+        Visuals
+      </button>
+    </div>
+  ) : null;
+
+  const workBadges = <ProfileWorkBadges profile={profile} className="public-talent__work-chips--header" />;
+
+  const profileHeader = !embedded ? (
+    <header className="public-talent__topbar">
+      <div className="public-talent__topbar-leading">
+        <h1 className="public-talent__topbar-title">{name}</h1>
+        {workBadges}
+      </div>
+      {sectionTabs}
+    </header>
+  ) : backHref ? (
+    <DiscoverBackHeader
+      href={backHref}
+      title={name}
+      beside={workBadges}
+      trailing={sectionTabs}
+    />
+  ) : null;
+
+  const publicActions = (
+    <div className="talent-profile__actions public-talent__actions">
+      <button type="button" className="talent-profile__action" onClick={() => void share()}>
+        <Share size={16} aria-hidden />
+        Share
+      </button>
+      <a className="talent-profile__action talent-profile__action--primary" href={getIosAppStoreUrl()}>
+        <Apple size={16} aria-hidden />
+        Get the app
+      </a>
+    </div>
+  );
+
+  const leftColumn = (
+    <aside className="public-talent__sidebar">
+      <HeroPager
+        name={name}
+        meta={meta}
+        shots={shots}
+        onOpen={setViewer}
+        overlayIdentity={false}
+        overlayCaption={meta || null}
+      />
+      {embedded ? (
+        <ProfileActions
+          profile={profile}
+          onNotice={setNotice}
+          onLists={() => setOverlay({ kind: "lists" })}
+          onMessage={() => setOverlay({ kind: "message" })}
+          onBlocked={() => router.back()}
+        />
+      ) : (
+        publicActions
+      )}
+    </aside>
+  );
+
+  const resumeTab = (
+    <div className="public-talent__tab-panel talent-profile__body">
+      {highlights.length ? (
+        <section>
+          <div className="talent-profile__section-head"><h4>Highlights</h4></div>
+          <div className="talent-profile__rail public-talent__highlight-rail">
+            {highlights.map((item) => {
+              const index = experienceIndexForHighlight(profile, item);
+              return (
+                <HighlightCard
+                  key={item.id}
+                  highlight={item}
+                  onClick={index === null ? undefined : () => openExperience(index)}
+                />
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
+      {styleTags.length ? (
+        <section className="public-talent__skills">
+          <TagGroup title="Styles" tags={styleTags} />
+        </section>
+      ) : null}
+
+      {chips.length ? (
+        <section className="public-talent__credits">
+          <div className="talent-profile__section-head">
+            <h4>Credits</h4>
+            {chips.length > CREDIT_RAIL_LIMIT ? (
+              <button type="button" onClick={() => setOverlay({ kind: "credits" })}>
+                See all {chips.length}
+              </button>
+            ) : null}
+          </div>
+          <ul className="talent-profile__credit-rail">
+            {chips.slice(0, CREDIT_RAIL_LIMIT).map((chip) => (
+              <li key={chip.id}>
+                <CreditAvatar chip={chip} onClick={() => openCredit(chip)} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {resumeSections.length || training.length || resumeUrl ? (
+        <section className="public-talent__resume">
+          <div className="talent-profile__section-head">
+            <h4>Resume</h4>
+            {resumeUrl ? (
+              <a className="public-talent__download" href={resumeUrl} target="_blank" rel="noopener noreferrer">
+                <Download size={15} aria-hidden />
+                Download
+              </a>
+            ) : null}
+          </div>
+          {resumeSections.length ? (
+            <div className="public-resume">
+              <div className="public-resume__head" aria-hidden>
+                <span>Project</span>
+                <span>Role</span>
+                <span>Credit</span>
+              </div>
+              {resumeSections.map((section) => {
+                const collapsed = Boolean(collapsedResumeSections[section.key]);
+                return (
+                  <section
+                    key={section.key}
+                    className="public-resume__section"
+                    aria-label={section.heading}
+                    data-collapsed={collapsed}
+                  >
+                    <button
+                      type="button"
+                      className="public-resume__section-toggle"
+                      aria-expanded={!collapsed}
+                      onClick={() => toggleResumeSection(section.key)}
+                    >
+                      <h5>{section.heading}</h5>
+                      <ChevronDown size={16} aria-hidden />
+                    </button>
+                    <ul>
+                      {section.items.map(({ experience, index }) => (
+                        <li key={experience.id || `${experience.title}-${index}`}>
+                          <button
+                            type="button"
+                            className="public-resume__row"
+                            onClick={() => openExperience(index)}
+                          >
+                            <span className="public-resume__project">
+                              <ResumeThumb experience={experience} />
+                              <span>
+                                {experienceDisplayTitle(
+                                  experience,
+                                  parseResumeExperienceCategory(experience.category) ?? "televisionFilm",
+                                )}
+                              </span>
+                            </span>
+                            <span className="public-resume__role">{rolesOf(experience) || "—"}</span>
+                            <span className="public-resume__credit">{creditOf(experience) || "—"}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                );
+              })}
+            </div>
+          ) : null}
+          {training.length ? (
+            <div className="public-talent__resume-group">
+              <h5>Training</h5>
+              <ul className="public-talent__training">
+                {training.map((row, index) => (
+                  <li key={`${row.title}-${row.organization}-${index}`}>
+                    <strong>{row.title || row.organization || "Training"}</strong>
+                    {row.organization && row.title ? <span> · {row.organization}</span> : null}
+                    {row.year ? <span> · {row.year}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {skillTags.length ? (
+        <section className="public-talent__skills">
+          <TagGroup title="Skills" tags={skillTags} />
+        </section>
+      ) : null}
+
+      {!highlights.length && !chips.length && !resumeSections.length && !training.length && !styleTags.length && !skillTags.length ? (
+        <div className="public-talent__empty">
+          <p>This profile is getting started. Credits and resume details will appear here as they are added.</p>
+        </div>
+      ) : null}
+    </div>
+  );
+
+  const visualsTab = (
+    <div className="public-talent__tab-panel talent-profile__body">
+      <section>
+        <div className="talent-profile__section-head"><h4>Visuals</h4></div>
+        <ul className="public-talent__visual-rail">
+          {visualClips.map((clip, index) => (
+            <li key={clip.id}>
+              <button
+                type="button"
+                className="public-talent__visual-card"
+                onClick={() => setVideoIndex(index)}
+                aria-label={`Open ${clip.label}`}
+              >
+                <video src={clip.url} muted playsInline preload="metadata" />
+                <span>{clip.label}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+
+  const rightColumn = (
+    <div ref={scrollRef} className="public-talent__scroll">
+      <div role="tabpanel" id={`${tabId}-panel`} aria-labelledby={`${tabId}-${hasVisuals ? tab : "resume"}`}>
+        {tab === "visuals" && hasVisuals ? visualsTab : resumeTab}
+      </div>
+
+      {!embedded ? (
+        <footer className="public-talent__cta">
+          <div>
+            <h2>See more of {firstName} on Motiion</h2>
+            <p>Explore talent, opportunities, and the dance industry in the Motiion app.</p>
+          </div>
+          <div className="public-talent__cta-actions">
+            <a className="ui-button" href={getIosAppStoreUrl()}>
+              Get the iOS app
+            </a>
+            <Link className="ui-button ui-button--secondary" href={viewerNavigation?.href ?? "/signup"}>
+              {viewerNavigation?.label ?? "Join Motiion"}
+            </Link>
+          </div>
+        </footer>
+      ) : null}
+    </div>
+  );
+
+  const detailOverlay =
+    overlay?.kind === "credits" || overlay?.kind === "credit" || overlay?.kind === "experience"
+      ? overlay
+      : null;
+
+  const detailTitle =
+    detailOverlay?.kind === "credits"
+      ? "Credits"
+      : detailOverlay?.kind === "credit"
+        ? detailOverlay.chip.title
+        : detailOverlay?.kind === "experience"
+          ? experiences[detailOverlay.index]?.title?.trim() || "Experience"
+          : "Details";
+
+  const detailContent =
+    detailOverlay?.kind === "credits" ? (
+      <ul className="talent-profile__credit-grid talent-profile__credit-grid--panel">
+        {chips.map((chip) => (
+          <li key={chip.id}>
+            <CreditAvatar chip={chip} onClick={() => openCredit(chip)} />
+          </li>
+        ))}
+      </ul>
+    ) : detailOverlay?.kind === "credit" ? (
+      <ul className="public-talent__panel-list">
+        {experienceIndexesForChip(profile, detailOverlay.chip).map((index) => {
+          const experience = experiences[index];
+          return (
+            <li key={experience.id || `${experience.title}-${index}`}>
+              <button
+                type="button"
+                className="home-profile-row"
+                onClick={() => setOverlay({ kind: "experience", index })}
+              >
+                <ResumeThumb experience={experience} />
+                <span className="home-profile-row__copy">
+                  <span className="home-profile-row__label">{experience.title}</span>
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    ) : detailOverlay?.kind === "experience" && experiences[detailOverlay.index] ? (
+      <ExperienceDetail experience={experiences[detailOverlay.index]} />
+    ) : null;
+
+  // In-app: dock into the workspace third column and push the main frame
+  // (same pattern as Portfolio headshots/visuals). Public pages keep the overlay sheet.
+  const detailPanel = embedded ? (
+    <WorkspaceSidePanel
+      id={PROFILE_SIDE_PANEL_ID}
+      open={detailOverlay !== null}
+      title={detailTitle}
+      onClose={() => setOverlay(null)}
+    >
+      {detailContent}
+    </WorkspaceSidePanel>
+  ) : detailOverlay ? (
+    <PanelSheet title={detailTitle} onClose={() => setOverlay(null)}>
+      {detailContent}
+    </PanelSheet>
+  ) : null;
+
+  const body = (
+    <div ref={shellRef} className={`public-talent${embedded ? " public-talent--embedded" : ""}`}>
+      {profileHeader}
+      <div className="public-talent__layout">
+        {leftColumn}
+        {rightColumn}
+      </div>
+
+      {!embedded && !viewerNavigation ? (
+        <div className="public-talent__app-bar">
+          <p>Open in the Motiion app</p>
+          <a href={getIosAppStoreUrl()}>Get the app</a>
+        </div>
+      ) : null}
+
+      {detailPanel}
+
+      {overlay?.kind === "message" ? (
+        <MessageSheet profile={profile} onClose={() => setOverlay(null)} onNotice={setNotice} />
+      ) : null}
+
+      {overlay?.kind === "lists" ? (
+        <ListsSheet profile={profile} onClose={() => setOverlay(null)} onNotice={setNotice} />
+      ) : null}
+
+      {viewer !== null && shots.length ? (
+        <HeadshotViewer
+          urls={shots}
+          name={name}
+          initialIndex={Math.min(viewer, shots.length - 1)}
+          onClose={() => setViewer(null)}
+        />
+      ) : null}
+
+      {videoIndex !== null && visualClips.length ? (
+        <VideoViewer
+          clips={visualClips}
+          name={name}
+          initialIndex={Math.min(videoIndex, visualClips.length - 1)}
+          onClose={() => setVideoIndex(null)}
+        />
+      ) : null}
+
+      {notice ? <p className="talent-profile__toast" role="status">{notice}</p> : null}
+    </div>
+  );
+
+  if (embedded) {
+    return (
+      <div className="public-profile-theme public-profile-embedded">
+        <PublicPageAnalytics
+          eventName="profile_viewed"
+          properties={{ slug: profile.username ?? profile.id, embedded: true }}
+          path={`/profile/${profile.username ?? profile.id}`}
+        />
+        {body}
+      </div>
+    );
+  }
 
   return (
     <ProductShell className="public-profile-theme" appearance="light">
@@ -55,402 +599,73 @@ export default function ProfilePageClient({ profile, viewerNavigation = null }: 
         properties={{ slug: profile.username ?? profile.id }}
         path={`/profile/${profile.username ?? profile.id}`}
       />
-      <nav className="public-profile-nav" aria-label="Motiion"><Link href={viewerNavigation?.href ?? "/"} className="public-profile-brand">Motiion</Link><Link href={viewerNavigation?.href ?? "/login"}>{viewerNavigation?.label ?? "Log in"}</Link></nav>
-      <main className="public-profile" style={{ display: "grid", gap: 24 }}>
-        <header className="product-profile-header" style={{ display: "grid", gap: 16 }}>
-          <div style={{ display: "flex", gap: 14, alignItems: "center", minWidth: 0 }}>
-            <Avatar src={headshot} name={displayName} size="xl" loading="eager" />
-            <div style={{ minWidth: 0 }}>
-              <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, letterSpacing: -0.5, lineHeight: 1.1 }}>
-                {displayName}
-              </h1>
-              {profile.username ? (
-                <p style={{ margin: "6px 0 0", fontSize: 14, color: "var(--text-low)" }}>@{profile.username}</p>
-              ) : null}
-              {profile.location ? (
-                <p style={{ margin: "4px 0 0", fontSize: 14, color: "var(--text-low)" }}>{profile.location}</p>
-              ) : null}
-              {profile.representation ? (
-                <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--text-low)" }}>{profile.representation}</p>
-              ) : null}
-            </div>
-          </div>
-
-          <nav
-            className="product-profile-tabs"
-            aria-label="Profile sections"
-            role="tablist"
-            style={{ display: "flex", gap: 20, flexWrap: "wrap" }}
-          >
-            {TABS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className="product-tab"
-                role="tab"
-                id={`${tabId}-${item.id}`}
-                aria-controls={`${tabId}-panel`}
-                aria-selected={tab === item.id}
-                tabIndex={tab === item.id ? 0 : -1}
-                data-active={tab === item.id}
-                onClick={() => setTab(item.id)}
-                onKeyDown={event => {
-                  const index = TABS.findIndex(candidate => candidate.id === item.id);
-                  const next = event.key === "ArrowRight" ? (index + 1) % TABS.length : event.key === "ArrowLeft" ? (index + TABS.length - 1) % TABS.length : event.key === "Home" ? 0 : event.key === "End" ? TABS.length - 1 : null;
-                  if (next === null) return;
-                  event.preventDefault(); setTab(TABS[next].id);
-                  (event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>("[role=tab]")[next])?.focus();
-                }}
-              >
-                {item.label}
-              </button>
-            ))}
-          </nav>
-        </header>
-
-        {highlights.length > 0 ? (
-          <section aria-label="Highlights">
-            <h2 style={{ ...monoLabelStyle, margin: "0 0 10px" }}>
-              Highlights
-            </h2>
-            <div className="product-highlights-rail">
-              {highlights.map((item) => (
-                <HighlightCard key={item.id} highlight={item} />
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        <section role="tabpanel" id={`${tabId}-panel`} aria-labelledby={`${tabId}-${tab}`} tabIndex={0} style={{ display: "grid", gap: 16 }}>
-          {tab === "about" ? <AboutPanel profile={profile} styleTags={styleTags} /> : null}
-          {tab === "resume" ? <ResumePanel experiences={profile.experiences} training={profile.training} resumeUrl={profile.resume_url} /> : null}
-          {tab === "visuals" ? <VisualsPanel visuals={orderVisuals(profile.profile_visuals)} /> : null}
-        </section>
-
-        <footer className="public-profile-join">
-          <div><h2>{viewerNavigation ? "Keep exploring" : "Connect through Motiion"}</h2><p>{viewerNavigation ? "Open your account to explore talent, opportunities, and your saved work." : "Show your work, find opportunities, and connect with the dance industry."}</p></div>
-          <div className="flex flex-wrap gap-3"><Link className="ui-button" href={viewerNavigation?.href ?? "/signup"}>{viewerNavigation?.label ?? "Join Motiion"}</Link><a className="ui-button ui-button--secondary" href={getIosAppStoreUrl()}>Get the iOS app</a></div>
-        </footer>
-      </main>
+      <nav className="public-profile-nav" aria-label="Motiion">
+        <Link href={viewerNavigation?.href ?? "/"} className="public-profile-brand">
+          Motiion
+        </Link>
+        <Link href={viewerNavigation?.href ?? "/login"}>
+          {viewerNavigation?.label ?? "Log in"}
+        </Link>
+      </nav>
+      {body}
     </ProductShell>
   );
 }
 
-
-function HighlightCard({ highlight }: { highlight: ProfileHighlight }) {
-  const image = highlight.image_url?.trim();
-  const [failedImage, setFailedImage] = useState<string | null>(null);
-  return (
-    <article className="product-highlight-card">
-      {image && image !== failedImage ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={image} alt="" loading="lazy" decoding="async" onError={() => setFailedImage(image)} />
-      ) : (
-        <div style={{ aspectRatio: "3/4", background: "var(--surface-accent)" }} />
-      )}
-      <div style={{ padding: "10px 12px 12px" }}>
-        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, lineHeight: 1.25 }}>{highlight.title}</p>
-        {highlight.subtitle ? (
-          <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--text-low)", lineHeight: 1.3 }}>{highlight.subtitle}</p>
-        ) : null}
-      </div>
-    </article>
-  );
-}
-
-function AboutPanel({
-  profile,
-  styleTags,
-}: {
-  profile: PublicTalentProfile;
-  styleTags: string[];
-}) {
-  const skills = profile.skills ?? [];
-  const hasDetails = Boolean(profile.gender || profile.height || profile.union_status || styleTags.length || skills.length || publicWebUrl(profile.instagram_url) || publicWebUrl(profile.youtube_url));
-  if (!hasDetails) return <EmptySection message="This profile is getting started. Credits, skills, and other details will appear as they are added." />;
-
-  return (
-    <div className="product-glass-card" style={{ padding: 16, display: "grid", gap: 14 }}>
-      <StatGrid profile={profile} />
-      {styleTags.length > 0 ? (
-        <TagGroup title="Styles" tags={styleTags} />
-      ) : null}
-      {skills.length > 0 ? <TagGroup title="Skills" tags={skills} /> : null}
-      <SocialLinks profile={profile} />
-    </div>
-  );
-}
-
-function StatGrid({ profile }: { profile: PublicTalentProfile }) {
-  const stats = [
-    profile.gender,
-    profile.height,
-    profile.union_status,
-  ].filter((v): v is string => Boolean(v?.trim()));
-
-  if (stats.length === 0) return null;
-
-  return (
-    <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10 }}>
-      {profile.gender ? (
-        <div>
-          <dt style={{ ...monoLabelStyle, margin: 0 }}>Gender</dt>
-          <dd style={{ margin: "4px 0 0", fontSize: 15, fontWeight: 600 }}>{profile.gender}</dd>
-        </div>
-      ) : null}
-      {profile.height ? (
-        <div>
-          <dt style={{ ...monoLabelStyle, margin: 0 }}>Height</dt>
-          <dd style={{ margin: "4px 0 0", fontSize: 15, fontWeight: 600 }}>{profile.height}</dd>
-        </div>
-      ) : null}
-      {profile.union_status ? (
-        <div>
-          <dt style={{ ...monoLabelStyle, margin: 0 }}>Union</dt>
-          <dd style={{ margin: "4px 0 0", fontSize: 15, fontWeight: 600 }}>{profile.union_status}</dd>
-        </div>
-      ) : null}
-    </dl>
-  );
-}
-
-function TagGroup({ title, tags }: { title: string; tags: string[] }) {
-  return (
-    <div>
-      <p style={{ ...monoLabelStyle, margin: "0 0 8px" }}>
-        {title}
-      </p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-        {tags.map((tag) => (
-          <span key={tag} className="product-pill">
-            {tag}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SocialLinks({ profile }: { profile: PublicTalentProfile }) {
-  const links = [
-    { label: "Instagram", url: publicWebUrl(profile.instagram_url) },
-    { label: "YouTube", url: publicWebUrl(profile.youtube_url) },
-  ].filter((l) => l.url?.trim());
-
-  if (links.length === 0) return null;
-
-  return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-      {links.map((link) => (
-        <a
-          key={link.label}
-          href={link.url!}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="product-pill"
-          style={{ textDecoration: "none" }}
-        >
-          {link.label}
-        </a>
-      ))}
-    </div>
-  );
-}
-
-function ResumePanel({
-  experiences,
-  training,
-  resumeUrl,
-}: {
-  experiences: ProfileExperience[];
-  training: { title?: string; organization?: string; year?: string }[];
-  resumeUrl: string | null;
-}) {
-  const grouped = groupExperiences(experiences);
-  const safeResumeUrl = publicWebUrl(resumeUrl);
-
-  if (grouped.length === 0 && training.length === 0 && !safeResumeUrl) {
-    return <EmptySection message="Resume credits will appear here when added in Motiion." />;
+function ResumeThumb({ experience }: { experience: ProfileExperience }) {
+  const resolved = experienceImage(experience);
+  // Defer the real URL until after mount so Brandfetch client-id refresh can't
+  // mismatch server HTML (hydration) when env differs between server and client.
+  const [src, setSrc] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    setSrc(resolved);
+  }, [resolved]);
+  if (!src || failed) {
+    return <span className="public-resume__thumb" aria-hidden>{experience.title.charAt(0)}</span>;
   }
-
-  return (
-    <div style={{ display: "grid", gap: 14 }}>
-      {safeResumeUrl ? (
-        <a href={safeResumeUrl} target="_blank" rel="noopener noreferrer" className="product-btn-primary" style={{ textAlign: "center" }}>
-          View resume PDF
-        </a>
-      ) : null}
-      {grouped.map(([category, items]) => (
-        <div key={category} className="product-glass-card" style={{ padding: 16 }}>
-          <h3 style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 700 }}>{category}</h3>
-          <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 12 }}>
-            {items.map((exp, index) => (
-              <li key={`${category}-${index}`} style={{ display: "flex", gap: 12 }}>
-                <ExperienceThumb experience={exp} />
-                <div style={{ minWidth: 0 }}>
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: 15 }}>{exp.title}</p>
-                  {experienceSubtitle(exp) ? (
-                    <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--text-low)" }}>{experienceSubtitle(exp)}</p>
-                  ) : null}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-      {training.length > 0 ? (
-        <div className="product-glass-card" style={{ padding: 16 }}>
-          <h3 style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 700 }}>Training</h3>
-          <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 10 }}>
-            {training.map((row, index) => (
-              <li key={index} style={{ fontSize: 14 }}>
-                <span style={{ fontWeight: 600 }}>{row.title || row.organization || "Training"}</span>
-                {row.organization && row.title ? (
-                  <span style={{ color: "var(--text-low)" }}> · {row.organization}</span>
-                ) : null}
-                {row.year ? <span style={{ color: "var(--text-low)" }}> · {row.year}</span> : null}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function ExperienceThumb({ experience }: { experience: ProfileExperience }) {
-  const src = experience.tv_film_project_poster_url || experience.image_url;
-  const [failedImage, setFailedImage] = useState<string | null>(null);
-  if (!src || src === failedImage) {
-    return (
-      <div
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 10,
-          flexShrink: 0,
-          background: "var(--surface-accent)",
-        }}
-      />
-    );
-  }
-
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
+      className="public-resume__thumb"
       src={src}
       alt=""
       loading="lazy"
       decoding="async"
-      onError={() => setFailedImage(src)}
-      style={{ width: 44, height: 44, borderRadius: 10, objectFit: "cover", flexShrink: 0 }}
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
     />
   );
 }
 
-function VisualsPanel({ visuals }: { visuals: ProfileVisual[] }) {
-  if (visuals.length === 0) {
-    return <EmptySection message="Reel and visual slots will appear here when added in Motiion." />;
-  }
-
-  return (
-    <div style={{ display: "grid", gap: 12 }}>
-      {visuals.map((visual) => (
-        <article key={visual.id} className="product-glass-card" style={{ overflow: "hidden" }}>
-          <div style={{ position: "relative", aspectRatio: "16/9", background: "#111" }}>
-            <video
-              src={visual.url}
-              controls
-              playsInline
-              preload="metadata"
-              style={{ width: "100%", height: "100%", objectFit: "contain" }}
-            />
-            <span
-              className="product-pill"
-              style={{ position: "absolute", top: 10, right: 10, background: "var(--ui-surface)" }}
-            >
-              {visualChipLabel(visual)}
-            </span>
-          </div>
-        </article>
-      ))}
-    </div>
-  );
+function buildResumeSections(experiences: ProfileExperience[]) {
+  return RESUME_EXPERIENCE_CATEGORIES.map((section) => ({
+    ...section,
+    heading: section.label.replace("/", " / "),
+    items: experiences
+      .map((experience, index) => ({ experience, index }))
+      .filter(({ experience }) => parseResumeExperienceCategory(experience.category) === section.key),
+  })).filter((section) => section.items.length > 0);
 }
 
-function EmptySection({ message }: { message: string }) {
-  return (
-    <div className="product-glass-card" style={{ padding: 20, textAlign: "center" }}>
-      <p style={{ margin: 0, color: "var(--text-low)", lineHeight: 1.5 }}>{message}</p>
-    </div>
-  );
+function rolesOf(experience: ProfileExperience) {
+  const roles = (experience.roles ?? []).map((role) => role.trim()).filter(Boolean);
+  if (roles.length) return roles.join(", ");
+  return experience.role?.trim() || "";
 }
 
-function uniqueTags(values: string[]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const raw of values) {
-    const tag = raw.trim();
-    if (!tag) continue;
-    const key = tag.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(tag);
-  }
-  return out.sort((a, b) => a.localeCompare(b));
-}
-
-function groupExperiences(experiences: ProfileExperience[]): [string, ProfileExperience[]][] {
-  const map = new Map<string, ProfileExperience[]>();
-  for (const exp of experiences) {
-    const category = formatCategory(exp.category);
-    const list = map.get(category) ?? [];
-    list.push(exp);
-    map.set(category, list);
-  }
-  return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-}
-
-function formatCategory(raw: string | null | undefined): string {
-  if (!raw?.trim()) return "Credits";
-  return raw
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function experienceSubtitle(exp: ProfileExperience): string | null {
-  const role = exp.role || exp.roles?.[0];
-  const credit = exp.credits_display_name || exp.credits;
-  const parts = [role, credit].filter((p): p is string => Boolean(p?.trim()));
-  return parts.length > 0 ? parts.join(" · ") : null;
-}
-
-function orderVisuals(visuals: ProfileVisual[]): ProfileVisual[] {
-  const order: Record<ProfileVisual["kind"], number> = {
-    reel: 0,
-    skill: 1,
-    style: 2,
-    slate: 3,
-    other: 4,
-  };
-  return [...visuals].sort((a, b) => {
-    const kindDiff = order[a.kind] - order[b.kind];
-    if (kindDiff !== 0) return kindDiff;
-    return (a.sort ?? 0) - (b.sort ?? 0);
-  });
-}
-
-function visualChipLabel(visual: ProfileVisual): string {
-  switch (visual.kind) {
-    case "reel":
-      return "Reel";
-    case "slate":
-      return "Slate";
-    case "other":
-      return "Other";
-    case "skill":
-      return visual.ref?.trim() ? `Skill: ${visual.ref}` : "Skill";
-    case "style":
-      return visual.ref?.trim() ? `Style: ${visual.ref}` : "Style";
-  }
+function creditOf(experience: ProfileExperience) {
+  const category = parseResumeExperienceCategory(experience.category);
+  const names = [
+    ...(experience.choreographers ?? []),
+    ...(experience.associate_choreographers ?? []),
+    ...(experience.assistants ?? []),
+    experience.main_talent,
+    category === "musicVideos" ? (experience.song_artists?.[0] ?? experience.credits_display_name ?? experience.credits) : null,
+    experience.production_company || experience.theater_name,
+    category !== "musicVideos" ? (experience.credits_display_name || experience.credits) : null,
+  ]
+    .map((value) => value?.trim())
+    .filter(Boolean);
+  return [...new Set(names)].join(", ");
 }

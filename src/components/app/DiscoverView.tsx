@@ -25,7 +25,7 @@ import { suggestCreditCollaborators } from "@/lib/talent/discover-actions";
 import type { SearchFilters, SearchProfileRecord, SearchResult } from "@/types/search";
 import { ProductEmptyState } from "@/components/ui/EmptyState";
 
-type Attributes = {
+export type DiscoverBrowseAttributes = {
   location: string;
   gender: string;
   height: string;
@@ -37,6 +37,8 @@ type Attributes = {
   eyes: string[];
 };
 
+type Attributes = DiscoverBrowseAttributes;
+
 type BrowseQuery = Attributes & {
   keyword: string;
   location: string;
@@ -45,17 +47,31 @@ type BrowseQuery = Attributes & {
   page: number;
 };
 
-const EMPTY_ATTRIBUTES: Attributes = { location: "", gender: "", height: "", union: "", rep: "", skills: [], ethnicity: [], hair: [], eyes: [] };
+export const EMPTY_DISCOVER_ATTRIBUTES: Attributes = {
+  location: "",
+  gender: "",
+  height: "",
+  union: "",
+  rep: "",
+  skills: [],
+  ethnicity: [],
+  hair: [],
+  eyes: [],
+};
+const EMPTY_ATTRIBUTES = EMPTY_DISCOVER_ATTRIBUTES;
 
-function countAttributes(attributes: Attributes) {
+export function countDiscoverAttributes(attributes: Attributes) {
   return Object.values(attributes).reduce(
     (total, value) => total + (Array.isArray(value) ? value.length : value ? 1 : 0),
     0,
   );
 }
+const countAttributes = countDiscoverAttributes;
 
 function buildHref(basePath: string, query: BrowseQuery, credit?: string) {
   const params = new URLSearchParams();
+  params.set("view", "explore");
+  params.set("layout", "list");
   if (credit) params.set("credit", credit);
   if (query.keyword) params.set("keyword", query.keyword);
   if (query.location) params.set("location", query.location);
@@ -68,8 +84,7 @@ function buildHref(basePath: string, query: BrowseQuery, credit?: string) {
     if (query[key].length) params.set(key, query[key].join(","));
   }
   if (query.page > 1) params.set("page", String(query.page));
-  const search = params.toString();
-  return search ? `${basePath}?${search}` : basePath;
+  return `${basePath}?${params}`;
 }
 
 /** 1 … 4 5 6 … 42 */
@@ -83,13 +98,27 @@ function pageWindow(page: number, total: number): (number | "gap")[] {
   );
 }
 
-function BrowseCard({ profile, onOpen }: { profile: SearchProfileRecord; onOpen: () => void }) {
+function BrowseCard({
+  profile,
+  onOpen,
+  active = false,
+}: {
+  profile: SearchProfileRecord;
+  onOpen: () => void;
+  active?: boolean;
+}) {
   const name = profile.display_name || profile.full_name || "Talent profile";
   const image = profile.headshot_url || profile.headshot_urls?.[0];
   const detail = [...new Set([...(profile.talent_types ?? []), ...(profile.styles ?? [])])].slice(0, 2).join(" · ");
 
   return (
-    <button type="button" className="discover-browse-card" aria-label={`Open ${name} profile`} onClick={onOpen}>
+    <button
+      type="button"
+      className={`discover-browse-card${active ? " discover-browse-card--active" : ""}`}
+      aria-label={`Open ${name} profile`}
+      aria-pressed={active}
+      onClick={onOpen}
+    >
       <span className="discover-browse-card__photo">
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -139,7 +168,7 @@ function useDismiss(open: boolean, rootRef: RefObject<HTMLDivElement | null>, cl
 
 const TYPE_OPTIONS = [{ value: "", label: "All talent" }, ...talentSubtypeOptions];
 
-function TypeFilter({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+export function TypeFilter({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -276,7 +305,7 @@ function FilterPopover({
   );
 }
 
-function StylesFilter({ value, onApply }: { value: string[]; onApply: (styles: string[]) => void }) {
+export function StylesFilter({ value, onApply }: { value: string[]; onApply: (styles: string[]) => void }) {
   const [draft, setDraft] = useState(value);
   const label = value.length === 0 ? "Styles" : value.length === 1 ? value[0] : `Styles · ${value.length}`;
 
@@ -306,7 +335,7 @@ function FilterSection({ label, children }: { label: string; children: ReactNode
   );
 }
 
-function AttributesFilter({ value, onApply }: { value: Attributes; onApply: (attributes: Attributes) => void }) {
+export function AttributesFilter({ value, onApply }: { value: Attributes; onApply: (attributes: Attributes) => void }) {
   const [draft, setDraft] = useState(value);
   const applied = countAttributes(value);
   const drafted = countAttributes(draft);
@@ -371,7 +400,7 @@ export function DiscoverView({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const requestVersion = useRef(0);
   const [pending, startTransition] = useTransition();
-  const { openTalent, lookupTalent } = useDiscoverTalent();
+  const { openTalent, lookupTalent, selectedTalentId } = useDiscoverTalent();
   const totalPages = Math.max(1, Math.ceil(result.total / Math.max(result.pageSize, 1)));
   const attributes: Attributes = {
     location: filters.location ?? "",
@@ -429,10 +458,6 @@ export function DiscoverView({
 
   return (
     <div className="discover-browse" ref={rootRef}>
-      <div className="discover-browse__header">
-        <h1>Browse</h1>
-      </div>
-
       <div className="discover-browse__toolbar">
         <form key={queryKey} className="discover-browse__filters" onSubmit={(event) => void onSearch(event)}>
           <TypeFilter value={current.subtype} onChange={(subtype) => go({ subtype })} />
@@ -467,7 +492,7 @@ export function DiscoverView({
             : result.source === "unavailable" ? "Search unavailable" : "No matches"}
         </p>
         {hasFilters ? (
-          <button type="button" className="discover-browse__reset" onClick={() => startTransition(() => router.push(basePath, { scroll: false }))}>
+          <button type="button" className="discover-browse__reset" onClick={() => startTransition(() => router.push(`${basePath}?view=explore&layout=list`, { scroll: false }))}>
             <X size={13} aria-hidden />
             Clear filters
           </button>
@@ -478,23 +503,24 @@ export function DiscoverView({
 
       <div className="discover-browse__results" data-pending={pending || undefined} aria-busy={pending}>
         {result.items.length ? (
-          <div key={queryKey} className="discover-browse__grid ui-swap">
+          <div key={queryKey} className="discover-browse__grid discover-skel-enter">
             {result.items.map((item) => (
               <BrowseCard
                 key={item.id}
                 profile={item}
+                active={selectedTalentId === item.id}
                 onOpen={() => openTalent(lookupTalent(item.id) ?? searchProfileToTalent(item, 0))}
               />
             ))}
           </div>
         ) : result.source !== "unavailable" ? (
-          <div key={queryKey} className="ui-swap">
+          <div key={queryKey} className="discover-skel-enter">
             <ProductEmptyState
               illustration="search"
               title="No matches for this search"
               description={credit ? `No talent found who worked with ${credit}.` : "Try broadening location or removing a filter."}
               actionLabel="Clear filters"
-              actionHref={basePath}
+              actionHref={`${basePath}?view=explore&layout=list`}
             />
           </div>
         ) : null}

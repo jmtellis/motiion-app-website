@@ -1,4 +1,8 @@
-import { experiencesForCreditChip, type CreditChipItem } from "@/lib/profile/profile-credits";
+import {
+  applyCreditPageLayout,
+  experiencesForCreditChip,
+  type CreditChipItem,
+} from "@/lib/profile/profile-credits";
 import { resolveBrandfetchLogoURL } from "@/lib/profile/brandfetch-logo";
 import {
   RESUME_EXPERIENCE_CATEGORIES,
@@ -20,7 +24,8 @@ export const SECTION_LABEL: Record<ProfileSection, string> = {
 export type SocialLink = { label: string; url: string };
 
 export function creditChips(profile: PublicTalentProfile): CreditChipItem[] {
-  return [...(profile.credits?.artists ?? []), ...(profile.credits?.companies ?? [])];
+  const unordered = [...(profile.credits?.artists ?? []), ...(profile.credits?.companies ?? [])];
+  return applyCreditPageLayout(unordered, profile.experiences ?? [], profile.credit_page_layout);
 }
 
 /** Indexes into `profile.experiences`, so pages can address an experience without copying it. */
@@ -108,7 +113,15 @@ export function categoryLabel(experience: ProfileExperience) {
 
 export function experienceImage(experience: ProfileExperience) {
   const category = parseResumeExperienceCategory(experience.category) ?? "televisionFilm";
-  return experienceDisplayImageURL(experience, category) ?? resolveBrandfetchLogoURL(experience.image_url, experience.credits_brand_domain);
+  return (
+    experienceDisplayImageURL(experience, category) ??
+    resolveBrandfetchLogoURL(experience.image_url, experience.credits_brand_domain) ??
+    experience.tv_film_project_poster_url?.trim() ??
+    experience.image_url?.trim() ??
+    experience.main_talent_image_url?.trim() ??
+    experience.production_company_image_url?.trim() ??
+    null
+  );
 }
 
 type Fact = { label: string; value: string };
@@ -117,11 +130,14 @@ function join(values: (string | null | undefined)[] | null | undefined) {
   return (values ?? []).map((value) => value?.trim()).filter(Boolean).join(", ");
 }
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
+
 function formatDate(raw: string | null | undefined) {
   if (!raw) return "";
   const date = new Date(raw.length === 10 ? `${raw}T12:00:00Z` : raw);
   if (Number.isNaN(date.getTime())) return raw;
-  return date.toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+  // Deterministic UTC formatting — avoid toLocaleDateString hydration mismatches.
+  return `${MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 }
 
 function duration(start: string | null | undefined, end: string | null | undefined) {

@@ -100,6 +100,8 @@ type TalentNavigatorGridProps = {
   onOpenProfile: (talent: Talent) => void;
   onSaveTalent?: (talent: Talent) => void | Promise<void>;
   onNavigate?: (direction: "row-up" | "row-down" | "col-left" | "col-right") => void;
+  /** Talent currently open in the preview panel. */
+  selectedTalentId?: string | null;
 };
 
 function wrapIndex(index: number, length: number) {
@@ -165,6 +167,7 @@ export function TalentNavigatorGrid({
   onOpenProfile,
   onSaveTalent,
   onNavigate,
+  selectedTalentId = null,
 }: TalentNavigatorGridProps) {
   const metrics = useMemo(
     () => getNavigatorGridMetrics(compact, preview, previewViewport),
@@ -260,6 +263,7 @@ export function TalentNavigatorGrid({
                   talent={cell.talent}
                   active={isActive}
                   distance={cell.distance}
+                  panelOpen={selectedTalentId === cell.talent.id}
                   tabIndex={isActive ? 0 : -1}
                   onClick={() => (isActive ? onOpenProfile(cell.talent) : onFocusCell(cell.rowIndex, cell.colIndex))}
                   onDoubleClick={() => onOpenProfile(cell.talent)}

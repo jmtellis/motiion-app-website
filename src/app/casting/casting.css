@@ -862,6 +862,12 @@ html.event-program-page body::-webkit-scrollbar {
   color: #fff;
 }
 
+/* Beat light-theme heading / __title cascades on cover overlays. */
+.event-program-showcase-hero .event-program-showcase-title,
+.event-program-showcase-hero .event-program-eyebrow {
+  color: #fff;
+}
+
 .event-program-cast-section {
   display: grid;
   gap: 12px;

@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   assertDeploymentIsolation, assertSupabaseIsolation, assertTestStripeKey,
-  isEmailRecipientAllowed, prepareBuildEnvironment, previewPublicEnvOverrides,
-  PRODUCTION_SUPABASE_REF, INDUSTRY_STAGING_SUPABASE_REF, PREVIEW_DISCONNECTED_ENV,
+  allowsLocalProductionSupabase, isEmailRecipientAllowed, prepareBuildEnvironment,
+  previewPublicEnvOverrides, PRODUCTION_SUPABASE_REF, INDUSTRY_STAGING_SUPABASE_REF,
+  PREVIEW_DISCONNECTED_ENV,
 } from "../src/lib/environment";
 
 const productionUrl = `https://${PRODUCTION_SUPABASE_REF}.supabase.co`;
@@ -15,6 +16,28 @@ describe("environment isolation", () => {
       assert.throws(() => assertDeploymentIsolation({ ...context, NEXT_PUBLIC_SUPABASE_URL: productionUrl }), /production Supabase/);
       assert.throws(() => assertDeploymentIsolation({ ...context, NEXT_PUBLIC_APP_ENV: "production", NEXT_PUBLIC_SUPABASE_URL: productionUrl }), /cannot use the production/);
     }
+  });
+  it("allows a local-only production Supabase override outside Vercel", () => {
+    const local = {
+      NODE_ENV: "development",
+      NEXT_PUBLIC_MOTIION_LOCAL_PRODUCTION: "1",
+      NEXT_PUBLIC_APP_ENV: "staging",
+      NEXT_PUBLIC_SUPABASE_URL: productionUrl,
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3001",
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_example",
+    };
+    assert.equal(allowsLocalProductionSupabase(local), true);
+    assert.equal(assertDeploymentIsolation(local), "staging");
+    assert.doesNotThrow(() => assertSupabaseIsolation(productionUrl, "staging", local));
+    assert.equal(allowsLocalProductionSupabase({ ...local, VERCEL_ENV: "preview" }), false);
+    assert.throws(
+      () => assertDeploymentIsolation({ ...local, VERCEL_ENV: "preview" }),
+      /production Supabase/,
+    );
+    assert.equal(
+      allowsLocalProductionSupabase({ NODE_ENV: "development", MOTIION_LOCAL_PRODUCTION: "1" }),
+      true,
+    );
   });
   it("accepts isolated staging and normal production; rejects a staging database in production", () => {
     assert.equal(assertDeploymentIsolation({ VERCEL_ENV: "preview", NEXT_PUBLIC_SUPABASE_URL: stagingUrl }), "staging");

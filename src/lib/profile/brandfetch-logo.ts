@@ -47,10 +47,13 @@ export function domainFromHostedURL(rawURL: string | null | undefined): string |
 }
 
 function brandfetchClientId(): string | null {
+  // Prefer the public id so server-rendered client components hydrate with the same URLs.
   const raw =
-    process.env.BRANDFETCH_CLIENT_ID?.trim() ||
-    process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID?.trim();
-  if (!raw || raw === "$(BRANDFETCH_CLIENT_ID)") return null;
+    process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID?.trim() ||
+    process.env.BRANDFETCH_CLIENT_ID?.trim();
+  if (!raw || raw === "$(BRANDFETCH_CLIENT_ID)" || raw === "$(NEXT_PUBLIC_BRANDFETCH_CLIENT_ID)") {
+    return null;
+  }
   return raw;
 }
 
@@ -67,6 +70,19 @@ export function brandfetchLogoURL(
   return `${LOGO_CDN_BASE}/domain/${encodedDomain}/w/${width}/h/${height}/theme/dark/fallback/lettermark/type/icon?c=${encodeURIComponent(clientId)}`;
 }
 
+/** Swap/refresh the Brandfetch client token on a CDN URL when we have one configured. */
+function refreshBrandfetchClientParam(rawURL: string): string | null {
+  const clientId = brandfetchClientId();
+  if (!clientId) return null;
+  try {
+    const url = new URL(rawURL);
+    url.searchParams.set("c", clientId);
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 /** Rebuild expiring Brandfetch asset URLs from a stored brand domain when possible. */
 export function resolveBrandfetchLogoURL(
   storedURL: string | null | undefined,
@@ -81,8 +97,11 @@ export function resolveBrandfetchLogoURL(
 
   const domain = normalizedDomain(brandDomain) ?? domainFromHostedURL(trimmedStored);
   if (domain) {
-    return brandfetchLogoURL(domain) ?? trimmedStored;
+    return brandfetchLogoURL(domain) ?? refreshBrandfetchClientParam(trimmedStored);
   }
 
-  return trimmedStored;
+  // Brand-id CDN paths (`/idh2k…/`) cannot be rebuilt from a domain — refresh `c=` when possible.
+  // Fall back to the stored URL so server/client markup stays aligned when the public client id
+  // isn't inlined yet; <img onError> covers expired tokens.
+  return refreshBrandfetchClientParam(trimmedStored) ?? trimmedStored;
 }

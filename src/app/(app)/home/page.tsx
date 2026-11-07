@@ -28,8 +28,8 @@ export default async function HomePage() {
   return (
     <HomeFeed
       greeting={greeting}
-      discoverySlot={<HomeDiscovery upcomingSlot={<HomeUpcomingActivities events={calendar.events} error={calendar.error} />} />}
-      listingsSlot={<><CommunityFavorites key={profile.id} initial={community} /><HomeListings activities={activities.activities} error={activities.error} /></>}
+      discoverySlot={<HomeDiscovery from="home" upcomingSlot={<HomeUpcomingActivities events={calendar.events} error={calendar.error} />} />}
+      listingsSlot={<><CommunityFavorites key={profile.id} initial={community} /><HomeListings activities={activities.activities} error={activities.error} classesHref="/discover/classes?from=home" /></>}
     />
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { LayoutGrid, List } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { DiscoverProfilePanel } from "@/components/app/DiscoverProfilePanel";
@@ -24,6 +25,16 @@ import "@/components/talent-buyers/talent-navigator/talent-navigator.css";
 import { ProductEmptyState } from "@/components/ui/EmptyState";
 
 export type DiscoverMode = "featured" | "discover" | "browse" | "saved";
+export type ExploreLayout = "navigator" | "list";
+
+function resolveMode(mode: DiscoverMode): Exclude<DiscoverMode, "browse"> {
+  return mode === "browse" ? "discover" : mode;
+}
+
+function resolveLayout(mode: DiscoverMode, layout?: ExploreLayout): ExploreLayout {
+  if (layout) return layout;
+  return mode === "browse" ? "list" : "navigator";
+}
 
 /** Same discovery canvas as the industry workspace; no hiring-only actions. */
 export function TalentDiscovery({
@@ -35,7 +46,8 @@ export function TalentDiscovery({
   children,
   collectionTitle,
   basePath = "/discover",
-  initialMode = "browse",
+  initialMode = "discover",
+  initialLayout,
   saved,
   featured,
 }: {
@@ -48,6 +60,8 @@ export function TalentDiscovery({
   collectionTitle?: string;
   basePath?: string;
   initialMode?: DiscoverMode;
+  /** List vs navigator inside Explore. `browse` initialMode implies list. */
+  initialLayout?: ExploreLayout;
   /** Replaces the talent Saved tab; `null` hides it (industry keeps favorites in Roster). */
   saved?: ReactNode | null;
   /** Adds a leading Featured tab. */
@@ -55,9 +69,14 @@ export function TalentDiscovery({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [mode, setMode] = useState<DiscoverMode>(initialMode);
+  const [mode, setMode] = useState(() => resolveMode(initialMode));
+  const [exploreLayout, setExploreLayout] = useState<ExploreLayout>(() =>
+    resolveLayout(initialMode, initialLayout),
+  );
+  const [scrolled, setScrolled] = useState(false);
   const [selected, setSelected] = useState<Talent | null>(null);
   const [viewed, setViewed] = useState(recentlyViewed);
+  const resultsRef = useRef<HTMLDivElement>(null);
   const rows = useMemo(
     () =>
       buildTalentRows(initialData.talent, EMPTY_NAVIGATOR_FILTERS, {
@@ -75,8 +94,11 @@ export function TalentDiscovery({
 
   const navigate = slide.navigate;
   const panelOpen = selected !== null;
+  const showingList = mode === "discover" && exploreLayout === "list";
+  const showingNavigator = mode === "discover" && exploreLayout === "navigator";
+
   useEffect(() => {
-    if (mode !== "discover" || panelOpen || !rows.length) return;
+    if (!showingNavigator || panelOpen || !rows.length) return;
     function onKeyDown(event: KeyboardEvent) {
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
       const target = event.target as HTMLElement | null;
@@ -90,12 +112,46 @@ export function TalentDiscovery({
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [mode, navigate, panelOpen, rows.length]);
+  }, [showingNavigator, navigate, panelOpen, rows.length]);
+
+  useEffect(() => {
+    const node = resultsRef.current;
+    if (!node) {
+      setScrolled(false);
+      return;
+    }
+    function onScroll() {
+      setScrolled(node!.scrollTop > 8);
+    }
+    onScroll();
+    node.addEventListener("scroll", onScroll, { passive: true });
+    return () => node.removeEventListener("scroll", onScroll);
+  }, [mode, exploreLayout]);
 
   function openTalent(talent: Talent) {
     const known = talentById.get(talent.id) ?? talent;
     setSelected(known);
     setViewed((current) => [known, ...current.filter((person) => person.id !== known.id)].slice(0, 10));
+  }
+
+  function pushMode(next: Exclude<DiscoverMode, "browse">, layout: ExploreLayout = "navigator") {
+    setMode(next);
+    if (next === "discover") setExploreLayout(layout);
+    const params = new URLSearchParams(searchParams.toString());
+    if (next === "discover") {
+      params.set("view", "explore");
+      if (layout === "list") params.set("layout", "list");
+      else params.delete("layout");
+    } else {
+      params.set("view", next);
+      params.delete("layout");
+    }
+    router.push(`${basePath}?${params}`, { scroll: false });
+  }
+
+  function toggleExploreLayout() {
+    const next = exploreLayout === "navigator" ? "list" : "navigator";
+    pushMode("discover", next);
   }
 
   const filterLabel = credit
@@ -107,30 +163,43 @@ export function TalentDiscovery({
   const emptyCopy = credit
     ? `No talent found who worked with ${credit}.`
     : "Try a different name, style, or location.";
+  const shellClass = [
+    "talent-discovery",
+    `talent-discovery--${mode}`,
+    showingList ? "talent-discovery--list" : "",
+    scrolled ? "talent-discovery--scrolled" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const profileBasePath = basePath === "/talent" ? "/talent" : "/discover";
 
   return (
-    <DiscoverTalentProvider value={{ openTalent, lookupTalent: (id) => talentById.get(id) }}>
-      <div className={`talent-discovery talent-discovery--${mode}`}>
+    <DiscoverTalentProvider
+      value={{
+        openTalent,
+        lookupTalent: (id) => talentById.get(id),
+        selectedTalentId: selected?.id ?? null,
+      }}
+    >
+      <div className={shellClass}>
+        <div className="talent-discovery-chrome" aria-hidden="true">
+          <div className="talent-discovery-chrome__bar" />
+        </div>
         <div className="talent-discovery-modes">
           {collectionTitle ? <p className="talent-collection-title">{collectionTitle}</p> : null}
           <SegmentedControl
             options={[
               ...(featured ? [{ value: "featured" as const, label: "Featured" }] : []),
-              { value: "browse" as const, label: "Browse" },
               { value: "discover" as const, label: "Explore" },
               ...(saved === null ? [] : [{ value: "saved" as const, label: "Saved" }]),
             ]}
             value={mode}
-            onChange={(next) => {
-              setMode(next);
-              const params = new URLSearchParams(searchParams.toString());
-              params.set("view", next === "discover" ? "explore" : next);
-              router.push(`${basePath}?${params}`, { scroll: false });
-            }}
+            onChange={(next) => pushMode(next, next === "discover" ? "navigator" : exploreLayout)}
             ariaLabel="Discover view"
             activeTone="white"
           />
-          {filterLabel && mode === "discover" ? (
+          {filterLabel && showingNavigator ? (
             <button
               type="button"
               className="talent-discovery-chip"
@@ -143,21 +212,29 @@ export function TalentDiscovery({
             </button>
           ) : null}
         </div>
+        {mode === "discover" ? (
+          <button
+            type="button"
+            className="talent-discovery-layout-toggle"
+            aria-label={exploreLayout === "navigator" ? "Show list view" : "Show navigator view"}
+            title={exploreLayout === "navigator" ? "List view" : "Navigator view"}
+            onClick={toggleExploreLayout}
+          >
+            {exploreLayout === "navigator" ? <List size={18} aria-hidden /> : <LayoutGrid size={18} aria-hidden />}
+          </button>
+        ) : null}
         {mode === "featured" && featured ? (
-          <div key="featured" className="talent-discovery-results talent-discovery-featured ui-swap">
+          <div key="featured" ref={resultsRef} className="talent-discovery-results talent-discovery-featured ui-swap">
             {featured}
           </div>
         ) : mode === "saved" ? (
-          <div key="saved" className="talent-discovery-results ui-swap">
+          <div key="saved" ref={resultsRef} className="talent-discovery-results ui-swap">
             {saved ?? <DiscoverSaved />}
           </div>
-        ) : mode === "browse" ? (
-          <div key="browse" className="talent-discovery-results ui-swap">{children}</div>
+        ) : showingList ? (
+          <div key="list" ref={resultsRef} className="talent-discovery-results ui-swap">{children}</div>
         ) : (
-          <div
-            className="talent-navigator ui-fade-in"
-            aria-label="Discover"
-          >
+          <div className="talent-navigator ui-fade-in" aria-label="Discover">
             <div className="talent-navigator__stage">
               {rows.length ? (
                 <div className="talent-navigator__grid-canvas">
@@ -172,6 +249,7 @@ export function TalentDiscovery({
                     onFocusCell={slide.focusCell}
                     onNavigate={slide.navigate}
                     onOpenProfile={openTalent}
+                    selectedTalentId={selected?.id ?? null}
                   />
                 </div>
               ) : (
@@ -203,6 +281,7 @@ export function TalentDiscovery({
         talent={selected}
         open={selected !== null}
         onClose={() => setSelected(null)}
+        profileBasePath={profileBasePath}
       />
     </DiscoverTalentProvider>
   );

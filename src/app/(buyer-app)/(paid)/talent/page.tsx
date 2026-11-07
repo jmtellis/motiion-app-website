@@ -1,5 +1,3 @@
-import { Suspense } from "react";
-
 import { DiscoverFeatured } from "@/components/app/DiscoverFeatured";
 import { DiscoverView } from "@/components/app/DiscoverView";
 import { TalentDiscovery } from "@/components/app/TalentDiscovery";
@@ -18,13 +16,14 @@ export default async function BuyerTalentPage({
   if ("redirectTo" in canvas) redirect(canvas.redirectTo);
 
   const view = typeof params.view === "string" ? params.view : "";
-  const searching = Object.keys(params).some((key) => key !== "view");
+  const layout = typeof params.layout === "string" ? params.layout : "";
+  const searching = Object.keys(params).some((key) => key !== "view" && key !== "layout");
+  const listLayout = view === "browse" || layout === "list";
   const initialMode =
-    view === "discover" || view === "explore"
+    view === "discover" || view === "explore" || view === "browse" || searching
       ? "discover"
-      : view === "browse" || (!view && searching)
-        ? "browse"
-        : "featured";
+      : "featured";
+  const initialLayout = listLayout ? "list" : "navigator";
 
   return (
     <div className="talent-navigator-route">
@@ -33,17 +32,14 @@ export default async function BuyerTalentPage({
         currentUserId={profile.id}
         basePath="/talent"
         initialMode={initialMode}
+        initialLayout={initialLayout}
         collectionTitle={canvas.collectionTitle}
         initialData={canvas.initialData}
         keyword={canvas.filters.keyword ?? ""}
         credit={canvas.credit}
         recentlyViewed={canvas.recentlyViewed}
         saved={null}
-        featured={
-          <Suspense fallback={<div className="talent-discovery-featured__loading" aria-busy="true" />}>
-            <DiscoverFeatured />
-          </Suspense>
-        }
+        featured={<DiscoverFeatured detailBasePath="/talent" from="talent" />}
       >
         <DiscoverView
           basePath="/talent"

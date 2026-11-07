@@ -1,4 +1,4 @@
-import type { ProfileCredits } from "@/lib/profile/profile-credits";
+import type { ProfileCreditPageLayout, ProfileCredits } from "@/lib/profile/profile-credits";
 
 export type ProfileHighlight = {
   id: string;
@@ -42,6 +42,8 @@ export type ProfileExperience = {
   industry_professional_user_id?: string | null;
   live_stage_subtype?: string | null;
   entity_image_status?: string | null;
+  /** Credits-page cover: main talent, studio/company, or TMDB project. */
+  public_credit_kind?: "mainTalent" | "studioOrCompany" | "tmdbProject" | null;
 };
 
 export type ProfileVisual = {
@@ -76,6 +78,7 @@ export type PublicTalentProfile = {
   talent_types: string[];
   profile_highlights: ProfileHighlight[];
   credits: ProfileCredits;
+  credit_page_layout: ProfileCreditPageLayout | null;
   experiences: ProfileExperience[];
   training: { title?: string; organization?: string; year?: string }[];
   profile_visuals: ProfileVisual[];
@@ -119,6 +122,8 @@ export type PublicFeaturedTalent = {
   displayName: string;
   headshotUrl: string | null;
   username: string | null;
+  /** City / region from the public talent profile when available. */
+  location?: string | null;
   talentTypes?: string[] | null;
   representation?: string | null;
   videoUrl: string | null;

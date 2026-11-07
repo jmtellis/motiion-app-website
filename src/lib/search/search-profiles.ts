@@ -483,17 +483,57 @@ function mergeVerifiedFirst(
   };
 }
 
+function directorySearchOpen(filters: SearchFilters) {
+  return Boolean(filters.keyword?.trim());
+}
+
+/** Public talent who are agency-represented or profile-approved. Used when no name search is active. */
+const loadQualifiedDirectoryIds = cache(async (): Promise<Set<string> | null> => {
+  const admin = createAdminSupabaseClient();
+  if (!admin) return null;
+  const ids = new Set<string>();
+  const pageSize = 1000;
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await admin
+      .from("profiles")
+      .select("user_id, representation, profile_review_status")
+      .eq("is_private", false)
+      .not("onboarding_completed_at", "is", null)
+      .contains("enabled_shells", ["talent"])
+      .or("profile_review_status.eq.approved,representation.not.is.null")
+      .order("user_id", { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (error) {
+      console.error("Qualified directory unavailable", error.code);
+      return null;
+    }
+    for (const row of data ?? []) {
+      const represented = Boolean(typeof row.representation === "string" && row.representation.trim());
+      if (row.profile_review_status === "approved" || represented) ids.add(row.user_id);
+    }
+    if (!data || data.length < pageSize) break;
+  }
+  return ids;
+});
+
+function applyDirectoryGate(result: SearchResult, qualified: Set<string>): SearchResult {
+  const items = result.items.filter((profile) => qualified.has(profile.id));
+  return { ...result, items, total: items.length, pageSize: items.length };
+}
+
 export const searchTalentProfiles = cache(async (filters: SearchFilters): Promise<SearchResult> => {
   const blocked = await currentBlockedUsers();
   if (blocked.error) return emptySearchResult(filters);
-  const [verifiedResult, talentProfiles] = await Promise.all([
-    queryProfessionalProfiles(filters, blocked.ids), querySupabaseView("talent", filters, blocked.ids),
+  const [verifiedResult, talentProfiles, qualified] = await Promise.all([
+    queryProfessionalProfiles(filters, blocked.ids),
+    querySupabaseView("talent", filters, blocked.ids),
+    directorySearchOpen(filters) ? Promise.resolve(null) : loadQualifiedDirectoryIds(),
   ]);
   const verifiedProfiles = verifiedResult ?? [];
-  if (talentProfiles) return mergeVerifiedFirst(verifiedProfiles, talentProfiles);
-
-  if (verifiedProfiles.length) {
-    return {
+  let result: SearchResult | null = null;
+  if (talentProfiles) result = mergeVerifiedFirst(verifiedProfiles, talentProfiles);
+  else if (verifiedProfiles.length) {
+    result = {
       items: verifiedProfiles,
       total: verifiedProfiles.length,
       page: 1,
@@ -502,8 +542,9 @@ export const searchTalentProfiles = cache(async (filters: SearchFilters): Promis
       source: "talent",
     };
   }
-
-  return emptySearchResult(filters);
+  if (!result) return emptySearchResult(filters);
+  if (qualified) return applyDirectoryGate(result, qualified);
+  return result;
 });
 
 /** Divisible by 2, 3, 5, and 6 so every grid width ends on a full row. */
@@ -609,6 +650,47 @@ async function overlayVerification(rows: SearchProfileRecord[]): Promise<SearchP
   });
 }
 
+/**
+ * Default Browse: only represented or approved profiles. Scans filtered talent pages
+ * and keeps rows that pass the directory gate so attribute filters stay on `talent`.
+ */
+async function searchGatedBrowseTalent(
+  filters: SearchFilters,
+  page: number,
+  blocked: ReadonlySet<string>,
+): Promise<SearchResult | null> {
+  const qualified = await loadQualifiedDirectoryIds();
+  if (!qualified) return null;
+
+  const pageSize = BROWSE_PAGE_SIZE;
+  const matched: SearchProfileRecord[] = [];
+  const maxScanPages = Math.ceil(5000 / pageSize);
+
+  for (let scanPage = 1; scanPage <= maxScanPages; scanPage++) {
+    const result = await supabaseRestGetCounted<SearchProfileRecord>(
+      buildBrowseQueryPath({ ...filters, page: scanPage }, scanPage) + blockedUserQuery("id", blocked),
+      { revalidate: 60 },
+    );
+    if (!result) return null;
+    for (const row of result.rows) {
+      const profile = normalizeSearchProfile(row);
+      if (qualified.has(profile.id)) matched.push(profile);
+    }
+    if (result.rows.length < pageSize || scanPage * pageSize >= result.total) break;
+  }
+
+  const start = (page - 1) * pageSize;
+  const items = await overlayVerification(matched.slice(start, start + pageSize));
+  return {
+    items,
+    total: matched.length,
+    page,
+    pageSize,
+    usingFallbackData: false,
+    source: "talent",
+  };
+}
+
 /** Browse grid: SQL-side filtering, ordering, and offset pagination with an exact total. */
 export const searchBrowseTalent = cache(async (filters: SearchFilters): Promise<SearchResult> => {
   const page = Number.isFinite(filters.page) && (filters.page ?? 0) > 0 ? Math.floor(filters.page!) : 1;
@@ -617,6 +699,12 @@ export const searchBrowseTalent = cache(async (filters: SearchFilters): Promise<
 
   const blocked = await currentBlockedUsers();
   if (blocked.error) return { ...emptySearchResult(filters), page, pageSize: BROWSE_PAGE_SIZE };
+
+  if (!directorySearchOpen(filters)) {
+    const gated = await searchGatedBrowseTalent(filters, page, blocked.ids);
+    if (gated) return gated;
+  }
+
   const result = await supabaseRestGetCounted<SearchProfileRecord>(buildBrowseQueryPath(filters, page) + blockedUserQuery("id", blocked.ids), {
     revalidate: 60,
   });

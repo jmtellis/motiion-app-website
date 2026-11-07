@@ -78,10 +78,12 @@ export async function loadDiscoverCanvas(
     result = await searchCuratedTalent(collection.talent_ids);
     initialData = buildNavigatorInitialData(result);
   } else {
-    // Browse needs one counted page. Load the larger canvas only when Explore is requested.
-    const explore = ["discover", "explore"].includes(single(params, "view"));
+    // List layout needs one counted page. Load the navigator canvas for the Explore grid.
+    const view = single(params, "view");
+    const listLayout = view === "browse" || single(params, "layout") === "list";
+    const exploreGrid = ["discover", "explore"].includes(view) && !listLayout;
     const browse = await searchBrowseTalent({ ...filters, navigator: false });
-    const navigator = explore ? await searchTalentProfiles(filters) : browse;
+    const navigator = exploreGrid ? await searchTalentProfiles(filters) : browse;
     const lastPage = Math.max(1, Math.ceil(browse.total / browse.pageSize));
     if (browse.page > lastPage) {
       const next = new URLSearchParams();

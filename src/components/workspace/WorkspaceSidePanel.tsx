@@ -30,6 +30,7 @@ export function WorkspaceSidePanel({
   leading,
   children,
   persistent = false,
+  hideHeader = false,
 }: {
   id: string;
   open: boolean;
@@ -39,6 +40,8 @@ export function WorkspaceSidePanel({
   leading?: ReactNode;
   children: ReactNode;
   persistent?: boolean;
+  /** Edge-to-edge body — useful when the content owns its own close control. */
+  hideHeader?: boolean;
 }) {
   const host = useContext(SidePanelHostContext);
   const mobile = useSyncExternalStore(subscribeMobile, isMobile, serverMobile);
@@ -77,24 +80,26 @@ export function WorkspaceSidePanel({
       data-persistent={persistent}
       inert={!open && !persistent}
     >
-      <div className="workspace-side-panel">
-        <header className="workspace-side-panel__header">
-          <div className="workspace-side-panel__title">
-            {leading}
-            <h2>{title}</h2>
-          </div>
-          <div className="workspace-side-panel__actions">
-            {actions}
-            <button
-              type="button"
-              className="workspace-notifications__close"
-              aria-label={`Close ${title.toLowerCase()}`}
-              onClick={onClose}
-            >
-              <X size={18} aria-hidden />
-            </button>
-          </div>
-        </header>
+      <div className={`workspace-side-panel${hideHeader ? " workspace-side-panel--flush" : ""}`}>
+        {hideHeader ? null : (
+          <header className="workspace-side-panel__header">
+            <div className="workspace-side-panel__title">
+              {leading}
+              <h2>{title}</h2>
+            </div>
+            <div className="workspace-side-panel__actions">
+              {actions}
+              <button
+                type="button"
+                className="workspace-notifications__close"
+                aria-label={`Close ${title.toLowerCase()}`}
+                onClick={onClose}
+              >
+                <X size={18} aria-hidden />
+              </button>
+            </div>
+          </header>
+        )}
         <div className="workspace-side-panel__body">{children}</div>
       </div>
     </aside>

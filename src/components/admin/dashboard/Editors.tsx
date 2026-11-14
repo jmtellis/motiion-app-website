@@ -1,4 +1,7 @@
 "use client";
+
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -166,10 +169,10 @@ export function ExclusionEditor({ disabled }: { disabled: boolean }) {
       </label>
       <label>
         Action
-        <select name="excluded" disabled={disabled || busy}>
+        <CustomSelect name="excluded" disabled={disabled || busy}>
           <option value="true">Exclude test account</option>
           <option value="false">Include account again</option>
-        </select>
+        </CustomSelect>
       </label>
       <button className="launch-button secondary" disabled={disabled || busy}>
         Save exclusion

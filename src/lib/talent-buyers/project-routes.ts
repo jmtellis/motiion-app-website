@@ -25,14 +25,11 @@ export function projectOverviewPath(projectId: string) {
   return projectPath(projectId, "overview");
 }
 
-/** Default landing path for a project by type (casting → Breakdown). */
+/** Projects open Manage; focused casting URLs remain directly addressable. */
 export function projectLandingPath(
   projectId: string,
-  rawType: string | null | undefined,
+  _rawType: string | null | undefined,
 ): string {
-  if (getNormalizedProjectType(rawType) === "casting") {
-    return projectWorkspacePath(projectId, "breakdown");
-  }
   return projectOverviewPath(projectId);
 }
 

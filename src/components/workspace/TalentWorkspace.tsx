@@ -19,6 +19,7 @@ import "@/components/workspace/workspace-controls.css";
 import "@/components/ui/chips.css";
 import "@/components/ui/motion.css";
 import "@/components/ui/polish.css";
+import "@/components/talent-buyers/dashboard/workspace-polish.css";
 
 export function TalentWorkspace({
   children,
@@ -38,6 +39,21 @@ export function TalentWorkspace({
   const sidebar = useWorkspaceSidebar("motiion-talent-sidebar-width");
   const pathname = usePathname();
   const mainRef = useRef<HTMLElement>(null);
+  const [scrolled, setScrolled] = useState(false);
+  const pageTitle = pathname.startsWith("/messages") ? "Inbox"
+    : pathname.startsWith("/schedule") ? "Schedule"
+    : pathname.startsWith("/portfolio") ? "Portfolio"
+    : pathname.startsWith("/opportunities") ? "Opportunities"
+    : pathname.startsWith("/settings") ? "Settings"
+    : pathname.startsWith("/home") ? "Home" : null;
+  useEffect(() => {
+    const main = mainRef.current;
+    if (!main) return;
+    const update = () => setScrolled(main.scrollTop > 88);
+    update();
+    main.addEventListener("scroll", update, { passive: true });
+    return () => main.removeEventListener("scroll", update);
+  }, [pathname]);
   const homeHref = community ? "/home" : "/discover";
   const [shell, setShell] = useState<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -84,6 +100,9 @@ export function TalentWorkspace({
           tabIndex={-1}
           className={`workspace-talent-main ${mainVariant}`}
         >
+          {pageTitle ? <div className="workspace-scroll-header" aria-hidden={!scrolled} data-visible={scrolled}>
+            <div className="workspace-scroll-header__surface">{pageTitle}</div>
+          </div> : null}
           {children}
         </main>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Children, cloneElement, isValidElement, useId, type InputHTMLAttributes, type ReactElement, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { Children, cloneElement, isValidElement, useId, type InputHTMLAttributes, type ReactElement, type ReactNode, type TextareaHTMLAttributes } from "react";
 
 type ControlProps = { "aria-label"?: string; "aria-labelledby"?: string; "aria-describedby"?: string; "aria-invalid"?: boolean | "true" | "false"; };
 type FieldProps = { label: ReactNode; hint?: ReactNode; error?: ReactNode; className?: string; children: ReactNode; };
@@ -30,4 +30,4 @@ export function Field({ label, hint, error, className = "", children }: FieldPro
 }
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) { return <input {...props} />; }
 export function TextArea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) { return <textarea {...props} />; }
-export function Select({ children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) { return <select {...props}>{children}</select>; }
+export { CustomSelect as Select } from "./CustomSelect";

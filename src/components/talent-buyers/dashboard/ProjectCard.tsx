@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { createElement } from "react";
+import { ChevronRight } from "lucide-react";
+import { projectCardDate } from "@/lib/talent-buyers/project-card-date";
 
 import { formatBuyerRelativeDate, labelFromSnake } from "@/lib/talent-buyers/dashboard-data";
 import {
-  getProjectTypeAccent,
   getProjectTypeIcon,
   getProjectTypeStockCategory,
 } from "@/lib/talent-buyers/project-type-icons";
@@ -12,7 +13,6 @@ import type { ProjectHubSummary } from "@/lib/talent-buyers/projects-hub";
 import { resolveBuyerCoverSrc } from "@/lib/talent-buyers/stock-images";
 import type { BuyerProjectSummary } from "@/types/talent-buyer-dashboard";
 
-import { AbilityIconRow } from "@/components/talent-buyers/project/composable/AbilityIconRow";
 
 import { IndustryBadge } from "./IndustryUI";
 
@@ -24,10 +24,9 @@ type ProjectCardModel = BuyerProjectSummary &
 export function ProjectCard({
   project,
   variant = "default",
-  nextBeatLabel,
 }: {
   project: ProjectCardModel;
-  variant?: "default" | "dashboard" | "workspace";
+  variant?: "default" | "dashboard" | "workspace" | "archive";
   /** Next dated beat from the Schedule, e.g. "Audition · Oct 3, 6 PM". */
   nextBeatLabel?: string;
 }) {
@@ -44,7 +43,6 @@ export function ProjectCard({
     ? "Project"
     : (project.workTypeLabel ?? getProjectTypeLabel(project.projectType));
   const TypeIcon = getProjectTypeIcon(project.projectType);
-  const typeAccent = getProjectTypeAccent(project.projectType);
   const href = project.href ?? `/projects/${project.id}`;
   const countLabel =
     project.workKind === "activity" ? "Guests" : project.workKind === "job" ? "People" : "Talent";
@@ -98,44 +96,35 @@ export function ProjectCard({
     );
   }
 
+  const dates = projectCardDate(project.startDate, project.endDate);
   if (isDashboard) {
-    const action = project.status === "draft" ? "Continue draft" : project.status === "archived" ? "View project" : "Open project";
+    return <Link href={href} className="ui-media-card ui-project-card project-active-card" aria-label={`Open ${project.title}${project.status === "draft" ? " (draft)" : ""}`}>
+      <span className="ui-media-card__media">
+        <BuyerCoverImage src={coverSrc} alt="" fill secondarySrc={project.productionCompanyLogoUrl} allowStockFallback={false} />
+        {project.status === "draft" ? <span className="ui-project-card__status"><IndustryBadge>Draft</IndustryBadge></span> : null}
+      </span>
+      <span className="ui-media-card__body">
+        <span className="project-summary-card__type">{createElement(TypeIcon, { size: 14, "aria-hidden": true })}{typeLabel}</span>
+        <span className="project-active-card__heading"><h3 className="ui-media-card__title">{project.title}</h3><ChevronRight size={18} aria-hidden /></span>
+        <span className="ui-media-card__text">{dates}</span>
+      </span>
+    </Link>;
+  }
+
+  if (variant === "archive") {
     return (
-      <Link href={href} className="ui-media-card ui-project-card">
-        <span className="ui-media-card__media">
-          <BuyerCoverImage
-            src={coverSrc}
-            alt=""
-            fill
-            secondarySrc={project.productionCompanyLogoUrl}
-            fallbackId={project.id}
-            fallbackCategory={stockCategory}
-            allowStockFallback={false}
-          />
-          <span className="ui-project-card__status"><IndustryBadge tone={project.status === "active" ? "success" : "neutral"}>{labelFromSnake(project.status)}</IndustryBadge></span>
+      <Link href={href} className="project-summary-card" aria-label={`Open ${project.title}${project.status === "draft" ? " (draft)" : ""}`}>
+        <span className="project-summary-card__thumbnail">
+          <BuyerCoverImage src={coverSrc} alt="" fill secondarySrc={project.productionCompanyLogoUrl} allowStockFallback={false} />
         </span>
-        <span className="ui-media-card__body">
-          <span className="ui-media-card__eyebrow ui-project-card__type">
-            <span className={`ui-project-card__type-icon ui-project-card__type-icon--${typeAccent}`} aria-hidden>
-              {createElement(TypeIcon, { className: "size-3", strokeWidth: 2.4 })}
-            </span>
-            {typeLabel}
-          </span>
-          <h3 className="ui-media-card__title">{project.title}</h3>
-          <p className="ui-media-card__text">
-            {nextBeatLabel
-              ? `Next: ${nextBeatLabel}`
-              : `Edited ${formatBuyerRelativeDate(project.lastUpdated)}`}
-          </p>
-          <span className="ui-media-card__footer">
-            <span className="ui-media-card__cta">{action}</span>
-            <span className="ui-project-card__meta">
-              {project.abilities?.length ? (
-                <AbilityIconRow abilities={project.abilities} className="bd-project-card__abilities" />
-              ) : null}
-              {project.status === "draft" ? null : `${project.talentCount} ${countLabel.toLowerCase()}`}
-            </span>
-          </span>
+        <span className="project-summary-card__copy">
+          <span className="project-summary-card__type">{createElement(TypeIcon, { size: 14, "aria-hidden": true })}{typeLabel}</span>
+          <h3>{project.title}</h3>
+          <span className="project-summary-card__meta">{dates}</span>
+        </span>
+        <span className="project-summary-card__end">
+          {project.status === "draft" ? <IndustryBadge>Draft</IndustryBadge> : null}
+          <ChevronRight size={18} aria-hidden />
         </span>
       </Link>
     );

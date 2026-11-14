@@ -39,6 +39,8 @@ export type ProjectComposerForm = {
 };
 
 export type ProjectRecord = {
+  project_details?: Record<string, unknown> | null;
+  is_union?: boolean;
   is_composable?: boolean;
   project_abilities?: { ability: string; settings?: { body?: string } | null }[];
   id: string;

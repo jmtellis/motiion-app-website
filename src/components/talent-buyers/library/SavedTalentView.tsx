@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { LayoutGrid, Rows3, Search } from "lucide-react";
 
@@ -112,7 +115,7 @@ export function SavedTalentView({
             placeholder="Search talent"
           />
         </label>
-        <select
+        <CustomSelect
           className="library-select"
           value={collectionFilter}
           onChange={(event) => setCollectionFilter(event.target.value)}
@@ -124,8 +127,8 @@ export function SavedTalentView({
               {collection.name}
             </option>
           ))}
-        </select>
-        <select
+        </CustomSelect>
+        <CustomSelect
           className="library-select"
           value={sort}
           onChange={(event) => setSort(event.target.value as "recent" | "name")}
@@ -133,7 +136,7 @@ export function SavedTalentView({
         >
           <option value="recent">Recent</option>
           <option value="name">A–Z</option>
-        </select>
+        </CustomSelect>
         <div className="library-layout-toggle" role="group" aria-label="Browse layout">
           <button
             type="button"

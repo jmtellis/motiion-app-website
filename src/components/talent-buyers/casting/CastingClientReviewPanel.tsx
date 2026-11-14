@@ -1,5 +1,10 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
+import { FilterSelect } from "@/components/ui/FilterSelect";
+
 import { useSearchParams } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { Copy } from "lucide-react";
@@ -60,7 +65,7 @@ async function loadClientShares(roleIds: string[]) {
   return { data: result.shares, error: result.error };
 }
 
-export function CastingClientReviewPanel() {
+export function CastingClientReviewPanel({ roleScoped = false }: { roleScoped?: boolean }) {
   const searchParams = useSearchParams();
   const { showToast } = useToast();
   const { projectId, project, castingWorkflow } = useProjectWorkspace();
@@ -84,7 +89,7 @@ export function CastingClientReviewPanel() {
   };
 
   const roles = workflow.roles;
-  const requestedRoleMatch = roles.find((role) => role.id === requestedRole || role.bridgedRoleId === requestedRole);
+  const requestedRoleMatch = roles.find((role) => role.id === requestedRole || role.bridgedRoleId === requestedRole || role.bridgedRoleIds?.includes(requestedRole));
   const roleFilter = requestedRoleMatch ? requestedRoleMatch.bridgedRoleId ?? requestedRoleMatch.id : "all";
   const header = getCastingPanelHeader("client-review");
 
@@ -197,28 +202,13 @@ export function CastingClientReviewPanel() {
   }
 
   const primaryAction = {
-    label: "Create client link",
+    label: "Share shortlist for feedback",
     actionId: "create-client-link",
     disabled: shareRoleIds.length === 0,
   };
 
   const roleToggle = (
-    <label className="casting-find-talent-role-pill">
-      <span className="sr-only">Role</span>
-      <select
-        value={roleFilter}
-        onChange={(event) => setRoleFilterValue(event.target.value)}
-        className="casting-find-talent-role-pill__select"
-        aria-label="Role"
-      >
-        <option value="all">All roles</option>
-        {roles.map((role) => (
-          <option key={role.id} value={role.bridgedRoleId ?? role.id}>
-            {role.name}
-          </option>
-        ))}
-      </select>
-    </label>
+    <FilterSelect label="Role" value={roleFilter} onChange={setRoleFilterValue} options={[{ value: "all", label: "All roles" }, ...roles.map((role) => ({ value: role.bridgedRoleId ?? role.id, label: role.name }))]} />
   );
 
   if (!roles.length) {
@@ -242,7 +232,7 @@ export function CastingClientReviewPanel() {
     <>
       <CastingPanelHeader
         title={header.title}
-        center={roleToggle}
+        center={roleScoped ? undefined : roleToggle}
         primaryAction={canReviewCasting ? primaryAction : undefined}
         onPrimaryAction={(actionId) => {
           if (actionId === "create-client-link") setShareOpen(true);
@@ -252,7 +242,7 @@ export function CastingClientReviewPanel() {
       <div className="project-workspace__panel-body casting-client-review casting-client-review--share">
         <div className="mb-3 flex items-center justify-between gap-3">
           <p className="text-sm text-[var(--ui-muted)]" role="status">
-            {sharesLoading ? (hasLoaded ? "Refreshing client links…" : "Loading active links…") : "Active client links"}
+            {sharesLoading ? (hasLoaded ? "Refreshing client links…" : "Loading active links…") : "Shared shortlists"}
           </p>
           <button type="button" className="bd-btn-secondary text-sm" disabled={sharesLoading} onClick={refresh}>Refresh</button>
         </div>
@@ -265,17 +255,17 @@ export function CastingClientReviewPanel() {
         {!hasLoaded ? null : shareRows.length === 0 ? (
           <EmptyState
             variant="dashboard"
-            title="No active client links"
+            title="No shortlists shared yet"
             description={
               shareRoleIds.length
-                ? `Use Create client link to share shortlisted talent for ${shareScopeLabel}.`
-                : "Shortlist talent in Review first, then create a presentation link here."
+                ? `Share a shortlist for feedback on ${shareScopeLabel}.`
+                : "Shortlist talent in Review submissions, then share a review link here."
             }
-            actionLabel={shareRoleIds.length ? undefined : "Review candidates"}
+            actionLabel={shareRoleIds.length ? undefined : "Review submissions"}
             actionHref={
               shareRoleIds.length
                 ? undefined
-                : castingWorkspaceHref(projectId, "review", { stage: "shortlisted" })
+                : castingWorkspaceHref(projectId, "review", { stage: "shortlisted", roleId: roleFilter === "all" ? undefined : roleFilter })
             }
           />
         ) : (
@@ -329,7 +319,7 @@ export function CastingClientReviewPanel() {
         <section className="mt-8 border-t border-[var(--ui-border)] pt-5" aria-labelledby="casting-client-feedback-heading">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 id="casting-client-feedback-heading" className="font-semibold text-[var(--ui-text)]">Client feedback</h3>
+              <h3 id="casting-client-feedback-heading" className="font-semibold text-[var(--ui-text)]">Shortlist feedback</h3>
               <p className="mt-1 text-sm text-[var(--ui-muted)]">Submitted decisions remain available after a review link expires or is revoked.</p>
             </div>
             <button type="button" className="bd-btn-secondary text-sm" disabled={feedbackLoading} onClick={refreshFeedback}>
@@ -343,10 +333,10 @@ export function CastingClientReviewPanel() {
           {hasFeedback && feedback.length === 0 ? <p className="mt-4 text-sm text-[var(--ui-muted)]">No client decisions submitted for these roles yet.</p> : null}
           {feedback.length > 1 ? <label className="mt-4 flex items-center gap-2 text-sm text-[var(--ui-text)]">
             Reviewer
-            <select className="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2" value={activeReviewer} onChange={(event) => setReviewerFilter(event.target.value)}>
+            <CustomSelect className="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2" value={activeReviewer} onChange={(event) => setReviewerFilter(event.target.value)}>
               <option value="all">All reviewers</option>
               {feedback.map((review) => <option key={review.reviewerId} value={review.reviewerId}>{review.reviewerName}</option>)}
-            </select>
+            </CustomSelect>
           </label> : null}
           <div className="mt-4 space-y-3">
             {visibleFeedback.map((review) => {

@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BadgeCheck,
@@ -602,7 +605,7 @@ function ResumeTab({ experiences }: { experiences: ProfileExperience[] }) {
               <label className="sr-only" htmlFor="resume-category">
                 Experience category
               </label>
-              <select
+              <CustomSelect
                 id="resume-category"
                 className="buyer-talent-profile__category-select"
                 value={selectedCategory}
@@ -616,7 +619,7 @@ function ResumeTab({ experiences }: { experiences: ProfileExperience[] }) {
                     {label}
                   </option>
                 ))}
-              </select>
+              </CustomSelect>
               <ChevronDown className="buyer-talent-profile__category-chevron size-3.5" aria-hidden />
             </div>
           </div>

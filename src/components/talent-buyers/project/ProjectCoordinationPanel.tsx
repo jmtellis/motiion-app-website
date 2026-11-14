@@ -1,4 +1,7 @@
 "use client";
+
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
@@ -62,7 +65,7 @@ export function ProjectCoordinationPanel({ initialRecords, storageError }: { ini
     <div className="project-bookings__heading"><div><h2>Internal notes</h2><p>Track external contacts and private details. These notes do not send requests or confirm talent.</p></div><button onClick={() => edit()} disabled={Boolean(storageError)}><Plus size={16} aria-hidden /> Add person</button></div>
     {storageError && <div role="alert" className="project-bookings__notice"><p>{storageError}</p><button className="secondary" onClick={() => router.refresh()}>Try again</button></div>}
     {notice && <p role="status" className="project-bookings__notice">{notice}</p>}
-    <label className="project-coordination__filter">Status <select value={filter} onChange={(event) => setFilter(event.target.value)}><option value="all">All people</option>{coordinationStatuses.map((status) => <option key={status} value={status}>{coordinationLabels[status]}</option>)}</select></label>
+    <label className="project-coordination__filter">Status <CustomSelect value={filter} onChange={(event) => setFilter(event.target.value)}><option value="all">All people</option>{coordinationStatuses.map((status) => <option key={status} value={status}>{coordinationLabels[status]}</option>)}</CustomSelect></label>
     {visible.length ? <div className="project-bookings__panel"><div className="project-bookings__table"><table><thead><tr><th scope="col">Person / role</th><th scope="col">Status</th><th scope="col">Dates</th></tr></thead><tbody>{visible.map((record) => <tr key={record.id}>
       <td><button className="project-bookings__name" onClick={() => edit(record)}>{record.talent_name}</button><small>{record.role || "Role to confirm"}</small></td>
       <td><span className={`project-bookings__status is-${record.status}`}>{coordinationLabels[record.status]}</span></td>
@@ -73,7 +76,7 @@ export function ProjectCoordinationPanel({ initialRecords, storageError }: { ini
       {editor && <form id="project-coordination-form" onSubmit={(event) => { event.preventDefault(); save(); }}><fieldset disabled={pending} className="project-bookings__fields">
         <label>Person<input autoFocus required list="coordination-roster" value={editor.talent_name} onChange={(event) => update("talent_name", event.target.value)} maxLength={200} autoComplete="off" /><datalist id="coordination-roster">{rosterMembers.map((member) => <option key={member.id} value={member.name} />)}</datalist></label>
         <label>Role<input value={editor.role} onChange={(event) => update("role", event.target.value)} maxLength={200} placeholder="e.g. Lead dancer" /></label>
-        <label>Status<select value={editor.status} onChange={(event) => update("status", event.target.value as CoordinationInput["status"])}>{coordinationStatuses.map((status) => <option key={status} value={status}>{coordinationLabels[status]}</option>)}</select></label>
+        <label>Status<CustomSelect value={editor.status} onChange={(event) => update("status", event.target.value as CoordinationInput["status"])}>{coordinationStatuses.map((status) => <option key={status} value={status}>{coordinationLabels[status]}</option>)}</CustomSelect></label>
         <label>Start date<input type="date" value={editor.start_date ?? ""} onChange={(event) => update("start_date", event.target.value || null)} /></label>
         <label>End date<input type="date" min={editor.start_date ?? undefined} value={editor.end_date ?? ""} onChange={(event) => update("end_date", event.target.value || null)} /></label>
         <label className="project-coordination__notes">Internal notes<textarea rows={8} maxLength={20000} value={editor.negotiation_notes} onChange={(event) => update("negotiation_notes", event.target.value)} placeholder="Next steps, call times, and details for your team…" /></label>

@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import { Check, Plus, Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
@@ -484,7 +487,7 @@ function TrainingFields({
               <div className="portfolio-training__grid">
                 <label className="industry-field portfolio-field">
                   <span className="industry-field__label">Type</span>
-                  <select
+                  <CustomSelect
                     value={entry.trainingType}
                     onChange={(event) => update(entry.id, { trainingType: event.target.value })}
                   >
@@ -494,7 +497,7 @@ function TrainingFields({
                         {option}
                       </option>
                     ))}
-                  </select>
+                  </CustomSelect>
                 </label>
                 <label className="industry-field portfolio-field">
                   <span className="industry-field__label">Program</span>

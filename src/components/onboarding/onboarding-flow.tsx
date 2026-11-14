@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useHydrated } from "@/hooks/use-hydrated";
 import type { ReactNode } from "react";
@@ -238,7 +241,7 @@ function SelectField({
 }) {
   return (
     <Field label={label}>
-      <select
+      <CustomSelect
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className="h-11 w-full rounded-full border border-[var(--line)] bg-[var(--surface-card)] px-4 text-sm text-[var(--ink)] outline-none transition focus:border-[rgb(17_17_17_/_0.35)]"
@@ -251,7 +254,7 @@ function SelectField({
             {option.label}
           </option>
         ))}
-      </select>
+      </CustomSelect>
     </Field>
   );
 }

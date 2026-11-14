@@ -1,3 +1,4 @@
+import { projectDetailsFromRecord } from "@/lib/talent-buyers/project-settings";
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 
@@ -6,7 +7,6 @@ import { ProjectWorkspaceCastingBootstrap } from "@/components/talent-buyers/pro
 import { ProjectWorkspaceProvider } from "@/components/talent-buyers/project/ProjectWorkspaceContext";
 import { ProjectWorkspaceShell } from "@/components/talent-buyers/project/ProjectWorkspaceShell";
 import type { ProjectWorkspaceMeta } from "@/components/talent-buyers/project/ProjectWorkspaceContext";
-import { fetchPosterCastingDetail } from "@/lib/talent-buyers/casting-projects";
 import { listProjectCastings } from "@/lib/talent-buyers/castings";
 import { listProjectActivities } from "@/lib/talent-buyers/project-activities";
 import { resolveWorkspaceAttachments } from "@/lib/talent-buyers/project-attachments";
@@ -37,12 +37,10 @@ export default async function ProjectWorkspaceLayout({
   if (!projectRecord) notFound();
   const db = await createServerSupabaseClient();
   const canReviewCasting = projectRecord.poster_id === profile.id || Boolean(db && (await db.rpc("is_project_operator", { p_project_id: id, p_user_id: profile.id })).data);
-  const [liveDetail, castings, { activities }, rosterResult] = await Promise.all([
-    fetchPosterCastingDetail(id, profile.id),
+  const [castings, { activities }, rosterResult] = await Promise.all([
     listProjectCastings(id, profile.id),
     listProjectActivities(id), listProjectRosterMembers(id),
   ]);
-  if (!liveDetail) notFound();
   if (rosterResult.error) throw new Error(rosterResult.error);
   const rosterMembers = rosterResult.members;
 
@@ -60,6 +58,7 @@ export default async function ProjectWorkspaceLayout({
   });
 
   const project: ProjectWorkspaceMeta = {
+    details: projectDetailsFromRecord(resolvedProject),
     notes: resolvedProject.project_abilities?.find((ability) => ability.ability === "notes")?.settings?.body ?? "",
     isOwner: resolvedProject.poster_id === profile.id,
     canReviewCasting,

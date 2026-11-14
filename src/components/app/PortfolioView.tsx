@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -18,12 +19,6 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
-import { HeadshotsPanel } from "@/components/portfolio/HeadshotsPanel";
-import { HighlightsPanel } from "@/components/portfolio/HighlightsPanel";
-import { PublicProfilePanel } from "@/components/portfolio/PublicProfilePanel";
-import { ResumePanel } from "@/components/portfolio/ResumePanel";
-import { SizeSheetPanel } from "@/components/portfolio/SizeSheetPanel";
-import { VisualsPanel } from "@/components/portfolio/VisualsPanel";
 import "@/components/portfolio/portfolio-panels.css";
 import { PortfolioProfileTabs } from "@/components/talent/PortfolioProfileTabs";
 import { useNotificationsPanel } from "@/components/workspace/WorkspaceNotifications";
@@ -34,6 +29,18 @@ import type { PortfolioOwnerData } from "@/lib/app/portfolio-owner";
 import { ResumePaper, SizeSheetPaper } from "@/components/portfolio/PortfolioPaper";
 import { sizeSheetRows } from "@/components/portfolio/size-sheet";
 import type { PublicTalentProfile } from "@/types/public";
+
+function EditorLoading() {
+  return <div className="portfolio-editor-loading" role="status" aria-live="polite">Loading editor…</div>;
+}
+
+// Editing tools load on demand; the overview does not need upload/crop machinery.
+const HeadshotsPanel = dynamic(() => import("@/components/portfolio/HeadshotsPanel").then((module) => module.HeadshotsPanel), { loading: EditorLoading });
+const HighlightsPanel = dynamic(() => import("@/components/portfolio/HighlightsPanel").then((module) => module.HighlightsPanel), { loading: EditorLoading });
+const PublicProfilePanel = dynamic(() => import("@/components/portfolio/PublicProfilePanel").then((module) => module.PublicProfilePanel), { loading: EditorLoading });
+const ResumePanel = dynamic(() => import("@/components/portfolio/ResumePanel").then((module) => module.ResumePanel), { loading: EditorLoading });
+const SizeSheetPanel = dynamic(() => import("@/components/portfolio/SizeSheetPanel").then((module) => module.SizeSheetPanel), { loading: EditorLoading });
+const VisualsPanel = dynamic(() => import("@/components/portfolio/VisualsPanel").then((module) => module.VisualsPanel), { loading: EditorLoading });
 
 type PanelKey = "public" | "headshots" | "highlights" | "visuals" | "resume" | "sizing";
 

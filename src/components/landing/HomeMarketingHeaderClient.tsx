@@ -108,20 +108,16 @@ export function HomeMarketingHeaderClient({
   const landingAudience = useLandingAudienceOptional();
   const [pastHero, setPastHero] = useState(wordmarkHeader);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [compactHeader, setCompactHeader] = useState(false);
 
   useEffect(() => {
     const query = window.matchMedia("(max-width: 767px)");
     const update = () => {
-      setCompactHeader(query.matches);
       if (!query.matches) setMenuOpen(false);
     };
     update();
     query.addEventListener("change", update);
-    window.addEventListener("resize", update);
     return () => {
       query.removeEventListener("change", update);
-      window.removeEventListener("resize", update);
     };
   }, []);
 
@@ -248,36 +244,34 @@ export function HomeMarketingHeaderClient({
       <header className={cn("landing-header", showScrolled && "is-visible", menuOpen && "is-menu-open")}>
         <div className="landing-header__inner">
           <Link href="/" className="landing-header__brand" aria-label="Motiion home"><MotiionScrolledWordmark priority /></Link>
-          {compactHeader ? (
-            <div className="landing-header__menu">
-              <button type="button" className="landing-header__menu-toggle" aria-expanded={menuOpen} aria-controls="landing-header-menu" onClick={() => setMenuOpen(open => !open)}>
-                {menuOpen ? <X aria-hidden /> : <Menu aria-hidden />}
-                <span className="sr-only">{menuOpen ? "Close menu" : "Open menu"}</span>
-              </button>
-              <nav id="landing-header-menu" aria-label="Main navigation" className="landing-header__menu-panel" inert={!menuOpen} aria-hidden={!menuOpen}>
-                {marketingPageLinks.map((link) => (
-                  <Link key={link.href} href={link.href} aria-current={marketingPageLinkCurrent(pathname, link.href)} className="landing-header__menu-item" onClick={closeMenu}>{link.label}</Link>
-                ))}
-                {accountUser ? <AccountPill user={accountUser} /> : <>
-                  <Link href="/login" className="landing-header__menu-item" onClick={closeMenu}>Login</Link>
-                  <Link href="/signup" className="landing-header__menu-item" onClick={closeMenu}>Sign Up</Link>
-                </>}
-                <IosDownloadHeroButton label="Download" className="landing-header__download landing-header__menu-item" />
-              </nav>
-            </div>
-          ) : (
-            <div className="landing-header__end landing-header__desktop-actions">
+          {/* CSS owns the breakpoint so navigation is correct before hydration. */}
+          <div className="landing-header__menu">
+            <button type="button" className="landing-header__menu-toggle" aria-expanded={menuOpen} aria-controls="landing-header-menu" onClick={() => setMenuOpen(open => !open)}>
+              {menuOpen ? <X aria-hidden /> : <Menu aria-hidden />}
+              <span className="sr-only">{menuOpen ? "Close menu" : "Open menu"}</span>
+            </button>
+            <nav id="landing-header-menu" aria-label="Main navigation" className="landing-header__menu-panel" inert={!menuOpen} aria-hidden={!menuOpen}>
               {marketingPageLinks.map((link) => (
-                <Link key={link.href} href={link.href} aria-current={marketingPageLinkCurrent(pathname, link.href)} className="landing-header__pricing">{link.label}</Link>
+                <Link key={link.href} href={link.href} aria-current={marketingPageLinkCurrent(pathname, link.href)} className="landing-header__menu-item" onClick={closeMenu}>{link.label}</Link>
               ))}
-              <IosDownloadHeroButton label="Download" className="landing-header__download" />
-              <span className="landing-header__action-divider" aria-hidden />
               {accountUser ? <AccountPill user={accountUser} /> : <>
-                <Link href="/login" className="home-split__login">Login</Link>
-                <Link href="/signup" className="mkt-btn mkt-btn--primary landing-header__signup">Sign Up</Link>
+                <Link href="/login" className="landing-header__menu-item" onClick={closeMenu}>Login</Link>
+                <Link href="/signup" className="landing-header__menu-item" onClick={closeMenu}>Sign Up</Link>
               </>}
-            </div>
-          )}
+              <IosDownloadHeroButton label="Download" className="landing-header__download landing-header__menu-item" />
+            </nav>
+          </div>
+          <div className="landing-header__end landing-header__desktop-actions">
+            {marketingPageLinks.map((link) => (
+              <Link key={link.href} href={link.href} aria-current={marketingPageLinkCurrent(pathname, link.href)} className="landing-header__pricing">{link.label}</Link>
+            ))}
+            <IosDownloadHeroButton label="Download" className="landing-header__download" />
+            <span className="landing-header__action-divider" aria-hidden />
+            {accountUser ? <AccountPill user={accountUser} /> : <>
+              <Link href="/login" className="home-split__login">Login</Link>
+              <Link href="/signup" className="mkt-btn mkt-btn--primary landing-header__signup">Sign Up</Link>
+            </>}
+          </div>
         </div>
       </header>
     );

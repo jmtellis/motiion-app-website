@@ -1,5 +1,7 @@
 "use client";
 
+import { WorkspaceSidePanel } from "@/components/workspace/WorkspaceSidePanel";
+import type { ReactNode } from "react";
 import { Dialog } from "@/components/ui/Dialog";
 import { roleSubmissionOptionsSchema } from "@/lib/talent-buyers/casting-schema";
 
@@ -27,6 +29,7 @@ import {
 import type { RoleClientMatchFilters } from "@/lib/talent-buyers/casting/role-publication-snapshot";
 
 import "../../project/project-create.css";
+import "../../project/casting-create-wizard.css";
 
 const AGE_BOUND_MIN = 13;
 const AGE_BOUND_MAX = 99;
@@ -380,18 +383,29 @@ function HeightRequirementEditor({
   );
 }
 
+function RoleEditorSurface({ sidePanel, titleId, onClose, children }: { sidePanel: boolean; titleId: string; onClose: () => void; children: ReactNode }) {
+  return sidePanel ? <WorkspaceSidePanel id="casting-role-editor" open title="Configure role" onClose={onClose} hideHeader>{children}</WorkspaceSidePanel>
+    : <Dialog open onClose={onClose} labelledBy={titleId} className="casting-role-dialog">{children}</Dialog>;
+}
+
 export function CastingRoleStep({
   form,
   onFormChange,
   showPrefillBadge,
   autoOpenWhenEmpty = true,
+  initialRoleId, editorOnly = false, onCommit, onDismiss,
 }: {
   form: CastingComposerForm;
   onFormChange: (form: CastingComposerForm) => void;
   showPrefillBadge?: boolean;
   autoOpenWhenEmpty?: boolean;
+  initialRoleId?: string;
+  editorOnly?: boolean;
+  onCommit?: (form: CastingComposerForm) => Promise<boolean>;
+  onDismiss?: () => void;
 }) {
   const titleId = useId();
+  const [saving, setSaving] = useState(false);
   const [editor, setEditor] = useState<RoleEditorState | null>(null);
   const [ageOption, setAgeOption] = useState<AgeOption>("any");
   const [minAge, setMinAge] = useState(AGE_DEFAULT_MIN);
@@ -409,6 +423,12 @@ export function CastingRoleStep({
 
 
   useEffect(() => {
+    if (editorOnly && !didAutoOpenRef.current) {
+      didAutoOpenRef.current = true;
+      const index = form.roles.findIndex((role) => role.id === initialRoleId);
+      openEditor(index >= 0 ? form.roles[index] : createDefaultRole(), index >= 0 ? index : null);
+      return;
+    }
     if (!autoOpenWhenEmpty || didAutoOpenRef.current) return;
     if (appliedRoles.length > 0) return;
     didAutoOpenRef.current = true;
@@ -468,6 +488,8 @@ export function CastingRoleStep({
   }
 
   function closeEditor() {
+    if (saving) return;
+    onDismiss?.();
     setEditor(null);
     setOpenAttr(null);
   }
@@ -584,7 +606,8 @@ export function CastingRoleStep({
     updateDraft({ ethnicityPreferences: next });
   }
 
-  function applyEditor() {
+  async function applyEditor() {
+    if (saving) return;
     if (!editor) return;
     const title = editor.draft.title.trim();
     if (!title || !roleSubmissionOptionsSchema.safeParse(editor.draft).success) return;
@@ -595,12 +618,16 @@ export function CastingRoleStep({
       description: editor.draft.description.trim(),
     });
 
-    if (editor.editIndex != null) {
-      const nextRoles = form.roles.map((role, index) => (index === editor.editIndex ? committed : role));
-      onFormChange({ ...form, roles: nextRoles });
-    } else {
-      onFormChange({ ...form, roles: [...form.roles.filter((role) => role.title.trim()), committed] });
+    const nextRoles = editor.editIndex != null
+      ? form.roles.map((role, index) => index === editor.editIndex ? committed : role)
+      : [...form.roles.filter((role) => role.title.trim()), committed];
+    const next = { ...form, roles: nextRoles };
+    if (onCommit) {
+      setSaving(true);
+      try { if (!await onCommit(next)) return; }
+      finally { setSaving(false); }
     }
+    onFormChange(next);
     closeEditor();
   }
 
@@ -619,15 +646,15 @@ export function CastingRoleStep({
 
   const optionsError = editor ? roleSubmissionOptionsSchema.safeParse(editor.draft) : null;
   const rail = editor ? (
-        <Dialog open onClose={closeEditor} labelledBy={titleId} className="casting-role-dialog">
-          <aside className="casting-schedule-rail__panel">
+        <RoleEditorSurface sidePanel={editorOnly} onClose={closeEditor} titleId={titleId}>
+          <aside className={`casting-schedule-rail__panel${editorOnly ? " casting-role-config-panel" : ""}`}>
             <header className="casting-schedule-rail__header">
               <div>
                 <h3 id={titleId} className="casting-schedule-rail__title">
                   {editor.editIndex != null ? "Edit role" : "Add role"}
                 </h3>
                 <p className="casting-schedule-rail__subtitle">
-                  Set the casting details for this role, then apply to add it to the breakdown.
+                  {editorOnly ? "Update the details and requirements for this role." : "Set the casting details for this role, then apply to add it to the breakdown."}
                 </p>
               </div>
               <button
@@ -646,17 +673,20 @@ export function CastingRoleStep({
                   <span className="project-create__label">Role title</span>
                   <input
                     className="project-create__input"
+                    aria-label="Role title"
                     value={editor.draft.title}
                     onChange={(event) => updateDraft({ title: event.target.value })}
                     placeholder="Lead dancer, ensemble, etc."
-                    autoFocus
+                    autoFocus={!editorOnly}
                   />
                 </div>
 
+                <details className="casting-role-disclosure"><summary>Description <span>{editor.draft.description.trim() ? "Added" : "Optional"}</span></summary>
                 <div className="project-create__field">
                   <span className="project-create__label">Role description</span>
                   <textarea
                     className="project-create__textarea"
+                    aria-label="Role description"
                     value={editor.draft.description}
                     onChange={(event) => updateDraft({ description: event.target.value })}
                     placeholder="Describe the role, look, and expectations."
@@ -664,6 +694,8 @@ export function CastingRoleStep({
                   />
                 </div>
 
+                </details>
+                <details className="casting-role-disclosure"><summary>Submission options <span>Links, limits & travel</span></summary>
                 <fieldset className="casting-role-options">
                   <legend className="project-create__label">Submission options</legend>
                   <label className="casting-role-options__check">
@@ -694,7 +726,9 @@ export function CastingRoleStep({
                   </label>
                   {optionsError?.success === false ? <p className="casting-role-options__error" role="alert">{optionsError.error.issues[0]?.message}</p> : null}
                 </fieldset>
+                </details>
 
+                <details className="casting-role-disclosure"><summary>Talent requirements <span>{editor.draft.peopleNeeded || "1"} needed</span></summary>
                 <div className="casting-role-attr-list">
                   <RoleAttributeDisclosure
                     id="age"
@@ -862,11 +896,12 @@ export function CastingRoleStep({
                     </div>
                   </RoleAttributeDisclosure>
                 </div>
+                </details>
               </div>
             </div>
 
             <footer className="casting-schedule-rail__footer">
-              {editor.editIndex != null ? (
+              {editor.editIndex != null && !editorOnly ? (
                 <button
                   type="button"
                   className="project-create__btn project-create__btn--danger"
@@ -884,14 +919,16 @@ export function CastingRoleStep({
                 type="button"
                 className="project-create__btn project-create__btn--primary"
                 onClick={applyEditor}
-                disabled={!editor.draft.title.trim() || optionsError?.success === false}
+                disabled={saving || !editor.draft.title.trim() || optionsError?.success === false}
               >
-                Apply
+                {saving ? "Saving…" : onCommit ? "Save role" : "Apply"}
               </button>
             </footer>
           </aside>
-        </Dialog>
+        </RoleEditorSurface>
     ) : null;
+
+  if (editorOnly) return rail;
 
   return (
     <div className="space-y-5">

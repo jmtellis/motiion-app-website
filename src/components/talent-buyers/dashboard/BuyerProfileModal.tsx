@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import Image from "next/image";
 import Link from "next/link";
 import { Camera } from "lucide-react";
@@ -245,7 +248,7 @@ function BuyerProfileModalContent({
 
           <label className="block space-y-1.5">
             <span className="text-xs font-medium uppercase tracking-wide text-white/45">Title</span>
-            <select
+            <CustomSelect
               className={fieldClass}
               value={buyerRole}
               onChange={(event) => setBuyerRole(event.target.value as TalentBuyerRole | "")}
@@ -257,7 +260,7 @@ function BuyerProfileModalContent({
                   {option.label}
                 </option>
               ))}
-            </select>
+            </CustomSelect>
           </label>
 
           <label className="block space-y-1.5">

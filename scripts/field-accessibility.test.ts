@@ -1,8 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createRequire } from "node:module";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Field } from "../src/components/ui/Field";
+
+// Static markup checks do not need the CSS imported by Field's select export.
+const require = createRequire(import.meta.url);
+require.extensions[".css"] = () => {};
+const { Field } = require("../src/components/ui/Field") as typeof import("../src/components/ui/Field");
 
 test("field names stay concise while live validation remains a separate description", () => {
   const html = renderToStaticMarkup(createElement(Field, { label: "Username" } as Parameters<typeof Field>[0], [

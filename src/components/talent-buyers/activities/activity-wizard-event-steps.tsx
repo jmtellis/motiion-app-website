@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import { useRef, useState, useTransition } from "react";
 import { ImagePlus, Plus, Trash2 } from "lucide-react";
 
@@ -143,7 +146,7 @@ export function PromosStep({
               />
             </ActivityField>
             <ActivityField label="Type">
-              <select
+              <CustomSelect
                 className="w-full rounded-full border border-white/12 bg-black/30 px-3.5 py-2.5 text-sm text-white outline-none focus:border-white/30"
                 value={promo.discountType}
                 onChange={(event) => {
@@ -157,7 +160,7 @@ export function PromosStep({
               >
                 <option value="percent">Percent off</option>
                 <option value="fixed_cents">Fixed $ off</option>
-              </select>
+              </CustomSelect>
             </ActivityField>
             <ActivityField
               label={promo.discountType === "percent" ? "Percent" : "Amount (USD)"}

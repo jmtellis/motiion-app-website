@@ -160,6 +160,7 @@ export function CastingBreakdownDocumentView({
   sectionsOnly = false,
   hideRoles = false,
   rolesAfterOverview = false,
+  collapsibleSections = false,
 }: {
   document: CastingBreakdownDocument;
   headerAction?: ReactNode;
@@ -173,6 +174,8 @@ export function CastingBreakdownDocumentView({
   hideRoles?: boolean;
   /** Place Roles immediately after Overview instead of at the end. */
   rolesAfterOverview?: boolean;
+  /** Workspace detail: disclose secondary information only when needed. */
+  collapsibleSections?: boolean;
 }) {
   const outstandingReadiness = document.readiness.filter((item) => !item.ok);
   const overviewIndex = document.sections.findIndex((section) => section.title === "Overview");
@@ -202,6 +205,15 @@ export function CastingBreakdownDocumentView({
   }
 
   function renderProseSection(section: CastingBreakdownDocument["sections"][number]) {
+    if (collapsibleSections && section.title !== "Overview") {
+      return <details key={section.title} className="casting-detail-disclosure">
+        <summary><SectionTitleIcon title={section.title} /><span>{section.title}</span></summary>
+        <div className="casting-detail-disclosure__body">
+          {renderSectionAction?.(section.title)}
+          {section.blocks.map((block, index) => <CastingBreakdownBlockView key={`${section.title}-${index}`} block={block} />)}
+        </div>
+      </details>;
+    }
     return (
       <CastingBreakdownDocSection
         key={section.title}

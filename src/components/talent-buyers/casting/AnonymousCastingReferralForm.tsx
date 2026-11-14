@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import { useMemo, useState, useTransition } from "react";
 import { Loader2, Search, X } from "lucide-react";
 
@@ -159,13 +162,13 @@ export function AnonymousCastingReferralForm({
           {roles.length > 1 ? (
             <label className="casting-toolbar__field">
               <span>Role</span>
-              <select value={roleId} onChange={(event) => setRoleId(event.target.value)} className="casting-select">
+              <CustomSelect value={roleId} onChange={(event) => setRoleId(event.target.value)} className="casting-select">
                 {roles.map((role) => (
                   <option key={role.id} value={role.id}>
                     {role.name}
                   </option>
                 ))}
-              </select>
+              </CustomSelect>
             </label>
           ) : (
             <p className="casting-refer-form__role-name">{selectedRole?.name}</p>

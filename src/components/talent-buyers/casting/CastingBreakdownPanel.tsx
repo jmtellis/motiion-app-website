@@ -21,7 +21,7 @@ import { CastingBreakdownDocumentView } from "./CastingBreakdownDocumentView";
 import { CastingBreakdownRolesSection } from "./CastingBreakdownRolesSection";
 import { CASTING_DESCRIPTION_MAX_CHARS } from "./wizard-steps/CastingBasicsStep";
 import { CastingCompensationStep } from "./wizard-steps/CastingCompensationStep";
-import { CastingRoleStep } from "./wizard-steps/CastingRoleStep";
+import { CastingRoleEditor } from "./CastingRoleEditor";
 import { CastingScheduleStep } from "./wizard-steps/CastingScheduleStep";
 import { CastingSubmissionStep } from "./wizard-steps/CastingSubmissionStep";
 import { CastingWhereStep } from "./wizard-steps/CastingWhereStep";
@@ -197,6 +197,7 @@ export function CastingBreakdownPanel() {
             <CastingBreakdownDocumentView
               document={{ ...breakdownDocument, readiness: [] }}
               sectionsOnly
+              collapsibleSections
               rolesAfterOverview
               renderSectionAction={(sectionTitle) => {
                 const chip = SECTION_CHIP_LABELS[sectionTitle];
@@ -217,13 +218,9 @@ export function CastingBreakdownPanel() {
           </section>
         ) : null}
 
-        <section className="casting-breakdown-doc__section casting-breakdown-doc__section--wide" aria-labelledby="doc-Files">
-          <div className="casting-breakdown-doc__section-heading">
-            <h3 id="doc-Files" className="casting-breakdown-doc__section-title">
-              <span className="casting-breakdown-doc__section-icon" aria-hidden />
-              Files
-            </h3>
-          </div>
+        <details className="casting-detail-disclosure casting-detail-disclosure--wide">
+          <summary>Reference files{attachments.length ? ` · ${attachments.length}` : ""}</summary>
+          <div className="casting-detail-disclosure__body">
           <div className="casting-breakdown-doc__section-body">
             <ProjectAttachmentsManager
               projectId={projectId}
@@ -234,11 +231,13 @@ export function CastingBreakdownPanel() {
               emptyDescription="Add briefs, music, or reference files for this casting."
             />
           </div>
-        </section>
+          </div>
+        </details>
       </div>
 
+      {editing === "roles" ? <CastingRoleEditor onClose={cancelEdit} /> : null}
       <Modal
-        open={Boolean(editing && draftForm)}
+        open={Boolean(editing && editing !== "roles" && draftForm)}
         onClose={cancelEdit}
         title={editing ? SECTION_TITLES[editing] : "Edit breakdown"}
         size="xl"
@@ -314,13 +313,7 @@ export function CastingBreakdownPanel() {
               />
             ) : null}
 
-            {editing === "roles" ? (
-              <CastingRoleStep
-                form={draftForm}
-                onFormChange={setDraftForm}
-                autoOpenWhenEmpty={false}
-              />
-            ) : null}
+
           </div>
         ) : null}
       </Modal>

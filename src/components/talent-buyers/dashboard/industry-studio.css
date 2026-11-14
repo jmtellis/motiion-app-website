@@ -1285,3 +1285,13 @@
     .discover-browse__header, .discover-saved__header, .talent-schedule__header
   ) h1 { font-size: 24px; }
 }
+
+/* Project panels own their scrolling and extend to the bottom of the workspace. */
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .industry-studio-canvas:has(.project-workspace) {
+  padding-bottom: 0;
+}
+:is(.workspace-shell--industry, .workspace-shell--talent) .workspace-frame .project-workspace__panel {
+  min-height: 0;
+  border-radius: 0;
+  box-shadow: none;
+}

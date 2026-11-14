@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { registerForActivity } from "@/lib/app/activities";
@@ -291,7 +294,7 @@ export function ClassGuestBookingForm({ activity, signedIn = false, onPendingCha
 
         {showTicketPicker ? (
           <FormField label="Ticket">
-            <select
+            <CustomSelect
               className="public-review-select"
               value={ticketOptionId ?? ""}
               onChange={(e) => {
@@ -312,7 +315,7 @@ export function ClassGuestBookingForm({ activity, signedIn = false, onPendingCha
                       {tier.label} — {formatMoney(tier.amountCents, activity.priceCurrency ?? "usd")}
                     </option>
                   ))}
-            </select>
+            </CustomSelect>
           </FormField>
         ) : null}
 

@@ -113,13 +113,16 @@ function projectHomeHref(project: ScheduleProjectInput) {
   return project.composable ? projectHomePath(project.id) : projectLandingPath(project.id, project.projectType);
 }
 
-function productionDays(config: Partial<CastingConfiguration>): Array<{ date: string; label: string }> {
+function productionDays(config: Partial<CastingConfiguration>): Array<{ date: string; label: string; startTime?: string | null; endTime?: string | null; location?: string }> {
   const categories = config.schedule_categories ?? [];
   if (categories.length) {
     return categories.flatMap((category) =>
       sortIsoDates((category.selected_days_yyyymmdd ?? []).map(yyyymmddToIsoDate)).map((date) => ({
         date,
         label: productionScheduleLabel(category),
+        startTime: timeOnly(category.start_time_by_day?.[date]),
+        endTime: timeOnly(category.end_time_by_day?.[date]),
+        location: category.location_by_day?.[date]?.trim(),
       })),
     );
   }
@@ -214,7 +217,21 @@ function toMarker(seed: MarkerSeed): ScheduleMarker {
 }
 
 function capped(markers: ScheduleMarker[]) {
-  return markers.slice(0, MAX_MARKERS_PER_WORK_ITEM);
+  return markers.flatMap((marker) => {
+    if (marker.allDay || !marker.endTime || marker.endTime >= marker.startTime) return [marker];
+    // Stored clock ranges can cross midnight. Keep both civil days visible.
+    const first = { ...marker, endTime: "24:00" };
+    if (marker.endTime === "00:00") return [first];
+    const next = new Date(`${marker.date}T12:00:00Z`);
+    next.setUTCDate(next.getUTCDate() + 1);
+    return [first, {
+      ...marker,
+      id: `${marker.id}:overnight`,
+      date: next.toISOString().slice(0, 10),
+      startTime: "00:00",
+      startsAtIso: undefined,
+    }];
+  }).slice(0, MAX_MARKERS_PER_WORK_ITEM);
 }
 
 /** Rehearsal/show days, casting windows, and shell dates for one project. */
@@ -226,7 +243,7 @@ export function buildProjectScheduleMarkers(project: ScheduleProjectInput): Sche
   const markers: ScheduleMarker[] = [];
 
   const days = productionDays(config);
-  const dayBeats = days.length ? days : startEndBeats(project.startDate, project.endDate);
+  const dayBeats: ReturnType<typeof productionDays> = days.length ? days : startEndBeats(project.startDate, project.endDate);
   dayBeats.forEach((beat, index) => {
     markers.push(
       toMarker({
@@ -234,8 +251,9 @@ export function buildProjectScheduleMarkers(project: ScheduleProjectInput): Sche
         title: beat.label,
         eventType: "event",
         date: beat.date,
-        startTime: null,
-        location: project.location,
+        startTime: beat.startTime ?? null,
+        endTime: beat.endTime,
+        location: beat.location || project.location,
         href: homeHref,
         workId: project.id,
         workTitle: title,
@@ -273,7 +291,7 @@ export function buildProjectScheduleMarkers(project: ScheduleProjectInput): Sche
           title: "Submissions close",
           eventType: "casting",
           date: deadline.date,
-          startTime: null,
+          startTime: deadline.time,
           href: castingHref,
           workId: project.id,
           workTitle: title,

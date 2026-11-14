@@ -61,7 +61,7 @@ export function CastingBreakdownRolesSection({
         </h3>
         {onEditRoles ? (
           <button type="button" className="casting-overview-breakdown__link" onClick={onEditRoles}>
-            Edit roles
+            Add role
           </button>
         ) : null}
       </div>

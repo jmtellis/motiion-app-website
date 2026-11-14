@@ -47,6 +47,11 @@ export type CastingScheduleCategoryCodable = {
   activity_type_raw: string;
   custom_schedule_title?: string | null;
   selected_days_yyyymmdd: string[];
+  applies_to_group_ids?: string[];
+  applies_to_group_ids_by_day?: Record<string, string[]>;
+  start_time_by_day?: Record<string, string>;
+  end_time_by_day?: Record<string, string>;
+  location_by_day?: Record<string, string>;
 };
 
 export type CastingAuditionSessionCodable = {

@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import { useState, useTransition } from "react";
 
 import { Modal } from "@/components/talent-buyers/dashboard/Modal";
@@ -84,7 +87,7 @@ function CollectionShareModalSession({
         {!lockedCollectionId ? (
           <label className="block space-y-1.5">
             <span className="text-xs font-medium text-[var(--ui-muted)]">Collection</span>
-            <select
+            <CustomSelect
               className="library-select w-full"
               value={collectionId}
               onChange={(event) => setCollectionId(event.target.value)}
@@ -94,7 +97,7 @@ function CollectionShareModalSession({
                   {collection.name}
                 </option>
               ))}
-            </select>
+            </CustomSelect>
           </label>
         ) : null}
 

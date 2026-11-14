@@ -700,3 +700,47 @@
 @media (prefers-reduced-motion: reduce) {
   .projects-hub * { animation: none !important; transition: none !important; }
 }
+
+/* Compact project summaries follow the app's thumbnail and chevron layout. */
+.projects-hub .projects-hub__grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 350px), 1fr)); gap: 16px; }
+.project-summary-card { display: flex; align-items: center; gap: 16px; padding: 20px; min-width: 0; border: 1px solid var(--ui-border); border-radius: 16px; background: var(--ui-surface, white); color: var(--ui-text); text-decoration: none; }
+.project-summary-card:hover { background: var(--ui-surface-soft, #f6f6f6); }
+.project-summary-card:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 3px; }
+.project-summary-card__thumbnail { position: relative; flex: 0 0 64px; height: 64px; overflow: hidden; border-radius: 12px; }
+.project-summary-card__copy { display: grid; gap: 5px; flex: 1; min-width: 0; }
+.project-summary-card__copy h3 { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+.project-summary-card__type { display: flex; gap: 6px; align-items: center; color: var(--ui-muted); font-size: 12px; }
+.project-summary-card__meta { font-size: 13px; color: var(--ui-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.project-summary-card__end { align-self: stretch; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 12px; color: var(--ui-muted); }
+.project-summary-card__end:has(.industry-badge) { justify-content: space-between; }
+.projects-hub__clear-search { display: grid; place-items: center; flex: none; padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.projects-hub .industry-work-tools { flex: 1; }
+.projects-hub .discover-browse__field--search { flex: 1; }
+.workspace-shell--industry .projects-hub .studio-type-filter { min-height: var(--ui-chip-height, 34px); height: var(--ui-chip-height, 34px); padding-block: 0; font-size: 13px; }
+
+/* Discover-style compact chrome with centered tabs. */
+.projects-hub__pinned-header { position: sticky; top: 0; z-index: 36; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; min-height: 48px; padding-bottom: 12px; }
+.projects-hub__pinned-header::before { content: ""; position: absolute; z-index: -1; inset: calc(-1 * var(--buyer-main-padding-block-start, 28px)) -32px 0; background: rgb(246 246 246 / .88); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border-bottom: 1px solid rgb(0 0 0 / .06); box-shadow: 0 8px 24px rgb(0 0 0 / .04); opacity: 0; transition: opacity 180ms ease; pointer-events: none; }
+.projects-hub__pinned-header[data-scrolled=true]::before { opacity: 1; }
+.projects-hub__center-tabs { grid-column: 2; }
+.projects-hub__type-actions { display: inline-flex; align-items: center; gap: 10px; flex: none; }
+.projects-hub .projects-hub__create { display: inline-flex; align-items: center; gap: 6px; height: var(--ui-chip-height, 34px); min-height: var(--ui-chip-height, 34px); padding: 0 14px; font-size: 13px; background: #242424; border-color: #242424; color: #fff; }
+.projects-hub .projects-hub__create:hover { background: #3a3a3a; }
+.projects-hub__overview { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-top: 12px; }
+.projects-hub__overview h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -.035em; }
+.projects-hub__overview .projects-hub__result-count { margin: 6px 0 0; }
+.projects-hub .industry-work-tools { flex: 0 1 auto; margin-left: auto; justify-content: flex-end; }
+.projects-hub .discover-browse__field--search,
+.projects-hub .discover-browse__field--search:focus-within { flex: 0 1 230px; width: 230px; min-width: 160px; }
+.projects-hub .projects-hub__grid--active { grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 24px; }
+.project-active-card__heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.project-active-card__heading > svg { flex: none; color: var(--ui-muted); }
+.project-active-card .ui-media-card__body { gap: 8px; }
+@media (max-width: 760px) {
+  .projects-hub__pinned-header::before { left: -16px; right: -16px; }
+  .projects-hub .industry-work-tools { width: auto; }
+}
+
+@media (max-width: 640px) {
+  .projects-hub__overview .industry-work-tools { flex-wrap: wrap; }
+}

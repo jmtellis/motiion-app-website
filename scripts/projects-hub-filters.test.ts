@@ -8,20 +8,21 @@ const rows = [
   { id: "class", title: "Movement class", status: "active", projectType: "production", workKind: "activity", workTypeLabel: "Class", lastUpdated: "2026-11-01" },
 ];
 test("Active is the default, including old all and unsupported scopes", () => {
-  for (const value of [null, undefined, "all", "browse", "focus", "wrong"]) assert.equal(projectScope(value), "active");
-  assert.equal(projectScope("drafts"), "draft");
-  assert.deepEqual(filterProjects(rows, { scope: projectScope(null) }).map((r) => r.id), ["class", "live"]);
+  for (const value of [null, undefined, "all", "browse", "focus", "wrong", "draft", "drafts"]) assert.equal(projectScope(value), "active");
+  assert.equal(projectScope("archived"), "archived");
+  assert.deepEqual(filterProjects(rows, { scope: projectScope(null) }).map((r) => r.id), ["class", "draft", "live"]);
 });
-test("drafts and archives remain separate and search never changes scope", () => {
-  assert.deepEqual(filterProjects(rows, { scope: "draft", query: "  SUMMER " }).map((r) => r.id), ["draft"]);
+test("Active includes drafts while archived projects stay separate", () => {
+  assert.deepEqual(filterProjects(rows, { scope: "active", query: "  SUMMER " }).map((r) => r.id), ["draft", "live"]);
   assert.deepEqual(filterProjects(rows, { scope: "active", query: "previous" }), []);
-  assert.deepEqual(filterProjects(rows, { scope: "active", type: "casting" }).map((r) => r.id), ["live"]);
+  assert.deepEqual(filterProjects(rows, { scope: "archived" }).map((row) => row.id), ["old"]);
+  assert.deepEqual(filterProjects(rows, { scope: "active", type: "casting" }).map((r) => r.id), ["draft", "live"]);
   assert.deepEqual(filterProjects(rows, { scope: "active", type: "class" }).map((r) => r.id), ["class"]);
 });
 test("legacy preferences are removed while creation and unrelated context survive", () => {
   const params = new URLSearchParams("view=focus&layout=list&scope=all&create=1&intent=casting");
   assert.equal(projectHubQuery(params, "active"), "create=1&intent=casting");
-  assert.equal(projectHubQuery(params, "draft"), "create=1&intent=casting&scope=draft");
+  assert.equal(projectHubQuery(params, "archived"), "create=1&intent=casting&scope=archived");
   assert.equal(params.get("view"), "focus", "normalization does not mutate the caller");
 });
 test("filtering leaves caller order intact and handles invalid update timestamps", () => {

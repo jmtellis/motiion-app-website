@@ -36,7 +36,9 @@ html:has(.workspace-shell) body { overscroll-behavior: none; }
   height: 100dvh;
   min-height: 0;
   padding: 8px 8px 8px 0;
-  overflow: hidden;
+  /* Panel autofocus must never scroll the outer frame and clip the navigation inset.
+     Each content pane owns its scrolling; the shell only clips overflow. */
+  overflow: clip;
   position: relative;
   background: var(--workspace-canvas);
   color: #ededef;
@@ -301,4 +303,20 @@ html:has(.workspace-shell) body { overscroll-behavior: none; }
 .workspace-account-popover :is(a, button):disabled {
   opacity: 0.55;
   cursor: default;
+}
+
+/* Leave focused controls clear of pinned context, with room at the bottom of
+   phone screens for the home indicator. Each pane retains its own scrolling. */
+.workspace-talent-main, .buyer-dashboard-shell__main {
+  scroll-padding-block: 80px 24px;
+}
+@media (max-width: 1023px) {
+  .workspace-talent-main { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 760px) {
+  .workspace-shell .buyer-dashboard-shell__main:not(:has(.project-create, .casting-create-wizard, .project-workspace, .buyer-home-dashboard, .talent-navigator, .talent-navigator-route, .talent-discovery)) {
+    --buyer-main-padding-inline: 16px;
+    padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right));
+  }
 }

@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import Link from "next/link";
 import { WorkflowStates } from "./WorkflowStates";
 import { useMemo, useState } from "react";
@@ -125,7 +128,7 @@ export function DesignSystemGallery({ sample }: { sample: CatalogSampleProfile }
           </div>
           <label className="mb-3 block md:hidden">
             <span className="sr-only">Section</span>
-            <select
+            <CustomSelect
               value={activeId}
               onChange={(e) => setActiveId(e.target.value)}
               className="w-full rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface)] px-3 py-2 text-sm text-[var(--ds-text-default)]"
@@ -144,7 +147,7 @@ export function DesignSystemGallery({ sample }: { sample: CatalogSampleProfile }
                   </option>
                 ))}
               </optgroup>
-            </select>
+            </CustomSelect>
           </label>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>

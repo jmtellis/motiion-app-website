@@ -1,9 +1,12 @@
 "use client";
 
+import { FilterSelect } from "@/components/ui/FilterSelect";
+import { ExploreSearchField } from "@/components/ui/ExploreSearchField";
+
 import { VoiceSearchControl } from "./VoiceSearchControl";
 import { BadgeCheck, Check, ChevronDown, ChevronLeft, ChevronRight, MapPin, Search, SlidersHorizontal, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode, type RefObject } from "react";
 
 import { useDiscoverTalent } from "@/components/app/discover-selection";
 import { ChipGroup } from "@/components/ui/ChipGroup";
@@ -109,7 +112,6 @@ function BrowseCard({
 }) {
   const name = profile.display_name || profile.full_name || "Talent profile";
   const image = profile.headshot_url || profile.headshot_urls?.[0];
-  const detail = [...new Set([...(profile.talent_types ?? []), ...(profile.styles ?? [])])].slice(0, 2).join(" · ");
 
   return (
     <button
@@ -138,7 +140,6 @@ function BrowseCard({
           <MapPin size={12} aria-hidden />
           {profile.location || "Location TBD"}
         </small>
-        {detail ? <em>{detail}</em> : null}
       </span>
     </button>
   );
@@ -169,66 +170,7 @@ function useDismiss(open: boolean, rootRef: RefObject<HTMLDivElement | null>, cl
 const TYPE_OPTIONS = [{ value: "", label: "All talent" }, ...talentSubtypeOptions];
 
 export function TypeFilter({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const selected = TYPE_OPTIONS.find((option) => option.value === value) ?? TYPE_OPTIONS[0];
-  useDismiss(open, rootRef, () => setOpen(false));
-
-  useEffect(() => {
-    if (open) menuRef.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus();
-  }, [open]);
-
-  function onMenuKey(event: ReactKeyboardEvent<HTMLDivElement>) {
-    const items = [...(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitemradio"]') ?? [])];
-    const index = items.indexOf(document.activeElement as HTMLElement);
-    const next =
-      event.key === "ArrowDown" ? (index + 1) % items.length
-        : event.key === "ArrowUp" ? (index - 1 + items.length) % items.length
-          : event.key === "Home" ? 0
-            : event.key === "End" ? items.length - 1
-              : -1;
-    if (next < 0) return;
-    event.preventDefault();
-    items[next]?.focus();
-  }
-
-  return (
-    <div className="discover-styles" ref={rootRef}>
-      <button
-        type="button"
-        className="ui-chip discover-styles__trigger"
-        aria-pressed={Boolean(value)}
-        aria-expanded={open}
-        aria-haspopup="menu"
-        aria-label={`Talent type: ${selected.label}`}
-        onClick={() => setOpen((current) => !current)}
-      >
-        {selected.label}
-        <ChevronDown size={14} aria-hidden className="discover-styles__chevron" />
-      </button>
-      {open ? (
-        <div ref={menuRef} className="discover-styles__popover discover-type-menu" role="menu" aria-label="Talent type" onKeyDown={onMenuKey}>
-          {TYPE_OPTIONS.map((option) => (
-            <button
-              key={option.value || "all"}
-              type="button"
-              role="menuitemradio"
-              aria-checked={option.value === value}
-              className="discover-type-menu__item"
-              onClick={() => {
-                setOpen(false);
-                if (option.value !== value) onChange(option.value);
-              }}
-            >
-              {option.label}
-              {option.value === value ? <Check size={15} aria-hidden /> : null}
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
+  return <FilterSelect value={value} onChange={onChange} options={TYPE_OPTIONS} label="Talent type" />;
 }
 
 function FilterPopover({
@@ -463,18 +405,15 @@ export function DiscoverView({
           <TypeFilter value={current.subtype} onChange={(subtype) => go({ subtype })} />
           <StylesFilter value={current.styles} onApply={(styles) => go({ styles })} />
           <AttributesFilter value={attributes} onApply={(next) => go(next)} />
-          <label className="discover-browse__field discover-browse__field--search">
-            <input
+          <ExploreSearchField
               name="keyword"
-              ref={searchInputRef}
+              inputRef={searchInputRef}
               value={searchValue}
               onChange={(event) => updateSearch(event.target.value)}
               placeholder="Name, style, skill"
               aria-label="Search by name, style, or skill"
-              className="workspace-bare-input"
               enterKeyHint="search"
-            />
-          </label>
+          />
           <VoiceSearchControl onTranscript={(text) => { updateSearch(text); searchInputRef.current?.focus(); }} />
           <button type="submit" className="discover-browse__submit" aria-label="Search" title="Search" disabled={pending}>
             <Search size={16} aria-hidden />

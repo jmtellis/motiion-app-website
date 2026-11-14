@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 
@@ -112,7 +115,7 @@ export default function AdminEntitiesPage() {
       <section className="grid gap-4 md:grid-cols-2">
         <div className="space-y-3 rounded-2xl border border-[#262626] bg-[#121212] p-4">
           <h2 className="text-sm font-medium text-[#eaeaea]">Create entity</h2>
-          <select
+          <CustomSelect
             className="w-full rounded-lg border border-[#333] bg-[#1a1a1a] px-3 py-2 text-sm"
             value={createType}
             onChange={(e) => setCreateType(e.target.value)}
@@ -122,7 +125,7 @@ export default function AdminEntitiesPage() {
                 {type}
               </option>
             ))}
-          </select>
+          </CustomSelect>
           <input
             className="w-full rounded-lg border border-[#333] bg-[#1a1a1a] px-3 py-2 text-sm"
             value={createName}
@@ -226,7 +229,7 @@ export default function AdminEntitiesPage() {
             onChange={(e) => setCreditId(e.target.value)}
             placeholder="Credit UUID"
           />
-          <select
+          <CustomSelect
             className="w-full rounded-lg border border-[#333] bg-[#1a1a1a] px-3 py-2 text-sm"
             value={creditStatus}
             onChange={(e) => setCreditStatus(e.target.value)}
@@ -236,7 +239,7 @@ export default function AdminEntitiesPage() {
                 {status}
               </option>
             ))}
-          </select>
+          </CustomSelect>
           <button
             type="button"
             className="rounded-lg border border-[#333] px-4 py-2 text-sm text-[#eaeaea]"

@@ -1,0 +1,134 @@
+/* Project structure follows the app: Manage, Schedule, Messages. */
+.project-workspace__panel { container-type: inline-size; }
+.project-simple-nav { position: relative; display: flex; gap: 28px; padding: 0 24px; border-bottom: 1px solid var(--ui-border); }
+.project-simple-nav a { padding: 18px 0 14px; border-bottom: 2px solid transparent; color: var(--ui-muted); font-size: 14px; font-weight: 550; text-decoration: none; }
+.project-simple-nav a[aria-current="page"] { color: var(--ui-text); }
+.project-simple-nav a:focus-visible, .project-manage__row:focus-visible { outline: 2px solid var(--ui-text); outline-offset: -3px; border-radius: 6px; }
+.project-simple-nav__indicator { position: absolute; bottom: -1px; left: 0; height: 2px; background: var(--ui-text); transition: transform 220ms ease, width 220ms ease; pointer-events: none; }
+.project-drill-in { display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 24px; border-bottom: 1px solid var(--ui-border); background: var(--ui-surface, white); }
+.project-drill-in__trail { display: flex; flex: none; align-items: center; gap: 12px; font-size: 14px; }
+.project-drill-in__trail a { display: inline-flex; align-items: center; gap: 8px; color: var(--ui-muted); text-decoration: none; }
+.project-drill-in__trail > span { color: var(--ui-muted); }
+.project-drill-in__trail h2 { margin: 0; font-size: 15px; font-weight: 600; color: var(--ui-text); }
+.project-manage { max-width: 880px; margin: 0 auto; padding: 32px 28px 48px; color: var(--ui-text); }
+.project-manage__heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.project-manage__heading h2 { margin: 0; font-size: 20px; font-weight: 620; letter-spacing: -.025em; }
+.project-manage__heading p { margin: 6px 0 0; font-size: 14px; color: var(--ui-muted); }
+.project-manage__heading button { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.project-manage__list { overflow: hidden; border: 1px solid var(--ui-border); border-radius: 20px; background: var(--ui-surface, white); }
+.project-manage__row { display: flex; align-items: center; gap: 16px; min-height: 94px; padding: 20px 24px; color: inherit; text-decoration: none; }
+.project-manage__row + .project-manage__row { border-top: 1px solid var(--ui-border); }
+.project-manage__row:hover { background: var(--ui-surface-soft, #f6f6f6); }
+.project-manage__row > svg { flex-shrink: 0; color: var(--ui-muted); }
+.project-manage__icon { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; background: var(--ui-surface-soft, #f6f6f6); border-radius: 12px; }
+.project-manage__copy { display: grid; flex: 1; min-width: 0; gap: 5px; }
+.project-manage__copy strong { font-size: 16px; font-weight: 600; }
+.project-manage__copy > span { color: var(--ui-muted); font-size: 13px; line-height: 1.5; }
+.project-manage__details { margin-top: 24px; }
+.project-manage__details summary { padding: 12px 0; color: var(--ui-muted); font-size: 14px; cursor: pointer; }
+.project-manage__details-body { display: grid; gap: 20px; padding: 20px 0; }
+.project-manage__details-body > dl { display: flex; flex-wrap: wrap; gap: 32px; }
+.project-manage__details-body dt { color: var(--ui-muted); font-size: 12px; margin-bottom: 6px; }
+.project-manage__details-body dd { margin: 0; font-size: 14px; }
+.project-manage__details-body > button { justify-self: start; }
+.project-manage > .need-prompt { margin-bottom: 28px; }
+.project-schedule, .project-messages { padding: 24px; }
+.project-schedule__heading { display: flex; align-items: center; justify-content: flex-end; gap: 16px; margin-bottom: 20px; }
+.project-schedule__heading:empty { display: none; }
+.project-schedule .bd-cal-timegrid__body { max-height: 60vh; }
+.casting-detail-disclosure { min-width: 0; padding: 16px 0; border-top: 1px solid var(--ui-border); }
+.casting-detail-disclosure summary { display: flex; align-items: center; gap: 10px; color: var(--ui-text); font-size: 15px; font-weight: 600; cursor: pointer; }
+.casting-detail-disclosure summary::after { content: "+"; margin-left: auto; color: var(--ui-muted); font-size: 20px; font-weight: 400; }
+.casting-detail-disclosure[open] summary::after { content: "−"; }
+.casting-detail-disclosure__body { display: grid; gap: 16px; padding: 20px 0 4px; }
+.casting-detail-disclosure__body > button { justify-self: start; }
+.casting-detail-disclosure--wide { grid-column: 1 / -1; }
+.project-casting-view.ui-field { margin: 0; gap: 0; min-width: min(240px, 100%); }
+.project-casting-view.ui-field > .ui-field__label { display: contents; }
+.casting-workflow-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 24px; }
+.casting-workflow-actions p { flex-basis: 100%; margin: 0; color: var(--ui-muted); font-size: 13px; }
+.casting-review__shortlist > .bd-btn-secondary { margin: 16px; display: flex; justify-content: center; text-align: center; }
+/* Equal grid tracks keep all three cards consistent without clipping longer copy. */
+.project-manage--cards { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; width: 100%; max-width: 1440px; padding: 28px 32px 48px; container-type: inline-size; }
+.project-manage__cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: stretch; grid-auto-rows: 1fr; }
+.project-tool-card { display: flex; flex-direction: column; min-width: 0; height: 100%; overflow: hidden; border: 1px solid var(--ui-border, #e5e5e5); border-radius: 20px; background: var(--ui-surface, #fff); }
+.project-tool-card__visual { position: relative; display: grid; place-items: center; flex: 0 0 180px; min-height: 180px; padding: 36px 24px 20px; background: #f2f2ef; color: #67685f; }
+.project-tool-card__visual--casting { background: #eef1ed; color: #687862; }
+.project-tool-card__visual--people { background: #edf0f3; color: #637382; }
+.project-tool-card__visual--confirmations { background: #f4f0e8; color: #8a7858; }
+.project-tool-card__visual .roster-stack { transform: scale(.8); margin: -16px; }
+.project-tool-card__status { position: absolute; top: 16px; right: 16px; max-width: calc(100% - 32px); border-radius: 999px; padding: 5px 10px; background: rgb(255 255 255 / .85); color: #505050; font-size: 11px; font-weight: 550; }
+.project-tool-card__body { display: flex; flex: 1; flex-direction: column; gap: 10px; padding: 22px; }
+.project-tool-card__body h3 { margin: 0; color: var(--ui-text); font-size: 20px; font-weight: 600; letter-spacing: -.025em; }
+.project-tool-card__body p { margin: 0; color: var(--ui-muted); font-size: 14px; line-height: 1.6; }
+.project-tool-card__detail { color: var(--ui-muted); font-size: 12px; line-height: 1.5; }
+.project-tool-card__action { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding: 18px 0 0; border: 0; background: transparent; color: var(--ui-text); font: inherit; font-size: 14px; font-weight: 600; text-align: left; text-decoration: none; cursor: pointer; }
+.project-tool-card__action:hover { text-decoration: underline; text-underline-offset: 4px; }
+.project-tool-card__action:disabled { opacity: .5; cursor: wait; }
+.project-tool-card__action:focus-visible, .project-casting-steps a:focus-visible { outline: 2px solid var(--ui-focus, #555); outline-offset: 4px; border-radius: 6px; }
+.project-tool-card__permission { margin-top: auto !important; padding-top: 12px; font-size: 12px !important; }
+.project-casting-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 24px; border-bottom: 1px solid var(--ui-border, #e5e5e5); }
+.project-casting-steps a { padding: 8px 12px; border-radius: 999px; color: var(--ui-muted); font-size: 13px; text-decoration: none; white-space: nowrap; }
+.project-casting-steps a:hover { background: var(--ui-surface-soft, #f6f6f6); color: var(--ui-text); }
+.project-casting-steps a[aria-current=page] { color: #fff; background: #242424; }
+.project-drill-in .project-casting-steps { padding: 0; border: 0; flex-wrap: nowrap; gap: 4px; }
+.project-drill-in .project-casting-steps a { padding: 8px 10px; }
+.project-casting-step-picker { display: none; min-width: 0; }
+.casting-share-content { display: grid; gap: 20px; color: var(--ui-text); }
+.casting-share-content p { font-size: 14px; line-height: 1.6; }
+.casting-share-content__actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.casting-share-content__actions > :is(a, button) { display: inline-flex; align-items: center; gap: 8px; }
+.workspace-shell .buyer-chrome-bar .project-header-icon { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 36px; width: 36px; height: 36px; min-height: 36px; padding: 0; border: 1px solid var(--ui-border, #e5e5e5); border-radius: 50%; background: var(--ui-surface, white); color: var(--ui-text, #242424); cursor: pointer; }
+.project-header-icon:hover { background: var(--ui-surface-soft, #f6f6f6); }
+.project-header-icon:focus-visible { outline: 2px solid var(--ui-focus, #555); outline-offset: 3px; }
+.workspace-shell .workspace-frame .buyer-chrome-bar :is(.project-header-back, .project-header-actions-trigger) { box-sizing: border-box; min-height: 34px; height: 34px; padding: 7px 14px; gap: 8px; font-size: 13px; line-height: 1.4; border-radius: 999px; }
+.workspace-shell .project-workspace__panel:has(.project-casting-steps) .ui-state:has(:is(.ui-state__icon, .ui-empty-illustration)),
+.workspace-shell .project-workspace__panel .casting-breakdown-workspace__empty-card { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+@media (max-width: 640px) {
+  .project-simple-nav { gap: 24px; padding-inline: 16px; }
+  .project-manage, .project-manage--cards { padding: 24px 16px; }
+  .project-manage__row { padding: 18px 16px; gap: 12px; }
+  .project-manage__heading { align-items: flex-start; }
+  .project-schedule, .project-messages { padding: 16px; }
+  .project-manage__cards { gap: 16px; }
+  .project-casting-steps { padding-inline: 16px; }
+}
+@container (min-width: 960px) { .project-manage__cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@container (max-width: 620px) { .project-manage__cards { grid-template-columns: minmax(0, 1fr); } }
+@container (max-width: 1100px) { .project-drill-in .project-casting-steps { display: none; } .project-casting-step-picker { display: block; } }
+@container (max-width: 420px) { .project-drill-in { gap: 8px; padding-inline: 12px; } .project-drill-in__trail { gap: 6px; } .project-drill-in__trail a { gap: 4px; } .project-casting-step-picker .custom-select__trigger { max-width: 160px; } }
+@media (prefers-reduced-motion: reduce) { .project-simple-nav__indicator { transition: none; } }
+
+/* Casting starts with compact role tiles, then a scoped role workspace. */
+.casting-roles-home__actions { display: flex; justify-content: flex-end; margin-bottom: 20px; }
+.casting-roles-home__actions button { display: inline-flex; align-items: center; gap: 8px; }
+.casting-role-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 250px)); gap: 24px; }
+.casting-role-tile { min-width: 0; color: var(--ui-text); text-decoration: none; border-radius: 18px; }
+.casting-role-tile__art { display: grid; place-items: center; height: 180px; overflow: hidden; border-radius: 18px; background: var(--ui-surface-soft, #f2f3f1); }
+.casting-role-tile__art .roster-stack { transform: scale(.72); }
+.casting-role-tile__copy { display: grid; gap: 5px; padding: 12px 2px; }
+.casting-role-tile__copy strong { font-size: 15px; overflow-wrap: anywhere; }
+.casting-role-tile__copy > span { font-size: 12px; color: var(--ui-muted); }
+.casting-role-tile:hover .casting-role-tile__art { background: #e9ece7; }
+.casting-role-tile:focus-visible { outline: 2px solid var(--ui-focus, #555); outline-offset: 5px; }
+.casting-role-navigation .project-drill-in__trail { min-width: 0; flex: 1; }
+.casting-role-navigation .project-drill-in__trail h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.casting-role-navigation .project-drill-in__trail a { flex-shrink: 0; }
+.casting-role-tab { display: flex; align-items: center; gap: 2px; }
+.casting-role-edit { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 30px; height: 30px; border: 0; border-radius: 50%; color: var(--ui-muted); background: transparent; cursor: pointer; }
+.casting-role-edit:hover { background: var(--ui-surface-soft, #f3f3f3); }
+.project-casting-steps .casting-role-invite { display: inline-flex; padding: 7px; opacity: 0; transition: opacity .15s ease; }
+.casting-role-tab:hover .casting-role-invite, .casting-role-tab:focus-within .casting-role-invite { opacity: 1; }
+.casting-role-edit:focus-visible { outline: 2px solid var(--ui-focus, #555); }
+.workspace-shell .casting-roles-home .ui-state { border: 0; background: transparent; box-shadow: none; }
+@media (hover: none) { .project-casting-steps .casting-role-invite { opacity: 1; } }
+@container (max-width: 1100px) { .casting-role-navigation .project-casting-step-picker { display: flex; align-items: center; gap: 4px; flex: none; } }
+@container (max-width: 520px) { .casting-role-navigation { flex-wrap: wrap; } .casting-role-navigation .project-drill-in__trail { flex-basis: 100%; } .casting-role-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; } .casting-role-tile__art { height: 150px; } }
+
+.workspace-shell .workspace-frame .buyer-chrome-bar :is(.project-header-back, .project-header-actions-trigger) { font-weight: 500; letter-spacing: normal; }
+.project-schedule { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; padding-top: 16px; }
+.project-schedule__content { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 72px; }
+.project-schedule__add { position: absolute; right: 24px; bottom: 24px; z-index: 6; display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border: 0; border-radius: 50%; background: #171717; color: #fff; box-shadow: 0 4px 14px #0002; cursor: pointer; }
+.project-schedule__add:hover { background: #333; color: #fff; }
+.project-schedule__add:focus-visible { outline: 2px solid #171717; outline-offset: 4px; }
+.project-schedule__add > svg { width: 22px; height: 22px; }

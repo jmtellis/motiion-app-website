@@ -2,10 +2,8 @@
 
 import { createContext, useContext } from "react";
 
-import type { ProjectAbilityId } from "@/lib/talent-buyers/project-abilities";
 
 export type ComposableProjectUi = {
-  openAbilityManager: (preselect?: ProjectAbilityId[]) => void;
   openShellEditor: () => void;
 };
 

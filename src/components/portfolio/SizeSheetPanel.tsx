@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import { Download, Loader2, Share2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -128,7 +131,7 @@ export function SizeSheetPanel({ owner, actionsHost, onDirtyChange, onSaved }: P
           <fieldset className="portfolio-field-row">
             <legend>Height</legend>
             <div className="portfolio-field-pair">
-              <select
+              <CustomSelect
                 aria-label="Feet"
                 value={height ? parsedHeight.feet : ""}
                 onChange={(event) => setHeight(event.target.value ? formatHeight(Number(event.target.value), height ? parsedHeight.inches : 0) : "")}
@@ -137,8 +140,8 @@ export function SizeSheetPanel({ owner, actionsHost, onDirtyChange, onSaved }: P
                 {FEET_RANGE.map((feet) => (
                   <option key={feet} value={feet}>{feet} ft</option>
                 ))}
-              </select>
-              <select
+              </CustomSelect>
+              <CustomSelect
                 aria-label="Inches"
                 value={height ? parsedHeight.inches : ""}
                 disabled={!height}
@@ -148,7 +151,7 @@ export function SizeSheetPanel({ owner, actionsHost, onDirtyChange, onSaved }: P
                 {INCHES_RANGE.map((inches) => (
                   <option key={inches} value={inches}>{inches} in</option>
                 ))}
-              </select>
+              </CustomSelect>
             </div>
           </fieldset>
 
@@ -170,12 +173,12 @@ export function SizeSheetPanel({ owner, actionsHost, onDirtyChange, onSaved }: P
                   {field.units ? <small>{field.units}</small> : null}
                 </span>
                 <span className="portfolio-select-clear">
-                  <select value={values[field.key]} onChange={(event) => setValues((current) => ({ ...current, [field.key]: event.target.value }))}>
+                  <CustomSelect value={values[field.key]} onChange={(event) => setValues((current) => ({ ...current, [field.key]: event.target.value }))}>
                     <option value="">Not set</option>
                     {field.options.map((option) => (
                       <option key={option} value={option}>{option}</option>
                     ))}
-                  </select>
+                  </CustomSelect>
                   {values[field.key] ? (
                     <button type="button" aria-label={`Clear ${field.label}`} onClick={() => setValues((current) => ({ ...current, [field.key]: "" }))}>
                       <X size={14} aria-hidden />

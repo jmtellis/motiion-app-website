@@ -616,3 +616,19 @@
     transition: none;
   }
 }
+
+/* Render both navigation variants; CSS selects the right one before hydration.
+   Specificity also protects this from the home hero's header overrides. */
+@media (max-width: 767px) {
+  .landing-header .landing-header__end.landing-header__desktop-actions { display: none; }
+  .landing-header .landing-header__inner {
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right));
+  }
+  .landing-header__menu-panel { max-height: calc(100dvh - 80px); overflow-y: auto; overscroll-behavior: contain; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+}
+.landing-header__menu-toggle { transition: background-color 160ms ease; touch-action: manipulation; }
+.landing-header__menu-toggle:active { background: rgb(255 255 255 / .12); }
+@media (hover: hover) and (pointer: fine) {
+  .landing-header__menu-toggle:hover { background: rgb(255 255 255 / .08); }
+}

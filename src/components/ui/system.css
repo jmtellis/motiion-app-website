@@ -47,6 +47,7 @@
   --ui-reading-width: 680px;
   --ui-font: var(--font-geist-sans), system-ui, sans-serif;
   --ui-duration: 160ms;
+  --ui-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ui-z-sticky: 20;
   --ui-z-panel: 80;
   --ui-z-dialog: 100;
@@ -58,13 +59,17 @@
   border: 1px solid transparent; border-radius: var(--ui-radius-button);
   font: 600 14px/1.4 var(--ui-font); cursor: pointer; text-decoration: none;
   background: var(--ui-button-primary); color: #fff;
-  transition: background-color var(--ui-duration), border-color var(--ui-duration), opacity var(--ui-duration);
+  transition: background-color var(--ui-duration) var(--ui-ease), border-color var(--ui-duration) var(--ui-ease), opacity var(--ui-duration) var(--ui-ease), scale 100ms var(--ui-ease);
+  touch-action: manipulation;
 }
-.ui-button:hover { background: var(--ui-button-primary-hover); }
 .ui-button--secondary, .ui-icon-button { background: var(--ui-surface); color: var(--ui-text); border-color: var(--ui-border); }
-.ui-button--secondary:hover, .ui-icon-button:hover { background: var(--ui-surface-soft); border-color: var(--ui-control-border); }
 .ui-button--danger { background: var(--ui-danger); color: var(--ui-on-accent); }
-.ui-button--danger:hover { background: var(--ui-danger-hover); color: var(--ui-on-accent); }
+@media (hover: hover) and (pointer: fine) {
+.ui-button:hover:not(:disabled):not([aria-disabled=true]) { background: var(--ui-button-primary-hover); }
+.ui-button--secondary:hover:not(:disabled):not([aria-disabled=true]), .ui-icon-button:hover:not(:disabled):not([aria-disabled=true]) { background: var(--ui-surface-soft); border-color: var(--ui-control-border); }
+.ui-button--danger:hover:not(:disabled):not([aria-disabled=true]) { background: var(--ui-danger-hover); color: var(--ui-on-accent); }
+}
+.ui-button:active:not(:disabled):not([aria-disabled=true]), .ui-icon-button:active:not(:disabled):not([aria-disabled=true]) { scale: .98; }
 .ui-button:disabled, .ui-icon-button:disabled { cursor: not-allowed; opacity: .55; }
 .ui-icon-button { width: 44px; padding: 10px; flex-shrink: 0; }
 :is(.ui-button,.ui-icon-button,.ui-dialog button,.ui-dialog a,.ui-dialog input,.ui-dialog select,.ui-dialog textarea):focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 3px; }
@@ -112,14 +117,14 @@
 .ui-banner__action, .workspace-shell .workspace-frame .ui-banner__action { display:inline-flex; align-items:center; gap:6px; min-height:28px; padding:0 12px; border:0; border-radius:999px; background:var(--tone-action); color:#1f1f1f; font:600 12px/1 var(--ui-font); text-decoration:none; cursor:pointer; transition:background-color var(--ui-duration); }
 .ui-banner__action:hover, .workspace-shell .workspace-frame .ui-banner__action:hover { background:var(--tone-action-hover); color:#1f1f1f; }
 .ui-banner__action:focus-visible { outline:2px solid var(--tone-icon); outline-offset:2px; }
-.ui-dialog.ui-dialog { position:fixed; inset:0; width:100%; height:100%; max-width:none; max-height:none; margin:0; padding:24px; border:0; background:transparent; color:var(--ui-text); overflow:hidden; font-family:var(--ui-font); }
+.ui-dialog.ui-dialog { position:fixed; inset:0; width:100%; height:100%; max-width:none; max-height:none; margin:0; padding:max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)); border:0; background:transparent; color:var(--ui-text); overflow:hidden; font-family:var(--ui-font); }
 .ui-dialog:not([open]) { display:none !important; }
 .ui-dialog[open] { display:flex; align-items:center; justify-content:center; }
 .ui-dialog::backdrop { background:rgb(12 25 27 / .6); }
-.ui-dialog-panel { display:flex; flex-direction:column; width:min(100%,520px); max-height:calc(100dvh - 48px); overflow:hidden; border:1px solid var(--ui-border); border-radius:var(--ui-radius-panel); background:var(--ui-surface); box-shadow:var(--ui-shadow-overlay); }
-.ui-dialog-header { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 24px; border-bottom:1px solid var(--ui-border); }
+.ui-dialog-panel { display:flex; flex-direction:column; width:min(100%,520px); max-height:100%; min-height:0; overflow:hidden; border:1px solid var(--ui-border); border-radius:var(--ui-radius-panel); background:var(--ui-surface); box-shadow:var(--ui-shadow-overlay); }
+.ui-dialog-header { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 24px; border-bottom:1px solid var(--ui-border); }
 .ui-dialog-header h2 { margin:0; font-size:18px; font-weight:600; line-height:1.4; overflow-wrap:anywhere; }
-.ui-dialog-body { padding:24px; overflow:auto; overscroll-behavior:contain; }
+.ui-dialog-body { min-height:0; min-width:0; padding:24px; overflow:auto; overscroll-behavior:contain; }
 .ui-dialog[open] > :first-child { animation:ui-dialog-enter var(--ui-duration) ease-out; }
 @keyframes ui-dialog-enter { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 .ui-field { display:flex; flex-direction:column; gap:8px; min-width:0; font:400 14px/1.5 var(--ui-font); color:var(--ui-text); }
@@ -138,7 +143,7 @@
 .ui-tabs [role=tab][aria-selected=true]::after { content:""; position:absolute; bottom:0; left:14px; right:14px; height:2px; background:var(--ui-accent); border-radius:2px; }
 .ui-tabs [role=tab]:focus-visible { outline:2px solid var(--ui-focus); outline-offset:-3px; }
 @media(max-width:639px) {
-  .ui-dialog.ui-dialog { padding:12px; }
+  .ui-dialog.ui-dialog { padding:max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
   .ui-dialog--responsive.ui-dialog { align-items:flex-end; padding:0; }
   .ui-dialog--responsive .ui-dialog-panel { width:100%; max-height:92dvh; border-radius:20px 20px 0 0; padding-bottom:env(safe-area-inset-bottom); }
   .ui-dialog-header, .ui-dialog-body { padding:16px; }
@@ -148,6 +153,7 @@
 @media(prefers-reduced-motion:reduce) {
   .ui-dialog[open] > :first-child { animation:none; }
   .ui-button, .ui-icon-button { transition:none; }
+  .ui-button:active, .ui-icon-button:active { scale:none; }
 }
 
 /* On phones an inspection pane becomes a full-height native dialog, keeping the

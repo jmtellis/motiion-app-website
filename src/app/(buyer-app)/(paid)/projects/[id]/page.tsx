@@ -18,7 +18,7 @@ import {
 
 /**
  * Legacy entry: /projects/:id and /projects/:id?tab=…
- * Casting → Breakdown. Event shells → linked activity or activity create.
+ * Projects → Manage. Event shells → linked activity or activity create.
  */
 export default async function BuyerProjectDetailPage({
   params,

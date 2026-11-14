@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
@@ -97,7 +100,7 @@ export function TalentScheduleCalendar({
         eventHref={talentEventHref}
         actionLabel="Open"
         filter={
-          <select
+          <CustomSelect
             className="talent-schedule__type"
             aria-label="Activity type"
             value={filter}
@@ -108,7 +111,7 @@ export function TalentScheduleCalendar({
                 {option.label}
               </option>
             ))}
-          </select>
+          </CustomSelect>
         }
       />
     </div>

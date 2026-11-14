@@ -51,11 +51,13 @@ export function AddProjectActivityButton({
   triggerClassName = "bd-btn-accent",
   triggerLabel = "Add",
   showPlusIcon = true,
+  iconOnly = false,
 }: {
   projectId: string;
   triggerClassName?: string;
   triggerLabel?: string;
   showPlusIcon?: boolean;
+  iconOnly?: boolean;
 }) {
   const router = useRouter();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -85,10 +87,12 @@ export function AddProjectActivityButton({
       <button
         type="button"
         className={`${triggerClassName}${showPlusIcon ? " gap-1.5" : ""}`}
+        aria-label={iconOnly ? triggerLabel : undefined}
+        title={iconOnly ? triggerLabel : undefined}
         onClick={() => setPickerOpen(true)}
       >
         {showPlusIcon ? <Plus className="size-4 shrink-0" aria-hidden /> : null}
-        {triggerLabel}
+        {iconOnly ? null : triggerLabel}
       </button>
 
       <Modal

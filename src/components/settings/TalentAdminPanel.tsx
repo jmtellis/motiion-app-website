@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import Link from "next/link";
 import { useState, useTransition } from "react";
 
@@ -98,13 +101,13 @@ export function TalentAdminPanel({
         <p>Send a Motiion announcement to the same audiences as the app.</p>
         <label>
           Audience
-          <select value={audience} onChange={(event) => setAudience(event.target.value as AnnouncementAudience)}>
+          <CustomSelect value={audience} onChange={(event) => setAudience(event.target.value as AnnouncementAudience)}>
             {audiences.map((option) => (
               <option key={option.id} value={option.id}>
                 {option.label}
               </option>
             ))}
-          </select>
+          </CustomSelect>
         </label>
         <label>
           Message

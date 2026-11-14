@@ -2,7 +2,6 @@ import { Suspense } from "react";
 
 import { HomeDiscovery } from "@/components/app/HomeDiscovery";
 import { HomeListings } from "@/components/app/HomeListings";
-import { LaunchEventBanner } from "@/components/app/LaunchEventBanner";
 import {
   DiscoverFeaturedFeedSkeleton,
   DiscoverListingsSkeleton,
@@ -38,7 +37,6 @@ export function DiscoverFeatured({
       <Suspense fallback={<DiscoverFeaturedFeedSkeleton />}>
         <HomeDiscovery
           navigatorHref={null}
-          upcomingSlot={<LaunchEventBanner />}
           detailBasePath={detailBasePath}
           from={from}
         />

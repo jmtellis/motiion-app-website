@@ -120,3 +120,12 @@
 @media (prefers-reduced-motion: reduce) {
   .ui-chip, .casting-wizard-pill, .home-browser__filters button, .ui-chip-group__more { transition: none; }
 }
+
+/* Keep compact desktop filters comfortable to operate with a finger. */
+@media (pointer: coarse) {
+  :root { --ui-chip-height: 44px; }
+  .ui-chip-group__search { height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-chip:active, .casting-wizard-pill:active, .home-browser__filters button:active { transform: none; }
+}

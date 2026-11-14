@@ -1,5 +1,7 @@
 "use client";
 
+import { FilterSelect } from "@/components/ui/FilterSelect";
+
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
@@ -21,7 +23,7 @@ import {
   referralMatchesRole,
 } from "@/lib/talent-buyers/casting/casting-filters";
 import { referralToTalent } from "@/lib/talent-buyers/casting/casting-referrals";
-import type { CastingInvitation, CastingRole } from "@/lib/talent-buyers/casting/casting-types";
+import type { CastingInvitation } from "@/lib/talent-buyers/casting/casting-types";
 import type { Talent } from "@/lib/talent-navigator/types";
 
 import { useIndustryProOptional } from "@/components/talent-buyers/billing/IndustryProContext";
@@ -50,7 +52,7 @@ function inviteAvatarUrl(invite: CastingInvitation) {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
-export function CastingTalentSearchPanel() {
+export function CastingTalentSearchPanel({ roleScoped = false }: { roleScoped?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
@@ -76,7 +78,7 @@ export function CastingTalentSearchPanel() {
 
   const roles = workflow.roles;
   const selectedRoleId = searchParams.get("role") ?? roles[0]?.id ?? "";
-  const selectedRole = roles.find((role) => role.id === selectedRoleId) ?? roles[0] ?? null;
+  const selectedRole = roles.find((role) => (role.id === selectedRoleId || role.bridgedRoleId === selectedRoleId)) ?? roles[0] ?? null;
 
   const acceptsOutreach = castingProjectAcceptsOutreach(workflow.primaryCasting?.status);
 
@@ -292,22 +294,7 @@ export function CastingTalentSearchPanel() {
   }
 
   const rolePicker = (
-    <label className="casting-find-talent-role-pill">
-      <span className="sr-only">Role</span>
-      <select
-        value={selectedRole?.id ?? ""}
-        onChange={(event) => setSelectedRole(event.target.value)}
-        className="casting-find-talent-role-pill__select"
-        disabled={roles.length <= 1}
-        aria-label="Role"
-      >
-        {roles.map((role) => (
-          <option key={role.id} value={role.id}>
-            {role.name}
-          </option>
-        ))}
-      </select>
-    </label>
+    !roleScoped ? <FilterSelect label="Role" value={selectedRole?.id ?? ""} onChange={setSelectedRole} disabled={roles.length <= 1} options={roles.map((role) => ({ value: role.id, label: role.name }))} /> : null
   );
 
   return (

@@ -1,3 +1,4 @@
+import { CustomSelect } from "@/components/ui/CustomSelect";
 /* eslint-disable @next/next/no-img-element -- Admin preview displays stored external headshot URLs. */
 import Link from "next/link";
 import { AccountDetail } from "./AccountDetail";
@@ -566,7 +567,7 @@ export function Dashboard({
               }
               defaultValue={params.query}
             />
-            <select
+            <CustomSelect
               name="status"
               aria-label="Filter status"
               defaultValue={params.status || ""}
@@ -585,10 +586,10 @@ export function Dashboard({
                   <option value="rejected">Rejected</option>
                 </>
               )}
-            </select>
-            <select name="sort" aria-label="Sort directory" defaultValue={directoryState(params).sort}>
+            </CustomSelect>
+            <CustomSelect name="sort" aria-label="Sort directory" defaultValue={directoryState(params).sort}>
               <option value="newest">Newest signups first</option><option value="oldest">Oldest signups first</option><option value="name">Name A–Z</option>
-            </select>
+            </CustomSelect>
             <button className="launch-button secondary">Apply filters</button>
           </form>
           {!ok("profiles") ? (
@@ -1405,7 +1406,7 @@ export function Dashboard({
         </div>
         <form className="launch-period" action={base}>
           <input type="hidden" name="view" value={view} />
-          <select
+          <CustomSelect
             name="range"
             aria-label="Analytics period"
             defaultValue={data.days}
@@ -1413,7 +1414,7 @@ export function Dashboard({
             <option value="7">Last 7 days</option>
             <option value="30">Last 30 days</option>
             <option value="90">Last 90 days</option>
-          </select>
+          </CustomSelect>
           <button className="launch-button secondary">Apply</button>
         </form>
       </div>

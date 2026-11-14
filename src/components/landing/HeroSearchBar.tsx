@@ -1,3 +1,4 @@
+import { CustomSelect } from "@/components/ui/CustomSelect";
 import { Search } from "lucide-react";
 
 import { styleOptions, talentSubtypeOptions } from "@/lib/mock-data";
@@ -19,14 +20,14 @@ function SelectField({
   return (
     <label className="field min-w-0 flex-1">
       <span>{label}</span>
-      <select name={name} defaultValue={value ?? ""}>
+      <CustomSelect name={name} defaultValue={value ?? ""}>
         <option value="">{placeholder}</option>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
         ))}
-      </select>
+      </CustomSelect>
     </label>
   );
 }

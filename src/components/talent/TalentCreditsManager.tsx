@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import { useEffect, useState, useTransition } from "react";
 import { Loader2, Plus, Trash2, X } from "lucide-react";
 
@@ -286,7 +289,7 @@ export function TalentCreditsManager() {
 
             <label className="block space-y-1 text-sm">
               <span className="text-[#8a8a8a]">Credit type</span>
-              <select
+              <CustomSelect
                 className="w-full rounded-lg border border-[#333] bg-[#1a1a1a] px-3 py-2 text-[#fafafa]"
                 value={draft.creditType}
                 onChange={(e) => setDraft((d) => ({ ...d, creditType: e.target.value }))}
@@ -296,7 +299,7 @@ export function TalentCreditsManager() {
                     {type.replaceAll("_", " ")}
                   </option>
                 ))}
-              </select>
+              </CustomSelect>
             </label>
 
             {(

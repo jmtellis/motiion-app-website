@@ -149,11 +149,11 @@ describe("project schedule markers", () => {
     }
   });
 
-  it("routes legacy casting projects to their casting workspace", () => {
+  it("routes legacy project date markers to Manage", () => {
     const [marker] = buildProjectScheduleMarkers(
       project({ composable: false, projectType: "casting", startDate: "2026-10-01" }),
     );
-    assert.equal(marker.href, "/projects/p1/workspace/breakdown");
+    assert.equal(marker.href, "/projects/p1/overview");
   });
 
   it("caps markers per work item", () => {
@@ -345,4 +345,43 @@ describe("roster stack tiles", () => {
     assert.equal(formatRelativeUpdated("2025-12-01T12:00:00Z", now), "Dec 1, 2025");
     assert.equal(formatRelativeUpdated(null, now), null);
   });
+});
+
+it("uses iOS per-day rehearsal times and locations, keeping undated times all-day", () => {
+  const markers = buildProjectScheduleMarkers(project({ castingConfiguration: {
+    schedule_categories: [{ id_key: "c1", activity_type_raw: "Rehearsal",
+      selected_days_yyyymmdd: ["2026-11-10", "2026-11-11"],
+      start_time_by_day: { "2026-11-10": "18:30:00" },
+      end_time_by_day: { "2026-11-10": "20:00:00" },
+      location_by_day: { "2026-11-10": "Studio B" },
+    }],
+  } }));
+  assert.deepEqual(markers.map(({ startTime, endTime, allDay, location }) => ({ startTime, endTime, allDay, location })), [
+    { startTime: "18:30", endTime: "20:00", allDay: false, location: "Studio B" },
+    { startTime: "00:00", endTime: null, allDay: true, location: "Los Angeles" },
+  ]);
+});
+
+it("keeps timestamp deadlines timed in the viewer's timezone including midnight", () => {
+  const previous = process.env.TZ;
+  try {
+    process.env.TZ = "America/Los_Angeles";
+    const [marker] = buildProjectScheduleMarkers(project({ castingEnabled: true, castingConfiguration: {
+      submission_deadline_iso8601: "2026-11-11T08:00:00Z",
+    } }));
+    assert.equal(marker.date, "2026-11-11");
+    assert.equal(marker.startTime, "00:00");
+    assert.equal(marker.allDay, false);
+  } finally {
+    if (previous === undefined) delete process.env.TZ; else process.env.TZ = previous;
+  }
+});
+
+it("shows overnight activity segments on both dates without inventing an extra day at midnight", () => {
+  const markers = buildActivityScheduleMarkers(activity({ activityDate: "2026-11-10", startTime: "22:00", endTime: "01:30" }));
+  assert.deepEqual(markers.map(({ date, startTime, endTime }) => [date, startTime, endTime]), [
+    ["2026-11-10", "22:00", "24:00"], ["2026-11-11", "00:00", "01:30"],
+  ]);
+  assert.equal(new Set(markers.map(({ id }) => id)).size, 2);
+  assert.equal(buildActivityScheduleMarkers(activity({ startTime: "22:00", endTime: "00:00" })).length, 1);
 });

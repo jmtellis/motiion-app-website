@@ -155,22 +155,22 @@ export function RosterDetailView({ roster: initialRoster }: { roster: RosterDeta
       </FadeInSection>
 
       {roster.members.length ? (
-        <StaggerList className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" stagger={0.04}>
+        <StaggerList className="roster-people-grid" stagger={0.04}>
           {roster.members.map((member) => (
             <article
               key={member.id}
-              className="bd-muted-panel bd-interactive-card group relative overflow-hidden p-4"
+              className="roster-person group relative"
             >
-              <div className="flex items-start gap-3">
+              <div className="roster-person__content">
                 {member.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={member.avatarUrl}
                     alt=""
-                    className="size-14 shrink-0 rounded-xl object-cover"
+                    className="roster-person__photo"
                   />
                 ) : (
-                  <span className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-white/8 text-lg font-semibold text-white/70">
+                  <span className="roster-person__photo roster-person__fallback">
                     {member.name[0]?.toUpperCase() ?? "?"}
                   </span>
                 )}
@@ -185,14 +185,11 @@ export function RosterDetailView({ roster: initialRoster }: { roster: RosterDeta
                   {member.location ? (
                     <p className="mt-0.5 truncate text-sm text-white/50">{member.location}</p>
                   ) : null}
-                  {member.styles.length ? (
-                    <p className="mt-1 truncate text-xs text-white/40">{member.styles.join(" · ")}</p>
-                  ) : null}
                 </div>
               </div>
               <button
                 type="button"
-                className="absolute top-3 right-3 inline-flex size-8 items-center justify-center rounded-full text-white/40 opacity-0 transition hover:bg-white/8 hover:text-white/80 group-hover:opacity-100"
+                className="absolute top-3 right-3 inline-flex size-8 items-center justify-center rounded-full text-white/40 opacity-100 transition hover:bg-white/8 hover:text-white/80"
                 aria-label={`Remove ${member.name}`}
                 disabled={isPending}
                 onClick={() => handleRemoveMember(member.profileId, member.name)}

@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import type { PublicShortlistRecipient } from "@/types/publicShortlist";
 
 type ShortlistReviewChromeProps = {
@@ -51,7 +54,7 @@ export function ShortlistReviewChrome({
       <div className="public-review-glass-card" style={{ display: "grid", gap: 12 }}>
         <label style={{ display: "grid", gap: 8 }}>
           <span className="public-review-section-title">Reviewing as</span>
-          <select
+          <CustomSelect
             className="public-review-select"
             value={selectedRecipientId}
             onChange={(event) => onRecipientChange(event.target.value)}
@@ -61,7 +64,7 @@ export function ShortlistReviewChrome({
                 {recipient.displayName}
               </option>
             ))}
-          </select>
+          </CustomSelect>
         </label>
 
         <div className="shortlist-chrome-stats">

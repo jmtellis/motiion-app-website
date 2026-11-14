@@ -1079,3 +1079,29 @@
 .casting-role-options__check input { width: 1.125rem; height: 1.125rem; accent-color: var(--ui-accent); }
 .casting-role-options__hint { color: var(--ui-muted); font-size: 0.8125rem; line-height: 1.5; }
 .casting-role-options__error { color: var(--ui-danger); font-size: 0.875rem; }
+
+/* Project roles use the workspace notifications slot, with a scrolling body and pinned Save. */
+.workspace-side-panel__body:has(> .casting-role-config-panel) { display: flex; overflow: hidden; padding: 0; }
+.workspace-side-panel .casting-role-config-panel { position: relative; inset: auto; flex: 1; width: 100%; height: 100%; min-height: 0; border: 0; box-shadow: none; background: #fff; color: #242424; animation: role-config-enter 240ms ease-out; --buyer-bg: #fff; --industry-text: #242424; --industry-muted: #626262; --industry-line: #e5e5e5; --industry-fill: #f4f4f4; }
+.casting-role-config-panel .casting-schedule-rail__body { flex: 1; min-height: 0; overflow-y: auto; }
+.casting-role-config-panel :is(.casting-schedule-rail__header, .casting-schedule-rail__footer) { flex-shrink: 0; background: #fff; }
+.casting-role-disclosure { border-top: 1px solid #e5e5e5; padding-top: 4px; }
+.casting-role-disclosure > summary { display: flex; align-items: center; gap: 8px; padding: 14px 0; cursor: pointer; color: #242424; font-size: 14px; font-weight: 550; list-style: none; }
+.casting-role-disclosure > summary::-webkit-details-marker { display: none; }
+.casting-role-disclosure > summary > span { margin-left: auto; font-size: 12px; font-weight: 400; color: #626262; }
+.casting-role-disclosure > summary::after { content: "+"; font-size: 18px; color: #626262; }
+.casting-role-disclosure[open] > summary::after { content: "−"; }
+.casting-role-disclosure > summary:hover { color: #111; background: #f3f3f3; }
+.casting-role-disclosure > summary:focus-visible { outline: 2px solid #242424; outline-offset: 3px; }
+.workspace-side-panel .casting-role-config-panel :is(.casting-role-attr__trigger, .casting-wizard-pill, .casting-schedule-rail__close) { color: #242424; background: #f4f4f4; border-color: #d9d9d9; }
+.workspace-side-panel .casting-role-config-panel :is(.casting-role-attr__trigger, .casting-wizard-pill, .casting-schedule-rail__close):hover { color: #171717; background: #e7e7e7; }
+.workspace-side-panel .casting-role-config-panel .casting-wizard-pill--selected,
+.workspace-side-panel .casting-role-config-panel .casting-wizard-pill--selected:hover { color: #fff; background: #242424; border-color: #242424; }
+.workspace-side-panel .casting-role-config-panel .project-create__btn--primary { background: #171717; color: #fff; }
+.workspace-side-panel .casting-role-config-panel .project-create__btn--primary:hover { background: #333; color: #fff; }
+@keyframes role-config-enter { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .workspace-side-panel .casting-role-config-panel { animation: none; } }
+
+.casting-role-config-panel .casting-role-options { border: 0; padding: 0; border-radius: 0; }
+.casting-role-config-panel .casting-role-options > legend { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.workspace-side-panel .casting-role-config-panel .casting-wizard-pill--selected span { color: inherit; }

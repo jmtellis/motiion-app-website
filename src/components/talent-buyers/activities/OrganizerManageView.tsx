@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState, useTransition } from "react";
@@ -511,7 +514,7 @@ export function OrganizerManageView({
           {activity.eventDays.length > 1 ? (
             <label className="block space-y-1 text-sm text-white/60">
               Check-in day
-              <select
+              <CustomSelect
                 className="mt-1 w-full rounded-full border border-white/12 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-white/30"
                 value={eventDayId ?? ""}
                 onChange={(event) => setEventDayId(event.target.value || null)}
@@ -521,7 +524,7 @@ export function OrganizerManageView({
                     {day.label || day.dayDate}
                   </option>
                 ))}
-              </select>
+              </CustomSelect>
             </label>
           ) : null}
 
@@ -588,7 +591,7 @@ export function OrganizerManageView({
             {subgroups.length > 0 ? (
               <label className="block text-sm text-white/55">
                 Group
-                <select
+                <CustomSelect
                   className="mt-1 w-full rounded-full border border-white/12 bg-black/30 px-3 py-2.5 text-white outline-none"
                   value={leadInviteGroupId ?? ""}
                   onChange={(event) => setLeadInviteGroupId(event.target.value || null)}
@@ -599,7 +602,7 @@ export function OrganizerManageView({
                     </option>
                   ))}
                   <option value="">New group…</option>
-                </select>
+                </CustomSelect>
               </label>
             ) : null}
             {!leadInviteGroupId ? (
@@ -740,7 +743,7 @@ export function OrganizerManageView({
               </label>
               <label className="text-sm text-white/55">
                 Type
-                <select
+                <CustomSelect
                   className="mt-1 w-full rounded-full border border-white/12 bg-black/30 px-3 py-2 text-white"
                   value={promo.discountType}
                   onChange={(event) => {
@@ -755,7 +758,7 @@ export function OrganizerManageView({
                 >
                   <option value="percent">Percent</option>
                   <option value="fixed_cents">Fixed $</option>
-                </select>
+                </CustomSelect>
               </label>
               <label className="text-sm text-white/55">
                 Value

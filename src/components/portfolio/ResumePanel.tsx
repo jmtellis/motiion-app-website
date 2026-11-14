@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import { ArrowLeft, BadgeCheck, ExternalLink, FileText, GripVertical, Loader2, Plus, Trash2, Upload } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
@@ -361,11 +364,11 @@ function ExperienceEditor({
         {category === "liveStage" ? (
           <label className="portfolio-field-row">
             <span>Type</span>
-            <select value={subtype} onChange={(event) => set("live_stage_subtype", event.target.value)}>
+            <CustomSelect value={subtype} onChange={(event) => set("live_stage_subtype", event.target.value)}>
               {LIVE_SUBTYPES.map((option) => (
                 <option key={option.key} value={option.key}>{option.label}</option>
               ))}
-            </select>
+            </CustomSelect>
           </label>
         ) : null}
 
@@ -409,12 +412,12 @@ function ExperienceEditor({
           {field("start_date", "Start date", "e.g. 2024 or Mar 2024")}
           <label className="portfolio-field-row">
             <span>Duration</span>
-            <select value={text(draft.duration)} onChange={(event) => set("duration", event.target.value || null)}>
+            <CustomSelect value={text(draft.duration)} onChange={(event) => set("duration", event.target.value || null)}>
               <option value="">Not set</option>
               {DURATIONS.map((duration) => (
                 <option key={duration} value={duration}>{duration}</option>
               ))}
-            </select>
+            </CustomSelect>
           </label>
         </div>
         {field("link_url", "Video link", "https://")}

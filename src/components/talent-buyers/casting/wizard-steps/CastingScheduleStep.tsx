@@ -266,11 +266,13 @@ export function CastingScheduleStep({
   onFormChange,
   updateConfiguration,
   showPrefillBadge,
+  projectOnly = false,
 }: {
   form: CastingComposerForm;
   onFormChange: (form: CastingComposerForm) => void;
   updateConfiguration: (patch: Partial<CastingComposerForm["configuration"]>) => void;
   showPrefillBadge?: boolean;
+  projectOnly?: boolean;
 }) {
   const titleId = useId();
   const [editingTypeId, setEditingTypeId] = useState<CastingScheduleDateTypeId | null>(null);
@@ -438,6 +440,7 @@ export function CastingScheduleStep({
         configuration: {
           ...form.configuration,
           ...buildScheduleConfigurationPatch({ scheduleCategoryDrafts: scheduleDrafts }),
+          ...(allDates.length ? { production_dates_not_known_confirmed: false } : {}),
         },
       });
       closeEditor();
@@ -572,6 +575,33 @@ export function CastingScheduleStep({
                     </p>
                   )}
 
+                  {activeCategory?.selected_days_iso.length ? (
+                    <div className="schedule-day-details">
+                      <h4>Times and locations</h4>
+                      <p className="casting-schedule-rail__hint">Leave times empty for an all-day date.</p>
+                      {activeCategory.selected_days_iso.map((day) => (
+                        <fieldset key={day} className="schedule-day-details__day">
+                          <legend>{formatDateList([day])}</legend>
+                          {(["start_time_by_day", "end_time_by_day", "location_by_day"] as const).map((field) => (
+                            <label key={field} className="project-create__field">
+                              <span className="project-create__label">{field === "start_time_by_day" ? "Start time" : field === "end_time_by_day" ? "End time" : "Location"}</span>
+                              <input
+                                className="project-create__input"
+                                type={field === "location_by_day" ? "text" : "time"}
+                                value={field === "location_by_day" ? activeCategory[field]?.[day] ?? "" : activeCategory[field]?.[day]?.slice(0, 5) ?? ""}
+                                onChange={(event) => {
+                                  const value = event.target.value;
+                                  setScheduleDrafts((drafts) => drafts.map((draft) => draft.id_key === activeCategory.id_key
+                                    ? { ...draft, [field]: { ...draft[field], [day]: value } } : draft));
+                                }}
+                              />
+                            </label>
+                          ))}
+                        </fieldset>
+                      ))}
+                    </div>
+                  ) : null}
+
                   {categoriesWithDays.length > 0 ? (
                     <div className="casting-schedule-rail__assigned">
                       <h4 className="casting-schedule-rail__assigned-title">Assigned days</h4>
@@ -695,7 +725,7 @@ export function CastingScheduleStep({
       {showPrefillBadge ? <PrefillBadge /> : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {SCHEDULE_DATE_TYPES.map((type) => {
+        {SCHEDULE_DATE_TYPES.filter((type) => !projectOnly || type.id === "project_dates").map((type) => {
           const selected = hasScheduleValues(form, type.id);
           const summary = getAppliedSummary(form, type.id);
           const Icon = type.icon;

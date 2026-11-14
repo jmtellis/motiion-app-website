@@ -2,10 +2,10 @@
 
 import { MapPin } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { discoverDetailHref } from "@/lib/app/discover-paths";
 
 import { DiscoverBackHeader } from "@/components/app/DiscoverBackHeader";
-import { DiscoverProfilePanel } from "@/components/app/DiscoverProfilePanel";
 import { EventProgramHero, eventProgramHeroImageUrl } from "@/components/event/EventProgramHero";
 import {
   featuredTalentEmptyMessage,
@@ -40,13 +40,13 @@ function talentFromFeatured(node: PublicFeaturedTalent): Talent | null {
 function StudioCastGrid({
   featured,
   appearance,
-  onOpen,
-  activeId = null,
+  profileBasePath,
+  from,
 }: {
   featured: PublicFeaturedTalent[];
   appearance: ReturnType<typeof resolveTalentAppearance>;
-  onOpen: (talent: Talent) => void;
-  activeId?: string | null;
+  profileBasePath: "/discover" | "/talent";
+  from: string;
 }) {
   return (
     <section className="event-program-cast-section">
@@ -77,17 +77,15 @@ function StudioCastGrid({
               </span>
             );
             return person ? (
-              <button
+              <Link
                 key={talent.id}
-                type="button"
-                className={`discover-browse-card${activeId === person.id ? " discover-browse-card--active" : ""}`}
+                href={discoverDetailHref(profileBasePath, "profile", person.slug, from)}
+                className="discover-browse-card"
                 aria-label={`Open ${talent.displayName} profile`}
-                aria-pressed={activeId === person.id}
-                onClick={() => onOpen(person)}
               >
                 {photo}
                 {copy}
-              </button>
+              </Link>
             ) : (
               <div key={talent.id} className="discover-browse-card">
                 {photo}
@@ -111,7 +109,9 @@ export function DiscoverStudioEventView({
   backHref: string;
   profileBasePath?: "/discover" | "/talent";
 }) {
-  const [selected, setSelected] = useState<Talent | null>(null);
+  const pathname = usePathname();
+  const query = useSearchParams().toString();
+  const from = `${pathname}${query ? `?${query}` : ""}`;
   const appearance = resolveTalentAppearance(activity);
   const featured = programCastNodes(activity);
   const ctaLabel =
@@ -134,8 +134,8 @@ export function DiscoverStudioEventView({
           <StudioCastGrid
             featured={featured}
             appearance={appearance}
-            onOpen={setSelected}
-            activeId={selected?.id ?? null}
+            profileBasePath={profileBasePath}
+            from={from}
           />
           <div className="discover-studio-event__cta">
             <Link className="discover-studio-event__button" href={`/activity/${encodeURIComponent(activity.id)}`}>
@@ -144,13 +144,7 @@ export function DiscoverStudioEventView({
           </div>
         </div>
       </div>
-      <DiscoverProfilePanel
-        key={selected?.id ?? "none"}
-        talent={selected}
-        open={selected !== null}
-        onClose={() => setSelected(null)}
-        profileBasePath={profileBasePath}
-      />
+
     </div>
   );
 }

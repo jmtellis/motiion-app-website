@@ -4,6 +4,7 @@ import { ProjectRosterAbilityPage } from "@/components/talent-buyers/project/com
 import { requireHiringAccount } from "@/lib/auth/session";
 import { listProjectPeopleGroups } from "@/lib/talent-buyers/project-roster";
 import { listCollections } from "@/lib/talent-buyers/library";
+import { getNormalizedProjectType } from "@/lib/talent-buyers/project-types";
 import { isComposableProject } from "@/lib/talent-buyers/project-abilities";
 import { projectOverviewTalentPath } from "@/lib/talent-buyers/project-routes";
 import { fetchAccessibleProjectRecord } from "@/lib/talent-buyers/projects";
@@ -20,7 +21,7 @@ export default async function ProjectRosterPage({
   const query = await searchParams;
   const project = await fetchAccessibleProjectRecord(id, profile.id);
 
-  if (!project || !isComposableProject(project)) {
+  if (!project || (!isComposableProject(project) && getNormalizedProjectType(project.project_type) !== "casting")) {
     redirect(projectOverviewTalentPath(id));
   }
 

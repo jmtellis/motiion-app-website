@@ -1,5 +1,7 @@
 "use client";
 
+import { FilterSelect } from "@/components/ui/FilterSelect";
+
 import { useRouter, useSearchParams } from "next/navigation";
 import { isCastingFullyFinalized } from "@/lib/talent-buyers/casting/casting-completion";
 import { useMemo, useRef, useState, useTransition } from "react";
@@ -91,7 +93,7 @@ async function loadClientTallies(roleIds: string[]) {
   return { data: result.talliesBySubmissionId, error: result.error };
 }
 
-export function CastingCastPanel() {
+export function CastingCastPanel({ roleScoped = false }: { roleScoped?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
@@ -116,7 +118,7 @@ export function CastingCastPanel() {
   };
 
   const roles = workflow.roles;
-  const requestedRoleMatch = roles.find((role) => role.id === requestedRole || role.bridgedRoleId === requestedRole);
+  const requestedRoleMatch = roles.find((role) => role.id === requestedRole || role.bridgedRoleId === requestedRole || role.bridgedRoleIds?.includes(requestedRole));
   const roleFilter = requestedRoleMatch ? requestedRoleMatch.bridgedRoleId ?? requestedRoleMatch.id : "all";
   const header = getCastingPanelHeader("cast");
   const castingTitle = workflow.primaryCasting?.title?.trim() || "Casting";
@@ -298,22 +300,7 @@ export function CastingCastPanel() {
   const canFinalize = canReviewCasting && finalSelectCandidates.length > 0 && !selectionsLocked;
 
   const roleToggle = (
-    <label className="casting-find-talent-role-pill">
-      <span className="sr-only">Role</span>
-      <select
-        value={roleFilter}
-        onChange={(event) => setRoleFilterValue(event.target.value)}
-        className="casting-find-talent-role-pill__select"
-        aria-label="Role"
-      >
-        <option value="all">All roles</option>
-        {roles.map((role) => (
-          <option key={role.id} value={role.bridgedRoleId ?? role.id}>
-            {role.name}
-          </option>
-        ))}
-      </select>
-    </label>
+    <FilterSelect label="Role" value={roleFilter} onChange={setRoleFilterValue} options={[{ value: "all", label: "All roles" }, ...roles.map((role) => ({ value: role.bridgedRoleId ?? role.id, label: role.name }))]} />
   );
 
   if (!roles.length) {
@@ -337,7 +324,7 @@ export function CastingCastPanel() {
     <>
       <CastingPanelHeader
         title={header.title}
-        center={roleToggle}
+        center={roleScoped ? undefined : roleToggle}
         overflowActions={
           <>
           <button type="button" className="bd-btn-secondary text-sm" disabled={talliesLoading} onClick={refreshTallies}>{talliesLoading ? "Loading votes…" : "Refresh votes"}</button>
@@ -370,7 +357,7 @@ export function CastingCastPanel() {
                 title="No shortlisted talent yet"
                 description="Shortlist candidates in Review, share for client votes in Client Review, then pick Final Selects here."
                 actionLabel="Review candidates"
-                actionHref={castingWorkspaceHref(projectId, "review", { stage: "shortlisted" })}
+                actionHref={castingWorkspaceHref(projectId, "review", { stage: "shortlisted", roleId: roleFilter === "all" ? undefined : roleFilter })}
               />
             ) : (
               <div className="casting-table-wrap casting-client-review__table-wrap">

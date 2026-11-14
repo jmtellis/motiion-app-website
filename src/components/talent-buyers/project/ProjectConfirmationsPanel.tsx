@@ -1,4 +1,7 @@
 "use client";
+
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -72,7 +75,7 @@ export function ProjectConfirmationsPanel({ data }: { data: ConfirmationData }) 
         if (result.error) { setError(result.error); return; }
         setNotice(`${result.added ?? 0} added to confirmations.${result.external ? ` ${result.external} external submission${result.external === 1 ? " needs" : "s need"} direct contact; keep their details in internal notes below.` : ""}`); router.refresh();
       }); }}>Move final selections <ArrowRight size={16} aria-hidden /></button></div>)}</div>}
-      <div className="project-confirmations__filters"><label>Show <select value={filter} onChange={(event) => setFilter(event.target.value)}><option value="active">Active</option><option value="past">Past</option><option value="all">All people</option></select></label><span>{records.length} {records.length === 1 ? "person" : "people"}</span></div>
+      <div className="project-confirmations__filters"><label>Show <CustomSelect value={filter} onChange={(event) => setFilter(event.target.value)}><option value="active">Active</option><option value="past">Past</option><option value="all">All people</option></CustomSelect></label><span>{records.length} {records.length === 1 ? "person" : "people"}</span></div>
       {records.length ? <div className="project-confirmations__grid">{records.map((record) => <article key={record.id} className="project-confirmations__card"><div className="project-confirmations__identity"><CalendarCheck size={20} aria-hidden /><div><h2>{record.talentName}</h2><p>{record.role}</p></div><span className={`project-confirmations__badge ${record.status === "confirmed" ? "is-confirmed" : ""}`}>{confirmationLabel(record)}</span></div>
         <p>{record.dates.length ? <>{formatDate(record.dates[0].date)}{record.dates.length > 1 ? ` – ${formatDate(record.dates.at(-1)!.date)}` : ""}<small>{record.timeZone || "Time zone not set"} · {record.dates.length} {record.dates.length === 1 ? "day" : "days"}</small></> : "Dates to confirm"}</p>
         {record.responseNote && <blockquote>{record.responseNote}</blockquote>}

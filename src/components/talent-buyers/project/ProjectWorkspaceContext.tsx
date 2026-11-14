@@ -24,6 +24,7 @@ export type ComposableWorkspaceMeta = {
 };
 
 export type ProjectWorkspaceMeta = {
+  details?: Record<string, unknown>;
   notes?: string;
   isOwner?: boolean;
   canReviewCasting?: boolean;

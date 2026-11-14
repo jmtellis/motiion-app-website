@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import Link from "next/link";
 import { ChevronRight, MapPin, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -226,14 +229,14 @@ export function TalentActivitiesView({
         {presentTypes.length > 1 ? (
           <label className="talent-activities__type">
             <span className="sr-only">Activity type</span>
-            <select
+            <CustomSelect
               className="discover-browse__type-select"
               value={activeType}
               onChange={(event) => { const next = event.target.value as ActivityType; setTypeState(next); syncUrl(scope, next); }}
             >
               <option value="all">All types</option>
               {presentTypes.map((value) => <option key={value} value={value}>{TYPE_PLURAL[value]}</option>)}
-            </select>
+            </CustomSelect>
           </label>
         ) : null}
       </div>

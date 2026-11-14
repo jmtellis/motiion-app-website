@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -121,7 +124,7 @@ export function BuyerSettingsProfileForm({
           />
         </IndustryField>
         <IndustryField label="Title">
-          <select
+          <CustomSelect
             name="buyerRole"
             defaultValue={profile.buyerRole ?? ""}
             className={selectClass}
@@ -133,7 +136,7 @@ export function BuyerSettingsProfileForm({
                 {option.label}
               </option>
             ))}
-          </select>
+          </CustomSelect>
         </IndustryField>
         <IndustryField label="Your role (if Other)"><IndustryInput name="customRole" defaultValue={profile.customRole ?? ""} maxLength={200} placeholder="Your professional title" /></IndustryField>
         <IndustryField label="Markets (separate with commas)">

@@ -9,21 +9,20 @@ import "./projects-hub.css";
 
 export function ProjectGridView({
   projects,
-  nextBeatLabels = {},
+  archived = false,
 }: {
   projects: ProjectHubSummary[];
-  nextBeatLabels?: Record<string, string>;
+  archived?: boolean;
 }) {
   if (!projects.length) return null;
 
   return (
-    <StaggerList className="projects-hub__grid" stagger={0.03}>
+    <StaggerList className={`projects-hub__grid projects-hub__grid--${archived ? "archived" : "active"}`} stagger={0.03}>
       {projects.map((project) => (
         <ProjectCard
           key={project.id}
           project={project}
-          variant="dashboard"
-          nextBeatLabel={nextBeatLabels[project.id]}
+          variant={archived ? "archive" : "dashboard"}
         />
       ))}
     </StaggerList>

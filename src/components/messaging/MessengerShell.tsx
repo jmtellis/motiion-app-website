@@ -52,6 +52,8 @@ function MessengerContents({
   initialConversationId,
   projectFilterTitle,
   initialFilter = "primary",
+  title = "Inbox",
+  hideHeading = false,
 }: {
   conversations: InboxConversation[];
   currentUserId: string;
@@ -61,6 +63,8 @@ function MessengerContents({
   initialConversationId?: string | null;
   projectFilterTitle?: string | null;
   initialFilter?: InboxFilter;
+  title?: string;
+  hideHeading?: boolean;
 }) {
   const router = useRouter();
   const [lastGood, setLastGood] = useState({ userId: currentUserId, conversations: incomingConversations });
@@ -246,7 +250,7 @@ function MessengerContents({
       <div className={rootClass} data-view="conversation">
         <div key={active.conversation_id} className="inbox-conversation ui-swap">
           <button type="button" className="inbox-conversation__back" onClick={() => openConversation(null)}>
-            <ArrowLeft aria-hidden /> Inbox
+            <ArrowLeft aria-hidden /> {title}
           </button>
           <div className="inbox-conversation__pane">
             <ConversationPane
@@ -265,19 +269,21 @@ function MessengerContents({
   const editButton = hasConversations ? (
     <button
       type="button"
-      className="inbox-page__edit"
+      className={`inbox-page__edit${hideHeading ? " inbox-page__edit--icon" : ""}`}
+      aria-label={editing ? "Done editing conversations" : "Edit conversations"}
+      title={editing ? "Done" : "Edit conversations"}
       onClick={() => (editing ? exitEditing() : setEditing(true))}
     >
       {editing ? <Check className="size-3.5" /> : <Pencil className="size-3.5" />}
-      {editing ? "Done" : "Edit"}
+      {hideHeading ? null : editing ? "Done" : "Edit"}
     </button>
   ) : null;
 
   return (
     <div className={rootClass} data-view="list">
-      {isDashboard ? (
+      {hideHeading ? null : isDashboard ? (
         <IndustryPageHeader
-          title="Inbox"
+          title={title}
           description={
             projectFilterTitle
               ? `Conversations for ${projectFilterTitle}`
@@ -287,7 +293,7 @@ function MessengerContents({
         />
       ) : (
         <header className="inbox-page__header">
-          <h1>Inbox</h1>
+          <h1>{title}</h1>
           {editButton}
         </header>
       )}
@@ -341,6 +347,7 @@ function MessengerContents({
                 );
               })}
             </div>
+            <div className="inbox-search-actions">
             <label className="inbox-search">
               <Search aria-hidden="true" />
               <input
@@ -351,6 +358,8 @@ function MessengerContents({
                 className="workspace-bare-input"
               />
             </label>
+            {hideHeading ? editButton : null}
+            </div>
           </div>
 
           {!isWorkspace && projectFilterTitle ? (

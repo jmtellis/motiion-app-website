@@ -1,5 +1,7 @@
 "use client";
 
+import { FilterSelect } from "@/components/ui/FilterSelect";
+
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { castingReviewEmptyState, isCastingFullyFinalized } from "@/lib/talent-buyers/casting/casting-completion";
@@ -19,24 +21,16 @@ import type {
   CastingCandidate,
   CastingCandidateStatus,
   CastingRole,
-  ReviewViewMode,
 } from "@/lib/talent-buyers/casting/casting-types";
 
 import { EmptyState } from "@/components/talent-buyers/dashboard/EmptyState";
-import { SegmentedControl } from "@/components/talent-buyers/dashboard/SegmentedControl";
 import { useToast } from "@/components/talent-buyers/dashboard/ToastProvider";
 import { useProjectWorkspace } from "@/components/talent-buyers/project/ProjectWorkspaceContext";
 
 import { CastingCandidateDrawer } from "./CastingCandidateDrawer";
-import { CastingReviewFocusProfile } from "./CastingReviewFocusProfile";
 import { PROFILE_DRAG_MIME } from "./CastingTalentCarousel";
 
 import "./casting-workspace.css";
-
-const VIEW_MODES: { value: ReviewViewMode; label: string }[] = [
-  { value: "cards", label: "Cards" },
-  { value: "focus", label: "Focus" },
-];
 
 const SHORTLIST_STATUSES: CastingCandidateStatus[] = ["shortlisted"];
 const SUBMISSION_QUEUE_STATUSES: CastingCandidateStatus[] = [
@@ -69,16 +63,14 @@ function candidateMatchesRole(
   return candidate.roleIds.some((id) => ids.includes(id));
 }
 
-export function CastingReviewPanel() {
+export function CastingReviewPanel({ roleScoped = false, mode = "review" }: { roleScoped?: boolean; mode?: "review" | "shortlist" }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
   const { projectId, project, castingWorkflow, currentUserId } = useProjectWorkspace();
   const canReview = project.canReviewCasting !== false;
-  const [viewMode, setViewMode] = useState<ReviewViewMode>("cards");
   const [activeCandidate, setActiveCandidate] =
     useState<CastingCandidate | null>(null);
-  const [focusIndex, setFocusIndex] = useState(0);
   const [dropActive, setDropActive] = useState(false);
   const [pendingShortlistIds, setPendingShortlistIds] = useState<Set<string>>(
     new Set(),
@@ -143,18 +135,12 @@ export function CastingReviewPanel() {
     [roleScopedCandidates, shortlistedIds, pendingShortlistIds],
   );
 
+  const visibleCandidates = mode === "shortlist" ? shortlisted : submissions;
+
   function setRoleFilterValue(next: string) {
     setRoleFilter(next);
-    setFocusIndex(0);
     replaceReviewQuery({ role: next });
   }
-
-  const lastIndex = Math.max(0, submissions.length - 1);
-  if (focusIndex > lastIndex) setFocusIndex(lastIndex);
-
-  const focusCandidate =
-    submissions[Math.min(focusIndex, Math.max(submissions.length - 1, 0))] ??
-    null;
 
   function moveCandidate(candidateId: string, status: CastingCandidateStatus) {
     if (!canReview) return;
@@ -222,78 +208,41 @@ export function CastingReviewPanel() {
   }
 
   const roleToggle = (
-    <label className="casting-find-talent-role-pill">
-      <span className="sr-only">Role</span>
-      <select
-        value={roleFilter}
-        onChange={(event) => setRoleFilterValue(event.target.value)}
-        className="casting-find-talent-role-pill__select"
-        aria-label="Role"
-      >
-        <option value="all">All roles</option>
-        {workflow.roles.map((role) => (
-          <option key={role.id} value={role.bridgedRoleId ?? role.id}>
-            {role.name}
-          </option>
-        ))}
-      </select>
-    </label>
+    <FilterSelect label="Role" value={roleFilter} onChange={setRoleFilterValue} options={[{ value: "all", label: "All roles" }, ...workflow.roles.map((role) => ({ value: role.bridgedRoleId ?? role.id, label: role.name }))]} />
   );
 
   return (
     <>
       <div
-        className={`project-workspace__panel-body casting-review${
-          viewMode === "focus" ? " casting-review--focus" : ""
-        }`}
+        className="project-workspace__panel-body casting-review"
       >
         {!canReview && <p className="ui-state" role="status">You can view applicants. The project owner or an admin manages review decisions.</p>}
         <div className="casting-review__layout">
           <div className="casting-review__main">
             <div className="casting-review__toolbar">
-              {roleToggle}
-              <div className="casting-review__toolbar-center">
-                <SegmentedControl
-                  options={VIEW_MODES}
-                  value={viewMode}
-                  onChange={setViewMode}
-                  ariaLabel="Review view mode"
-                  equalWidth
-                  activeTone="white"
-                />
-              </div>
-              {viewMode === "focus" && focusCandidate ? (
-                <button
-                  type="button"
-                  className="buyer-chrome-bar__cta casting-review__toolbar-shortlist"
-                  disabled={isPending || !canReview}
-                  onClick={() => shortlistCandidate(focusCandidate)}
-                >
-                  Shortlist
-                </button>
-              ) : (
-                <span className="casting-review__toolbar-spacer" aria-hidden />
-              )}
+              {roleScoped ? null : roleToggle}
+              {mode === "shortlist" ? <Link className="bd-btn-secondary" href={`/projects/${projectId}/workspace/client-review?role=${encodeURIComponent(roleFilter)}`}>Share shortlist & feedback</Link> : null}
+              <span className="text-sm text-[var(--ui-muted)]">{mode === "shortlist" ? `${shortlisted.length} shortlisted` : `${submissions.length} awaiting review`}</span>
             </div>
 
-            {!submissions.length ? (
+            {!visibleCandidates.length ? (
               <EmptyState
                 variant="dashboard"
-                title={reviewEmptyState.title}
-                description={reviewEmptyState.description}
-                actionLabel={reviewEmptyState.action === "cast" ? "View final selections" : "Invite talent"}
-                actionHref={`/projects/${projectId}/workspace/${reviewEmptyState.action === "cast" ? "cast" : "talent-search"}`}
+                title={mode === "shortlist" ? "No shortlisted talent yet" : reviewEmptyState.title}
+                description={mode === "shortlist" ? "Shortlist talent while reviewing submissions to compare them here." : reviewEmptyState.description}
+                actionLabel={mode === "shortlist" ? "Review submissions" : reviewEmptyState.action === "cast" ? "View final selections" : "Invite talent"}
+                actionHref={`/projects/${projectId}/workspace/${mode === "shortlist" ? "review" : reviewEmptyState.action === "cast" ? "cast" : "talent-search"}?role=${encodeURIComponent(roleFilter)}`}
 
               />
             ) : null}
 
-            {submissions.length > 0 && viewMode === "cards" ? (
+            {visibleCandidates.length > 0 ? (
               <ul className="casting-candidate-grid casting-review__grid">
-                {submissions.map((candidate) => (
+                {visibleCandidates.map((candidate) => (
                   <li key={candidate.id}>
                     <article
                       className="casting-candidate-card casting-review__draggable-card"
-                      draggable={canReview}
+                      draggable={canReview && !roleScoped}
                       onDragStart={(event) => {
                         event.dataTransfer.setData(
                           PROFILE_DRAG_MIME,
@@ -337,16 +286,16 @@ export function CastingReviewPanel() {
                         disabled={
                           isPending || !canReview || pendingShortlistIds.has(candidate.id)
                         }
-                        aria-label={`Add ${candidate.displayName} to shortlist`}
-                        title="Add to shortlist"
+                        aria-label={`${mode === "shortlist" ? "Remove" : "Add"} ${candidate.displayName} ${mode === "shortlist" ? "from" : "to"} shortlist`}
+                        title={mode === "shortlist" ? "Remove from shortlist" : "Add to shortlist"}
                         onMouseDown={(event) => event.stopPropagation()}
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
-                          shortlistCandidate(candidate);
+                          if (mode === "shortlist") unshortlistCandidate(candidate); else shortlistCandidate(candidate);
                         }}
                       >
-                        <ListPlus className="size-4" aria-hidden />
+                        {mode === "shortlist" ? <X className="size-4" aria-hidden /> : <ListPlus className="size-4" aria-hidden />}
                       </button>
                     </article>
                   </li>
@@ -354,28 +303,10 @@ export function CastingReviewPanel() {
               </ul>
             ) : null}
 
-            {submissions.length > 0 &&
-            viewMode === "focus" &&
-            focusCandidate ? (
-              <CastingReviewFocusProfile
-                candidate={focusCandidate}
-                indexLabel={`${focusIndex + 1} of ${submissions.length}`}
-                canGoPrevious={submissions.length > 1}
-                canGoNext={submissions.length > 1}
-                isPending={isPending}
-                onPrevious={() =>
-                  setFocusIndex(
-                    (i) => (i - 1 + submissions.length) % submissions.length,
-                  )
-                }
-                onNext={() =>
-                  setFocusIndex((i) => (i + 1) % submissions.length)
-                }
-              />
-            ) : null}
+
           </div>
 
-          <section
+          {!roleScoped ? <section
             className={`casting-find-talent-invited-panel casting-review__shortlist${
               dropActive ? " is-drop-active" : ""
             }`}
@@ -443,7 +374,8 @@ export function CastingReviewPanel() {
                 ))}
               </ul>
             )}
-          </section>
+            {shortlisted.length > 0 ? <Link className="bd-btn-secondary" href={`/projects/${projectId}/workspace/client-review`}>Share shortlist & review feedback</Link> : null}
+          </section> : null}
         </div>
       </div>
 

@@ -18,7 +18,9 @@ export const PRODUCTION_SCHEDULE_ACTIVITY_OPTIONS = [
 export type ProductionScheduleActivityType =
   (typeof PRODUCTION_SCHEDULE_ACTIVITY_OPTIONS)[number]["value"];
 
-export type ProductionScheduleCategoryDraft = {
+export type ProductionScheduleCategoryDraft = Pick<CastingScheduleCategoryCodable,
+  "applies_to_group_ids" | "applies_to_group_ids_by_day" | "start_time_by_day" | "end_time_by_day" | "location_by_day"
+> & {
   id_key: string;
   activity_type_raw: ProductionScheduleActivityType | string;
   custom_schedule_title: string;
@@ -91,6 +93,11 @@ export function getScheduleCategoryDrafts(form: CastingComposerForm): Production
       activity_type_raw: category.activity_type_raw || "Shoot or Show Day",
       custom_schedule_title: category.custom_schedule_title?.trim() || "",
       selected_days_iso: categoryDaysToIso(category),
+      applies_to_group_ids: category.applies_to_group_ids,
+      applies_to_group_ids_by_day: category.applies_to_group_ids_by_day,
+      start_time_by_day: category.start_time_by_day,
+      end_time_by_day: category.end_time_by_day,
+      location_by_day: category.location_by_day,
     }));
   }
 
@@ -233,6 +240,12 @@ function draftsToScheduleCategories(
         draft.activity_type_raw === "Custom" ? draft.custom_schedule_title.trim() || null : null,
       // Store dashed ISO dates for iOS parity (field name is historical).
       selected_days_yyyymmdd: sortIsoDates(draft.selected_days_iso),
+      ...(draft.applies_to_group_ids ? { applies_to_group_ids: draft.applies_to_group_ids } : {}),
+      ...Object.fromEntries(
+        (["applies_to_group_ids_by_day", "start_time_by_day", "end_time_by_day", "location_by_day"] as const)
+          .filter((key) => draft[key] !== undefined)
+          .map((key) => [key, Object.fromEntries(Object.entries(draft[key] ?? {}).filter(([day]) => draft.selected_days_iso.includes(day)))]),
+      ),
     }))
     .filter((category) => {
       if (!category.selected_days_yyyymmdd.length) return false;

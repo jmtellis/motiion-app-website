@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { buildRoleInsertRow } from "@/lib/talent-buyers/casting-payload";
 
 import {
   buildBridgedRoleRow,
@@ -416,4 +417,36 @@ const form = { ...parsed.data, projectId };
     publicRoleId: rolesResult.roleIds[0],
     castingId,
   };
+}
+
+/** Edit app-owned project roles in place, preserving their submission relationships. */
+export async function saveProjectRoleDetails(
+  projectId: string,
+  roleId: string | null,
+  payload: unknown,
+): Promise<SaveCastingDraftResult> {
+  const parsed = parseCastingDraftForm(payload);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check role details." };
+  const session = await requirePosterSession();
+  if (!session.ok) return { ok: false, error: session.error };
+  const { supabase, userId } = session;
+  if (!(await assertProjectAccess(supabase, projectId, userId))) return { ok: false, error: "Project not found." };
+  const role = parsed.data.roles.find((item) => roleId ? item.id === roleId : !item.id);
+  if (!role) return { ok: false, error: "Role not found." };
+  const row: Partial<ReturnType<typeof buildRoleInsertRow>> = buildRoleInsertRow(userId, projectId, parsed.data, role, true);
+  if (roleId) {
+    // Details editing must not reset publication, credentials or project ownership.
+    delete row.poster_id;
+    delete row.project_id;
+    delete row.production;
+    delete row.is_active;
+    if (!role.password.trim()) delete row.password_hash;
+  }
+  const query = roleId
+    ? supabase.from("roles").update(row).eq("id", roleId).eq("project_id", projectId).is("casting_id", null)
+    : supabase.from("roles").insert(row);
+  const { data, error } = await query.select("id").single();
+  if (error || !data) return { ok: false, error: "Could not save role details. Please retry." };
+  revalidatePath(`/projects/${projectId}`, "layout");
+  return { ok: true, projectId, roleIds: [data.id as string] };
 }

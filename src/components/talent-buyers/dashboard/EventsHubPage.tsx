@@ -1,12 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 import { EventsCalendar } from "@/components/talent-buyers/dashboard/calendar/EventsCalendar";
-import { toDateKey } from "@/components/talent-buyers/dashboard/calendar/calendar-utils";
-import { BUYER_HOME_PATH } from "@/lib/talent-buyers/dashboard-data";
 import {
   localizeScheduleMarkers,
   type ScheduleMarker,
@@ -40,8 +37,6 @@ export function EventsHubPage({ markers, error = null }: { markers: ScheduleMark
     () => (hydrated ? localizeScheduleMarkers(visibleMarkers) : visibleMarkers),
     [hydrated, visibleMarkers],
   );
-  const today = toDateKey(new Date());
-  const hasUpcoming = events.some((event) => event.date >= today);
 
   return (
     <div className="talent-schedule buyer-dashboard buyer-calendar-page events-hub events-hub--schedule">
@@ -49,14 +44,6 @@ export function EventsHubPage({ markers, error = null }: { markers: ScheduleMark
         <h1>Calendar</h1>
       </header>
       {error ? <div role="status" className="events-hub__empty-note"><p>{error}</p><button type="button" className="bd-btn-secondary" onClick={() => router.refresh()}>Retry calendar</button></div> : null}
-      {hasUpcoming || error ? null : (
-        <div className="events-hub__empty-note" role="status">
-          <p>No upcoming dates across your projects</p>
-          <Link href={BUYER_HOME_PATH} className="bd-btn-secondary">
-            Go to Home
-          </Link>
-        </div>
-      )}
       <EventsCalendar events={events} embedded layout="page" markerMode defaultView="week" />
     </div>
   );

@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NavigationProgress } from "@/components/navigation/NavigationProgress";
 import { resolvePendingViewTransition } from "@/components/talent-buyers/project/composable/view-transition";
 import type { UserEntitlement } from "@/lib/billing/entitlement";
-import { defaultBuyerChromeBreadcrumbs } from "@/lib/talent-buyers/buyer-chrome-defaults";
+import { defaultBuyerChromeTitle, defaultBuyerChromeBreadcrumbs } from "@/lib/talent-buyers/buyer-chrome-defaults";
 import type { DashboardProfile } from "@/types/database";
 
 import {
@@ -38,6 +38,7 @@ import "@/components/workspace/workspace-controls.css";
 import "@/components/ui/chips.css";
 import "@/components/ui/motion.css";
 import "@/components/ui/polish.css";
+import "./workspace-polish.css";
 
 /** Match Find Talent hubs: no top chrome unless the page needs nested crumbs or end actions. */
 function buyerShellNeedsChrome(
@@ -68,6 +69,7 @@ export function BuyerDashboardShell({
   const sidebar = useWorkspaceSidebar("motiion-industry-sidebar-width");
   const sidebarExpanded = !sidebar.collapsed;
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const needsShellChrome = useMemo(
     () => buyerShellNeedsChrome(pathname, chrome),
     [pathname, chrome],
@@ -98,7 +100,10 @@ export function BuyerDashboardShell({
     if (!main) return;
     const saved = scrollByPathRef.current;
     function remember() {
-      if (main) saved.set(pathname, main.scrollTop);
+      if (main) {
+        saved.set(pathname, main.scrollTop);
+        setScrolled(main.scrollTop > 88);
+      }
     }
     main.addEventListener("scroll", remember, { passive: true });
     return () => main.removeEventListener("scroll", remember);
@@ -112,6 +117,7 @@ export function BuyerDashboardShell({
     const main = mainRef.current;
     if (!main) return;
     const top = restore ? (scrollByPathRef.current.get(pathname) ?? 0) : 0;
+    setScrolled(top > 88);
     main.scrollTo({ top });
     if (top > 0) {
       const frame = window.requestAnimationFrame(() => main.scrollTo({ top }));
@@ -224,6 +230,11 @@ export function BuyerDashboardShell({
                 : "overflow-x-clip overflow-y-auto overscroll-none px-8 pt-7 pb-0"
             }`}
           >
+            {!showChrome && !isTalentRoute && pathname !== "/projects" ? (
+              <div className="workspace-scroll-header" aria-hidden={!scrolled} data-visible={scrolled}>
+                <div className="workspace-scroll-header__surface">{chrome.title || defaultBuyerChromeTitle(pathname)}</div>
+              </div>
+            ) : null}
             {children}
           </main>
         </div>

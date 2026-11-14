@@ -166,11 +166,11 @@
   width: 40px;
   height: 40px;
   padding: 0;
-  border: 0;
-  border-radius: 999px;
-  background: #ededed;
+  border: 1px solid #b8b8b8;
+  border-radius: 12px;
+  background: #fff;
   color: #242424;
-  box-shadow: 0 1px 6px #0001;
+  box-shadow: 0 1px 3px #0001;
   cursor: pointer;
 }
 .talent-discovery-layout-toggle:hover {
@@ -692,6 +692,7 @@ html:has(.workspace-shell--talent) .staging-environment-badge { translate: none 
 .workspace-shell--talent .workspace-frame .workspace-mobile-account [role="menu"] :is(a,button) { color:#242424; }
 .workspace-shell--talent .workspace-frame .workspace-mobile-account [role="menu"] :is(a,button):hover { background:#eee; }
 
+.workspace-shell--talent { --talent-mobile-bar-height: calc(3.5rem + env(safe-area-inset-top, 0px)); }
 .talent-mobile-header { display: none; }
 .workspace-shell--talent .workspace-talent-mobile-toolbar { display:none; }
 .workspace-shell--talent .workspace-sidebar-navigation { margin-top:22px; }
@@ -723,12 +724,12 @@ html:has(.workspace-shell--talent) .staging-environment-badge { translate: none 
     border-bottom: 0;
   }
   html:has(.staging-environment-badge) .workspace-shell--talent .talent-mobile-header { top: 24px; }
-  .workspace-shell--talent .workspace-talent-main { --home-inline-pad: 16px; padding-top: calc(3.25rem + 16px); }
+  .workspace-shell--talent .workspace-talent-main { --home-inline-pad: 16px; padding-top: calc(var(--talent-mobile-bar-height) + 16px); }
   .talent-mobile-header__bar {
     display: grid;
     grid-template-columns: 2.75rem minmax(0, 1fr) 2.75rem;
     align-items: center;
-    min-height: 3.25rem;
+    min-height: var(--talent-mobile-bar-height);
     padding: 0.35rem 0.75rem;
   }
   .talent-mobile-header__toggle {
@@ -826,7 +827,7 @@ html:has(.workspace-shell--talent) .staging-environment-badge { translate: none 
    */
   .workspace-shell--talent .workspace-talent-main--navigator .talent-discovery-chrome {
     position: fixed;
-    top: 3.25rem;
+    top: var(--talent-mobile-bar-height);
     left: 0;
     right: 0;
     z-index: 39;
@@ -834,7 +835,7 @@ html:has(.workspace-shell--talent) .staging-environment-badge { translate: none 
     opacity: 1;
   }
   html:has(.staging-environment-badge) .workspace-shell--talent .workspace-talent-main--navigator .talent-discovery-chrome {
-    top: calc(24px + 3.25rem);
+    top: calc(24px + var(--talent-mobile-bar-height));
   }
   .workspace-shell--talent .workspace-talent-main--navigator .talent-discovery-chrome__bar {
     background: rgb(246 246 246 / 0.88);
@@ -850,22 +851,22 @@ html:has(.workspace-shell--talent) .staging-environment-badge { translate: none 
   }
   .workspace-shell--talent .workspace-talent-main--navigator .talent-discovery-modes {
     position: fixed;
-    top: calc(3.25rem + 10px);
+    top: calc(var(--talent-mobile-bar-height) + 10px);
     left: 50%;
     transform: translateX(-50%);
     z-index: 40;
   }
   html:has(.staging-environment-badge) .workspace-shell--talent .workspace-talent-main--navigator .talent-discovery-modes {
-    top: calc(24px + 3.25rem + 10px);
+    top: calc(24px + var(--talent-mobile-bar-height) + 10px);
   }
   .workspace-shell--talent .workspace-talent-main--navigator .talent-discovery-layout-toggle {
     position: fixed;
-    top: calc(3.25rem + 10px);
+    top: calc(var(--talent-mobile-bar-height) + 10px);
     right: 16px;
     z-index: 40;
   }
   html:has(.staging-environment-badge) .workspace-shell--talent .workspace-talent-main--navigator .talent-discovery-layout-toggle {
-    top: calc(24px + 3.25rem + 10px);
+    top: calc(24px + var(--talent-mobile-bar-height) + 10px);
   }
   .workspace-shell--talent .workspace-talent-main--navigator .talent-discovery-results {
     padding-top: 64px;
@@ -887,10 +888,14 @@ html:has(.workspace-shell--talent) .staging-environment-badge { translate: none 
 .talent-discovery-card span { color:#fffe; font-size:12px; }
 .talent-discovery-card-action { display:flex; gap:8px; align-items:center; }
 .talent-discovery-card-icon { position:absolute; right:24px; top:24px; color:#fff6; }
-.talent-discovery-card:hover { transform:translateY(-3px); box-shadow:0 8px 20px #0002; }
+@media (hover: hover) and (pointer: fine) {
+  .talent-discovery-card:hover { transform:translateY(-3px); box-shadow:0 8px 20px #0002; }
+}
 .talent-portfolio-cards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
 .talent-portfolio-card { display:flex; align-items:flex-start; gap:14px; padding:22px; background:white; border-radius:18px; box-shadow:var(--studio-shadow); transition:box-shadow 180ms,transform 180ms; }
-.talent-portfolio-card:hover { box-shadow:0 5px 16px #0002; transform:translateY(-2px); }
+@media (hover: hover) and (pointer: fine) {
+  .talent-portfolio-card:hover { box-shadow:0 5px 16px #0002; transform:translateY(-2px); }
+}
 .talent-portfolio-card > div { flex:1; min-width:0; }
 .talent-portfolio-card > svg { flex-shrink:0; color:#777; }
 .talent-portfolio-card-preview { position:relative; flex:none; display:grid; place-items:center; width:46px; height:61px; margin:-6px 0; overflow:hidden; border-radius:8px; background:#1f1f1f; color:#fff; box-shadow:0 0 0 1px #0000000f; pointer-events:none; }
@@ -1531,3 +1536,69 @@ span.notification-avatar { display:grid; place-items:center; }
 .workspace-notifications__body .workspace-notifications__requests ul { padding:0; border:0; border-radius:0; background:transparent; }
 .workspace-notifications__body .workspace-notifications__requests li { display:block; padding:12px 20px; }
 .workspace-notifications__body .workspace-notifications__requests li p + p { font-size:12px; }
+
+.talent-discovery-layout-toggle:focus-visible { outline: 2px solid var(--ui-focus, #242424); outline-offset: 3px; }
+
+.inbox-search-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex: 0 1 374px; min-width: 0; }
+.inbox-search-actions .inbox-search { flex: 1; min-width: 0; }
+.workspace-shell .workspace-frame .inbox-page__edit--icon { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 40px; width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: 50%; background: #171717; color: #fff; }
+.workspace-shell .workspace-frame .inbox-page__edit--icon:hover { background: #333; color: #fff; }
+@media (max-width: 640px) { .inbox-search-actions { flex-basis: 100%; } }
+
+/* Full-height talent panes must reserve the same fixed app bar as Discover.
+   Their padding reset previously placed identity / calendar controls under it. */
+@media (max-width: 1023px) {
+  .workspace-shell--talent .workspace-frame .workspace-talent-main--pane {
+    padding-top: var(--talent-mobile-bar-height);
+  }
+  .workspace-shell--talent .talent-mobile-header__bar {
+    min-height: var(--talent-mobile-bar-height);
+    padding-top: calc(.35rem + env(safe-area-inset-top, 0px));
+  }
+  .workspace-shell--talent .workspace-talent-main:not(.workspace-talent-main--pane):not(.workspace-talent-main--navigator) {
+    padding-top: calc(var(--talent-mobile-bar-height) + 16px);
+  }
+  .workspace-shell--talent .portfolio-scroll {
+    padding-bottom: max(24px, env(safe-area-inset-bottom, 0px));
+    scroll-padding-block: 16px 32px;
+  }
+  .talent-mobile-header__panel {
+    overscroll-behavior: contain;
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
+}
+.portfolio-editor-loading { padding: 24px; min-height: 160px; color: var(--ui-muted); font-size: 14px; }
+.talent-route-loading { display: grid; gap: 20px; width: 100%; padding: 24px; }
+.talent-route-loading__title { height: 28px; width: min(220px, 60%); }
+.talent-route-loading__line { height: 14px; width: min(340px, 85%); }
+.talent-route-loading__surface { height: min(320px, 40dvh); width: 100%; border-radius: 16px; }
+.talent-mobile-header__toggle { transition: background-color 160ms ease; touch-action: manipulation; }
+.talent-mobile-header__toggle:active { background: #e2e2e2; }
+@media (hover: hover) and (pointer: fine) {
+  .talent-mobile-header__toggle:hover { background: #ededed; }
+}
+
+.talent-portfolio-card:active { box-shadow: var(--ui-elevation); }
+.talent-portfolio-card:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 3px; }
+
+/* Settings use the same compact pill navigation as the rest of talent. */
+@media (max-width: 1023px) {
+  .workspace-shell--talent .industry-settings-nav { gap: 6px; padding: 4px; }
+  .workspace-shell--talent .industry-settings-nav [role=tab] {
+    flex: none;
+    min-height: var(--ui-chip-height, 34px);
+    padding: 0 14px;
+    border: 1px solid #e2e2e2;
+    border-radius: 999px;
+    background: #fff;
+    color: #424242;
+    font-size: 13px;
+    font-weight: 540;
+    white-space: nowrap;
+  }
+  .workspace-shell--talent .industry-settings-nav [role=tab][aria-selected=true] {
+    background: #171717;
+    border-color: #171717;
+    color: #fff;
+  }
+}

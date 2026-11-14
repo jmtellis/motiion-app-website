@@ -1,8 +1,7 @@
-export type ProjectScope = "active" | "draft" | "archived";
+export type ProjectScope = "active" | "archived";
 
 /** Old All/Browse/Focus links open the current Active workspace. */
 export function projectScope(value: string | null | undefined): ProjectScope {
-  if (value === "draft" || value === "drafts") return "draft";
   return value === "archived" ? "archived" : "active";
 }
 
@@ -23,7 +22,7 @@ export function filterProjects<T extends FilterableProject>(
 ): T[] {
   const needle = query.trim().toLocaleLowerCase();
   return projects
-    .filter((project) => project.status === scope)
+    .filter((project) => scope === "archived" ? project.status === "archived" : project.status === "active" || project.status === "draft")
     .filter((project) => type === "all" || (type === "casting"
       ? (project.projectType === "casting" || project.abilities?.some((ability) => ability.id === "casting")) && project.workKind !== "activity"
       : (project.workTypeLabel ?? project.projectType).toLowerCase() === type || (type === "class" && project.abilities?.some((ability) => ability.id === "classes"))))

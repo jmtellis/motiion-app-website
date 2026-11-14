@@ -1,5 +1,7 @@
 "use server";
 
+import { projectSettingsSchema, mergeProjectSettings } from "@/lib/talent-buyers/project-settings";
+import { fetchProjectRecord } from "@/lib/talent-buyers/projects";
 import { normalizeProjectContract } from "@/lib/talent-buyers/project-contract";
 import { requireIndustryApproval } from "@/lib/talent-buyers/require-industry-approval";
 import { revalidatePath } from "next/cache";
@@ -318,4 +320,24 @@ export async function saveProjectNotes(projectId: string, body: string): Promise
   const result = await session.supabase.rpc("update_project_ability_settings", { p_project_id: projectId, p_ability: "notes", p_settings: { body } });
   if (result.error) return { ok: false, error: "Could not save notes. Your changes are still here." };
   revalidateComposable(projectId); return { ok: true };
+}
+
+/** Save the same project_details contract used by the app's project settings. */
+export async function saveProjectSettings(projectId: string, input: unknown): Promise<ComposableActionResult> {
+  const parsed = projectSettingsSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check project settings." };
+  const session = await requireSession();
+  if (!session.ok) return session;
+  const project = await fetchProjectRecord(projectId, session.userId);
+  if (!project) return { ok: false, error: "Only the project owner can edit settings." };
+  const result = await session.supabase.rpc("update_project_details", {
+    p_project_id: projectId, p_title: parsed.data.title, p_details: mergeProjectSettings(project, parsed.data),
+  });
+  if (result.error) return { ok: false, error: result.error.message };
+  if ((project.cover_image_url ?? "") !== parsed.data.coverImageUrl) {
+    const cover = await session.supabase.from("projects").update({ cover_image_url: parsed.data.coverImageUrl || null }).eq("id", projectId).eq("poster_id", session.userId);
+    if (cover.error) { revalidateComposable(projectId); return { ok: false, error: "Details saved, but the cover could not be saved. Please retry." }; }
+  }
+  revalidateComposable(projectId);
+  return { ok: true };
 }

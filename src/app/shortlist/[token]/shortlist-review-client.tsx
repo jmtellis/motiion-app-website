@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Check, ChevronRight, Instagram, X } from "lucide-react";
 import { useSmoothScroll } from "@/components/landing/SmoothScroll";
@@ -144,10 +147,10 @@ function ShortlistReviewContent({ token }: { token: string }) {
                   </li>)}
                   <li><button type="button" aria-current={reviewingSummary ? "step" : undefined} disabled={submitting} onClick={() => changeStep(activeRole, true)}>Review &amp; submit</button></li>
                 </ol>
-                <select className="shortlist-step-select" aria-label="Current review step" value={reviewingSummary ? "summary" : String(activeRole)} disabled={submitting} onChange={(event) => event.target.value === "summary" ? changeStep(activeRole, true) : changeStep(Number(event.target.value))}>
+                <CustomSelect className="shortlist-step-select" aria-label="Current review step" value={reviewingSummary ? "summary" : String(activeRole)} disabled={submitting} onChange={(event) => event.target.value === "summary" ? changeStep(activeRole, true) : changeStep(Number(event.target.value))}>
                   {groups.map((group, index) => <option key={group.id} value={index}>{index + 1}. {group.title}</option>)}
                   <option value="summary">{groups.length + 1}. Review &amp; submit</option>
-                </select>
+                </CustomSelect>
                 <span className="shortlist-step-progress" aria-live="polite">{reviewed}/{total} reviewed</span>
               </nav>
               {payload.share.message?.trim() && <details className="shortlist-sender-note"><summary>Note from the sender</summary><p>{payload.share.message}</p></details>}

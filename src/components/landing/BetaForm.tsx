@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import { FormEvent, useState } from "react";
 
 type FormState = {
@@ -160,7 +163,7 @@ export function BetaForm({
         <div className={compact ? "grid gap-2.5 sm:grid-cols-2" : "contents"}>
           <label className={fieldClass(compact)}>
             <span>Role</span>
-            <select
+            <CustomSelect
               required
               value={formState.role}
               onChange={(event) =>
@@ -177,7 +180,7 @@ export function BetaForm({
               <option value="casting-team">Casting Team</option>
               <option value="agency-or-manager">Agency / Manager</option>
               <option value="other">Other</option>
-            </select>
+            </CustomSelect>
           </label>
 
           <label className={fieldClass(compact)}>

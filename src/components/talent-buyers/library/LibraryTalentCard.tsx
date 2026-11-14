@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { MapPin } from "lucide-react";
 import { useState } from "react";
 import type { LibraryTalent } from "@/lib/talent-buyers/library";
 
 /** Selection, inspection and removal are separate keyboard/touch targets. */
-export function LibraryTalentCard({ talent, selected, selectable, onToggleSelect, onRemove, savedIndicator, onInspect }: {
+export function LibraryTalentCard({ talent, selected, selectable, onToggleSelect, onRemove, onInspect }: {
   talent: LibraryTalent; selected?: boolean; selectable?: boolean; onToggleSelect?: () => void; onRemove?: () => void; savedIndicator?: boolean; onInspect?: () => void;
 }) {
   const href = talent.slug ? `/talent/${talent.slug}` : `/talent/${talent.profileId}`;
@@ -16,11 +17,11 @@ export function LibraryTalentCard({ talent, selected, selectable, onToggleSelect
         // eslint-disable-next-line @next/next/no-img-element
         <img src={talent.avatarUrl} alt="" loading="lazy" decoding="async" onError={() => setFailedImage(talent.avatarUrl)} />
       ) : <div className="library-talent-card__fallback">{talent.name.slice(0, 1).toUpperCase()}</div>}
-      <span className="library-talent-card__view">View profile</span>
+
     </div>
     <div className="library-talent-card__meta">
-      <p className="library-talent-card__name">{talent.name}{savedIndicator ? <span className="library-talent-card__saved">Saved</span> : null}</p>
-      <p className="library-talent-card__sub">{talent.location || "Location not added"}</p>
+      <p className="library-talent-card__name">{talent.name}</p>
+      <p className="library-talent-card__sub"><MapPin size={12} aria-hidden />{talent.location || "Location not added"}</p>
     </div>
   </>;
   return (

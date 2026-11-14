@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -157,7 +160,7 @@ function RoleEditor({
 
       <div className="grid gap-4 md:grid-cols-2">
         <AuthField label="Gender">
-          <select
+          <CustomSelect
             value={role.gender}
             onChange={(event) => onChange({ ...role, gender: event.target.value })}
             className="w-full rounded-full border border-[var(--line)] bg-white px-3 py-3 text-sm text-[var(--ink)] outline-none focus:border-[rgb(17_17_17_/_0.35)]"
@@ -168,7 +171,7 @@ function RoleEditor({
                 {option}
               </option>
             ))}
-          </select>
+          </CustomSelect>
         </AuthField>
         <AuthField label="People needed">
           <AuthInput
@@ -216,7 +219,7 @@ function RoleEditor({
 
       <div className="grid gap-4 md:grid-cols-2">
         <AuthField label="Union status">
-          <select
+          <CustomSelect
             value={role.unionStatus}
             onChange={(event) => onChange({ ...role, unionStatus: event.target.value })}
             className="w-full rounded-full border border-[var(--line)] bg-white px-3 py-3 text-sm text-[var(--ink)] outline-none focus:border-[rgb(17_17_17_/_0.35)]"
@@ -227,10 +230,10 @@ function RoleEditor({
                 {option}
               </option>
             ))}
-          </select>
+          </CustomSelect>
         </AuthField>
         <AuthField label="Card color">
-          <select
+          <CustomSelect
             value={role.cardColorPreset}
             onChange={(event) =>
               onChange({
@@ -245,7 +248,7 @@ function RoleEditor({
                 {option.label}
               </option>
             ))}
-          </select>
+          </CustomSelect>
         </AuthField>
       </div>
 

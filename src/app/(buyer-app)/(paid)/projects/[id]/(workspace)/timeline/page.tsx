@@ -1,20 +1,13 @@
-import { redirect } from "next/navigation";
-
+import { notFound } from "next/navigation";
+import { ProjectSchedulePanel } from "@/components/talent-buyers/project/ProjectSchedulePanel";
 import { requireHiringAccount } from "@/lib/auth/session";
 import { fetchAccessibleProjectRecord } from "@/lib/talent-buyers/projects";
-import {
-  projectLandingPath,
-  projectOverviewPath,
-} from "@/lib/talent-buyers/project-routes";
+import { fetchScheduleBundle } from "@/lib/talent-buyers/schedule-markers-server";
 
 export default async function ProjectTimelinePage({ params }: { params: Promise<{ id: string }> }) {
   const profile = await requireHiringAccount();
   const { id } = await params;
-  const project = await fetchAccessibleProjectRecord(id, profile.id);
-
-  if (project) {
-    redirect(projectLandingPath(id, project.project_type));
-  }
-
-  redirect(projectOverviewPath(id));
+  if (!await fetchAccessibleProjectRecord(id, profile.id)) notFound();
+  const { markers, error } = await fetchScheduleBundle(profile.id, id);
+  return <ProjectSchedulePanel markers={markers} error={error} />;
 }

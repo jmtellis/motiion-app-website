@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState } from "react";
@@ -330,7 +333,7 @@ function ConfirmDialog({
             </p>
             <label className="block text-xs text-[var(--ui-muted)]">
               Reason
-              <select
+              <CustomSelect
                 value={reason}
                 onChange={(event) => setReason(event.target.value as (typeof REPORT_REASONS)[number])}
                 className="mt-1 w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2 text-sm"
@@ -338,7 +341,7 @@ function ConfirmDialog({
                 {REPORT_REASONS.map((option) => (
                   <option key={option} value={option}>{option}</option>
                 ))}
-              </select>
+              </CustomSelect>
             </label>
             <label className="block text-xs text-[var(--ui-muted)]">
               Details

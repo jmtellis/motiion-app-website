@@ -98,27 +98,27 @@ async function fetchProductionJobs(
 }
 
 /** Every dated beat across the signed-in owner's projects, activities, and jobs. */
-export async function fetchScheduleBundle(ownerId: string): Promise<{ markers: ScheduleMarker[]; error: string | null }> {
+export async function fetchScheduleBundle(ownerId: string, projectId?: string): Promise<{ markers: ScheduleMarker[]; error: string | null }> {
   const supabase = await createServerSupabaseClient();
   if (!supabase) return { markers: [], error: "Calendar is temporarily unavailable. Please try again." };
 
-  const { data: memberships, error: membershipError } = await supabase.from("project_members")
-    .select("project_id").eq("user_id", ownerId);
+  // Project tabs query only their own work. The account calendar retains its owner/member scope.
+  const { data: memberships, error: membershipError } = projectId
+    ? { data: [], error: null }
+    : await supabase.from("project_members").select("project_id").eq("user_id", ownerId);
   const memberIds = [...new Set((memberships ?? []).map((row) => row.project_id as string))];
   let projectQuery = supabase.from("projects").select(
     "id, title, is_active, project_type, enabled_modules, project_configuration, casting_configuration, start_date, end_date, location",
   ).limit(500);
-  projectQuery = memberIds.length ? projectQuery.or(`poster_id.eq.${ownerId},id.in.(${memberIds.join(",")})`) : projectQuery.eq("poster_id", ownerId);
+  projectQuery = projectId ? projectQuery.eq("id", projectId) : memberIds.length ? projectQuery.or(`poster_id.eq.${ownerId},id.in.(${memberIds.join(",")})`) : projectQuery.eq("poster_id", ownerId);
+  const activityQuery = supabase.from("activities")
+    .select("id, title, type, project_id, location, activity_date, start_time, end_time")
+    .neq("status", "cancelled").limit(500);
   const [{ data: projectRows, error: projectError }, { data: activityRows, error: activityError }, jobResult] =
     await Promise.all([
       projectQuery,
-      supabase
-        .from("activities")
-        .select("id, title, type, project_id, location, activity_date, start_time, end_time")
-        .eq("creator_id", ownerId)
-        .neq("status", "cancelled")
-        .limit(500),
-      fetchProductionJobs(supabase, ownerId),
+      projectId ? activityQuery.eq("project_id", projectId) : activityQuery.eq("creator_id", ownerId),
+      projectId ? Promise.resolve({ jobs: [], error: false }) : fetchProductionJobs(supabase, ownerId),
     ]);
 
   if (projectError) console.debug("fetchScheduleMarkers projects:", projectError.message);

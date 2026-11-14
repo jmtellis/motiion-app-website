@@ -13,12 +13,17 @@ import {
   ProjectCoverAvatar,
   ProjectWorkspaceChromeEnd,
 } from "./ProjectWorkspaceChrome";
+import { EditProjectShellModal } from "./composable/EditProjectShellModal";
 import { ComposableProjectShell } from "./composable/ComposableProjectShell";
 import { useProjectWorkspace } from "./ProjectWorkspaceContext";
+import { ProjectHeaderActions } from "./ProjectHeaderActions";
 import { ProjectWorkspaceTabs } from "./ProjectWorkspaceTabs";
+import { ProjectWorkspaceNavigation } from "./ProjectWorkspaceNavigation";
+import { ComposableProjectUiContext } from "./composable/ComposableProjectUiContext";
 
 import "@/components/talent-buyers/casting/casting-overview.css";
 import "./project-workspace.css";
+import "./project-simplified.css";
 
 export function ProjectWorkspaceShell({ children }: { children: ReactNode }) {
   const { project } = useProjectWorkspace();
@@ -31,6 +36,7 @@ export function ProjectWorkspaceShell({ children }: { children: ReactNode }) {
 function TypedProjectWorkspaceShell({ children }: { children: ReactNode }) {
   const { projectId, project, castingWorkflow } = useProjectWorkspace();
   const [editProjectOpen, setEditProjectOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const castingVisibility = castingWorkflow?.primaryCasting?.visibility;
   const castingLifecycleStatus = castingWorkflow?.primaryCasting?.status;
   const castingFinalized = isCastingFullyFinalized(castingWorkflow?.roles ?? []);
@@ -82,7 +88,7 @@ function TypedProjectWorkspaceShell({ children }: { children: ReactNode }) {
           { label: projectTitle },
         ],
     end: (
-      <ProjectWorkspaceChromeEnd
+      isCastingProject ? <ProjectHeaderActions project={project} castingWorkflow={castingWorkflow} onSettings={() => setSettingsOpen(true)} onEditCasting={() => setEditProjectOpen(true)} /> : <ProjectWorkspaceChromeEnd
         project={project}
         castingStatus={castingLifecycleStatus}
         castingFinalized={castingFinalized}
@@ -95,13 +101,20 @@ function TypedProjectWorkspaceShell({ children }: { children: ReactNode }) {
   });
 
   return (
+    <ComposableProjectUiContext.Provider value={{ openShellEditor: () => setEditProjectOpen(true) }}>
     <div className="project-workspace">
       <section className="project-workspace__panel" aria-label="Project content">
         <div className="project-workspace__sticky-top">
-          <ProjectWorkspaceTabs />
+          {isCastingProject ? <ProjectWorkspaceNavigation projectId={projectId} /> : <ProjectWorkspaceTabs />}
         </div>
         {children}
       </section>
+      <EditProjectShellModal open={settingsOpen} onClose={() => setSettingsOpen(false)} project={{
+        id: projectId, title: project.title, location: project.location, coverImageUrl: project.coverImageUrl,
+        details: project.details, archivedAt: null, canArchive: false,
+        startDate: typeof project.details?.start_date === "string" ? project.details.start_date : null,
+        endDate: typeof project.details?.end_date === "string" ? project.details.end_date : null,
+      }} />
       {isCastingProject ? (
         <EditCastingProjectModal
           open={editProjectOpen}
@@ -109,5 +122,6 @@ function TypedProjectWorkspaceShell({ children }: { children: ReactNode }) {
         />
       ) : null}
     </div>
+    </ComposableProjectUiContext.Provider>
   );
 }

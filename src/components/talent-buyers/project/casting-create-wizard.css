@@ -43,7 +43,7 @@
   gap: 0.75rem;
 }
 
-.activity-create-wizard__steps--inline {
+.activity-create-wizard--panel .activity-create-wizard__steps--inline {
   display: flex;
   flex: 1 1 auto;
   flex-direction: row;
@@ -1904,4 +1904,23 @@
 
 .casting-role-attr__body {
   padding: 0 0.95rem 0.95rem;
+}
+
+/* The workspace panel already supplies a close action in its pinned header. */
+.workspace-side-panel .activity-create-wizard--panel .casting-create-wizard__close { display: none; }
+.activity-create-wizard--panel .activity-create-wizard__steps--inline {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-block: 4px;
+  scroll-padding-inline: 4px;
+}
+.activity-create-wizard__steps--inline > li { flex: none; }
+.activity-create-wizard--panel .activity-create-wizard__steps--inline .activity-create-wizard__step {
+  min-height: 44px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.activity-create-wizard--panel .activity-create-wizard__cover-empty { color: var(--ui-muted, #536366); }
+@media (max-width: 380px) {
+  .activity-create-wizard--panel .activity-create-wizard__step-panel > .grid-cols-2 { grid-template-columns: minmax(0, 1fr); }
 }

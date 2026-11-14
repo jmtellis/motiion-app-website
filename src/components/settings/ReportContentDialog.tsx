@@ -1,5 +1,8 @@
 "use client";
 
+import { CustomSelect } from "@/components/ui/CustomSelect";
+
+
 import { useId, useState } from "react";
 import { X } from "lucide-react";
 import { Dialog } from "@/components/ui/Dialog";
@@ -31,7 +34,7 @@ function ReportForm({ target, onClose }: { target: ContentReportTarget; onClose:
     <header className="ui-dialog-header"><h2 id={titleId}>{sent ? "Report sent" : `Report ${target.displayName}`}</h2><button type="button" className="ui-icon-button" disabled={pending} onClick={close} aria-label="Close report"><X size={18} /></button></header>
     <div className="ui-dialog-body">
       {sent ? <div className="space-y-4"><p role="status">Thanks. Your report has been sent to the Motiion moderation team.</p><button type="button" className="ui-button" onClick={onClose}>Done</button></div> : <form onSubmit={submit} className="space-y-4">
-        <Field label="Reason"><select value={reason} disabled={pending} onChange={(event) => setReason(event.target.value as ContentReportInput["reason"])}>{reportReasons.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></Field>
+        <Field label="Reason"><CustomSelect value={reason} disabled={pending} onChange={(event) => setReason(event.target.value as ContentReportInput["reason"])}>{reportReasons.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</CustomSelect></Field>
         <Field label={reason === "other" ? "What happened?" : "Details (optional)"} hint="Share the information the team needs to review this report."><textarea value={details} maxLength={2000} required={reason === "other"} disabled={pending} onChange={(event) => setDetails(event.target.value)} /></Field>
         {error ? <p className="ui-notice" data-tone="error" role="alert">{error}</p> : null}
         {discarding ? <div className="space-y-3 rounded-xl border border-[var(--ui-border)] p-3"><p>Discard this unsent report?</p><div className="flex flex-wrap gap-2"><button className="ui-button ui-button--secondary" type="button" onClick={() => setDiscarding(false)}>Keep editing</button><button className="ui-button ui-button--danger" type="button" onClick={onClose}>Discard</button></div></div> : <div className="flex flex-wrap gap-3"><button type="submit" className="ui-button" disabled={pending}>{pending ? "Sending…" : "Send report"}</button><button type="button" className="ui-button ui-button--secondary" disabled={pending} onClick={close}>Cancel</button></div>}

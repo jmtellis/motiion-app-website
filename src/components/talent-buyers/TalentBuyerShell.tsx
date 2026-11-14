@@ -12,6 +12,7 @@ function TalentBuyerShellFrame({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { slots, profileBackRef } = useTalentChromeContext();
+  const hasOwnHeader = /^\/talent\/(collection|event|classes|profile)(\/|$)/.test(pathname);
   const isProfileRoute = pathname.startsWith("/talent/") && pathname !== "/talent";
   const isNavigatorRoute = pathname === "/talent";
 
@@ -37,7 +38,7 @@ function TalentBuyerShellFrame({ children }: { children: ReactNode }) {
 
   return (
     <div className="talent-buyer-shell">
-      {!isNavigatorRoute ? (
+      {!isNavigatorRoute && !hasOwnHeader ? (
         <BuyerChromeBar
           className="talent-buyer-shell__chrome"
           start={start}

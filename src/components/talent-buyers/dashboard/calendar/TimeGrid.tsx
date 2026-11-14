@@ -294,10 +294,10 @@ function EventBlock({
     return (
       <ScheduleMarkerLink event={{ ...placed, href: placed.href }} className="bd-cal-event-block" style={style}>
         <span className="bd-cal-event-block__title">{copy.primary}</span>
-        {copy.secondary && placed.height >= 36 ? (
+        {copy.secondary && placed.height >= 52 ? (
           <span className="bd-cal-event-block__time">{copy.secondary}</span>
         ) : null}
-        {placed.height >= 52 ? time : null}
+        {time}
       </ScheduleMarkerLink>
     );
   }

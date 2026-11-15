@@ -1,3 +1,4 @@
+import { routeEmail } from "../_shared/email-routing.ts";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.49.8";
 export function teamEmail(input: {email: string; token: string; title: string; role: string; job_title: string}, origin: string) {
  const url = new URL(`/team-invite/${encodeURIComponent(input.token)}`, origin);
@@ -22,7 +23,7 @@ export function createTeamHandler(db: SupabaseClient, env: (key:string)=>string|
     if(project.error) throw project.error;
     if(!inv.enabled || inv.accepted_by || inv.token!==row.token || Date.parse(inv.expires_at)<=Date.now() || project.data.poster_id!==inv.invited_by || project.data.is_active===false || !["admin","coordinator"].includes(inv.role)) result="skipped";
     else {
-     const response=await send("https://api.resend.com/emails",{method:"POST",signal:AbortSignal.timeout(15000),headers:{Authorization:`Bearer ${env("RESEND_API_KEY")}`,"Content-Type":"application/json","Idempotency-Key":`project-team/${row.id}`},body:JSON.stringify(teamEmail({...inv,title:project.data.title},origin))});
+     const response=await send("https://api.resend.com/emails",{method:"POST",signal:AbortSignal.timeout(15000),headers:{Authorization:`Bearer ${env("RESEND_API_KEY")}`,"Content-Type":"application/json","Idempotency-Key":`project-team/${row.id}`},body:JSON.stringify(routeEmail(teamEmail({...inv,title:project.data.title},origin),env))});
      result=response.ok?"sent":[408,409,429].includes(response.status)||response.status>=500?"retry":"failed";
      if(result!=="sent") failure=`Provider HTTP ${response.status}`;
      await response.body?.cancel();

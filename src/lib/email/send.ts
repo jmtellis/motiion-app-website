@@ -1,5 +1,6 @@
 import { Resend } from "resend";
-import { getAppEnvironment, isEmailRecipientAllowed } from "@/lib/environment";
+import { getAppEnvironment } from "@/lib/environment";
+import { isStagingEmailProject, routeEmail } from "../../../supabase/functions/_shared/email-routing";
 
 let resendClient: Resend | null = null;
 
@@ -15,19 +16,22 @@ export async function sendNotificationEmail(input: {
   subject: string;
   html: string;
 }): Promise<{ ok: boolean; error?: string; id?: string }> {
-  if (!isEmailRecipientAllowed(input.to, getAppEnvironment(), process.env.STAGING_EMAIL_ALLOWLIST)) {
-    return { ok: false, error: "Email blocked: recipient is not on the staging allowlist" };
-  }
   const resend = getResend();
   if (!resend) return { ok: false, error: "Resend not configured" };
 
   try {
-    const { data, error } = await resend.emails.send({
+    const env = (key: string) => key === "SUPABASE_URL" ? process.env.NEXT_PUBLIC_SUPABASE_URL : process.env[key];
+    if (getAppEnvironment() !== "production" && !isStagingEmailProject(env)) {
+      return { ok: false, error: "Email blocked: staging database required" };
+    }
+    const message = routeEmail({
       from: process.env.MOTIION_EMAIL_FROM || "Motiion <notifications@motiion.io>",
-      to: input.to,
+      to: [input.to],
       subject: input.subject,
       html: input.html,
-    });
+      text: "",
+    }, env);
+    const { data, error } = await resend.emails.send({ ...message, html: message.html ?? input.html, text: message.text || undefined });
     if (error) {
       console.error("Resend send failed:", error.message);
       return { ok: false, error: error.message };

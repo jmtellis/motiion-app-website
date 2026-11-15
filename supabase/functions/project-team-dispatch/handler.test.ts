@@ -4,7 +4,7 @@ function fixture({enabled=true,status=200,role='admin',token='ws_fixture',confir
  const row={id:'delivery',invitation_id:'invite',token:'ws_fixture',lease_id:'lease'};
  const inv={project_id:'project',invited_by:'owner',email:'teammate@example.invalid',token,role,job_title:'Assistant',enabled,accepted_by:confirmed?'user':null,expires_at:'2099-01-01'};
  const db:any={from:(name:string)=>{const q:any={select:()=>q,eq:()=>q,single:async()=>({data:name==='industry_approval_delivery_config'?{email_enabled:true}:name==='projects'?{title:'Project',poster_id:'owner',is_active:true}:inv})};return q;},rpc:async(name:string,args:unknown)=>name==='claim_project_team_emails'?{data:[row]}:(ack.push(args),{})};
- const handler=createTeamHandler(db,k=>k==='NOTIF_DISPATCH_SECRET'?'secret':k==='INDUSTRY_APPROVAL_URL'?'https://example.invalid/industry/approved':'fake',async(_url,init)=>{sent.push(init!);return new Response(null,{status});});
+ const handler=createTeamHandler(db,k=>k==='SUPABASE_URL'?'https://pygdxcscmebeqjxhzzuq.supabase.co':k==='NOTIF_DISPATCH_SECRET'?'secret':k==='INDUSTRY_APPROVAL_URL'?'https://example.invalid/industry/approved':'fake',async(_url,init)=>{sent.push(init!);return new Response(null,{status});});
  return {sent,ack,run:(secret='secret')=>handler(new Request('https://worker.invalid',{method:'POST',headers:{'x-notif-dispatch-secret':secret}}))};
 }
 test('dispatch rejects unauthenticated calls',async()=>{const f=fixture();assert.equal((await f.run('bad')).status,401);assert.equal(f.sent.length,0);});

@@ -27,7 +27,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test scripts/*.test.ts scripts/*.test.mjs",
     "test:booking-scope": "node --import tsx --test scripts/booking-scope.test.ts",
-    "test:collections": "node --import tsx --test scripts/collection-data.test.ts"
+    "test:collections": "node --import tsx --test scripts/collection-data.test.ts",
+    "test:staging-email": "node --import tsx --test supabase/functions/_shared/email-routing.test.ts supabase/functions/staging-auth-email/handler.test.ts supabase/functions/industry-approval-dispatch/handler.test.ts supabase/functions/project-team-dispatch/handler.test.ts"
   },
   "dependencies": {
     "@notionhq/client": "^5.12.0",

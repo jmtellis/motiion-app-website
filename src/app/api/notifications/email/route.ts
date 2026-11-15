@@ -1,17 +1,10 @@
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
-import { getAppEnvironment, isEmailRecipientAllowed } from "@/lib/environment";
-
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+import { sendNotificationEmail } from "@/lib/email/send";
 
 export async function POST(request: Request) {
   const expectedToken = process.env.INTERNAL_EMAIL_TOKEN;
   if (!expectedToken || request.headers.get("x-internal-token") !== expectedToken) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-  }
-
-  if (!resend) {
-    return NextResponse.json({ ok: false, error: "Resend not configured" }, { status: 503 });
   }
 
   const body = await request.json().catch(() => null);
@@ -24,25 +17,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Missing to, subject, or html" }, { status: 400 });
   }
 
-  if (!isEmailRecipientAllowed(to, getAppEnvironment(), process.env.STAGING_EMAIL_ALLOWLIST)) {
-    return NextResponse.json({ ok: false, error: "Recipient is not on the staging allowlist" }, { status: 403 });
-  }
-
-  try {
-    const { error } = await resend.emails.send({
-      from: process.env.MOTIION_EMAIL_FROM || "Motiion <notifications@motiion.io>",
-      to,
-      subject,
-      html,
-    });
-    if (error) {
-      return NextResponse.json({ ok: false, error: error.message }, { status: 502 });
-    }
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : "Send failed" },
-      { status: 502 },
-    );
-  }
+  const result = await sendNotificationEmail({ to, subject, html });
+  return NextResponse.json(result, { status: result.ok ? 200 : 502 });
 }

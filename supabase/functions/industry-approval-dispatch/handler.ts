@@ -1,3 +1,4 @@
+import { routeEmail } from "../_shared/email-routing.ts";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.49.8";
 import { approvalURL, emailBody, responseResult, type Delivery, type DeliveryResult } from "./delivery.ts";
 type Dependencies = { db: SupabaseClient; env: (name: string) => string | undefined; send: typeof fetch; jwt: () => Promise<string>; baseURL: () => string };
@@ -36,7 +37,7 @@ export function createHandler({ db, env, send, jwt, baseURL }: Dependencies) { r
           const response = await send("https://api.resend.com/emails", {
             method: "POST", signal: AbortSignal.timeout(15000),
             headers: { Authorization: `Bearer ${env("RESEND_API_KEY")}`, "Content-Type": "application/json", "Idempotency-Key": `industry-approval/${row.id}` },
-            body: JSON.stringify(emailBody(row, url)),
+            body: JSON.stringify(routeEmail(emailBody(row, url), env)),
           });
           result = responseResult(response.status);
           if (result !== "sent") failure = `Email provider HTTP ${response.status}`;

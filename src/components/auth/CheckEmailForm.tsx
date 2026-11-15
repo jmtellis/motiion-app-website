@@ -22,7 +22,7 @@ export function CheckEmailForm({ email, accountType, signedInEmail, returnTo }: 
   const next = safeAuthReturnPath(returnTo);
   const loginHref = `/login?email=${encodeURIComponent(email)}${next ? `&next=${encodeURIComponent(next)}` : ""}`;
   const signupParams = new URLSearchParams();
-  if (accountType === "lookingForTalent") signupParams.set("account_type", "lookingForTalent");
+  signupParams.set("account_type", accountType ?? "talent");
   if (next) signupParams.set("next", next);
   const signupHref = `/signup${signupParams.size ? `?${signupParams}` : ""}`;
   useEffect(() => {

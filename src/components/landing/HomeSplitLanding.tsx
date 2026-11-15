@@ -25,21 +25,20 @@ export function HomeSplitLanding({ events }: { events: HeroEventCard[] }) {
             animate={{ opacity: 1, y: 0 }}
             transition={entrance}
           >
-            <p className="home-split__eyebrow">Talent. Industry. Community.</p>
             <h1 className="home-split__headline">
-              Powering the
+              Great productions <span className="home-split__headline-phrase">require the right</span>
               <br />
-              <em>dance</em> industry.
+              <em>movement</em>.
             </h1>
             <p className="home-split__subtext">
-              Discover the talent, work, and opportunities that bring dance to life. Motiion connects
-              professional profiles, industry tools, and community experiences in one place.
+              Discover, cast, and manage professional dancers for your next project.
             </p>
             <div className="home-split__ctas">
               <Link href="/signup" className="mkt-btn mkt-btn--primary home-split__cta">
-                Create account
+                Get started
                 <ArrowRight className="home-split__cta-icon" aria-hidden />
               </Link>
+              <Link href="/signup?account_type=talent" className="mkt-btn">For talent</Link>
             </div>
           </motion.div>
         </div>

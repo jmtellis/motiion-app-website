@@ -527,8 +527,7 @@ function OnboardingFlowContent({ profile, agencies, addingTalentShell = false, i
     const roleCards = (
       [
         ["talent", "Talent", "Build your career and find opportunities."],
-        ["industry", "Industry Professional", "Cast, hire, and work with dance talent."],
-        ["community", "Community Member", "Discover dancers, events, and stay connected."],
+        ["industry", "Find talent", "Cast, hire, and work with dance talent."],
       ] as const
     ).filter(([role]) => !addingTalentShell || role === "talent");
 

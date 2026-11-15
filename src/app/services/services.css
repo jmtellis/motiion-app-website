@@ -19,3 +19,10 @@
   .services-live, .services-upcoming { grid-template-columns: 1fr; }
   .services-upcoming { margin-top: 40px; padding-top: 28px; }
 }
+
+.services-page h1 { margin-bottom: 24px; }
+.services-hero-description { font-size: clamp(18px, 2vw, 22px); max-width: 780px; margin-bottom: 28px; }
+.services-page .project-plan > a { margin-top: auto; }
+.services-page .project-plan ul { margin: 0 0 24px; }
+.services-project-extras { margin-top: 72px; padding-top: 48px; border-top: 1px solid #ffffff1c; }
+.services-page .project-eyebrow { color: #b5c8b9; }

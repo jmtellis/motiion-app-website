@@ -16,6 +16,7 @@ export const footerColumns: FooterColumn[] = [
   {
     title: "Platform",
     links: [
+      { label: "For talent", href: "/for-talent" },
       { label: "Casting opportunities", href: "/open-calls" },
       { label: "Join Motiion", href: "/signup" },
       { label: "Login", href: "/login" },

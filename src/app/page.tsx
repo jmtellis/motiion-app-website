@@ -40,6 +40,7 @@ export default async function Home({
     searchParams,
     loadHeroEventCards(),
   ]);
+  if (params.audience === "talent") redirect("/for-talent");
   if (profile && isOnboardingComplete(profile)) {
     redirect(getProfileDestination(profile));
   }

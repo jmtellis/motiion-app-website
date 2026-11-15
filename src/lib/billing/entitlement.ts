@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { receiptIsActive, type ProjectReceipt } from "./project-catalog";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 export type EntitlementTier = "free" | "pro";
@@ -177,7 +178,15 @@ export async function getUserEntitlement(
   const [rows, status] = await Promise.all([loadAccountAccessRows(userId), loadAccountProStatus(userId)]);
   if (!status[entitlement.replace("_pro", "") as "talent" | "industry" | "community"]) return FREE_ENTITLEMENT;
   const details = entitlementFromAccessRows({ ...rows, entitlement });
-  return details.active ? details : { tier: "pro", active: true, status: "active", currentPeriodEnd: null };
+  if (details.active) return details;
+  if (entitlement === "industry_pro") {
+    const admin = createAdminSupabaseClient();
+    const result = admin ? await admin.from("project_purchases").select("*").eq("user_id",userId) : null;
+    if (result?.error) throw new Error("Could not refresh project purchases.");
+    const receipt = (result?.data as ProjectReceipt[] | undefined)?.filter(p => receiptIsActive(p)).sort((a,b) => Number(a.plan === "project_pass") - Number(b.plan === "project_pass"))[0];
+    if (receipt) return {tier:"pro",active:true,status:"active",currentPeriodEnd:receipt.expires_at,source:receipt.provider};
+  }
+  return { tier: "pro", active: true, status: "active", currentPeriodEnd: null };
 }
 
 export async function userHasPaidEntitlement(

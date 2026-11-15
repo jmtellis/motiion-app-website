@@ -9,7 +9,11 @@ const illustrations: Partial<Record<BenefitIconKey, string>> = {
   "user-circle": "people-cards", users: "training-steps", sparkles: "event-calendar",
 };
 
+// Hiring clips temporarily reuse the existing footage until new assets are ready.
 const talentVideoPreviews: Record<string, string> = {
+  "industry-navigator": "/marketing/videos/site-talent-1",
+  "industry-roster": "/marketing/videos/site-talent-2",
+  "industry-projects": "/marketing/videos/site-talent-3",
   "talent-portfolio": "/marketing/videos/site-talent-1",
   "talent-discovery": "/marketing/videos/site-talent-2",
   "talent-inbox": "/marketing/videos/site-talent-3",

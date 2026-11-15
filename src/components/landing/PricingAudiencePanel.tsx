@@ -2,15 +2,13 @@
 import { LandingAudienceProvider, useLandingAudience } from "./LandingAudienceContext";
 import { LandingAudienceChoices } from "./LandingAudienceChoices";
 import { AudiencePricingSection } from "./AudiencePricingSection";
-import { talentPricingContent, industryPricingContent, communityPricingContent } from "@/lib/marketing/audience-pricing";
+import { talentPricingContent, industryPricingContent } from "@/lib/marketing/audience-pricing";
 import { getIosAppStoreUrl } from "@/lib/referrals/app-store";
 import type { MarketingTab } from "@/lib/marketing/marketing-pages";
 function Plans() {
   const { audience } = useLandingAudience();
-  const content = { talent: talentPricingContent, casting: industryPricingContent, community: communityPricingContent }[audience];
-  const rows = audience === "community"
-    ? [["Community access", "Standard", "Premium"], ["Classes & events", "Browse", "Enhanced"], ["People discovery", "Standard", "Enhanced"], ["Community updates", "Standard", "Priority"]]
-    : [audience === "talent" ? ["Casting submissions", "5 total", "Unlimited"] : ["Published castings", "1 every rolling 30 days; 1 accepting applications", "Unlimited"], ["Headshots", "4", "10"], ["Profile videos", "Reel & slate", "All types"], ["Portfolio highlights", "2", "10"], ["Visuals per experience", "None", "3"], ...(audience === "talent" ? [["Profile matches", "Locked", "Unlocked"], ["Search listing", "Standard", "Priority"], ["Résumé PDF", "Locked", "Included"]] : [["Saved Talent", "Unlimited", "Unlimited"], ["Custom rosters", "3; unlimited talent", "Unlimited"], ["Roster sharing", "Not included", "Including expiring links"], ["Client shortlist review", "One project, once; all roles", "All projects"], ["Whole-cast schedule & messages", "Included", "Included"], ["Groups, group schedules & chats", "Existing access", "Create & manage"], ["Voice search", "Not included", "Included"]])];
+  const content = audience === "talent" ? talentPricingContent : industryPricingContent;
+  const rows = [audience === "talent" ? ["Casting submissions", "5 total", "Unlimited"] : ["Published castings", "1 every rolling 30 days; 1 accepting applications", "Unlimited"], ["Headshots", "4", "10"], ["Profile videos", "Reel & slate", "All types"], ["Portfolio highlights", "2", "10"], ["Visuals per experience", "None", "3"], ...(audience === "talent" ? [["Profile matches", "Locked", "Unlocked"], ["Search listing", "Standard", "Priority"], ["Résumé PDF", "Locked", "Included"]] : [["Saved Talent", "Unlimited", "Unlimited"], ["Custom rosters", "3; unlimited talent", "Unlimited"], ["Roster sharing", "Not included", "Including expiring links"], ["Client shortlist review", "One project, once; all roles", "All projects"], ["Whole-cast schedule & messages", "Included", "Included"], ["Groups, group schedules & chats", "Existing access", "Create & manage"], ["Voice search", "Not included", "Included"]])];
   return <>
     <LandingAudienceChoices />
     <div id="landing-audience-panel" role="tabpanel" aria-labelledby={`landing-audience-choice-${audience}`} className="py-12">

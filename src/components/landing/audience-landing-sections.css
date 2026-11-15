@@ -108,3 +108,7 @@
 .audience-features { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 32px; list-style: none; margin: 32px 0 0; padding: 0; }
 .audience-features li { border-top: 1px solid #ffffff18; padding-top: 20px; color: #a6aaaa; line-height: 1.7; }
 @media(max-width:767px) { .audience-features { grid-template-columns: 1fr; gap: 24px; } }
+
+.audience-features__title { margin: 0 0 12px; color: #f1f1f1; font-size: 21px; font-weight: 500; letter-spacing: -.03em; line-height: 1.3; }
+
+.audience-features__intro { margin-inline: auto; text-align: center; }

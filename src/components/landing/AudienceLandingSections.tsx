@@ -59,6 +59,8 @@ export function AudienceLandingSections({
   afterWorkflow,
   featureShowcase,
   showPricing = true,
+  idPrefix = "",
+  combinedWorkflowFeatures,
 }: {
   content: AudiencePageContent;
   dark?: boolean;
@@ -67,10 +69,12 @@ export function AudienceLandingSections({
   afterWorkflow?: ReactNode;
   featureShowcase?: ReactNode;
   showPricing?: boolean;
+  idPrefix?: string;
+  combinedWorkflowFeatures?: { title: string; description: string }[];
 }) {
   return (
     <>
-      <AudienceSection id="benefits" altBackground={false} dark={dark} flush>
+      <AudienceSection id={`${idPrefix}benefits`} altBackground={false} dark={dark} flush>
         {/* One reveal per section — the cards inside no longer reveal again. */}
         <Reveal amount={0.15} distance={20}>
           {illustratedBenefits ? <IllustratedBenefits benefits={content.benefits} /> : <AudienceBenefitsShowcase benefits={content.benefits} dark={dark} />}
@@ -79,7 +83,15 @@ export function AudienceLandingSections({
 
       {afterBenefits}
 
-      {featureShowcase ?? <AudienceSection id="workflow" altBackground={true} dark={dark}>
+      {combinedWorkflowFeatures ? <AudienceSection id={`${idPrefix}features`} altBackground={false} dark={dark}>
+        <h2 className="mkt-heading text-center">{content.workflowTitle}</h2>
+        <p className="mkt-lead audience-features__intro mt-4 text-center">{content.trustTitle}</p>
+        <ul className="audience-features">
+          {combinedWorkflowFeatures.map(feature => <li key={feature.title}>
+            <h3 className="audience-features__title">{feature.title}</h3><p>{feature.description}</p>
+          </li>)}
+        </ul>
+      </AudienceSection> : featureShowcase ?? <AudienceSection id={`${idPrefix}workflow`} altBackground={true} dark={dark}>
         <Reveal amount={0.15} distance={20}>
           <div className="audience-workflow">
             <div className="audience-workflow__steps">
@@ -118,7 +130,7 @@ export function AudienceLandingSections({
 
       {afterWorkflow}
 
-      {!featureShowcase && <AudienceSection id="features" altBackground={false} dark={dark}>
+      {!featureShowcase && !combinedWorkflowFeatures && <AudienceSection id={`${idPrefix}features`} altBackground={false} dark={dark}>
         <h2 className="mkt-heading text-center">Features</h2>
         <p className="mkt-lead mt-4">{content.trustTitle}</p>
         <ul className="audience-features">
@@ -127,7 +139,7 @@ export function AudienceLandingSections({
       </AudienceSection>}
 
       {showPricing && content.pricing ? (
-        <AudienceSection id="pricing" altBackground={true} dark={dark}>
+        <AudienceSection id={`${idPrefix}pricing`} altBackground={true} dark={dark}>
           <Reveal amount={0.14} distance={20}>
             <AudiencePricingSection content={content.pricing} dark={dark} />
           </Reveal>
@@ -135,7 +147,7 @@ export function AudienceLandingSections({
       ) : null}
 
       <AudienceSection
-        id="faq"
+        id={`${idPrefix}faq`}
         altBackground={false}
         dark={dark}
         innerClassName="mkt-container--reading"

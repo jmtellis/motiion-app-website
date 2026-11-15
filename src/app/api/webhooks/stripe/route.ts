@@ -1,3 +1,4 @@
+import { syncProjectCheckout, syncProjectSubscription, revokeProjectCharge } from "@/lib/billing/project-sync";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getIndustryIdentityVerificationBySessionId, updateIndustryIdentityVerificationBySessionId, upsertIndustryIdentityVerification } from "@/lib/billing/identity";
@@ -24,8 +25,9 @@ export async function POST(request: Request) {
     if (seen) return NextResponse.json({ ok: true, duplicate: true });
     let subscriptionId: string | null = null;
     let expectedUserId: string | undefined;
-    if (event.type === "checkout.session.completed") {
+    if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
       const session = event.data.object;
+      if (session.metadata?.project_plan) await syncProjectCheckout(await stripe.checkout.sessions.retrieve(session.id), stripe, event.created);
       // Class/event ticket purchases have their own fulfillment path.
       if (session.mode === "subscription") {
         subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id ?? null;
@@ -39,7 +41,13 @@ export async function POST(request: Request) {
     if (subscriptionId) {
       // Retrieve current state: Stripe does not guarantee event delivery order.
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-      await syncIndustrySubscription(subscription, event.id, event.created, expectedUserId);
+      if (!(await syncProjectSubscription(subscription, event.created))) await syncIndustrySubscription(subscription, event.id, event.created, expectedUserId);
+    }
+    if (event.type === "charge.refunded" && event.data.object.refunded) await revokeProjectCharge(event.data.object, stripe, event.created);
+    if (event.type === "charge.dispute.created" || event.type === "radar.early_fraud_warning.created") {
+      const raw = event.data.object.charge;
+      const chargeId = typeof raw === "string" ? raw : raw?.id;
+      if (chargeId) await revokeProjectCharge(await stripe.charges.retrieve(chargeId), stripe, event.created);
     }
     if (event.type.startsWith("identity.verification_session.")) {
       const snapshot = event.data.object as Stripe.Identity.VerificationSession;

@@ -75,7 +75,7 @@ export const createAccountHeroCta = {
         id: "talent",
         label: "Creative Talent",
         description: "For dancers and choreographers building a profile and managing their career.",
-        href: "/signup",
+        href: "/signup?account_type=talent",
       },
       {
         id: "industry",
@@ -97,7 +97,7 @@ export const learnMoreHeroCta = {
         id: "talent",
         label: "Talent",
         description: "Create a profile. Get discovered. Book work.",
-        href: "/?audience=talent",
+        href: "/for-talent",
       },
       {
         id: "casting",
@@ -242,7 +242,7 @@ export const homeSignupSection = {
       id: "talent",
       label: "Creative Talent",
       description: "For dancers and choreographers building a profile and managing their career.",
-      href: "/signup",
+      href: "/signup?account_type=talent",
       cta: "Create your profile",
     },
     {
@@ -356,7 +356,7 @@ export const homeAudienceLinks = [
   {
     label: "Professional Dancers",
     description: "Create a profile. Get discovered. Book work.",
-    href: "/?audience=talent",
+    href: "/for-talent",
   },
   {
     label: "Industry Professional",
@@ -412,7 +412,7 @@ export const audienceProfiles: Record<AudienceKey, AudienceProfile> = {
       "Search-safe profile handling protects personal context while staying discoverable.",
       "Designed to reduce missed opportunities caused by outdated materials.",
     ],
-    ctaPrimary: { label: "Join the beta", href: "/signup" },
+    ctaPrimary: { label: "Join the beta", href: "/signup?account_type=talent" },
     ctaSecondary: {
       label: "Search talent",
       href: "/search",

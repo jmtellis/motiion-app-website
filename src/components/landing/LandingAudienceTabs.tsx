@@ -14,7 +14,6 @@ import "./landing-audience.css";
 const heroAudiences: { id: MarketingTab; label: string }[] = [
   { id: "talent", label: "Talent" },
   { id: "casting", label: "Industry" },
-  { id: "community", label: "Community" },
 ];
 
 /**

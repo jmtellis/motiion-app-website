@@ -1,4 +1,3 @@
-import { INDUSTRY_OFFER } from "@/lib/billing/industry-offer";
 import { getIosAppStoreUrl } from "@/lib/referrals/app-store";
 
 export type PricingPlan = {
@@ -49,7 +48,7 @@ export const talentPricingContent: IndustryPricingContent = {
     "description": "Explore Motiion with the essentials.",
     "cta": {
       "label": "Sign up free",
-      "href": "/signup"
+      "href": "/signup?account_type=talent"
     },
     "features": [
       "Up to 4 headshots",
@@ -84,45 +83,20 @@ export const talentPricingContent: IndustryPricingContent = {
 };
 
 export const industryPricingContent: IndustryPricingContent = {
-  "variant": "industry",
-  "title": "Industry plans",
-  "description": "Start free. Upgrade when you need more.",
-  "free": {
-    "name": "Free",
-    "price": "$0",
-    "period": "forever",
-    "description": "Explore Motiion with the essentials.",
-    "cta": {
-      "label": "Sign up free",
-      "href": "/signup?account_type=lookingForTalent"
-    },
-    "features": [
-      "One new casting every rolling 30 days; one accepting applications",
-      "Unlimited Saved Talent and 3 custom rosters, with unlimited talent",
-      "One-time client shortlist review on one project, all roles",
-      "Whole-cast schedule, individual messages and project conversation",
-      "Existing feedback, conversations and rosters stay accessible"
-    ]
+  variant: "industry",
+  title: "Casting and project plans",
+  description: "Choose a Project Pass or a monthly plan.",
+  free: {
+    name: "Explore", price: "$0", description: "Browse dancers before choosing a plan.",
+    cta: { label: "Explore free", href: "/signup?account_type=lookingForTalent" },
+    features: ["Browse dancer profiles", "Choose a plan when you’re ready to run a project"]
   },
-  "pro": {
-    "name": "Industry Pro",
-    "price": INDUSTRY_OFFER.price,
-    "period": "USD / month",
-    "description": "Tools to discover talent and manage your castings.",
-    "cta": {
-      "label": "Get Industry Pro",
-      "href": "/signup?account_type=lookingForTalent&plan=pro"
-    },
-    "features": [
-      "Unlimited new and open castings",
-      "Unlimited custom rosters and unlimited talent",
-      "Roster sharing, including expiring access",
-      "Client shortlist review across all projects and roles",
-      "Project groups with group schedules and contextual chats",
-      "Voice search for talent",
-      "Industry benefits also included with Dual Pro; invited participants join free"
-    ],
-    "highlighted": true
+  pro: {
+    name: "Studio", price: "$149", period: "USD / month",
+    description: "Casting and cast coordination for one active project.",
+    cta: { label: "Get started", href: "/checkout?plan=studio" },
+    features: ["1 active project at a time", "3 team members", "Reuse your slot when a project wraps", "Project Pass and Production House options on our pricing page"],
+    highlighted: true
   }
 };
 
@@ -137,7 +111,7 @@ export const communityPricingContent: IndustryPricingContent = {
     "description": "Explore Motiion with the essentials.",
     "cta": {
       "label": "Sign up free",
-      "href": "/signup"
+      "href": "/signup?account_type=talent"
     },
     "features": [
       "Up to 4 headshots",

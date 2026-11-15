@@ -12,8 +12,7 @@ export const LANDING_AUDIENCE_CHOICES_ID = "landing-audience-choices";
 
 const choices: { id: MarketingTab; label: string; illustration: string; description: string }[] = [
   { id: "talent", label: "Talent", illustration: "talent-portfolio", description: "Your work, in view." },
-  { id: "casting", label: "Industry", illustration: "industry-roster", description: "The right people, together." },
-  { id: "community", label: "Community", illustration: "community-connections", description: "Closer to the dance world." },
+  { id: "casting", label: "Find talent", illustration: "industry-roster", description: "The right people, together." },
 ];
 
 export function LandingAudienceChoices() {

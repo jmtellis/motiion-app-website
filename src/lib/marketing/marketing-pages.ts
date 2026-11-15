@@ -4,13 +4,13 @@ import { industryPricingContent, talentPricingContent } from "@/lib/marketing/au
 
 export type MarketingTab = "community" | "talent" | "casting";
 
-export const JOIN_BETA_CTA = { label: "Sign up", href: "/signup" } as const;
+export const JOIN_BETA_CTA = { label: "Create your profile", href: "/signup?account_type=talent" } as const;
 export const INDUSTRY_PRO_SIGNUP_CTA = { label: "Sign up", href: "/signup" } as const;
 
 /** Root landing and other pages where no audience tab is selected. */
 export type MarketingHeaderTab = MarketingTab | null;
 
-export const LANDING_DEFAULT_AUDIENCE: MarketingTab = "talent";
+export const LANDING_DEFAULT_AUDIENCE: MarketingTab = "casting";
 
 export type BenefitIconKey =
   | "images"
@@ -65,7 +65,7 @@ export const talentPageContent: AudiencePageContent = {
   summary:
     "Our mobile app brings your portfolio and experience together, helps you get discovered, and connects you to your next opportunity.",
   heroCtas: {
-    primary: { label: "Create your profile", href: "/signup" },
+    primary: { label: "Create your profile", href: "/signup?account_type=talent" },
   },
   benefitsTitle: "What you can do",
   benefits: [
@@ -131,47 +131,47 @@ export const talentPageContent: AudiencePageContent = {
       question: "Is there a cost to join?",
       answer:
         "You can start on the Free plan and upgrade to Pro when you need more visibility, media, and workflow tools.",
-      answerLink: { label: "See pricing", href: "/pricing" },
+      answerLink: { label: "See pricing", href: "/pricing?audience=talent" },
     },
   ],
   pricing: talentPricingContent,
 };
 
 export const castingPageContent: AudiencePageContent = {
-  eyebrow: "Industry Professionals",
+  eyebrow: "Casting & creative teams",
   headline: "Find your talent. Bring your project together.",
   summary:
-    "Our mobile app helps you discover dancers and choreographers, build rosters, and manage castings on the go.",
+    "Discover dancers and choreographers, organize your rosters, and manage projects across the website and mobile app.",
   heroCtas: {
-    primary: { label: "Create an industry account", href: "/signup" },
+    primary: { label: "Start your application", href: "/signup" },
   },
   benefitsTitle: "What you can do",
   benefits: [
     {
-      title: "Discover talent",
+      title: "Find the right dancers.",
       description:
-        "Search and review professional profiles by style, experience, and location. Verification is shown when a credential has been confirmed, not assumed for every profile.",
+        "Start with your brief. Explore Motiion’s network by style, experience, and location to find dancers who fit your vision.",
       icon: "search",
       featured: true,
       preview: "industry-navigator",
     },
     {
-      title: "Build your roster",
-      description: "Save and organize the talent you want to work with again.",
+      title: "Build your cast.",
+      description: "Share casting opportunities, review submissions, and collaborate on shortlists to choose your cast.",
       icon: "bookmark",
       featured: true,
       preview: "industry-roster",
     },
     {
-      title: "Manage castings",
+      title: "Confirm your cast.",
       description:
-        "Run projects, collect submissions, and collaborate with your team from discovery through a decision.",
+        "Check availability, place dancers on hold, and confirm your cast. Move confirmed dancers into bookings whenever your project needs them.",
       icon: "folder-kanban",
       featured: true,
       preview: "industry-projects",
     },
   ],
-  workflowTitle: "How it works for industry professionals",
+  workflowTitle: "From your brief to your cast",
   workflowSteps: [
     "Create your account and tell us how your team hires and manages talent.",
     "Search the Motiion talent database and save people to your roster.",
@@ -186,7 +186,7 @@ export const castingPageContent: AudiencePageContent = {
   ],
   faq: [
     {
-      question: "Who is the industry professional experience for?",
+      question: "Who is Motiion built for?",
       answer:
         "Casting directors, creative directors, producers, managers, agencies, recruiters, choreographers hiring for projects, and any team that discovers, organizes, and books dance talent.",
     },
@@ -196,85 +196,34 @@ export const castingPageContent: AudiencePageContent = {
         "No. Motiion is infrastructure for discovery, roster management, and project workflow—we do not represent talent.",
     },
     {
-      question: "Can we search before signing up?",
-      answer:
-        "Yes. You can browse public talent profiles, then create an account when you are ready to build rosters, create projects, and collaborate.",
+      question: "How do I get started?",
+      answer: "Create an account and complete your hiring application. Once approved, you can set up your workspace and start discovering talent.",
+    },
+    {
+      question: "Can I organize talent for different projects?",
+      answer: "Yes. Save talent to rosters and keep project details, casting roles, and submissions together so your team can review the right people in context.",
+    },
+    {
+      question: "Can I share a shortlist with my client?",
+      answer: "Yes. Share shortlists for client review and keep casting decisions connected to the project. Available sharing tools and limits depend on your plan.",
+    },
+    {
+      question: "Can I use Motiion on the web and on my phone?",
+      answer: "Yes. Use the website for your workspace and the mobile app to stay connected to your talent and projects on the go.",
+    },
+    {
+      question: "Which plan is right for my team?",
+      answer: "Compare casting, roster, and collaboration limits to choose the plan that fits your workload.",
+      answerLink: { label: "Compare plans", href: "/pricing?audience=casting" },
     },
   ],
   pricing: industryPricingContent,
 };
 
-export const communityPageContent: AudiencePageContent = {
-  eyebrow: "Community Members",
-  headline: "Find your place in dance.",
-  summary:
-    "Our mobile app connects you to the people, classes, and events that keep you part of the dance world.",
-  heroCtas: {
-    primary: { label: "Join the community", href: "/signup" },
-  },
-  benefitsTitle: "What you can do",
-  benefits: [
-    {
-      title: "Discover people",
-      description: "Explore dancers and the work they’re part of.",
-      icon: "user-circle",
-      featured: true,
-      preview: "talent-discovery",
-    },
-    {
-      title: "Find classes and training",
-      description: "Look for classes, workshops, and programs in the same place you follow the scene.",
-      icon: "users",
-      featured: true,
-    },
-    {
-      title: "Explore events",
-      description: "Discover performances and community gatherings, including who is part of the cast.",
-      icon: "sparkles",
-      featured: true,
-      preview: "community-event",
-    },
-  ],
-  workflowTitle: "How it works for the community",
-  workflowSteps: [
-    "Create a free Motiion account and tell us you are here for the community.",
-    "Browse events, classes, and programs happening around you.",
-    "Save what you care about and get the details before you go.",
-    "Keep coming back as the calendar, the rooms, and the people change.",
-  ],
-  trustTitle: "Built for people who show up",
-  trustPoints: [
-    "Made for dancers, students, and fans who want a clearer way into the scene.",
-    "Keeps community discovery on the same platform hiring teams already use.",
-    "Grows from events and class into a longer relationship with the work.",
-  ],
-  faq: [
-    {
-      question: "Who is the community experience for?",
-      answer:
-        "Anyone who wants to find dance events, classes, and programs—students, working dancers, and people who love the scene but are not hiring or building a booking profile yet.",
-    },
-    {
-      question: "How is this different from a talent profile?",
-      answer:
-        "Community is for discovery and showing up. A talent profile is for getting hired. You can start in the community and add a professional profile later if you want to be discovered for work.",
-    },
-    {
-      question: "Do I need an industry account to browse?",
-      answer:
-        "No. Community accounts are for finding events, classes, and programs—not for running castings or hiring.",
-    },
-    {
-      question: "Is there a cost to join?",
-      answer: "You can create a free community account and start exploring from there.",
-    },
-  ],
-};
-
 export const landingAudienceSegments = [
-  { id: "casting", label: "Industry Professionals", content: castingPageContent },
+  { id: "casting", label: "Casting & creative teams", content: castingPageContent },
   { id: "talent", label: "Professional Dancers", content: talentPageContent },
-  { id: "community", label: "Community Members", content: communityPageContent },
+
 ] as const;
 
 export function parseAudienceParam(value: string | undefined): MarketingTab {

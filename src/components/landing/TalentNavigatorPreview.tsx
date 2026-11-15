@@ -1,58 +1,51 @@
 import Image from "next/image";
-import { ArrowUp, Bell, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Folder, Heart, Library, Mail, PanelLeftClose, Search, Settings, SlidersHorizontal, Users, Mic } from "lucide-react";
+import { CalendarDays, Folder, Library, Mail, Search, Settings, ArrowUpRight, Plus } from "lucide-react";
 import { MotiionWordmark } from "@/components/brand/MotiionWordmark";
 import { previewHeadshot } from "@/lib/marketing/preview-media";
-import "./talent-navigator-preview.css";
+import "./hiring-workspace-preview.css";
 
 const navigation = [
-  { label: "Discover", icon: Search },
-  { label: "Projects", icon: Folder },
-  { label: "Calendar", icon: CalendarDays },
-  { label: "Roster", icon: Library },
-  { label: "Inbox", icon: Mail },
-  { label: "Notifications", icon: Bell },
+  { label: "Discover", icon: Search }, { label: "Projects", icon: Folder },
+  { label: "Inbox", icon: Mail }, { label: "Calendar", icon: CalendarDays }, { label: "Roster", icon: Library },
 ];
+// Source: seahawks.com/photos/2025-super-bowl-lx-seahawks-patriots-bad-bunny-halftime-show
+// Public reference image; this is an illustrative project, not a customer claim.
+const projectImage = "https://static.clubs.nfl.com/image/upload/t_new_photo_album/f_auto/seahawks/hkstrphes29bs8rf24zi.jpg";
 
-/** A presentation-only Navigator scene, using existing illustrative marketing assets. */
+/** Illustrative project data; this preview never displays private workspace records. */
 export function TalentNavigatorPreview() {
-  return (
-    <section className="navigator-proof" id="talent-navigator-preview" aria-label="Inside Talent Navigator">
-      <figure className="navigator-proof__figure">
-        <div className="navigator-proof__window" role="img" aria-label="Motiion Talent Navigator preview: a workspace sidebar, a grid of dancer portraits, and a search field for describing the talent you want to find.">
-          <div className="navigator-proof__interface" aria-hidden="true">
-            <aside className="navigator-proof__sidebar">
-              <div className="navigator-proof__brand"><MotiionWordmark height={9} /><PanelLeftClose size={14} /></div>
-              <span className="navigator-proof__group-label">Workspace</span>
-              <div className="navigator-proof__nav">
-                {navigation.map(({ label, icon: Icon }, index) => (
-                  <div key={label} className={`navigator-proof__nav-item ${index === 0 ? "is-active" : ""}`}><Icon size={15} strokeWidth={1.65} /><span>{label}</span></div>
-                ))}
-              </div>
-              <div className="navigator-proof__sidebar-bottom"><Settings size={15} /><span>Settings</span></div>
-              <div className="navigator-proof__account"><span className="navigator-proof__avatar">M</span><span>Motiion workspace<small>Industry</small></span><ChevronDown size={12} /></div>
-            </aside>
-            <div className="navigator-proof__canvas">
-              <div className="navigator-proof__grid">
-                {Array.from({ length: 15 }, (_, index) => (
-                  <div key={index} className={`navigator-proof__portrait ${index === 7 ? "is-featured" : ""}`}>
-                    <Image src={previewHeadshot(index + 3)} alt="" fill sizes="(max-width: 639px) 150px, (max-width: 1023px) 200px, 260px" />
-                    {index === 7 && <div className="navigator-proof__profile"><span>Featured talent<small>Los Angeles, CA</small></span><Heart size={17} /></div>}
-                  </div>
-                ))}
-              </div>
-              <div className="navigator-proof__vignette" />
-              <div className="navigator-proof__view"><span>Discover</span><span>Browse <small>PRO</small></span></div>
-              <span className="navigator-proof__previous"><ChevronLeft size={18} /></span>
-              <span className="navigator-proof__next"><ChevronRight size={18} /></span>
-              <div className="navigator-proof__composer">
-                <div className="navigator-proof__filters"><span><Users size={13} /> Roles <ChevronDown size={11} /></span><span><SlidersHorizontal size={13} /> Filters <ChevronDown size={11} /></span></div>
-                <div className="navigator-proof__input"><span>Who are you looking for?</span><Mic size={17} /><span className="navigator-proof__send"><ArrowUp size={19} /></span></div>
-              </div>
+  return <section className="hiring-preview mkt-container" aria-labelledby="hiring-preview-heading">
+    <div className="hiring-preview__intro">
+      <h2 id="hiring-preview-heading" className="mkt-heading">Bring your team and cast together.</h2>
+      <p className="mkt-lead">Give your cast, schedules, and conversations a shared workspace so everyone moves together.</p>
+    </div>
+    <figure>
+      <div className="hiring-preview__window" role="img" aria-label="Illustrative Motiion project workspace for Bad Bunny’s Super Bowl LX Halftime Show, with completed casting, cast groups, confirmations, rehearsals, and project messages.">
+        <div className="hiring-preview__interface" aria-hidden="true">
+          <aside className="hiring-preview__sidebar"><MotiionWordmark height={11} />
+            <div className="hiring-preview__nav">{navigation.map(({ label, icon: Icon }) => <div key={label} className={label === "Projects" ? "is-active" : ""}><Icon size={17} /><span>{label}</span></div>)}</div>
+            <div className="hiring-preview__account"><Settings size={16} /><span>Creative team<small>Motiion workspace</small></span></div>
+          </aside>
+          <div className="hiring-preview__main">
+            <div className="hiring-preview__project-heading">
+              <div className="hiring-preview__cover"><Image src={projectImage} unoptimized alt="" fill sizes="100px" /></div>
+              <div className="hiring-preview__project-identity"><h3>Bad Bunny · Super Bowl LX</h3><p>Live performance · Santa Clara</p><span className="hiring-preview__production-status">In production</span></div>
+              <span className="hiring-preview__new"><Plus size={14} /> Invite</span>
+            </div>
+            <div className="hiring-preview__tabs"><strong>Manage</strong><span>Schedule</span><span>Messages <small>3</small></span></div>
+            <div className="hiring-preview__tools">
+              <div className="hiring-preview__tool"><span className="hiring-preview__status">Selections complete</span><h4>Casting</h4><strong>48 dancers selected</strong><p>3 roles · 240 submissions reviewed</p><span className="hiring-preview__tool-link">View selections <ArrowUpRight size={13} /></span></div>
+              <div className="hiring-preview__tool"><div className="hiring-preview__members">{[0, 1, 2, 3].map(member => <Image key={member} src={previewHeadshot(member)} alt="" width={28} height={28} />)}<span>+48</span></div><h4>People</h4><strong>52 people · 4 groups</strong><p>Principal · Salsa dancers · Field cast · Creative team</p><span className="hiring-preview__tool-link">Manage people <ArrowUpRight size={13} /></span></div>
+              <div className="hiring-preview__tool"><span className="hiring-preview__status">Everyone confirmed</span><h4>Confirmations</h4><strong>48 of 48 confirmed</strong><p>Availability collected · No pending holds</p><span className="hiring-preview__tool-link">View confirmations <ArrowUpRight size={13} /></span></div>
+            </div>
+            <div className="hiring-preview__activity">
+              <div className="hiring-preview__panel"><h4>Upcoming schedule</h4><div className="hiring-preview__schedule-row"><span>9:00 AM</span><div><strong>Full cast rehearsal</strong><p>All dancers · Rehearsal studio</p></div></div><div className="hiring-preview__schedule-row"><span>1:00 PM</span><div><strong>Field blocking</strong><p>Field cast · Stadium</p></div></div></div>
+              <div className="hiring-preview__panel"><h4>Project messages</h4><div className="hiring-preview__message"><Image src={previewHeadshot(4)} alt="" width={28} height={28} /><div><strong>Creative team <small>12 min ago</small></strong><p>Updated rehearsal notes are ready for tomorrow’s full cast run.</p></div></div><div className="hiring-preview__message"><Image src={previewHeadshot(5)} alt="" width={28} height={28} /><div><strong>Salsa dancers <small>28 min ago</small></strong><p>Call time confirmed. See everyone at the studio!</p></div></div></div>
             </div>
           </div>
         </div>
-        <figcaption className="navigator-proof__caption"><span><span className="navigator-proof__dot" />Talent Navigator</span><span>Discover the people behind the work.<small>Product preview</small></span></figcaption>
-      </figure>
-    </section>
-  );
+      </div>
+      <figcaption>Illustrative workspace</figcaption>
+    </figure>
+  </section>;
 }

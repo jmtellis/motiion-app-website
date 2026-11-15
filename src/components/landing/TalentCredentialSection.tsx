@@ -7,7 +7,7 @@ import { motion, useReducedMotion, useScroll, useSpring, useTransform } from "mo
 import "./talent-credential.css";
 
 /** Artwork and proportions mirror DigitalCredentialLayout in the iOS app. */
-export function TalentCredentialSection() {
+export function TalentCredentialSection({ audience = "talent" }: { audience?: "talent" | "hiring" }) {
   const sectionRef = useRef<HTMLElement>(null);
   const reduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({
@@ -22,17 +22,17 @@ export function TalentCredentialSection() {
   const shine = useTransform(progress, [0, 0.5, 1], ["-80%", "0%", "80%"]);
 
   return (
-    <section ref={sectionRef} id="credential" className="talent-credential" aria-labelledby="credential-heading">
+    <section ref={sectionRef} id="credential" className={`talent-credential${audience === "hiring" ? " talent-credential--hiring" : ""}`} aria-labelledby="credential-heading">
       <div className="talent-credential__stage mkt-container">
         <div className="talent-credential__copy">
-          <p className="talent-credential__eyebrow">Your Motiion credential</p>
-          <h2 id="credential-heading">Make your<br />{" "}<em>introduction.</em></h2>
-          <p className="talent-credential__description">Your name. Your work. One scan away. Share a direct connection to your portfolio, wherever you meet.</p>
+          {audience === "talent" && <p className="talent-credential__eyebrow">Your Motiion credential</p>}
+          <h2 id="credential-heading">{audience === "hiring" ? <>A better way to work with <em>dancers</em>.</> : <>Make your<br />{" "}<em>introduction.</em></>}</h2>
+          <p className="talent-credential__description">{audience === "hiring" ? "Your credential connects you to Motiion’s network of dancers and creative teams. Together, we’re building clearer communication, more organized projects, and better experiences for everyone involved." : "Your name. Your work. One scan away. Share a direct connection to your portfolio, wherever you meet."}</p>
         </div>
 
         <div className="talent-credential__visual">
           <div className="talent-credential__glow" aria-hidden="true" />
-          <div className="talent-credential__perspective" role="img" aria-label="Jay Tellis's Motiion credential, member 0000007, with a QR code linking to his profile">
+          <div className="talent-credential__perspective" role="img" aria-label={`Jay Tellis’s Motiion credential${audience === "hiring" ? ", Creative Director" : ""}, member 0000007, with a QR code linking to his profile`}>
             <motion.div
               className="talent-credential__card"
               style={{ rotateY: reduceMotion ? 0 : rotateY, rotateZ: reduceMotion ? 0 : rotateZ, rotateX: reduceMotion ? 0 : rotateX }}
@@ -45,7 +45,10 @@ export function TalentCredentialSection() {
                 <div className="talent-credential__portrait">
                   <Image src="/marketing/credential/j-tellis.jpg" alt="" fill sizes="(max-width: 767px) 200px, 280px" />
                 </div>
-                <div className="talent-credential__name">Jay Tellis</div>
+                <div className="talent-credential__identity">
+                  <div className="talent-credential__name">Jay Tellis</div>
+                  {audience === "hiring" && <div className="talent-credential__role">Creative Director</div>}
+                </div>
                 <div className="talent-credential__member">0000007</div>
                 <motion.div className="talent-credential__shine" style={{ x: reduceMotion ? "0%" : shine }} />
               </div>

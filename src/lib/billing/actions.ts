@@ -1,36 +1,12 @@
 "use server";
 
-import { requireIndustryApproval } from "@/lib/talent-buyers/require-industry-approval";
-import { hasIndustryProAccess } from "@/lib/billing/gate";
-import { trackServerEvent } from "@/lib/analytics/track-server";
-import { createBillingPortalSession, createIndustryCheckoutSession, getStripeClient } from "@/lib/billing/stripe";
+import { createBillingPortalSession, getStripeClient } from "@/lib/billing/stripe";
 import { findAccountStripeCustomerIds } from "@/lib/billing/account-deletion";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export async function startIndustryCheckout(): Promise<{ url: string | null; error?: string }> {
-  const supabase = await createServerSupabaseClient();
-  if (!supabase) return { url: null, error: "Supabase is not configured." };
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user?.email) return { url: null, error: "You must be signed in." };
-
-  const approval = await requireIndustryApproval(user.id);
-  if (!approval.ok) return { url: null, error: approval.error };
-  if (await hasIndustryProAccess(user.id)) return { url: null, error: "Industry Pro is already active. Manage your plan in Settings." };
-
-  const priceId = process.env.STRIPE_INDUSTRY_PRICE_ID;
-  if (!priceId) return { url: null, error: "Billing is not configured yet." };
-
-  await trackServerEvent("paywall_cta_tapped", { plan: "industry_pro" });
-
-  return createIndustryCheckoutSession({
-    userId: user.id,
-    email: user.email,
-    priceId,
-  });
+  return { url: "/pricing" };
 }
 
 export async function openBillingPortal(): Promise<{ url: string | null; error?: string }> {

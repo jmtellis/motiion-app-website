@@ -117,11 +117,6 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
-        source: "/for-talent",
-        destination: "/?audience=talent",
-        permanent: false,
-      },
-      {
         source: "/for-casting",
         destination: "/?audience=casting",
         permanent: false,

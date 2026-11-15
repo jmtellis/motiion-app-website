@@ -8,11 +8,13 @@ function cn(...classes: Array<string | false | null | undefined>) {
 
 export function IosDownloadHeroButton({
   dark = false,
+  iconOnly = false,
   className,
   variant = "secondary",
   label = iosHeroCta.label,
 }: {
   dark?: boolean;
+  iconOnly?: boolean;
   className?: string;
   label?: string;
   /** Quiet outlined companion by default; `primary` for standalone use. */
@@ -23,6 +25,7 @@ export function IosDownloadHeroButton({
   return (
     <a
       href={getIosAppStoreUrl()}
+      aria-label={iconOnly ? "Download Motiion on the App Store" : undefined}
       className={cn(
         "mkt-btn",
         variant === "primary" ? "mkt-btn--primary" : "mkt-btn--secondary",
@@ -30,7 +33,7 @@ export function IosDownloadHeroButton({
       )}
     >
       <AppleLogo className="h-[1.125rem] w-[1.125rem] shrink-0" />
-      {label}
+      {iconOnly ? null : label}
     </a>
   );
 }

@@ -86,8 +86,8 @@
   max-width: 36rem;
 }
 
-.landing-audience-panel #benefits > .mkt-section-y {
-  padding-top: 2rem;
+.landing-audience-panel [id$="-benefits"] > .mkt-section-y {
+  padding-top: var(--mkt-section-y, 3.5rem);
   padding-bottom: var(--mkt-section-y, 3.5rem);
 }
 
@@ -221,7 +221,7 @@
 /* Audience selection leads into the text and illustrations below the hero. */
 .landing-audience-panel > .landing-audience-choices { padding: 8px 24px 0; }
 .landing-audience-choices__choice:focus-visible { outline-color: var(--accent); }
-.landing-audience-panel .landing-audience-intro__inner { padding-top: 24px; }
+.landing-audience-panel .landing-audience-intro__inner { padding-top: var(--mkt-section-y, 3.5rem); }
 @media(max-width:767px) {
   .landing-audience-choices__choice { padding-inline: 20px; }
 }

@@ -1,9 +1,9 @@
 "use client";
-import { INDUSTRY_OFFER } from "@/lib/billing/industry-offer";
+import Link from "next/link";
 
 import { useState, useTransition } from "react";
 
-import { openBillingPortal, startIndustryCheckout } from "@/lib/billing/actions";
+import { openBillingPortal } from "@/lib/billing/actions";
 import type { EntitlementTier, UserEntitlement } from "@/lib/billing/entitlement";
 
 function formatPeriodEnd(value: string | null) {
@@ -49,14 +49,14 @@ export function BuyerBillingSection({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-[var(--ui-text)]">
-            {isPro ? "Industry Pro" : "Free plan"}
+            {isPro ? "Paid account access" : "Free plan"}
           </p>
           <p className="mt-1 text-sm text-[var(--ui-muted)]">
             {isPro
               ? renewal
                 ? `Access through ${renewal}.`
                 : "Your subscription is active."
-              : `${INDUSTRY_OFFER.description} Eligible promotion codes can be entered at checkout.`}
+              : "Choose a Project Pass or monthly plan."}
           </p>
         </div>
         {isPro && source === "apple_iap" ? (
@@ -73,14 +73,7 @@ export function BuyerBillingSection({
             {isPending ? "Opening…" : "Manage billing"}
           </button>
         ) : (
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={() => go(startIndustryCheckout)}
-            className="bd-btn-primary disabled:opacity-50"
-          >
-            {isPending ? "Redirecting…" : INDUSTRY_OFFER.cta}
-          </button>
+          <Link href="/pricing" className="bd-btn-primary">View plans</Link>
         )}
       </div>
       {error ? <p className="ui-notice mt-3" data-tone="error" role="alert">{error}</p> : null}

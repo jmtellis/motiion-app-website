@@ -1,3 +1,4 @@
+import { ProjectAccountSummary } from "@/components/billing/ProjectAccountSummary";
 import { ReferralsPanel } from "@/components/settings/ReferralsPanel";
 import { NotificationSettingsSection } from "@/components/settings/NotificationSettingsSection";
 import { BlockedUsersSection } from "@/components/settings/BlockedUsersSection";
@@ -89,6 +90,7 @@ export default async function BuyerSettingsPage({
                     description="Your subscription plan and payment settings."
                     size="dashboard"
                   />
+                  <ProjectAccountSummary />
                   <BuyerBillingSection
                     tier={entitlement.tier}
                     active={entitlement.active}

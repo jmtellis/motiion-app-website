@@ -24,7 +24,7 @@ import { marketingPageLinkCurrent, marketingPageLinks } from "@/lib/marketing/si
 function getHeaderSignupCta(activeTab: MarketingHeaderTab) {
   if (activeTab === "casting") return INDUSTRY_PRO_SIGNUP_CTA;
   if (activeTab === "talent" || activeTab === "community") return JOIN_BETA_CTA;
-  return { label: homeSignupScrollCta.label, href: "#signup" } as const;
+  return { label: homeSignupScrollCta.label, href: "/signup" } as const;
 }
 
 function cn(...classes: Array<string | false | null | undefined>) {
@@ -159,6 +159,8 @@ export function HomeMarketingHeaderClient({
   const showScrolled = wordmarkHeader || pastHero;
   const headerCta = getHeaderSignupCta(landingAudience?.audience ?? activeTab);
   const signupScrolls = headerCta.href.startsWith("#");
+  const isLandingPage = pathname === "/";
+  const headerLinks = isLandingPage ? [...marketingPageLinks].reverse() : marketingPageLinks;
 
   const restingLogoLink = (
     <Link
@@ -251,26 +253,26 @@ export function HomeMarketingHeaderClient({
               <span className="sr-only">{menuOpen ? "Close menu" : "Open menu"}</span>
             </button>
             <nav id="landing-header-menu" aria-label="Main navigation" className="landing-header__menu-panel" inert={!menuOpen} aria-hidden={!menuOpen}>
-              {marketingPageLinks.map((link) => (
+              {headerLinks.map((link) => (
                 <Link key={link.href} href={link.href} aria-current={marketingPageLinkCurrent(pathname, link.href)} className="landing-header__menu-item" onClick={closeMenu}>{link.label}</Link>
               ))}
-              {accountUser ? <AccountPill user={accountUser} /> : <>
+              {!isLandingPage && (accountUser ? <AccountPill user={accountUser} /> : <>
                 <Link href="/login" className="landing-header__menu-item" onClick={closeMenu}>Login</Link>
-                <Link href="/signup" className="landing-header__menu-item" onClick={closeMenu}>Sign Up</Link>
-              </>}
-              <IosDownloadHeroButton label="Download" className="landing-header__download landing-header__menu-item" />
+                <Link href={activeTab === "talent" ? "/signup?account_type=talent" : "/signup"} className="landing-header__menu-item" onClick={closeMenu}>Sign Up</Link>
+              </>)}
+              <IosDownloadHeroButton iconOnly={isLandingPage} label="Download" className="landing-header__download landing-header__menu-item" />
             </nav>
           </div>
           <div className="landing-header__end landing-header__desktop-actions">
-            {marketingPageLinks.map((link) => (
+            {headerLinks.map((link) => (
               <Link key={link.href} href={link.href} aria-current={marketingPageLinkCurrent(pathname, link.href)} className="landing-header__pricing">{link.label}</Link>
             ))}
-            <IosDownloadHeroButton label="Download" className="landing-header__download" />
-            <span className="landing-header__action-divider" aria-hidden />
-            {accountUser ? <AccountPill user={accountUser} /> : <>
+            <IosDownloadHeroButton iconOnly={isLandingPage} label="Download" className="landing-header__download" />
+            {!isLandingPage && <span className="landing-header__action-divider" aria-hidden />}
+            {!isLandingPage && (accountUser ? <AccountPill user={accountUser} /> : <>
               <Link href="/login" className="home-split__login">Login</Link>
-              <Link href="/signup" className="mkt-btn mkt-btn--primary landing-header__signup">Sign Up</Link>
-            </>}
+              <Link href={activeTab === "talent" ? "/signup?account_type=talent" : "/signup"} className="mkt-btn mkt-btn--primary landing-header__signup">Sign Up</Link>
+            </>)}
           </div>
         </div>
       </header>

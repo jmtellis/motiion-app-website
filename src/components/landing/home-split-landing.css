@@ -6,6 +6,7 @@ html:has(.home-split), html:has(.home-split) body { background: #111; color-sche
 .home-split__eyebrow { color: #c3c2bd; font-size: 10px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; margin: 0 0 32px; }
 .home-split__headline { font-size: clamp(48px, 5.5vw, 80px); font-weight: 500; line-height: 1.035; letter-spacing: -.065em; margin: 0; }
 .home-split__headline em { font-style: normal; color: #7edee0; }
+.home-split__headline-phrase { display: inline-block; max-width: 100%; }
 .home-split__subtext { max-width: 34rem; color: var(--hero-muted); font-size: 16px; line-height: 1.75; margin: 28px 0 32px; text-wrap: pretty; }
 .home-split__ctas { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 .home-split__cta { gap: 8px; min-height: 50px; padding-inline: 22px; border-radius: 100px; }
@@ -60,24 +61,9 @@ html:has(.home-split) .landing-audience-tabs__tab { font-size: 12px; min-height:
   .home-split__headline { font-size: clamp(43px, 10.2vw, 72px); max-width: 580px; }
   .home-split__subtext { font-size: 14px; line-height: 1.7; margin: 22px 0 24px; max-width: 390px; }
   .home-split__ctas { gap: 8px; }
-  .home-split .home-split__cta {
-    font-size: 13px;
-    min-height: 46px;
-    padding-inline: 0;
-    gap: 12px;
-    border: 0;
-    border-radius: 4px;
-    background: transparent;
-    color: var(--accent);
-  }
-  .home-split .home-split__cta:hover:not(:disabled),
-  .home-split .home-split__cta:active:not(:disabled) {
-    background: transparent;
-    color: var(--accent);
-    text-decoration: underline;
-    text-underline-offset: 4px;
-  }
-  .home-split .home-split__cta:focus-visible { outline-color: var(--accent); }
+  .home-split .home-split__cta { min-height: 46px; padding: 12px 22px; }
+  .home-split__ctas { align-items: flex-start; flex-direction: column; }
+  .home-split__ctas > a:not(.home-split__cta) { padding-inline: 0; font-size: 13px; }
   .home-split__app-link { font-size: 12px; }
   .home-split__events { top: 108px; right: 0; bottom: auto; left: 0; height: 320px; align-items: flex-start; -webkit-mask-image: none; mask-image: none; }
   .home-split__event { width: 220px; height: 274px; padding: 16px; border-radius: 24px; }
@@ -111,7 +97,7 @@ html:has(.home-split) .landing-audience-tabs__tab { font-size: 12px; min-height:
 .landing-header__download { border: 0 !important; background: transparent !important; color: #d5d7d8; gap: 8px; min-height: 36px; padding: 6px 10px; font-size: 12px; }
 .landing-header__action-divider { width: 1px; height: 24px; background: #ffffff26; margin-inline: 8px; }
 .landing-header__signup { min-height: 36px; padding: 6px 16px; font-size: 12px; border-radius: 8px; }
-@media(min-width:768px) { .home-split__ctas { display: none; } }
+
 @media(max-width:767px) { .landing-header__menu-panel .landing-header__download { font-size: 1rem; } }
 
 .landing-header__signup { border-radius: 999px; }
@@ -119,7 +105,7 @@ html:has(.home-split) .landing-audience-tabs__tab { font-size: 12px; min-height:
 .landing-header__pricing:hover,
 .landing-header__pricing[aria-current="page"] { color: white; }
 
-.landing-header__download { flex-direction: row-reverse; }
+.landing-header__download { flex-direction: row; }
 
 /* Hovering a card pauses the shared track without resetting its position. */
 .home-split__event { filter: brightness(.78); transition: filter 220ms ease; }

@@ -1,7 +1,7 @@
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.motiion.app").replace(/\/$/, "");
 export const SITE_TITLE = "Motiion — The Professional Platform for Dance";
 export const SITE_DESCRIPTION =
-  "Motiion connects dancers, choreographers, agencies, and casting teams. Discover dance talent, build your professional profile, and find opportunities.";
+  "Discover dancers, build rosters, and manage castings with Motiion. Bring your project together, or create a talent profile to get discovered.";
 
 export const homepageStructuredData = {
   "@context": "https://schema.org",

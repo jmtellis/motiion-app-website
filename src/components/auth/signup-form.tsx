@@ -19,7 +19,8 @@ function isValidEmail(value: string) {
 export function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const accountType = parseAccountTypeParam(searchParams.get("account_type")) ?? "talent";
+  const requestedType = parseAccountTypeParam(searchParams.get("account_type"));
+  const accountType = requestedType === "talent" || searchParams.has("featured") ? "talent" : "lookingForTalent";
   const [email, setEmail] = useState("");
   const callbackError = oauthErrorMessage(searchParams.get("error"));
   const [password, setPassword] = useState("");
@@ -142,6 +143,8 @@ export function SignupForm() {
 
   return (
     <div className="signup-split-form__body">
+      <p className="signup-split-form__subtitle">{accountType === "lookingForTalent" ? "Find talent and bring your project together. Access requires an application." : "Create your talent profile and find opportunities."}</p>
+      <button type="button" className="signup-split-text-btn" onClick={() => { const params = new URLSearchParams(searchParams.toString()); params.set("account_type", accountType === "talent" ? "lookingForTalent" : "talent"); router.replace(`/signup?${params}`); }}>{accountType === "talent" ? "Here to find talent? Get started" : "Create a talent account"}</button>
       <form action={handleSubmit} className="flex flex-col gap-4">
         {!passwordStep ? (
         <label className="signup-split-field">

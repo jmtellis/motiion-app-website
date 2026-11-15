@@ -2,11 +2,11 @@ import { redirect } from "next/navigation";
 
 import { CheckEmailForm } from "@/components/auth/CheckEmailForm";
 import { SignupSplitShell } from "@/components/auth/SignupSplitShell";
-import { getCurrentUserProfile, getProfileDestination } from "@/lib/auth/session";
+import { getCurrentUserProfile } from "@/lib/auth/session";
 import { getSetupFlowShellProps } from "@/lib/setup-flow/config";
 
 type PageProps = {
-  searchParams: Promise<{ email?: string }>;
+  searchParams: Promise<{ email?: string; next?: string }>;
 };
 
 function resolveEmailParam(value: string | undefined) {
@@ -26,14 +26,14 @@ export default async function SignupCheckEmailPage({ searchParams }: PageProps) 
   }
 
   if (profile?.accountType && profile.email?.toLowerCase() === email.toLowerCase()) {
-    redirect(getProfileDestination(profile));
+    redirect(`/auth/continue${params.next ? `?next=${encodeURIComponent(params.next)}` : ""}`);
   }
 
   const shell = getSetupFlowShellProps({ audience: "talent", surface: "checkEmail" });
 
   return (
     <SignupSplitShell {...shell}>
-      <CheckEmailForm email={email} signedInEmail={profile?.email ?? undefined} accountType="talent" />
+      <CheckEmailForm email={email} returnTo={params.next} signedInEmail={profile?.email ?? undefined} accountType="talent" />
     </SignupSplitShell>
   );
 }

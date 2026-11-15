@@ -25,6 +25,7 @@ export function validateIndustryApplication(input: IndustryApplicationDetails): 
     const url = new URL(normalizeIndustryWorkUrl(input.work_url));
     if (!["http:", "https:"].includes(url.protocol) || !url.hostname.includes(".") || url.username || url.password || input.work_url.length > 2000 || /\s/.test(input.work_url.trim())) throw new Error();
   } catch { return "Enter a valid website, such as example.com."; }
+  if (input.hiring_projects.startsWith("Projects: ") && parseIndustryProjects(input.hiring_projects).includesOther && !parseIndustryProjects(input.hiring_projects).other.trim()) return "Describe your other projects.";
   if (input.hiring_projects.trim().length < 10 || input.hiring_projects.length > 3000) return "Briefly describe the projects you hire dancers for (10–3000 characters).";
   return null;
 }
@@ -62,6 +63,7 @@ export function validateIndustryApplicationStep(step: IndustryApplicationStep, i
     const validation = validateIndustryApplication({ ...input, hiring_projects: "Project context is checked separately" });
     if (validation) return validation;
   }
+  if ((step === "projects" || step === "review") && input.hiring_projects.startsWith("Projects: ") && parseIndustryProjects(input.hiring_projects).includesOther && !parseIndustryProjects(input.hiring_projects).other.trim()) return "Describe your other projects.";
   if ((step === "projects" || step === "review") && (input.hiring_projects.trim().length < 10 || input.hiring_projects.length > 3000)) return "Describe the projects you hire for (10–3000 characters).";
   if ((step === "acquisition" || step === "review") && (!sources.includes(input.acquisition_source) || input.acquisition_source_detail.length > 2000)) return "Choose how you heard about Motiion; keep extra details under 2,000 characters.";
   return null;
@@ -75,4 +77,19 @@ export function parseIndustryApplicationDraft(raw: string | null, userId: string
     if (!value.details || keys.some(key => typeof value.details[key] !== "string")) return null;
     return { details: Object.fromEntries(keys.map(key => [key, value.details[key]])) as IndustryApplicationDraft, step: value.step };
   } catch { return null; }
+}
+
+// Keep these choices aligned with iOS ProfileTitle and IndustryProjectSelection.
+export const industryRoleOptions = ["Choreographer", "Casting Director", "Creative Director", "Agent / Manager", "Marketing", "Producer", "Studio Owner", "Other"];
+export type IndustryProjectSelection = { selected: string[]; includesOther: boolean; other: string };
+export function parseIndustryProjects(text: string): IndustryProjectSelection {
+  const legacy: Record<string, string> = { "Live Performance": "Live performances", "Tour": "Tours", "TV / Film": "Television & film", "Music Video": "Music videos", "Brand Event": "Brand events", "Theater / Stage": "Theater & stage", "Award Show": "Award shows", "Class / Workshop Opportunity": "Classes & workshops" };
+  const [labels, ...other] = (text.startsWith("Projects: ") ? text.slice(10) : text).split("\nOther: ");
+  const selected = [...new Set(labels.split("; ").filter(Boolean).flatMap(label => label === "Print / Commercial" ? ["Print campaigns", "Commercials & video ads"] : [legacy[label] ?? label]))];
+  if (selected.every(label => industryProjectOptions.includes(label))) return { selected, includesOther: other.length > 0, other: other.join("\nOther: ") };
+  return { selected: [], includesOther: Boolean(text), other: text };
+}
+export function serializeIndustryProjects(value: IndustryProjectSelection): string {
+  if (!value.selected.length && !value.includesOther) return "";
+  return "Projects: " + value.selected.join("; ") + (value.includesOther ? "\nOther: " + value.other : "");
 }

@@ -98,6 +98,7 @@ export function WorkspaceAccountMenu({
           data-placement={placement}
         >
             <>
+              <Link href="/team-projects" role="menuitem" onClick={close}>Team projects</Link>
               {shellAction?.kind === "link" ? (
                 <Link href={shellAction.href} role="menuitem" onClick={close}>
                   {shellAction.label}

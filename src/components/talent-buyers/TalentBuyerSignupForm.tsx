@@ -59,8 +59,9 @@ export function TalentBuyerSignupForm() {
         emailRedirectTo: buildOAuthRedirectUrl({
           flow: "signup",
           accountType: "lookingForTalent",
+          returnTo: searchParams.get("next") ?? undefined,
         }),
-        data: buildSignupUserMetadata("lookingForTalent"),
+        data: buildSignupUserMetadata("lookingForTalent", searchParams.get("next")),
       },
     });
 
@@ -77,8 +78,9 @@ export function TalentBuyerSignupForm() {
     }
 
     if (!data.session) {
+      try { window.localStorage.setItem(`motiion:confirmation-sent:${nextEmail.toLowerCase()}`, String(Date.now())); } catch { /* optional cooldown persistence */ }
       router.push(
-        `/talent-buyers/signup/check-email?email=${encodeURIComponent(nextEmail)}`,
+        `/talent-buyers/signup/check-email?email=${encodeURIComponent(nextEmail)}${searchParams.get("next") ? `&next=${encodeURIComponent(searchParams.get("next")!)}` : ""}`,
       );
       return;
     }

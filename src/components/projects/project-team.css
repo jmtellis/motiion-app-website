@@ -1,0 +1,14 @@
+.project-team {max-width: 880px; margin: 0 auto; padding: 32px 24px 80px; color: var(--text-primary);}
+.project-team nav {display:flex;gap:24px;margin-bottom:32px;flex-wrap:wrap;}
+.project-team h1 {font-size:32px;font-weight:650;line-height:1.2;margin:8px 0 16px;}
+.project-team h2 {font-size:22px;font-weight:600;margin-bottom:16px;}
+.project-team section {margin-top:32px;border-top:1px solid #7775;padding-top:24px;}
+.project-team p {line-height:1.6;margin:8px 0 16px;}
+.project-team form,.project-team article {display:grid;gap:12px;border:1px solid #7775;border-radius:16px;padding:20px;margin:16px 0;}
+.project-team label {display:grid;gap:8px;}
+.project-team input,.project-team select {width:100%;min-height:44px;padding:10px 12px;border:1px solid #7778;border-radius:8px;background:var(--background,#181818);color:inherit;font:inherit;}
+.project-team button,.project-team a {min-height:44px;padding:10px 14px;display:inline-flex;align-items:center;border:1px solid #7778;border-radius:8px;}
+.project-team button {cursor:pointer;justify-content:center;}
+.project-team button:disabled {opacity:.5;cursor:wait;}
+.project-team :is(button,a,input,select):focus-visible {outline:2px solid #00aacc;outline-offset:3px;}
+.project-team article > div {display:flex;gap:12px;flex-wrap:wrap;}

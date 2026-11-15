@@ -26,7 +26,7 @@ export const footerColumns: FooterColumn[] = [
   {
     title: "Company",
     links: [
-      ...marketingPageLinks,
+      ...marketingPageLinks.filter((link) => link.href !== "/for-talent"),
       { label: "Partnerships", href: "https://www.motiion.io/partnerships" },
       { label: "Contact", href: CONTACT_HREF },
     ],

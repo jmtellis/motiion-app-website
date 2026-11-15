@@ -6,7 +6,7 @@
 @media(max-width:639px) { .centered-auth .centered-auth__main { padding-top: 28px; } }
 
 .centered-auth .signup-split-oauth-row {
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .centered-auth .signup-split-divider span {
@@ -19,7 +19,30 @@
 .centered-auth .signup-split-form__body,
 .centered-auth .signup-split-form__body form { gap: 0.75rem; }
 .centered-auth .signup-split-submit { margin-top: 0; }
-.centered-auth__subtitle span { white-space: nowrap; }
-@media (min-width: 768px) {
-  .centered-auth__subtitle { width: max-content; max-width: calc(100vw - 48px); position: relative; left: 50%; transform: translateX(-50%); }
+.centered-auth__subtitle span { display: block; margin-top: 4px; }
+
+.centered-auth .signup-split-legal__links {
+  display: block;
+  white-space: nowrap;
 }
+
+.centered-auth__subtitle a { white-space: nowrap; }
+
+.centered-auth .signup-split-legal { margin-top: 16px; }
+
+/* Keep industry setup inside the same single column as account creation. */
+.centered-auth .signup-split-form--onboarding .signup-split-form__scroll-content { padding-top: 0; }
+.centered-auth .signup-split-form--onboarding .signup-split-form__step,
+.centered-auth .signup-split-form--onboarding .signup-split-form__footer { padding-inline: 0; }
+.centered-auth .signup-split-form--onboarding .signup-split-form__footer,
+.centered-auth .industry-onboarding-complete { background: transparent; }
+.centered-auth .industry-onboarding-complete { height: auto; padding: 0; overflow: visible; }
+.centered-auth .industry-onboarding-complete__pricing .audience-pricing__grid { grid-template-columns: minmax(0, 1fr); }
+
+.centered-auth--wide > .centered-auth__main > .signup-split-form { max-width: 45rem; }
+.centered-auth--wide .centered-auth__main { padding-top: 32px; }
+
+.centered-auth__footer { width: 100%; max-width: 48rem; margin-inline: auto; padding: 0 24px max(24px, env(safe-area-inset-bottom)); }
+.centered-auth__footer .industry-application__footer { margin-top: 0; flex-wrap: wrap; align-items: center; }
+.centered-auth__footer .industry-application__footer > p { flex-basis: 100%; }
+.centered-auth__footer :is(a, button) { min-height: 44px; display: inline-flex; align-items: center; }

@@ -1,12 +1,11 @@
 import { redirect } from "next/navigation";
 
 import { CheckEmailForm } from "@/components/auth/CheckEmailForm";
-import { SignupSplitShell } from "@/components/auth/SignupSplitShell";
-import { getCurrentUserProfile, getProfileDestination } from "@/lib/auth/session";
-import { getSetupFlowShellProps } from "@/lib/setup-flow/config";
+import { CenteredAuthShell } from "@/components/auth/CenteredAuthShell";
+import { getCurrentUserProfile } from "@/lib/auth/session";
 
 type PageProps = {
-  searchParams: Promise<{ email?: string }>;
+  searchParams: Promise<{ email?: string; next?: string }>;
 };
 
 function resolveEmailParam(value: string | undefined) {
@@ -26,14 +25,12 @@ export default async function TalentBuyerSignupCheckEmailPage({ searchParams }: 
   }
 
   if (profile?.accountType && profile.email?.toLowerCase() === email.toLowerCase()) {
-    redirect(getProfileDestination(profile));
+    redirect(`/auth/continue${params.next ? `?next=${encodeURIComponent(params.next)}` : ""}`);
   }
 
-  const shell = getSetupFlowShellProps({ audience: "industry", surface: "checkEmail" });
-
   return (
-    <SignupSplitShell {...shell}>
-      <CheckEmailForm email={email} signedInEmail={profile?.email ?? undefined} accountType="lookingForTalent" />
-    </SignupSplitShell>
+    <CenteredAuthShell mode="signup" title="Verify your email" subtitle="One more step to your industry application." showAlternateAuth={false}>
+      <CheckEmailForm email={email} returnTo={params.next} signedInEmail={profile?.email ?? undefined} accountType="lookingForTalent" />
+    </CenteredAuthShell>
   );
 }

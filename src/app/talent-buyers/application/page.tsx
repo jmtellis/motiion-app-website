@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CenteredAuthShell } from "@/components/auth/CenteredAuthShell";
 import { redirect } from "next/navigation";
 import { requireAuth } from "@/lib/auth/session";
 import { hasEnabledShell, isCommunityAccount } from "@/lib/auth/profile";
@@ -34,5 +35,5 @@ export default async function IndustryApplicationPage() {
   }} />;
 }
 function ApplicationUnavailable() {
-  return <main className="theme-product mx-auto max-w-xl space-y-4 p-8"><h1 className="text-2xl font-semibold">Applications are temporarily unavailable</h1><p>Your account and any saved application are safe. Please try again shortly.</p><Link className="btn-primary" href="/talent-buyers/application">Try again</Link><Link className="block underline" href="/settings">Account settings</Link></main>;
+  return <CenteredAuthShell mode="signup" title="Applications are temporarily unavailable" subtitle="Your account and any saved application are safe. Please try again shortly." showAlternateAuth={false}><div className="signup-split-form__body"><Link className="btn-primary" href="/talent-buyers/application">Try again</Link><Link className="block underline" href="/settings">Account settings</Link></div></CenteredAuthShell>;
 }

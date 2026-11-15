@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack -p 3001",
-    "build": "next build",
+    "build": "node scripts/ensure-team-seat-catalog.mjs && next build",
     "start": "next start",
     "lint": "eslint",
     "test:environment": "node --import tsx --test scripts/environment-isolation.test.ts",

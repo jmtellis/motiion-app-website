@@ -31,14 +31,13 @@ export function HomeSplitLanding({ events }: { events: HeroEventCard[] }) {
               <em>movement</em>.
             </h1>
             <p className="home-split__subtext">
-              Discover, cast, and manage professional dancers for your next project.
+              Discover, cast, and manage dancers for your next project.
             </p>
             <div className="home-split__ctas">
               <Link href="/signup" className="mkt-btn mkt-btn--primary home-split__cta">
                 Get started
                 <ArrowRight className="home-split__cta-icon" aria-hidden />
               </Link>
-              <Link href="/signup?account_type=talent" className="mkt-btn">For talent</Link>
             </div>
           </motion.div>
         </div>

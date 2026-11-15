@@ -70,7 +70,16 @@ export async function requireCommunityOrTalentAccount() {
 }
 
 export async function requireHiringAccount() {
-  const profile = await requireCompleteProfile();
+  const profile = await requireAuth();
+  const path = (await headers()).get("x-pathname") ?? "";
+  const projectId = path.match(/^\/projects\/([0-9a-f-]{36})(?:\/|$)/i)?.[1];
+  if (projectId) {
+    const db = await createServerSupabaseClient();
+    const role = db ? await db.rpc("project_team_role", { p_project_id: projectId }) : null;
+    if (!role?.error && role?.data === "admin") return profile;
+    if (!role?.error && role?.data === "coordinator") redirect(`/team-projects/${projectId}`);
+  }
+  if (!isOnboardingComplete(profile)) redirect(getOnboardingPath(profile));
   if (getActiveShell(profile) !== "lookingForTalent") redirect(getProfileDestination(profile));
   const supabase = await createServerSupabaseClient();
   const approval = supabase ? await supabase.rpc("has_industry_approval") : null;

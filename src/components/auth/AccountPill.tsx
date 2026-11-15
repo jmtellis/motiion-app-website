@@ -21,6 +21,7 @@ function getMenuLinks(user: AccountPillUser) {
   return [
     { label: "Profile", href: user.profileHref },
     { label: "Calendar", href: "/calendar" },
+    { label: "Team projects", href: "/team-projects" },
     { label: "Settings", href: user.settingsHref ?? "/settings" },
   ];
 }

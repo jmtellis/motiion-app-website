@@ -1,7 +1,8 @@
-/** Pages linked from the marketing header, beside Login / Sign up / Download. */
+/** Shared marketing navigation, followed by the App Store icon. */
 export const marketingPageLinks = [
-  { href: "/pricing", label: "Pricing" },
+  { href: "/for-talent", label: "For Talent" },
   { href: "/shop", label: "Shop" },
+  { href: "/pricing", label: "Pricing" },
 ] as const;
 
 export function marketingPageLinkCurrent(pathname: string, href: string): "page" | undefined {

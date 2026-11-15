@@ -24,3 +24,21 @@ describe("industry applications", () => {
     assert.match(industryApplicationCopy.approved.title, /approved/);
   });
 });
+
+import { parseIndustryProjects, serializeIndustryProjects } from "../src/lib/talent-buyers/industry-application";
+describe("project selection compatibility", () => {
+  it("round trips app selections and custom details", () => {
+    const selection = { selected: ["Tours", "Music videos"], includesOther: true, other: "Museum residencies" };
+    assert.deepEqual(parseIndustryProjects(serializeIndustryProjects(selection)), selection);
+  });
+  it("preserves existing free text and recognizes old website chips", () => {
+    assert.equal(parseIndustryProjects("A festival with local artists").other, "A festival with local artists");
+    assert.deepEqual(parseIndustryProjects("Tours; Music videos").selected, ["Tours", "Music videos"]);
+    assert.deepEqual(parseIndustryProjects("Projects: Tour; Print / Commercial").selected, ["Tours", "Print campaigns", "Commercials & video ads"]);
+  });
+  it("allows one short project choice but requires Other details", () => {
+    assert.equal(validateIndustryApplication({ ...valid, hiring_projects: "Projects: Tours" }), null);
+    assert.ok(validateIndustryApplication({ ...valid, hiring_projects: "Projects: Tours\nOther: " }));
+    assert.equal(serializeIndustryProjects({ selected: [], includesOther: false, other: "" }), "");
+  });
+});

@@ -25,7 +25,7 @@ export const setupFlowConfig: Record<SetupFlowAudience, SetupFlowAudienceConfig>
     subtexts: {
       signup:
         "One account for talent, industry, and community. After you sign up, tell us what brings you to Motiion.",
-      checkEmail: "Open the confirmation link to continue setting up your account.",
+      checkEmail: "Enter your email verification code to continue setting up your account.",
       onboarding: "Tell us what brings you to Motiion, then we’ll tailor the rest.",
       finishing: "Review everything, then enter Motiion.",
       complete: "Your Motiion account is ready.",
@@ -48,7 +48,7 @@ export const setupFlowConfig: Record<SetupFlowAudience, SetupFlowAudienceConfig>
     subtexts: {
       signup:
         "One account for talent, industry, and community. After you sign up, tell us what brings you to Motiion.",
-      checkEmail: "Open the confirmation link to continue setting up your account.",
+      checkEmail: "Enter your email verification code to continue setting up your account.",
       onboarding: "A few details so we can tailor your workspace.",
       finishing: "Connect your setup, then start hiring.",
       complete: "Your workspace is ready.",

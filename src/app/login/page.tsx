@@ -22,13 +22,13 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     const { next } = await searchParams;
     const destination = safeAuthReturnPath(next);
     if (destination) {
-      if (isOnboardingComplete(profile)) redirect(destination);
+      if (destination.startsWith("/team-invite/") || isOnboardingComplete(profile)) redirect(destination);
       redirect(`/auth/continue?next=${encodeURIComponent(destination)}`);
     }
     redirect(getProfileDestination(profile));
   }
   return (
-    <CenteredAuthShell mode="login">
+    <CenteredAuthShell showLogo mode="login">
       <Suspense fallback={<LoginFormFallback />}>
         <LoginForm />
       </Suspense>

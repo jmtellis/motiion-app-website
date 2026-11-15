@@ -50,7 +50,7 @@ export type PlatformUserResult = {
 };
 
 async function requireProjectAccess(projectId: string, userId: string) {
-  const approval = await requireIndustryApproval(userId);
+  const approval = await requireIndustryApproval(userId, projectId);
   if (!approval.ok) return approval;
   const supabase = await createServerSupabaseClient();
   if (!supabase) return { ok: false as const, error: "Supabase is not configured." };

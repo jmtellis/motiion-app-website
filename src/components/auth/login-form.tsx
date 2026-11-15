@@ -64,7 +64,7 @@ export function LoginForm() {
     const nextParam = safeAuthReturnPath(searchParams.get("next"));
     const accountDestination = await resolveClientLoginDestination(supabase);
     if (nextParam && accountDestination.includes("onboarding")) await rememberLoginReturnPath(nextParam);
-    let destination = accountDestination.includes("onboarding") ? accountDestination : nextParam ?? accountDestination;
+    let destination = nextParam?.startsWith("/team-invite/") ? nextParam : accountDestination.includes("onboarding") ? accountDestination : nextParam ?? accountDestination;
 
     if (!nextParam && !accountDestination.includes("onboarding")) {
       try {

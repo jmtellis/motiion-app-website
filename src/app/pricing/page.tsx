@@ -27,7 +27,7 @@ export default function PricingPage() {
             <ul>{plan.features.map(feature => <li key={feature}>{feature}</li>)}</ul>
           </section>)}
         </div>
-        <p className="project-pricing-note">All plans include casting and cast coordination tools. Prices in USD. No fees per submission review or dancer confirmation. </p>
+        <p className="project-pricing-note">Payment is required before creating a project, including a private draft. The project owner’s plan covers invited teammates within its team limit. All plans include casting and cast coordination tools. Prices in USD. No fees per submission review or dancer confirmation. </p>
         <div className="project-options">
           <p><Link href="/signup?account_type=lookingForTalent">Explore free →</Link> Browse dancers before choosing a plan.</p>
           <p><a href={projectInquiry("Enterprise plan")}>Enterprise →</a> Custom capacity for larger teams.</p>

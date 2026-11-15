@@ -2,17 +2,16 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Check, Clock3, Camera, ArrowLeft, ArrowRight } from "lucide-react";
+import { Check, Clock3, LoaderCircle, Camera, ArrowLeft, ArrowRight } from "lucide-react";
 import { useSignOut } from "@/hooks/use-sign-out";
 import { submitIndustryApplication, uploadIndustryApplicationPhoto } from "@/app/talent-buyers/application/actions";
 import { checkUsernameAvailability } from "@/app/onboarding/actions";
-import { SignupSplitShell } from "@/components/auth/SignupSplitShell";
+import { CenteredAuthShell } from "@/components/auth/CenteredAuthShell";
 import { acquisitionSourceOptions } from "@/lib/talent/copy";
 import { resizeImageFile } from "@/lib/onboarding/client-media";
-import { industryApplicationCopy, industryApplicationSteps, industryProjectOptions, parseIndustryApplicationDraft, validateIndustryApplicationStep, type IndustryApplication, type IndustryApplicationDraft, type IndustryApplicationStep } from "@/lib/talent-buyers/industry-application";
+import { industryRoleOptions, parseIndustryProjects, serializeIndustryProjects, industryApplicationCopy, industryApplicationSteps, industryProjectOptions, parseIndustryApplicationDraft, validateIndustryApplicationStep, type IndustryApplication, type IndustryApplicationDraft, type IndustryApplicationStep } from "@/lib/talent-buyers/industry-application";
 import "./industry-application.css";
 
-const stepLabels = { identity: "About you", work: "Work", projects: "Projects", acquisition: "Source", review: "Review" };
 const titles = { identity: "About you", work: "Your work", projects: "The projects you cast", acquisition: "How did you find us?", review: "Review your application" };
 export function IndustryApplicationForm({ application, initial, returnHref, userId }: {
   application: IndustryApplication | null; initial: IndustryApplicationDraft; returnHref: string; userId: string;
@@ -35,6 +34,8 @@ export function IndustryApplicationForm({ application, initial, returnHref, user
   const version = application?.version ?? 0;
   const copy = application ? industryApplicationCopy[application.status] : null;
   const index = industryApplicationSteps.indexOf(step);
+  const projects = parseIndustryProjects(details.hiring_projects);
+  const role = !details.professional_role || industryRoleOptions.includes(details.professional_role) ? details.professional_role : "Other";
   const locked = busy || uploading || signingOut;
   useEffect(() => {
     try {
@@ -106,9 +107,9 @@ export function IndustryApplicationForm({ application, initial, returnHref, user
   function field(key: keyof IndustryApplicationDraft, label: string, options: { type?: string; max?: number; optional?: boolean; help?: string } = {}) {
     return <label className="signup-split-field"><span>{label}{options.optional ? " (optional)" : ""}</span><input type={options.type ?? "text"} required={!options.optional} maxLength={options.max ?? 200} disabled={locked} value={details[key]} autoComplete={key === "full_name" ? "name" : key === "contact_email" ? "email" : key === "username" ? "username" : undefined} onChange={event => update(key, key === "username" ? event.target.value.toLowerCase().replace(/^@/, "") : event.target.value)} />{options.help && <small className="signup-split-hint">{options.help}</small>}</label>;
   }
-  if (!hydrated) return <SignupSplitShell headline="Your work. Your next cast." subtext="Apply for your professional workspace." steps={[]} showNav showWordmark><p role="status" className="signup-split-hint">Restoring your application…</p></SignupSplitShell>;
-  return <SignupSplitShell headline="Your work. Your next cast." subtext="Apply once for a workspace to discover talent, run castings, and coordinate your projects." steps={industryApplicationSteps.map((key, position) => ({ number: position + 1, label: stepLabels[key], status: position < index ? "completed" : position === index ? "active" : "pending" }))} showSteps={editing} showNav showWordmark>
-    <div className="industry-application signup-split-form">
+  if (!hydrated) return <CenteredAuthShell wide mode="signup" title="Industry application" subtitle="Apply for your professional workspace." showAlternateAuth={false}><p role="status" className="signup-split-hint">Restoring your application…</p></CenteredAuthShell>;
+  return <CenteredAuthShell wide mode="signup" showHeading={false} footer={<div className="industry-application__footer"><a className="signup-split-text-btn" href={returnHref}>Back to Motiion</a><button className="signup-split-text-btn" disabled={locked} onClick={signOut}>{signingOut ? "Signing out…" : "Sign out"}</button>{signOutError ? <p role="alert" className="signup-split-error">{signOutError}</p> : null}</div>}>
+    <div className="industry-application">
       {editing ? <>
         <p className="industry-application__eyebrow">Industry application · {index + 1} of {industryApplicationSteps.length}</p>
         <h1 ref={title} tabIndex={-1} className="signup-split-form__title">{titles[step]}</h1>
@@ -119,20 +120,27 @@ export function IndustryApplicationForm({ application, initial, returnHref, user
               <div className="industry-application__avatar">{details.avatar_url ? <Image src={details.avatar_url} alt="Your profile photo" width={88} height={88} unoptimized /> : <Camera aria-hidden size={28} />}</div>
               <label className="industry-application__upload"><span>{uploading ? "Saving photo…" : details.avatar_url ? "Change photo" : "Add profile photo"}</span><input type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" disabled={locked} onChange={event => { void upload(event.target.files?.[0]); event.target.value = ""; }} /><small>JPG, PNG, or WebP · up to 12 MB</small></label>
             </div>
+            <div className="industry-application__fields">
             {field("full_name", "Name")}
             {field("username", "Username", { max: 30, help: "3–30 lowercase letters, numbers, or underscores." })}
-            {usernameResult?.username === details.username && <p role="status" className="signup-split-hint">{usernameResult.message}</p>}
             {field("date_of_birth", "Date of birth", { type: "date", help: "You must be at least 18 to join Motiion." })}
+            </div>
+            {usernameResult?.username === details.username && <p role="status" className="signup-split-hint">{usernameResult.message}</p>}
           </>}
-          {step === "work" && <>
-            {field("professional_role", "Professional role", { help: "For example: choreographer, casting director, or producer." })}
+          {step === "work" && <div className="industry-application__fields">
+            <label className="signup-split-field"><span>Professional role</span><select required disabled={locked} value={role} onChange={event => update("professional_role", event.target.value)}><option value="" disabled>Select your role</option>{industryRoleOptions.map(option => <option key={option} value={option}>{option}</option>)}</select></label>
+            {role === "Other" && <label className="signup-split-field"><span>Your role</span><input required maxLength={200} disabled={locked} value={details.professional_role === "Other" ? "" : details.professional_role} onChange={event => update("professional_role", event.target.value || "Other")} /></label>}
             {field("organization", "Company or Independent")}
             {field("contact_email", "Contact email", { type: "email", max: 320 })}
             {field("work_url", "Website, portfolio, or credits", { max: 2000, optional: true, help: "A public link such as yoursite.com helps us understand your work." })}
-          </>}
+          </div>}
           {step === "projects" && <>
-            <div className="industry-application__project-options" aria-label="Add a project type">{industryProjectOptions.map(option => <button type="button" key={option} disabled={locked} onClick={() => { const value = details.hiring_projects.trim(); if (!value.includes(option)) update("hiring_projects", value ? `${value}; ${option}` : option); }}>{option}</button>)}</div>
-            <label className="signup-split-field"><span>Projects you hire for</span><textarea required minLength={10} maxLength={3000} rows={5} value={details.hiring_projects} disabled={locked} onChange={event => update("hiring_projects", event.target.value)} /><small className="signup-split-hint">Use the suggestions above or describe your projects in your own words.</small></label>
+            <div className="industry-application__project-options" role="group" aria-label="Project types">{[...industryProjectOptions, "Other"].map(option => {
+              const selected = option === "Other" ? projects.includesOther : projects.selected.includes(option);
+              return <button type="button" key={option} aria-pressed={selected} disabled={locked} onClick={() => update("hiring_projects", serializeIndustryProjects(option === "Other" ? { ...projects, includesOther: !selected } : { ...projects, selected: selected ? projects.selected.filter(value => value !== option) : [...projects.selected, option] }))}>{option}{selected && <Check size={14} aria-hidden />}</button>;
+            })}</div>
+            {projects.includesOther && <label className="signup-split-field"><span>Other projects</span><textarea required maxLength={2800} rows={3} value={projects.other} disabled={locked} onChange={event => update("hiring_projects", serializeIndustryProjects({ ...projects, other: event.target.value }))} /></label>}
+            <p className="signup-split-hint">Select all that apply.</p>
           </>}
           {step === "acquisition" && <>
             <fieldset className="industry-application__sources"><legend className="sr-only">How you heard about Motiion</legend>{acquisitionSourceOptions.map(option => <label key={option.value}><input type="radio" name="source" value={option.value} checked={details.acquisition_source === option.value} onChange={() => update("acquisition_source", option.value)} />{option.label}</label>)}</fieldset>
@@ -153,11 +161,10 @@ export function IndustryApplicationForm({ application, initial, returnHref, user
         <p className="signup-split-form__subtitle">{receipt ? "Your details are saved. The Motiion team will review your application. You can check progress here anytime." : copy?.body}</p>
         {application?.feedback && <section className="industry-application__feedback" role="note"><h2>Feedback from Motiion</h2><p>{application.feedback}</p></section>}
         <p className="signup-split-hint">We’ll show review updates here. Return to this page to check your status.</p>
-        <button className="signup-split-submit" disabled={refreshing} onClick={() => startRefresh(() => router.refresh())}>{refreshing ? "Checking…" : "Check application status"}</button>
+        <button className="signup-split-submit" disabled={refreshing} aria-busy={refreshing} aria-label="Check application status" onClick={() => startRefresh(() => router.refresh())}>{refreshing ? <LoaderCircle className="animate-spin" size={20} aria-hidden /> : "Check application status"}</button>
         <button className="signup-split-text-btn" onClick={() => { setReceipt(false); setEditing(true); navigate("identity"); }}>Update application</button>
         {error && <p className="signup-split-error" role="alert">{error}</p>}
       </div>}
-      <footer className="industry-application__footer"><a className="signup-split-text-btn" href={returnHref}>Back to Motiion</a><button className="signup-split-text-btn" disabled={locked} onClick={signOut}>{signingOut ? "Signing out…" : "Sign out"}</button>{signOutError ? <p role="alert" className="signup-split-error">{signOutError}</p> : null}</footer>
     </div>
-  </SignupSplitShell>;
+  </CenteredAuthShell>;
 }

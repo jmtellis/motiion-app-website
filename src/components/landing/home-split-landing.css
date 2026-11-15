@@ -4,7 +4,7 @@ html:has(.home-split), html:has(.home-split) body { background: #111; color-sche
 .home-split__content { display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 2; max-width: 40rem; }
 .home-split__copy { margin-block: auto; padding-block: 0 88px; }
 .home-split__eyebrow { color: #c3c2bd; font-size: 10px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; margin: 0 0 32px; }
-.home-split__headline { font-size: clamp(48px, 5.5vw, 80px); font-weight: 500; line-height: 1.035; letter-spacing: -.065em; margin: 0; }
+.home-split__headline { font-size: clamp(44px, 5vw, 72px); font-weight: 500; line-height: 1.035; letter-spacing: -.065em; margin: 0; }
 .home-split__headline em { font-style: normal; color: #7edee0; }
 .home-split__headline-phrase { display: inline-block; max-width: 100%; }
 .home-split__subtext { max-width: 34rem; color: var(--hero-muted); font-size: 16px; line-height: 1.75; margin: 28px 0 32px; text-wrap: pretty; }
@@ -51,7 +51,7 @@ html:has(.home-split) .landing-header.is-visible .landing-header__login > * { ma
 html:has(.home-split) .landing-audience-tabs { gap: 12px; }
 html:has(.home-split) .landing-audience-tabs__tab { font-size: 12px; min-height: 36px; }
 @media (min-width: 1440px) { .home-split { padding-top: 148px; } }
-@media (max-width: 1050px) and (min-width: 768px) { .home-split__headline { font-size: 54px; } }
+@media (max-width: 1050px) and (min-width: 768px) { .home-split__headline { font-size: 48px; } }
 @media (max-width: 767px) {
   .home-split { padding: 118px 24px 48px; }
   .home-split__layout { min-height: 0; }

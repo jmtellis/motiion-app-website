@@ -1,0 +1,62 @@
+.marketing-site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  color: #f4f2ed;
+  font-family: var(--font-brand);
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+.marketing-site-header.is-scrolled {
+  background: rgb(17 17 17 / 0.96);
+  border-bottom-color: rgb(255 255 255 / 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.marketing-site-header--overlay { position: fixed; inset: 0 0 auto; }
+.marketing-site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1368px;
+  min-height: 73px;
+  margin-inline: auto;
+  padding: max(12px, env(safe-area-inset-top)) 40px 12px;
+}
+.marketing-site-header__brand { flex-shrink: 0; padding-block: 14px; }
+.marketing-site-header__nav { display: flex; align-items: center; gap: 12px; }
+.marketing-site-header__nav > a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 10px;
+  color: #d5d7d8;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.marketing-site-header__nav > a:hover,
+.marketing-site-header__nav > a[aria-current="page"] { color: #fff; }
+.marketing-site-header a:focus-visible { outline: 2px solid var(--accent, #00aacc); outline-offset: 3px; border-radius: 4px; }
+.marketing-site-header__nav > .marketing-site-header__download {
+  min-width: 44px;
+  border: 0;
+  background: transparent;
+}
+/* Mobile navigation shares the same links as desktop. */
+.marketing-site-header__toggle { display: none; }
+@media (max-width: 767px) {
+  .marketing-site-header__inner { position: relative; min-height: 63px; padding-inline: 20px; justify-content: center; }
+  .marketing-site-header__brand { margin-inline: auto; }
+  .marketing-site-header__toggle { position: absolute; right: 12px; display: grid; place-items: center; width: 44px; height: 44px; border: 0; background: transparent; color: inherit; cursor: pointer; }
+  .marketing-site-header__toggle:focus-visible { outline: 2px solid var(--accent, #00aacc); outline-offset: 2px; border-radius: 4px; }
+  .marketing-site-header__nav { display: none; position: absolute; top: 100%; left: 0; right: 0; padding: 16px 20px 24px; background: #111; border-bottom: 1px solid rgb(255 255 255 / .1); }
+  .marketing-site-header__nav.is-open { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+  .marketing-site-header__nav > a { font-size: 16px; min-height: 48px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marketing-site-header { transition: none; }
+}

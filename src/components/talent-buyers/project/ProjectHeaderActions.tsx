@@ -54,6 +54,7 @@ export function ProjectHeaderActions({ project, castingWorkflow, onSettings, onE
   }
   return <>
     <ProjectBackButton />
+    <Link className="bd-btn-secondary" href={`/team-projects/${project.id}`}>Team &amp; access</Link>
     <FilterSelect triggerProps={{ className: "project-header-actions-trigger" }} actionMenu value="" label="Project actions" options={options} onChange={select} />
     {owner ? <button type="button" className="project-header-icon" onClick={onSettings} aria-label="Project settings" title="Project settings"><Settings size={18} aria-hidden /></button> : null}
     {dialog === "share" ? <CastingShareDialog projectId={project.id} castingWorkflow={castingWorkflow} open onClose={() => setDialog(null)} /> : null}

@@ -1,4 +1,5 @@
 "use server";
+import { getProjectCreationAccess } from "@/lib/billing/project-creation-access.server";
 
 import { revalidatePath } from "next/cache";
 
@@ -320,7 +321,9 @@ export async function createProject(payload: unknown, isDraft = false): Promise<
     return { ok: false, error: session.error };
   }
 
-const { supabase, userId } = session;
+  const creationAccess = await getProjectCreationAccess();
+  if (!creationAccess.allowed) return { ok: false, error: creationAccess.error ?? "Choose a paid plan or Project Pass before creating a project. View plans in Pricing." };
+  const { supabase, userId } = session;
   const { data, error } = await supabase
     .from("projects")
     .insert(buildContainerProjectInsertRow(userId, parsed.data, isDraft))

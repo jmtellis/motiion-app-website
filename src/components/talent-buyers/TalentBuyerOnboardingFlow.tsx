@@ -28,7 +28,7 @@ import {
 } from "@/app/talent-buyers/onboarding/actions";
 import { SetupFlowCancelButton } from "@/components/auth/SetupFlowCancelButton";
 import { SetupFlowFormPanel } from "@/components/auth/SetupFlowFormPanel";
-import { SignupSplitShell } from "@/components/auth/SignupSplitShell";
+import { CenteredAuthShell } from "@/components/auth/CenteredAuthShell";
 import { AuthField, AuthInput } from "@/components/auth/ui";
 import { SetupFieldBlock } from "@/components/auth/SetupFieldBlock";
 import { MarketPlacesSelector } from "@/components/talent-buyers/MarketPlacesSelector";
@@ -36,7 +36,6 @@ import { OrganizationPicker } from "@/components/talent-buyers/OrganizationPicke
 import { IndustryOnboardingCompletePricing } from "@/components/talent-buyers/IndustryOnboardingCompletePricing";
 import { trackClientEvent } from "@/lib/analytics/track-client";
 import { startIndustryCheckout } from "@/lib/billing/actions";
-import { getSetupFlowShellProps } from "@/lib/setup-flow/config";
 import { setupChoiceCard, setupMultiChoiceCard, setupPill } from "@/lib/setup-flow/form-styles";
 import {
   clearTalentBuyerDraft,
@@ -308,12 +307,6 @@ export function TalentBuyerOnboardingFlow({
     });
   }
 
-  const shellProps = getSetupFlowShellProps({
-    audience: "industry",
-    surface: "onboarding",
-    microStep: draft.currentStep,
-    isSuccess: isSuccessStep,
-  });
   const currentCopy = stepCopy[draft.currentStep];
 
   function renderStepFields() {
@@ -508,7 +501,7 @@ export function TalentBuyerOnboardingFlow({
 
   if (isSuccessStep) {
     return (
-      <SignupSplitShell {...shellProps} fullBleed coverAction={null}>
+      <CenteredAuthShell wide mode="signup" showHeading={false}>
         <div className="industry-onboarding-complete">
           <IndustryOnboardingCompletePricing
             title={currentCopy.title}
@@ -520,19 +513,12 @@ export function TalentBuyerOnboardingFlow({
             onUpgrade={handleUpgrade}
           />
         </div>
-      </SignupSplitShell>
+      </CenteredAuthShell>
     );
   }
 
   return (
-    <SignupSplitShell
-      fullBleed
-      {...shellProps}
-      showWordmark
-      progressLabel={progress.sectionTitle}
-      progressCurrent={progress.currentStep}
-      progressTotal={progress.totalSteps}
-    >
+    <CenteredAuthShell wide mode="signup" showHeading={false}>
       <SetupFlowFormPanel
         footerProgress
         progressLabel={progress.sectionTitle}
@@ -587,7 +573,7 @@ export function TalentBuyerOnboardingFlow({
       >
         {renderStepFields()}
       </SetupFlowFormPanel>
-    </SignupSplitShell>
+    </CenteredAuthShell>
   );
 }
 

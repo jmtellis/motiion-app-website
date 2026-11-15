@@ -107,7 +107,7 @@ export function SignupForm() {
 
     if (!data.session) {
       try { window.localStorage.setItem(`motiion:confirmation-sent:${nextEmail.toLowerCase()}`, String(Date.now())); } catch { /* optional cooldown persistence */ }
-      router.push(`${accountType === "lookingForTalent" ? "/talent-buyers" : ""}/signup/check-email?email=${encodeURIComponent(nextEmail)}`);
+      router.push(`${accountType === "lookingForTalent" ? "/talent-buyers" : ""}/signup/check-email?email=${encodeURIComponent(nextEmail)}${searchParams.get("next") ? `&next=${encodeURIComponent(searchParams.get("next")!)}` : ""}`);
       return;
     }
 
@@ -143,8 +143,6 @@ export function SignupForm() {
 
   return (
     <div className="signup-split-form__body">
-      <p className="signup-split-form__subtitle">{accountType === "lookingForTalent" ? "Find talent and bring your project together. Access requires an application." : "Create your talent profile and find opportunities."}</p>
-      <button type="button" className="signup-split-text-btn" onClick={() => { const params = new URLSearchParams(searchParams.toString()); params.set("account_type", accountType === "talent" ? "lookingForTalent" : "talent"); router.replace(`/signup?${params}`); }}>{accountType === "talent" ? "Here to find talent? Get started" : "Create a talent account"}</button>
       <form action={handleSubmit} className="flex flex-col gap-4">
         {!passwordStep ? (
         <label className="signup-split-field">
@@ -239,7 +237,8 @@ export function SignupForm() {
 
 
         <p className="signup-split-legal">
-          By creating an account, you agree to our{" "}
+          By creating an account, you agree to our
+          <span className="signup-split-legal__links">
           <a href="/terms" target="_blank" rel="noopener noreferrer">
             Terms and Conditions
           </a>{" "}
@@ -248,6 +247,7 @@ export function SignupForm() {
             Privacy Policy
           </a>
           .
+          </span>
         </p>
 
     </div>

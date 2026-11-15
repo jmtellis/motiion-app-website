@@ -120,7 +120,7 @@ export function CastingApplicationModal({ projectId, roleId, roleTitle, onClose,
       <button className="casting-modal-primary" disabled={busy || Boolean(previewStage)}>{busy ? "Please wait…" : login ? "Sign in" : "Create account"}</button>
       <button type="button" className="casting-modal-dismiss" disabled={busy} onClick={() => { setLogin(!login); setError(undefined); }}>{login ? "Create an account" : "Already have an account? Sign in"}</button>
     </form>}
-    {stage === "verify" && <div><CheckEmailForm email={emailAddress} accountType="talent" returnTo={returnPath} /><button className="casting-modal-dismiss" onClick={() => { setLogin(true); setStage("account"); }}>Sign in here after confirming</button></div>}
+    {stage === "verify" && <div><CheckEmailForm email={emailAddress} accountType="talent" returnTo={returnPath} /><button className="casting-modal-dismiss" onClick={() => { setLogin(true); setStage("account"); }}>Already verified? Sign in</button></div>}
     {stage === "details" && <form key={application?.userId} action={submit} onChange={event => saveDraft(new FormData(event.currentTarget))}>
       <p>Your details are saved to your account. You can finish your full profile later.</p>
       {!draftAvailable && <p role="status">This browser couldn’t save your draft. Keep this tab open until you submit.</p>}

@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
     const destination = await resolveOAuthRedirectPath(supabase, user.id, intent, user);
     const requested = safeAuthReturnPath(params.get("casting_return") ?? params.get("next") ?? (destination.includes("onboarding") && typeof user.user_metadata?.motiion_return_to === "string" ? user.user_metadata.motiion_return_to : null));
     // Complete the essential account setup before following a protected deep link.
-    const response = redirect(destination.includes("onboarding") ? destination : requested ?? destination);
+    const response = redirect((requested?.startsWith("/team-invite/") ? requested : destination.includes("onboarding") ? destination : requested ?? destination));
     if (requested && destination.includes("onboarding")) response.cookies.set(AUTH_RETURN_COOKIE, serializeAuthReturn(user.id, requested), { httpOnly: true, sameSite: "lax", secure: origin.startsWith("https:"), path: "/", maxAge: 60 * 60 * 24 * 30 });
     return response;
   } catch {

@@ -1,10 +1,13 @@
 "use client";
 
+import { useProfileCardInteraction } from "./use-profile-card-interaction";
+import Link from "next/link";
+import { discoverDetailHref } from "@/lib/app/discover-paths";
 import { FilterSelect } from "@/components/ui/FilterSelect";
 import { ExploreSearchField } from "@/components/ui/ExploreSearchField";
 
 import { VoiceSearchControl } from "./VoiceSearchControl";
-import { BadgeCheck, Check, ChevronDown, ChevronLeft, ChevronRight, MapPin, Search, SlidersHorizontal, X } from "lucide-react";
+import { ArrowUpRight, BadgeCheck, ChevronDown, ChevronLeft, ChevronRight, MapPin, Search, SlidersHorizontal, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode, type RefObject } from "react";
 
@@ -105,21 +108,26 @@ function BrowseCard({
   profile,
   onOpen,
   active = false,
+  profileHref,
 }: {
   profile: SearchProfileRecord;
   onOpen: () => void;
   active?: boolean;
+  profileHref: string;
 }) {
+  const interaction = useProfileCardInteraction(profileHref, onOpen);
   const name = profile.display_name || profile.full_name || "Talent profile";
   const image = profile.headshot_url || profile.headshot_urls?.[0];
 
   return (
+    <div className="discover-browse-card-group">
     <button
       type="button"
       className={`discover-browse-card${active ? " discover-browse-card--active" : ""}`}
-      aria-label={`Open ${name} profile`}
+      aria-label={`Preview ${name}`}
       aria-pressed={active}
-      onClick={onOpen}
+      onClick={interaction.onClick}
+      onKeyDown={interaction.onKeyDown}
     >
       <span className="discover-browse-card__photo">
         {image ? (
@@ -142,6 +150,8 @@ function BrowseCard({
         </small>
       </span>
     </button>
+    <Link className="discover-browse-card-profile" href={profileHref} prefetch={false} aria-label={`View ${name} profile`} title="View full profile"><ArrowUpRight size={18} aria-hidden /></Link>
+    </div>
   );
 }
 
@@ -447,6 +457,7 @@ export function DiscoverView({
               <BrowseCard
                 key={item.id}
                 profile={item}
+                profileHref={discoverDetailHref(basePath === "/talent" ? "/talent" : "/discover", "profile", item.id, queryKey)}
                 active={selectedTalentId === item.id}
                 onOpen={() => openTalent(lookupTalent(item.id) ?? searchProfileToTalent(item, 0))}
               />

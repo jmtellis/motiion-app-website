@@ -5,6 +5,9 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from "react";
 
+import "@/components/landing/marketing-header.css";
+import "./mobile-workspace-header.css";
+
 import { MotiionScrolledWordmark } from "@/components/brand/MotiionScrolledWordmark";
 
 /** Mobile app bar: landing-style wordmark and menu, without the test-environment notice. */
@@ -15,10 +18,11 @@ export function TalentMobileHeader({
 }: {
   homeHref: string;
   navigation: ReactNode;
-  account: ReactNode;
+  account?: ReactNode;
 }) {
   const pathname = usePathname();
   const menuId = useId();
+  const toggleRef = useRef<HTMLButtonElement>(null);
   const rootRef = useRef<HTMLElement>(null);
   const [openPath, setOpenPath] = useState<string | null>(null);
   const open = openPath === pathname;
@@ -36,17 +40,17 @@ export function TalentMobileHeader({
   useEffect(() => {
     if (!open) return;
 
-    function onPointerDown(event: globalThis.MouseEvent) {
+    function onPointerDown(event: PointerEvent) {
       if (!rootRef.current?.contains(event.target as Node)) setOpenPath(null);
     }
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpenPath(null);
+      if (event.key === "Escape") { setOpenPath(null); toggleRef.current?.focus(); }
     }
 
-    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
     return () => {
-      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [open]);
@@ -58,12 +62,13 @@ export function TalentMobileHeader({
   return (
     <header
       ref={rootRef}
-      className={`talent-mobile-header${open ? " is-open" : ""}`}
+      className={`talent-mobile-header marketing-site-header is-scrolled${open ? " is-open" : ""}`}
     >
-      <div className="talent-mobile-header__bar">
+      <div className="talent-mobile-header__bar marketing-site-header__inner">
         <button
+          ref={toggleRef}
           type="button"
-          className="talent-mobile-header__toggle"
+          className="talent-mobile-header__toggle marketing-site-header__toggle"
           aria-expanded={open}
           aria-controls={menuId}
           onClick={() => setOpen(!open)}
@@ -71,21 +76,21 @@ export function TalentMobileHeader({
           {open ? <X aria-hidden /> : <Menu aria-hidden />}
           <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
         </button>
-        <Link href={homeHref} className="talent-mobile-header__brand" aria-label="Motiion home">
+        <Link href={homeHref} className="talent-mobile-header__brand marketing-site-header__brand" aria-label="Motiion home">
           <MotiionScrolledWordmark priority />
         </Link>
         <span className="talent-mobile-header__balance" aria-hidden />
       </div>
       <div
         id={menuId}
-        className="talent-mobile-header__panel"
+        className={`talent-mobile-header__panel marketing-site-header__nav${open ? " is-open" : ""}`}
         hidden={!open}
         onClick={closeOnNavigate}
       >
         <nav aria-label="App" className="talent-mobile-header__nav">
           {navigation}
         </nav>
-        <div className="talent-mobile-header__account">{account}</div>
+        {account ? <div className="talent-mobile-header__account">{account}</div> : null}
       </div>
     </header>
   );

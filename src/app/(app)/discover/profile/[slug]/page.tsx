@@ -20,7 +20,7 @@ export default async function DiscoverStudioProfilePage({
   if (!profile) notFound();
 
   return (
-    <div className="discover-detail discover-detail--profile discover-skel-enter">
+    <div className="discover-detail discover-detail--profile">
       <ProfilePageClient
         profile={profile}
         embedded

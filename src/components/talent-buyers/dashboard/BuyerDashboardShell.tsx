@@ -1,6 +1,5 @@
 "use client";
 
-import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -68,7 +67,6 @@ export function BuyerDashboardShell({
   const { chrome } = useBuyerPageChromeContext();
   const sidebar = useWorkspaceSidebar("motiion-industry-sidebar-width");
   const sidebarExpanded = !sidebar.collapsed;
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const needsShellChrome = useMemo(
     () => buyerShellNeedsChrome(pathname, chrome),
@@ -77,12 +75,6 @@ export function BuyerDashboardShell({
   const isTalentRoute = pathname.startsWith("/talent");
   const hideShellChrome = !needsShellChrome;
   const sidebarCollapsed = !sidebarExpanded;
-
-  const [previousPathname, setPreviousPathname] = useState(pathname);
-  if (previousPathname !== pathname) {
-    setPreviousPathname(pathname);
-    setMobileOpen(false);
-  }
 
   const scrollByPathRef = useRef(new Map<string, number>());
   const historyTargetPathRef = useRef<string | null>(null);
@@ -125,28 +117,6 @@ export function BuyerDashboardShell({
     }
   }, [hideShellChrome, isTalentRoute, pathname]);
 
-  useEffect(() => {
-    const desktop = window.matchMedia("(min-width: 1024px)");
-    function closeMobileDrawer(event: MediaQueryListEvent) {
-      if (event.matches) setMobileOpen(false);
-    }
-    desktop.addEventListener("change", closeMobileDrawer);
-    return () => desktop.removeEventListener("change", closeMobileDrawer);
-  }, []);
-
-  function toggleSidebar() {
-    if (
-      typeof window !== "undefined" &&
-      window.matchMedia("(max-width: 1023px)").matches
-    ) {
-      setMobileOpen((open) => !open);
-      return;
-    }
-    sidebar.toggle();
-  }
-
-  // Keep the opener mounted while the native navigation dialog owns focus, so
-  // Escape/close can return focus to the same control without losing context.
   const showChrome = needsShellChrome;
 
   return (
@@ -168,9 +138,7 @@ export function BuyerDashboardShell({
           entitlement={entitlement}
           testEnvironment={testEnvironment}
           collapsed={sidebarCollapsed}
-          mobileOpen={mobileOpen}
-          onMobileClose={() => setMobileOpen(false)}
-          onToggleSidebar={toggleSidebar}
+          onToggleSidebar={sidebar.toggle}
           sidebarExpanded={sidebarExpanded}
         />
 
@@ -188,37 +156,11 @@ export function BuyerDashboardShell({
                 progressPercent={chrome.progressPercent}
                 start={
                   <>
-                    <button
-                      type="button"
-                      onClick={() => setMobileOpen(true)}
-                      className="inline-flex size-8 items-center justify-center rounded-full text-white/70 transition hover:bg-white/6 hover:text-white lg:hidden"
-                      aria-label="Open navigation menu"
-                      aria-expanded={mobileOpen}
-                      aria-controls="buyer-sidebar-nav"
-                    >
-                      <Menu className="size-4" aria-hidden />
-                    </button>
                     <BuyerChromeTitle />
                   </>
                 }
                 end={chrome.end}
               />
-            </div>
-          ) : null}
-
-          {!showChrome ? (
-            <div className="workspace-industry-mobile-toolbar">
-              <button
-                type="button"
-                onClick={() => setMobileOpen(true)}
-                className="workspace-icon-button"
-                aria-label="Open navigation menu"
-                aria-expanded={mobileOpen}
-                aria-controls="buyer-sidebar-nav"
-              >
-                <Menu className="size-4" aria-hidden />
-              </button>
-              <span>Motiion</span>
             </div>
           ) : null}
 

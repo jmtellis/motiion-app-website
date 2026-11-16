@@ -1,7 +1,9 @@
 "use client";
 
-import { Heart } from "lucide-react";
-import { useState, useTransition } from "react";
+import Link from "next/link";
+import { useProfileCardInteraction } from "@/components/app/use-profile-card-interaction";
+import { ArrowUpRight, Check, Heart } from "lucide-react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import type { Talent } from "@/lib/talent-navigator/types";
 
@@ -16,6 +18,7 @@ type TalentCardProps = {
   onMouseEnter?: () => void;
   onSave?: (talent: Talent) => void | Promise<void>;
   saved?: boolean;
+  profileHref?: string;
   tabIndex?: number;
   ariaLabel?: string;
 };
@@ -31,6 +34,21 @@ function visualsForDistance(distance: number, active: boolean) {
   };
 }
 
+/** Cached, slow, and failed portraits all keep a stable card footprint. */
+function Portrait({ src, name, active, nearby }: { src: string; name: string; active: boolean; nearby: boolean }) {
+  const imageRef = useRef<HTMLImageElement>(null);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  useEffect(() => {
+    const image = imageRef.current;
+    if (image?.complete) setStatus(image.naturalWidth > 0 ? "ready" : "error");
+  }, []);
+  return <>
+    <span className="talent-navigator__portrait-placeholder" data-loading={status === "loading"} aria-hidden>{status === "error" ? name.split(" ").map(part => part[0]).slice(0, 2).join("") : ""}</span>
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img ref={imageRef} src={src} alt="" loading={nearby ? "eager" : "lazy"} fetchPriority={active ? "high" : "auto"} decoding="async" data-ready={status === "ready"} onLoad={() => setStatus("ready")} onError={() => setStatus("error")} />
+  </>;
+}
+
 export function TalentCard({
   talent,
   active,
@@ -41,25 +59,21 @@ export function TalentCard({
   onMouseEnter,
   onSave,
   saved = false,
+  profileHref,
   tabIndex = -1,
   ariaLabel,
 }: TalentCardProps) {
+  const interaction = useProfileCardInteraction(profileHref, onClick);
   const visuals = visualsForDistance(distance, active);
   const [isPending, startTransition] = useTransition();
   const [justSaved, setJustSaved] = useState(false);
   const isSaved = saved || justSaved;
 
   return (
-    <button
-      type="button"
+    <div
+      data-profile-actions={active && profileHref ? true : undefined}
       className={`talent-navigator__card w-full text-left ${active ? "talent-navigator__card--active" : ""}${distance <= 1 ? " talent-navigator__card--near" : ""}${panelOpen ? " talent-navigator__card--panel-open" : ""}`}
-      onClick={onClick}
-      onDoubleClick={onDoubleClick}
       onMouseEnter={onMouseEnter}
-      tabIndex={tabIndex}
-      aria-label={ariaLabel ?? `${talent.name}${active ? ", active" : ""}`}
-      aria-current={active ? "true" : undefined}
-      aria-pressed={panelOpen || undefined}
       style={
         {
           "--tn-card-scale": visuals.scale,
@@ -68,9 +82,11 @@ export function TalentCard({
         } as React.CSSProperties
       }
     >
+      <button type="button" className="talent-navigator__card-hit"
+        onClick={interaction.onClick} onKeyDown={interaction.onKeyDown} onDoubleClick={profileHref ? undefined : onDoubleClick} tabIndex={tabIndex}
+        aria-label={ariaLabel ?? `Preview ${talent.name}`} aria-pressed={panelOpen || undefined} />
       <div className="talent-navigator__card-photo">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={talent.imageUrl} alt="" loading="lazy" />
+        <Portrait key={talent.imageUrl} src={talent.imageUrl} name={talent.name} active={active} nearby={distance <= 1} />
         {active ? (
           <>
             <div className="talent-navigator__card-overlay" aria-hidden />
@@ -84,9 +100,9 @@ export function TalentCard({
               ) : null}
             </div>
             {onSave ? (
-              <span
-                role="button"
-                tabIndex={0}
+              <button
+                type="button"
+                disabled={isPending || isSaved}
                 className={`talent-navigator__card-save${isSaved ? " talent-navigator__card-save--saved" : ""}`}
                 aria-label={isSaved ? `${talent.name} saved` : `Save ${talent.name}`}
                 aria-pressed={isSaved}
@@ -99,27 +115,17 @@ export function TalentCard({
                     setJustSaved(true);
                   });
                 }}
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter" && event.key !== " ") return;
-                  event.preventDefault();
-                  event.stopPropagation();
-                  if (isPending || isSaved) return;
-                  startTransition(async () => {
-                    await onSave(talent);
-                    setJustSaved(true);
-                  });
-                }}
+
               >
                 <Heart className="size-3.5" fill={isSaved ? "currentColor" : "none"} />
-              </span>
-            ) : (
-              <span className="talent-navigator__card-save" aria-hidden>
-                <Heart className="size-3.5" />
-              </span>
-            )}
+              </button>
+            ) : null}
+            {profileHref ? <Link className="talent-navigator__card-profile" href={profileHref} prefetch={false} aria-label={`${panelOpen ? "Selected in preview. " : ""}View ${talent.name} profile`} title={panelOpen ? "Selected in preview · View full profile" : "View full profile"}>
+              {panelOpen ? <Check size={18} aria-hidden /> : <ArrowUpRight size={18} aria-hidden />}
+            </Link> : null}
           </>
         ) : null}
       </div>
-    </button>
+    </div>
   );
 }

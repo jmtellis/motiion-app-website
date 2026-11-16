@@ -17,7 +17,6 @@ import {
   Link2,
   ListPlus,
   Loader2,
-  MessageCircle,
   Mic,
   MoreHorizontal,
   Play,
@@ -35,7 +34,6 @@ import { fetchIndustryTalentSaveState, setIndustryTalentSaved, setIndustryRoster
 import { loadHomeProfile } from "@/app/(app)/home/actions";
 import { useWorkspaceViewerId } from "@/components/workspace/WorkspaceNotifications";
 import { primaryTalentLabel } from "@/lib/app/talent-label";
-import { startConversationWith } from "@/lib/app/conversations";
 import type { CreditChipItem } from "@/lib/profile/profile-credits";
 import {
   addToDiscoverList,
@@ -74,6 +72,7 @@ import {
   visualOf,
   type ProfileSection,
 } from "./profile-model";
+import { PreviewRelevance } from "./PreviewRelevance";
 import "./talent-profile.css";
 
 type ProfilePage =
@@ -82,8 +81,7 @@ type ProfilePage =
 
 type Overlay =
   | { kind: "credit"; chip: CreditChipItem }
-  | { kind: "lists" }
-  | { kind: "message" };
+  | { kind: "lists" };
 
 export type TalentProfileChrome = {
   title: string | null;
@@ -100,12 +98,16 @@ export function TalentProfileSheet({
   variant = "sheet",
   onOpenFullProfile,
   onClose,
+  previewSummary,
+  hideFullProfileFooter = false,
 }: {
   slug: string;
+  previewSummary?: { name: string; imageUrl: string; location?: string };
+  hideFullProfileFooter?: boolean;
   userId?: string;
   onChrome: (chrome: TalentProfileChrome) => void;
   matchReason?: string | null;
-  /** Preview: actions, highlights, socials — no deep portfolio drill-in. */
+  /** Preview: save actions and relevance; experience lives on the full profile. */
   variant?: "sheet" | "preview";
   onOpenFullProfile?: (profile: PublicTalentProfile) => void;
   /** Overlay close control on the hero (headerless side panels). */
@@ -121,16 +123,21 @@ export function TalentProfileSheet({
   const [stack, setStack] = useState<ProfilePage[]>([]);
   const [overlay, setOverlay] = useState<Overlay | null>(null);
   const [viewer, setViewer] = useState<number | null>(null);
+  const [saveRevision, setSaveRevision] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const scrollAnchor = useRef<HTMLDivElement>(null);
+  const profileRequest = useRef<{ key: string; promise: ReturnType<typeof loadHomeProfile> } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    void loadHomeProfile(slug, userId).then((result) => {
+    // Reuse the in-flight request across Strict Mode effect replay, scoped to this sheet.
+    const key = JSON.stringify([slug, userId, loadAttempt]);
+    if (profileRequest.current?.key !== key) profileRequest.current = { key, promise: loadHomeProfile(slug, userId) };
+    void profileRequest.current.promise.then((result) => {
       if (cancelled) return;
       setLoadError(null);
       setProfile(result.profile);
-      if (result.profile) void recordProfileView(result.profile.id);
+      if (result.profile) void recordProfileView(result.profile.id).catch(() => {});
     }).catch(() => {
       if (!cancelled) setLoadError("We couldn’t load this profile. Check your connection and try again.");
     });
@@ -163,7 +170,7 @@ export function TalentProfileSheet({
 
   if (blocked?.slug === slug) return <div className="ui-state" role="status"><h2>{blocked.name} is blocked</h2><p>This person is hidden from your messages, search, Discover, and feeds. You can unblock them in settings.</p><Link className="ui-button ui-button--secondary" href={industryWorkspace ? "/dashboard/settings?section=privacy" : "/settings?section=resources"}>Manage blocked users</Link></div>;
   if (loadError) return <div className="ui-state ui-state--error" role="alert"><h2>Profile unavailable</h2><p>{loadError}</p><button type="button" className="ui-button" onClick={() => { setLoadError(null); setLoadAttempt((value) => value + 1); }}>Try again</button></div>;
-  if (profile === undefined) return <ProfileSkeleton />;
+  if (profile === undefined) return <ProfileSkeleton summary={previewSummary} />;
   if (!profile) return <div className="ui-state"><h2>Profile unavailable</h2><p>This person may have changed their profile’s visibility or removed their account.</p></div>;
 
   const isSelf = profile.id === viewerId;
@@ -179,7 +186,7 @@ export function TalentProfileSheet({
   }
 
   return (
-    <div className="talent-profile" ref={scrollAnchor}>
+    <div className={`talent-profile${preview ? " talent-profile--preview" : ""}`} ref={scrollAnchor}>
       {page && !preview ? (
         <ProfileDestination
           profile={profile}
@@ -192,14 +199,17 @@ export function TalentProfileSheet({
           profile={profile}
           matchReason={matchReason}
           preview={preview}
+          onOpenFullProfile={onOpenFullProfile ? () => onOpenFullProfile(profile) : undefined}
           onClose={onClose}
           actions={isSelf ? null : (
             <ProfileActions
+              compact={preview}
+              quickSave={preview}
+              saveRevision={saveRevision}
               profile={profile}
               onNotice={setNotice}
               onBlocked={() => { setBlocked({ slug, name: displayName(profile) }); setStack([]); setOverlay(null); setViewer(null); }}
               onLists={() => setOverlay({ kind: "lists" })}
-              onMessage={() => setOverlay({ kind: "message" })}
               onOpenFullProfile={onOpenFullProfile ? () => onOpenFullProfile(profile) : undefined}
             />
           )}
@@ -207,7 +217,7 @@ export function TalentProfileSheet({
           onCredit={preview ? () => undefined : openCredit}
           onHeadshot={setViewer}
           footer={
-            preview && onOpenFullProfile ? (
+            preview && onOpenFullProfile && !hideFullProfileFooter ? (
               <button
                 type="button"
                 className="talent-profile__full-profile"
@@ -232,10 +242,7 @@ export function TalentProfileSheet({
         />
       ) : null}
       {overlay?.kind === "lists" ? (
-        <ListsSheet profile={profile} onClose={() => setOverlay(null)} onNotice={setNotice} />
-      ) : null}
-      {overlay?.kind === "message" ? (
-        <MessageSheet profile={profile} onClose={() => setOverlay(null)} onNotice={setNotice} />
+        <ListsSheet profile={profile} onClose={() => { setOverlay(null); setSaveRevision(value => value + 1); }} onNotice={setNotice} />
       ) : null}
       {viewer !== null && shots.length ? (
         <HeadshotViewer
@@ -255,13 +262,19 @@ function pageTitle(profile: PublicTalentProfile, page: ProfilePage) {
   return profile.experiences?.[page.index]?.title?.trim() || "Experience";
 }
 
-function ProfileSkeleton() {
+function ProfileSkeleton({ summary }: { summary?: { name: string; imageUrl: string; location?: string } }) {
   return (
-    <div className="talent-profile" aria-busy="true" aria-label="Loading profile">
-      <div className="talent-profile__hero talent-profile__hero--loading" />
-      <div className="talent-profile__body">
-        <span className="talent-profile__bone" style={{ width: "55%", height: 22 }} />
-        <span className="talent-profile__bone" style={{ width: "35%", height: 14 }} />
+    <div className="talent-profile talent-profile--loading" aria-busy="true" aria-label="Loading profile details">
+      {summary ? <div className="discover-preview__portrait"><HeroPager name={summary.name} meta={summary.location ?? ""} shots={summary.imageUrl ? [summary.imageUrl] : []} onOpen={() => {}} loading /></div> : <div className="talent-profile__hero talent-profile__hero--loading" />}
+      <div className="talent-profile__actions" aria-hidden>
+        <span className="talent-profile__bone talent-profile__bone--message" />
+        <span className="talent-profile__bone talent-profile__bone--action" />
+        <span className="talent-profile__bone talent-profile__bone--action" />
+        <span className="talent-profile__bone talent-profile__bone--action" />
+      </div>
+      <div className="talent-profile__body" aria-hidden>
+        <span className="talent-profile__bone" style={{ width: "100%", height: 48, borderRadius: 14 }} />
+        <span className="talent-profile__bone" style={{ width: "100%", height: 48, borderRadius: 14 }} />
       </div>
     </div>
   );
@@ -277,6 +290,7 @@ function ProfileHome({
   onCredit,
   onHeadshot,
   preview = false,
+  onOpenFullProfile,
   footer = null,
   onClose,
 }: {
@@ -287,9 +301,11 @@ function ProfileHome({
   onCredit: (chip: CreditChipItem) => void;
   onHeadshot: (index: number) => void;
   preview?: boolean;
+  onOpenFullProfile?: () => void;
   footer?: ReactNode;
   onClose?: () => void;
 }) {
+  const industry = useIsIndustryWorkspace();
   const name = displayName(profile);
   const meta = [primaryTalentLabel(profile.talent_types), profile.location].filter(Boolean).join(" · ");
   const highlights = profile.profile_highlights ?? [];
@@ -298,6 +314,23 @@ function ProfileHome({
   const socials = socialLinks(profile);
   const representation = publicRepresentation(profile);
   const union = profile.union_status?.trim();
+
+  if (preview) {
+    return <>
+      <div className="discover-preview__portrait"><HeroPager name={name} meta={meta} shots={shots} onOpen={onHeadshot} /></div>
+      {actions}
+      <div className="talent-profile__body">
+        {matchReason ? <section className="discover-preview__relevance"><h3>Why this appeared</h3><p>{matchReason}</p></section> : null}
+        {industry ? <PreviewRelevance profile={profile} /> : null}
+        <div className="discover-preview__quick-actions">
+          <button type="button" className="home-profile-row" disabled={!shots.length} onClick={() => onHeadshot(0)}><ImageIcon size={18} aria-hidden /><span>Headshots</span><ChevronRight size={16} aria-hidden /></button>
+          {onOpenFullProfile ? <button type="button" className="home-profile-row" onClick={onOpenFullProfile}><ExternalLink size={18} aria-hidden /><span>Full profile & resume</span><ChevronRight size={16} aria-hidden /></button> : null}
+        </div>
+        {footer}
+      </div>
+
+    </>;
+  }
 
   const mediaRows: ReactNode[] = [];
   if (!preview && sectionAvailable(profile, "headshots")) {
@@ -318,7 +351,7 @@ function ProfileHome({
               {representation}
             </span>
           ) : null}
-          {union ? <span className="talent-profile__badge" data-muted={/non/i.test(union)}>{union}</span> : null}
+          {union ? <span className="talent-profile__badge" >{union}</span> : null}
         </span>
       </div>,
     );
@@ -410,17 +443,21 @@ function MenuRow({ icon, label, detail, onClick }: { icon: ReactNode; label: str
 /* ─── Actions ──────────────────────────────────────────────────────────── */
 
 export function ProfileActions({
+  compact = false,
+  quickSave = false,
+  saveRevision = 0,
   profile,
   onNotice,
   onLists,
-  onMessage,
   onBlocked,
   onOpenFullProfile,
 }: {
+  compact?: boolean;
+  quickSave?: boolean;
+  saveRevision?: number;
   profile: PublicTalentProfile;
   onNotice: (message: string) => void;
   onLists: () => void;
-  onMessage: () => void;
   onBlocked: () => void;
   onOpenFullProfile?: () => void;
 }) {
@@ -447,7 +484,7 @@ export function ProfileActions({
     return () => {
       cancelled = true;
     };
-  }, [profile.id, industry, loadAttempt]);
+  }, [profile.id, industry, loadAttempt, saveRevision]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -523,24 +560,24 @@ export function ProfileActions({
   return (
     <>
     {state?.error ? <p className="ui-notice" data-tone="error" role="alert">{state.error} <button type="button" onClick={() => setLoadAttempt(value => value + 1)}>Retry</button></p> : null}
-    <div className="talent-profile__actions">
+    <div className={`talent-profile__actions${quickSave ? " talent-profile__actions--quick-save" : ""}`}>
+      {quickSave ? <button type="button" className="talent-profile__action talent-profile__action--save" onClick={onLists} title={state?.lists.some(list => list.includes) ? `Saved in ${state.lists.filter(list => list.includes).map(list => list.name).join(", ")}` : undefined}><ListPlus size={18} aria-hidden /><span>{industry ? "Save to roster" : "Save to list"}</span></button> : null}
       <button
         type="button"
-        className="talent-profile__action talent-profile__action--favorite"
+        className={`talent-profile__action talent-profile__action--favorite${compact ? " talent-profile__action--icon" : ""}`}
+        aria-label={!state ? "Loading favorite status" : favorited ? "Remove from favorites" : "Add to favorites"}
+        title={favorited ? "Remove from favorites" : "Add to favorites"}
+        aria-busy={!state || busy === "favorite"}
         aria-pressed={favorited}
         disabled={Boolean(busy) || !state || Boolean(state.error)}
         onClick={() => void favorite()}
       >
-        <Heart size={16} aria-hidden className="talent-profile__favorite-icon" fill={favorited ? "currentColor" : "none"} />
-        Favorite
+        {!state || busy === "favorite" ? <Loader2 size={16} className="animate-spin" aria-hidden /> : <Heart size={16} aria-hidden className="talent-profile__favorite-icon" fill={favorited ? "currentColor" : "none"} />}
+        {compact ? null : "Favorite"}
       </button>
-      <button type="button" className="talent-profile__action" onClick={() => void share()}>
+      <button type="button" className={`talent-profile__action${compact ? " talent-profile__action--icon" : ""}`} aria-label="Share profile" title="Share profile" onClick={() => void share()}>
         <Share size={16} aria-hidden />
-        Share
-      </button>
-      <button type="button" className="talent-profile__action" onClick={onMessage}>
-        <MessageCircle size={16} aria-hidden />
-        Message
+        {compact ? null : "Share"}
       </button>
       <div className="talent-profile__more" ref={menuRef} onKeyDown={(event) => { if (event.key === "Escape" && menuOpen) { event.preventDefault(); event.stopPropagation(); setMenuOpen(false); menuRef.current?.querySelector<HTMLButtonElement>("button")?.focus(); } }} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setMenuOpen(false); }}>
         <button
@@ -733,55 +770,6 @@ export function ListsSheet({
           ))}
         </ul>
       ) : null}
-    </PanelSheet>
-  );
-}
-
-export function MessageSheet({
-  profile,
-  onClose,
-  onNotice,
-}: {
-  profile: PublicTalentProfile;
-  onClose: () => void;
-  onNotice: (message: string) => void;
-}) {
-  const [body, setBody] = useState("");
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState<"conversation" | "request" | null>(null);
-  const first = displayName(profile).split(" ")[0];
-
-  async function send() {
-    setSending(true);
-    setError(null);
-    const result = await startConversationWith({ targetUserId: profile.id, initialMessage: body.trim() || "Hi!" });
-    setSending(false);
-    if (!result.ok) {
-      setError(result.error ?? "Could not send your message.");
-      return;
-    }
-    setSent(result.pendingRequest ? "request" : "conversation");
-    onNotice(result.pendingRequest ? "Message request sent." : "Message sent.");
-  }
-
-  return (
-    <PanelSheet title={`Message ${first}`} onClose={onClose}>
-      {sent ? (
-        <div className="profile-sheet__sent">
-          <p>{sent === "request" ? `${first} will see your message request in their inbox.` : `Your message to ${first} is in your inbox.`}</p>
-          <Link href="/inbox" className="profile-sheet__primary">Open inbox</Link>
-        </div>
-      ) : (
-        <form className="profile-sheet__message" onSubmit={(event) => { event.preventDefault(); void send(); }}>
-          <textarea value={body} onChange={(event) => setBody(event.target.value)} placeholder={`Say hi to ${first}…`} aria-label="Message" rows={5} autoFocus maxLength={2000} />
-          {error ? <p className="profile-sheet__error">{error}</p> : null}
-          <button type="submit" className="profile-sheet__primary" disabled={sending}>
-            {sending ? <Loader2 size={14} className="animate-spin" aria-hidden /> : null}
-            Send message
-          </button>
-        </form>
-      )}
     </PanelSheet>
   );
 }

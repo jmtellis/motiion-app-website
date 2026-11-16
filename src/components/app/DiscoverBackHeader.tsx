@@ -10,7 +10,9 @@ export function DiscoverBackHeader({
   handle,
   beside,
   trailing,
+  inlineBack = false,
 }: {
+  inlineBack?: boolean;
   href: string;
   title: string;
   subtitle?: string | null;
@@ -24,8 +26,8 @@ export function DiscoverBackHeader({
   const profileChrome = Boolean(handle || beside || trailing);
 
   return (
-    <header className={`discover-detail-header${profileChrome ? " discover-detail-header--profile" : ""}`}>
-      <Link href={href} className="discover-detail-header__back" aria-label="Back">
+    <header className={`discover-detail-header${profileChrome ? " discover-detail-header--profile" : ""}${inlineBack ? " discover-detail-header--inline" : ""}`}>
+      <Link href={href} className="discover-detail-header__back" aria-label={inlineBack ? "Back to Discover" : "Back"}>
         <ChevronLeft size={20} aria-hidden />
         <span>Back</span>
       </Link>

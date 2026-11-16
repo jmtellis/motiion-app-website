@@ -16,7 +16,7 @@ import {
   BadgeCheck,
 } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
-import { Dialog } from "@/components/ui/Dialog";
+import { TalentMobileHeader } from "@/components/workspace/TalentMobileHeader";
 
 import { WorkspaceAccountMenu } from "@/components/workspace/WorkspaceAccountMenu";
 import { WorkspaceFooterNotices } from "@/components/workspace/WorkspaceFooterNotices";
@@ -300,7 +300,7 @@ function SidebarContent({
         if (event.target !== event.currentTarget) onContentFadeInEnd?.();
       }}
     >
-      <WorkspaceSidebarHeader href={BUYER_HOME_PATH} collapsed={collapsed} expanded={Boolean(showExpanded)} mobile={isMobileDrawer} onToggle={onToggleSidebar} />
+      {!isMobileDrawer ? <WorkspaceSidebarHeader href={BUYER_HOME_PATH} collapsed={collapsed} expanded={Boolean(showExpanded)} mobile={isMobileDrawer} onToggle={onToggleSidebar} /> : null}
 
       <div className="buyer-sidebar__scroll buyer-dashboard-shell__sidebar-scroll">
         <NavSection collapsed={collapsed}>
@@ -447,8 +447,9 @@ export function SidebarNav({
       </aside>
   );
   return mobile ? (
-    <Dialog open={showMobileDrawer} onClose={() => onMobileClose?.()} label="Navigation" className="buyer-sidebar-dialog">
-      {navigation}
-    </Dialog>
+    <TalentMobileHeader homeHref={BUYER_HOME_PATH} navigation={
+      <SidebarContent profile={profile} entitlement={entitlement} testEnvironment={testEnvironment}
+        pathname={pathname} collapsed={false} sidebarExpanded mobileOpen />
+    } />
   ) : navigation;
 }

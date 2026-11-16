@@ -225,5 +225,5 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .staging-env
 }
 html:has(.buyer-dashboard-shell--sidebar-collapsed) .staging-environment-badge { left:84px; bottom:12px; }
 @media(max-width:1023px) {
-  html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .staging-environment-badge { top:7px; right:12px; bottom:auto; left:auto; max-width:190px; }
+  html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) .staging-environment-badge { top:auto; right:auto; bottom:8px; left:8px; max-width:190px; }
 }

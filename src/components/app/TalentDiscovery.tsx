@@ -1,7 +1,10 @@
 "use client";
 
-import { LayoutGrid, List } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { discoverDetailHref, discoverReturnHref } from "@/lib/app/discover-paths";
+import { useMobileDiscover } from "@/lib/talent-navigator/use-mobile-discover";
+import { useDiscoverIdle } from "@/lib/talent-navigator/use-discover-idle";
+import { LayoutGrid, List, Pause, Play } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { DiscoverProfilePanel } from "@/components/app/DiscoverProfilePanel";
@@ -10,12 +13,13 @@ import { DiscoverSearchBar } from "@/components/app/DiscoverSearchBar";
 import { DiscoverTalentProvider } from "@/components/app/discover-selection";
 import {
   TalentNavigatorGrid,
+  MOBILE_GRID_METRICS,
   NAVIGATOR_STEP_X,
   NAVIGATOR_STEP_Y,
 } from "@/components/talent-buyers/talent-navigator/TalentNavigatorGrid";
 import { SegmentedControl } from "@/components/talent-buyers/dashboard/SegmentedControl";
 import { buildTalentRows } from "@/lib/talent-navigator/rows";
-import { useNavigatorSlide } from "@/lib/talent-navigator/use-navigator-slide";
+import { useNavigatorSlide, type NavigatorDirection } from "@/lib/talent-navigator/use-navigator-slide";
 import {
   EMPTY_NAVIGATOR_FILTERS,
   type Talent,
@@ -74,8 +78,11 @@ export function TalentDiscovery({
     resolveLayout(initialMode, initialLayout),
   );
   const [scrolled, setScrolled] = useState(false);
-  const [selected, setSelected] = useState<Talent | null>(null);
+  const [selection, setSelected] = useState<Talent | null>(null);
+  const [previewTracksGrid, setPreviewTracksGrid] = useState(false);
   const [viewed, setViewed] = useState(recentlyViewed);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [motionPaused, setMotionPaused] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
   const rows = useMemo(
     () =>
@@ -85,24 +92,51 @@ export function TalentDiscovery({
       }),
     [initialData],
   );
-  const slide = useNavigatorSlide(rows, NAVIGATOR_STEP_X, NAVIGATOR_STEP_Y);
+  const mobile = useMobileDiscover();
+  const slide = useNavigatorSlide(rows, mobile ? MOBILE_GRID_METRICS.stepX : NAVIGATOR_STEP_X, mobile ? MOBILE_GRID_METRICS.stepY : NAVIGATOR_STEP_Y);
+  const focusCell = slide.focusCell;
+  const restoredFocus = useRef<string | null>(null);
+  const focusId = searchParams.get("focus");
+  useEffect(() => {
+    if (!focusId || restoredFocus.current === focusId) return;
+    const rowIndex = rows.findIndex(row => row.talent.some(person => person.id === focusId));
+    if (rowIndex < 0) return;
+    const colIndex = rows[rowIndex].talent.findIndex(person => person.id === focusId);
+    restoredFocus.current = focusId;
+    focusCell(rowIndex, colIndex);
+  }, [focusId, rows, focusCell]);
   const talentById = useMemo(() => {
     const map = new Map<string, Talent>();
     for (const person of initialData.talent) map.set(person.id, person);
     return map;
   }, [initialData.talent]);
 
-  const navigate = slide.navigate;
-  const panelOpen = selected !== null;
+  const panelOpen = selection !== null;
+  const moveGrid = slide.navigate;
+  const navigate = useCallback((direction: NavigatorDirection) => {
+    if (panelOpen) setPreviewTracksGrid(true);
+    moveGrid(direction);
+  }, [moveGrid, panelOpen]);
   const showingList = mode === "discover" && exploreLayout === "list";
   const showingNavigator = mode === "discover" && exploreLayout === "navigator";
+  const centeredTalent = rows[slide.activeRowIndex]?.talent[slide.activeColIndex];
+  const selected = selection && previewTracksGrid && showingNavigator ? centeredTalent ?? selection : selection;
+  useDiscoverIdle(canvasRef, showingNavigator && !mobile && !panelOpen && !motionPaused && rows.length > 1 && !keyword && !credit, navigate);
 
   useEffect(() => {
-    if (!showingNavigator || panelOpen || !rows.length) return;
+    if (!showingNavigator || !rows.length) return;
     function onKeyDown(event: KeyboardEvent) {
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
       const target = event.target as HTMLElement | null;
-      if (target?.closest("input, textarea, select, [contenteditable='true'], [role='dialog'], [role='menu'], [role='listbox']")) return;
+      if (target?.closest("#discover-profile-panel, input, textarea, select, [contenteditable='true'], [role='dialog'], [role='menu'], [role='listbox'], [role='search']")) return;
+      if (event.key === "Enter" && !target?.closest("button, a")) {
+        const person = rows[slide.activeRowIndex]?.talent[slide.activeColIndex];
+        if (person && !event.repeat) {
+          event.preventDefault();
+          router.push(discoverDetailHref(basePath === "/talent" ? "/talent" : "/discover", "profile", person.slug || person.id, discoverReturnHref(basePath, searchParams.toString(), person.id)));
+        }
+        return;
+      }
       const direction = (
         { ArrowLeft: "col-left", ArrowRight: "col-right", ArrowUp: "row-up", ArrowDown: "row-down" } as const
       )[event.key as "ArrowLeft"];
@@ -112,7 +146,7 @@ export function TalentDiscovery({
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [showingNavigator, navigate, panelOpen, rows.length]);
+  }, [showingNavigator, navigate, panelOpen, rows, slide.activeRowIndex, slide.activeColIndex, router, basePath, searchParams]);
 
   useEffect(() => {
     const node = resultsRef.current;
@@ -130,6 +164,12 @@ export function TalentDiscovery({
 
   function openTalent(talent: Talent) {
     const known = talentById.get(talent.id) ?? talent;
+    const rowIndex = rows[slide.activeRowIndex]?.talent.some(person => person.id === known.id)
+      ? slide.activeRowIndex
+      : rows.findIndex(row => row.talent.some(person => person.id === known.id));
+    const trackGrid = showingNavigator && rowIndex >= 0;
+    if (trackGrid) focusCell(rowIndex, rows[rowIndex].talent.findIndex(person => person.id === known.id));
+    setPreviewTracksGrid(trackGrid);
     setSelected(known);
     setViewed((current) => [known, ...current.filter((person) => person.id !== known.id)].slice(0, 10));
   }
@@ -182,7 +222,7 @@ export function TalentDiscovery({
         selectedTalentId: selected?.id ?? null,
       }}
     >
-      <div className={shellClass}>
+      <div className={shellClass} ref={canvasRef}>
         <div className="talent-discovery-chrome" aria-hidden="true">
           <div className="talent-discovery-chrome__bar" />
         </div>
@@ -239,6 +279,7 @@ export function TalentDiscovery({
               {rows.length ? (
                 <div className="talent-navigator__grid-canvas">
                   <TalentNavigatorGrid
+                    mobile={mobile}
                     rows={rows}
                     activeRowIndex={slide.activeRowIndex}
                     activeColByRowId={slide.activeColByRowId}
@@ -247,8 +288,9 @@ export function TalentDiscovery({
                     slideInstant={slide.slideInstant}
                     onSlideComplete={slide.handleSlideComplete}
                     onFocusCell={slide.focusCell}
-                    onNavigate={slide.navigate}
+                    onNavigate={navigate}
                     onOpenProfile={openTalent}
+                    profileHref={(person) => discoverDetailHref(profileBasePath, "profile", person.slug || person.id, discoverReturnHref(basePath, searchParams.toString(), person.id))}
                     selectedTalentId={selected?.id ?? null}
                   />
                 </div>
@@ -263,6 +305,7 @@ export function TalentDiscovery({
                   />
                 </div>
               )}
+              <div className="talent-discovery-search-dock">
               <DiscoverSearchBar
                 basePath={basePath}
                 currentUserId={currentUserId}
@@ -272,12 +315,15 @@ export function TalentDiscovery({
                 onOpenTalent={openTalent}
                 onRecentlyViewedChange={setViewed}
               />
+        {showingNavigator && !mobile && rows.length > 1 && !keyword && !credit ? <button type="button" className="talent-discovery-motion-toggle" aria-label={panelOpen ? "Idle motion paused while preview is open" : motionPaused ? "Resume idle motion" : "Pause idle motion"} aria-pressed={motionPaused || panelOpen} disabled={panelOpen} onClick={() => setMotionPaused(current => !current)}>
+          {motionPaused || panelOpen ? <Play size={18} aria-hidden /> : <Pause size={18} aria-hidden />}
+        </button> : null}
+              </div>
             </div>
           </div>
         )}
       </div>
       <DiscoverProfilePanel
-        key={selected?.id ?? "none"}
         talent={selected}
         open={selected !== null}
         onClose={() => setSelected(null)}

@@ -965,3 +965,53 @@ span.public-resume__thumb {
     transition: none !important;
   }
 }
+
+/* Discover profile and preview share compact actions and quiet entry motion. */
+.public-talent--embedded .talent-profile__menu { border-radius: 16px; box-shadow: 0 10px 28px #00000014; }
+.public-talent--embedded :is(button, a):focus-visible { outline: 2px solid #555; outline-offset: 3px; }
+.public-talent--embedded:not(.public-talent--loading) .public-talent__layout { animation: tp-fade 200ms ease; }
+.public-talent--loading .talent-profile__hero { display: block; }
+@media (max-width: 899px) {
+  .public-talent--embedded .talent-profile__hero { border-radius: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .public-talent--embedded .public-talent__layout,
+  .public-talent--loading .talent-profile__bone { animation: none; }
+}
+
+.discover-detail-header--inline { display: flex; align-items: center; gap: 12px; padding-block: 16px 4px; }
+.discover-detail-header--inline .discover-detail-header__back { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; }
+.discover-detail-header--inline .discover-detail-header__back:hover { background: #00000006; }
+.discover-detail-header--inline .discover-detail-header__back span { display: none; }
+.discover-detail-header--inline .discover-detail-header__row { flex: 1; }
+.public-talent__work-summary { padding: 4px 0; }
+.public-talent__work-summary .public-talent__work-chips { flex-wrap: wrap; gap: 8px; }
+.public-talent--embedded .public-resume__head { padding: 12px 16px; border: 0; border-radius: 12px; background: #eee; color: #666; }
+.public-talent--embedded .public-resume__row { padding-inline: 16px; }
+.public-talent--embedded .public-resume__section-toggle { margin-inline: 16px; }
+
+.public-resume__mobile-label { display: none; }
+@media (max-width: 899px) {
+  /* One scrolling profile, rather than two independently clipped desktop panes. */
+  .workspace-shell .workspace-frame .buyer-dashboard-shell__main:has(.discover-detail--profile) { overflow-y: auto; overscroll-behavior-y: contain; }
+  .workspace-shell .workspace-frame .talent-navigator-route:has(.discover-detail--profile) { height: auto; min-height: 100%; overflow: visible; flex-shrink: 0; padding: 0; }
+  .workspace-shell .discover-detail--profile { width: 100%; height: auto; max-height: none; overflow: visible; padding: 0 16px max(28px, env(safe-area-inset-bottom)); }
+  .public-talent--embedded .discover-detail-header--inline { position: sticky; top: 0; z-index: 8; padding: 12px 0; background: #f6f6f6f5; backdrop-filter: blur(12px); align-items: flex-start; }
+  .public-talent--embedded .discover-detail-header__back { width: 44px; height: 44px; }
+  .public-talent--embedded .discover-detail-header__row { gap: 12px; flex-wrap: wrap; }
+  .public-talent--embedded .discover-detail-header__copy h1 { font-size: 24px; line-height: 1.2; padding-block: 7px; }
+  .public-talent--embedded .discover-detail-header__trailing { width: 100%; justify-content: flex-start; }
+  .public-talent--embedded .public-talent__tabs button { min-height: 44px; }
+  .public-talent--embedded .public-talent__sidebar { gap: 12px; padding-bottom: 24px; }
+  .public-talent--embedded .talent-profile__hero { max-height: min(400px, 48dvh); border-radius: 20px; }
+  .public-talent--embedded .talent-profile__hero-nav { width: 44px; height: 44px; opacity: 1; }
+  .public-talent--embedded .talent-profile__action { min-height: 44px; }
+  .public-talent--embedded .talent-profile__action--icon { width: 44px; }
+  .public-talent--embedded .public-talent__tab-panel { padding: 0; gap: 28px; }
+  .public-talent--embedded .public-resume__head { display: none; }
+  .public-talent--embedded .public-resume__row { grid-template-columns: 1fr; gap: 10px; padding: 16px; background: #f0f0f0; border-radius: 16px; margin-block: 8px; }
+  .public-talent--embedded .public-resume__project { font-size: 15px; }
+  .public-talent--embedded :is(.public-resume__role, .public-resume__credit) { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; white-space: normal; }
+  .public-talent--embedded .public-resume__mobile-label { display: inline; color: #888; font-size: 12px; }
+  .public-talent--embedded .public-resume__section-toggle { margin: 0; min-height: 44px; }
+}

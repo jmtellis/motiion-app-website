@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import {
   Bookmark,
@@ -8,13 +7,11 @@ import {
   CalendarPlus,
   ClipboardList,
   Download,
-  Mail,
   Send,
 } from "lucide-react";
 
 import {
   askTalentAvailability,
-  contactTalentUser,
   inviteTalentFromNavigator,
   listBuyerCastingTargets,
   requestTalentSizeSheet,
@@ -27,20 +24,16 @@ import { Field } from "@/components/ui/Field";
 import { Modal } from "./dashboard/Modal";
 import { useToast } from "./dashboard/ToastProvider";
 import { SaveToCollectionPopover } from "./library/SaveToCollectionPopover";
-import { useIndustryIdentityGate } from "./IndustryIdentityGate";
 import { ProLockHint } from "@/components/talent-buyers/billing/ProLockHint";
 import { useIndustryPro } from "@/components/talent-buyers/billing/IndustryProContext";
-import { isIndustryIdentityRequiredError } from "@/lib/talent-buyers/industry-identity-errors";
 
 type TalentProfileActionsProps = {
   profile: PublicTalentProfile;
 };
 
 export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
-  const router = useRouter();
   const { showToast } = useToast();
   const [isPending, startTransition] = useTransition();
-  const { runWithIdentity, gate } = useIndustryIdentityGate("contact");
   const { requirePro } = useIndustryPro();
 
   const [saveOpen, setSaveOpen] = useState(false);
@@ -103,35 +96,6 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
       `Invite sent to ${displayName}`,
       () => setInviteModalOpen(false),
     );
-  }
-
-  function handleContact() {
-    if (!requirePro("talent_outreach")) return;
-    runWithIdentity(() => {
-      startTransition(async () => {
-        try {
-        const result = await contactTalentUser(talentUserId);
-        if (result.ok && result.conversationId) {
-          router.push(`/messages?conversation=${result.conversationId}`);
-          return;
-        }
-        if (result.ok && result.pendingRequest) {
-          showToast({ message: `Message request sent to ${displayName}`, variant: "success" });
-          return;
-        }
-        if (isIndustryIdentityRequiredError(result)) {
-          showToast({
-            message: result.error ?? "Verify your identity to contact talent.",
-            variant: "error",
-          });
-          return;
-        }
-        showToast({ message: result.error ?? "Could not start a conversation.", variant: "error" });
-        } catch {
-          showToast({ message: "Could not start a conversation. Please try again.", variant: "error" });
-        }
-      });
-    });
   }
 
   function handleAvailabilitySubmit() {
@@ -254,16 +218,7 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
                   Download Resume
                 </button>
               )}
-              <button
-                type="button"
-                className="btp-action-btn btp-action-btn--block"
-                disabled={isPending}
-                onClick={handleContact}
-              >
-                <Mail className="size-3.5" aria-hidden />
-                <ProLockHint />
-                Contact
-              </button>
+
             </div>
           </section>
         </div>
@@ -359,7 +314,6 @@ export function TalentProfileActions({ profile }: TalentProfileActionsProps) {
           placeholder="Optional note for the talent"
         /></Field>
       </Modal>
-      {gate}
     </>
   );
 }

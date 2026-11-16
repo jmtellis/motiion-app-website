@@ -284,3 +284,60 @@ span.talent-profile__experience-thumb { display: grid; place-items: center; colo
 }
 
 @media(hover:none) { .talent-profile__hero-nav { opacity:1; } }
+
+/* Discover keeps navigation available while profile details are loading. */
+#discover-profile-panel .workspace-side-panel__header { min-height: 56px; padding: 8px 12px 8px 20px; background: transparent; border-bottom: 0; justify-content: flex-end; }
+#discover-profile-panel .workspace-side-panel__header > .workspace-side-panel__title { display: none; }
+#discover-profile-panel button:focus-visible { outline: 2px solid #555; outline-offset: 3px; }
+#discover-profile-panel .talent-profile { animation: none; }
+#discover-profile-panel .talent-profile--preview > .talent-profile__body { animation: tp-fade 200ms ease; }
+#discover-profile-panel .talent-profile__hero { border-radius: 0 0 16px 16px; }
+#discover-profile-panel .talent-profile__body { gap: 20px; }
+#discover-profile-panel .home-profile-row--static { align-items: flex-start; flex-wrap: wrap; }
+#discover-profile-panel .talent-profile__badges { flex-wrap: wrap; }
+#discover-profile-panel .talent-profile__menu { border-radius: 16px; box-shadow: 0 10px 28px #00000014; }
+.talent-profile--loading .talent-profile__bone, .talent-profile__hero-placeholder[data-loading='true'] { background: linear-gradient(110deg, #e5e6e7 30%, #f0f1f2 48%, #e5e6e7 66%) 100% 0 / 240% 100%; animation: tp-shimmer 3.2s ease-in-out infinite; }
+.talent-profile__bone--action { width: 40px; height: 40px; flex: none; border-radius: 50%; }
+.talent-profile__bone--message { flex: 1; height: 40px; border-radius: 999px; }
+.talent-profile__loading-credits { display: flex; gap: 16px; }
+.talent-profile__loading-credits .talent-profile__bone { width: 64px; height: 64px; border-radius: 50%; }
+.talent-profile__hero-placeholder { position: absolute; inset: 0; display: grid; place-items: center; background: #e5e6e7; color: #777; font-size: 40px; }
+.talent-profile__hero-card:disabled { cursor: default; }
+.talent-profile__hero-card img[data-ready] { opacity: 0; transition: opacity 320ms ease; }
+.talent-profile__hero-card img[data-ready='true'] { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  #discover-profile-panel .talent-profile--preview > .talent-profile__body { animation: none; }
+}
+
+/* Quick preview keeps the portrait inset and the next actions immediately available. */
+.discover-preview__portrait { padding: 16px 20px 0; }
+#discover-profile-panel .discover-preview__portrait .talent-profile__hero { border-radius: 20px; max-height: min(340px, 40dvh); }
+.discover-preview__quick-actions { display: grid; gap: 10px; }
+.discover-preview__quick-actions .home-profile-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #f4f4f4; border: 0; border-radius: 14px; }
+.discover-preview__quick-actions .home-profile-row span { flex: 1; text-align: left; }
+.discover-preview__quick-actions .home-profile-row:disabled { opacity: .45; cursor: default; }
+
+.discover-preview__relevance { display: grid; gap: 10px; }
+.discover-preview__relevance h3 { margin: 0; font-size: 14px; font-weight: 650; color: #333; }
+.discover-preview__relevance p { margin: 0; font-size: 13px; line-height: 1.5; color: #777; }
+.discover-preview__relevance ul { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.discover-preview__relevance li { display: grid; gap: 8px; padding: 14px; border-radius: 14px; background: #f4f4f4; }
+.discover-preview__relevance a { display: grid; gap: 4px; color: #333; text-decoration: none; }
+.discover-preview__relevance a:hover strong { text-decoration: underline; }
+.discover-preview__relevance a span { font-size: 12px; color: #777; }
+.discover-preview__relevance button { min-height: 44px; text-decoration: underline; }
+#discover-profile-panel .discover-preview__portrait .talent-profile__hero { max-height: min(220px, 28dvh); }
+
+.talent-profile__actions--quick-save { gap: 8px; }
+.talent-profile__actions--quick-save .talent-profile__action--save { flex: 1; min-width: 0; min-height: 44px; padding-inline: 12px; background: #242424; border-color: #242424; color: #fff; gap: 6px; }
+.talent-profile__actions--quick-save .talent-profile__action--save span { white-space: nowrap; font-size: 12px; }
+.talent-profile__actions--quick-save .talent-profile__action--save > svg { flex: none; }
+.discover-preview__role-link { color: inherit; text-decoration: none; }
+.discover-preview__role-link > span { display: grid; gap: 4px; min-width: 0; }
+.discover-preview__role-link strong { font-size: 14px; font-weight: 600; }
+.discover-preview__role-link small { color: #777; font-size: 12px; line-height: 1.4; }
+.discover-preview__role-link > svg { flex: none; }
+@media (max-width: 359px) {
+  .talent-profile__actions--quick-save { gap: 6px; padding-inline: 12px; }
+  .talent-profile__actions--quick-save .talent-profile__action--save > svg { display: none; }
+}

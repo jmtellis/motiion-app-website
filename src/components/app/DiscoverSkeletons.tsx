@@ -122,11 +122,12 @@ export function DiscoverPanelPeopleSkeleton({ count = 4 }: { count?: number }) {
 export function DiscoverNavigatorSkeleton() {
   return (
     <div className="discover-skel-navigator" aria-busy="true" aria-label="Loading explore">
-      <div className="discover-skel-navigator__grid">
-        {Array.from({ length: 9 }, (_, index) => (
-          <Bone key={index} className="discover-skel--nav-card" />
-        ))}
+      <div className="discover-skel-navigator__grid" aria-hidden>
+        {Array.from({ length: 5 }, (_, row) => <div className="discover-skel-navigator__row" key={row}>
+          {Array.from({ length: 7 }, (_, col) => <span key={col} className="discover-skel-navigator__tile" />)}
+        </div>)}
       </div>
+      <span className="discover-skel-navigator__label" role="status">Finding your next connection…</span>
     </div>
   );
 }

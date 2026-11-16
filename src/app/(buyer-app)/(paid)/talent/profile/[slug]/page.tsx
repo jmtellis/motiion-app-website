@@ -21,7 +21,7 @@ export default async function TalentStudioProfilePage({
 
   return (
     <div className="talent-navigator-route">
-      <div className="discover-detail discover-detail--profile discover-skel-enter">
+      <div className="discover-detail discover-detail--profile">
         <ProfilePageClient
           profile={profile}
           embedded

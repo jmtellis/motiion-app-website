@@ -2808,18 +2808,7 @@
   border-radius: 14px;
 }
 
-.talent-navigator__card--panel-open .talent-navigator__card-photo::after {
-  content: "";
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  z-index: 4;
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 0 0 3px rgb(0 0 0 / 0.35), 0 1px 4px rgb(0 0 0 / 0.35);
-}
+
 
 .talent-navigator__card-photo img {
   position: absolute;
@@ -4813,3 +4802,30 @@ button.talent-navigator__chip {
   background: var(--industry-fill, rgb(255 255 255 / 0.1));
 }
 
+
+/* Card navigation and actions are siblings, never nested interactive controls. */
+.talent-navigator__card-hit { position: absolute; inset: 0; z-index: 4; width: 100%; background: transparent; cursor: pointer; border-radius: inherit; }
+.talent-navigator__card-hit:focus-visible { outline: 2px solid white; outline-offset: -4px; }
+.talent-navigator__card-photo { pointer-events: none; }
+.talent-navigator__card-save, .talent-navigator__card-profile { pointer-events: auto; z-index: 5; }
+.talent-navigator__card:has(:focus-visible) { outline: 2px solid var(--tn-accent, #888); outline-offset: 3px; }
+.talent-navigator__card[data-profile-actions] .talent-navigator__card-overlay-content { right: 48px; }
+.talent-navigator__card-profile { position: absolute; bottom: 12px; right: 12px; display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid #ffffff80; border-radius: 50%; color: white; background: transparent; opacity: 0; transition: opacity 160ms ease; }
+.talent-navigator__card:hover .talent-navigator__card-profile, .talent-navigator__card:focus-within .talent-navigator__card-profile { opacity: 1; }
+.talent-navigator__card-profile:focus-visible { outline: 2px solid white; outline-offset: 3px; }
+@media (hover: none) { .talent-navigator__card-profile { opacity: 1; } }
+
+.talent-navigator__portrait-placeholder { position: absolute; inset: 0; display: grid; place-items: center; background: linear-gradient(110deg, #dedfe0 30%, #ebecee 48%, #dedfe0 66%) 100% 0 / 240% 100%; color: #777; font-size: 36px; }
+.talent-navigator__portrait-placeholder[data-loading='true'] { animation: discover-portrait-shimmer 3.2s ease-in-out infinite; }
+.talent-navigator__card-photo img[data-ready] { opacity: 0; transition: opacity 550ms ease, transform 220ms ease; }
+.talent-navigator__card-photo img[data-ready='true'] { opacity: 1; }
+@keyframes discover-portrait-shimmer { to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .talent-navigator__portrait-placeholder { animation: none !important; }
+  .talent-navigator__card-photo img[data-ready] { transition: none; }
+}
+
+.talent-navigator__image-layer { position: absolute; inset: 0; pointer-events: none; }
+.talent-navigator__image-layer .talent-navigator__card { pointer-events: auto; }
+
+.talent-navigator__card--panel-open .talent-navigator__card-profile { opacity: 1; }

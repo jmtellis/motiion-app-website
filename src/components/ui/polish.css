@@ -265,25 +265,19 @@ html:has(:is(.workspace-shell--industry, .workspace-shell--talent)) :is(.buyer-m
 .discover-browse-card--loading .discover-browse-card__copy { display: grid; gap: 8px; padding: 0 2px; }
 .discover-browse-card--loading .discover-skel--line { width: 70%; }
 .discover-skel-navigator {
-  display: grid;
-  place-items: center;
-  min-height: min(70vh, 640px);
-  padding: 48px 24px;
+  position: absolute; inset: 0; overflow: hidden; background: #f6f6f6;
 }
 .discover-skel-navigator__grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  width: min(100%, 420px);
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: grid; gap: 14px; width: max-content;
+
 }
-.discover-skel--nav-card {
-  aspect-ratio: 3 / 4;
-  border-radius: 18px;
-  opacity: 0.9;
-}
-.discover-skel--nav-card:nth-child(2),
-.discover-skel--nav-card:nth-child(5),
-.discover-skel--nav-card:nth-child(8) { opacity: 1; transform: scale(1.04); }
+.discover-skel-navigator::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 66% 62% at 50% 48%, transparent 20%, #f6f6f655 60%, #f6f6f6eb 100%); }
+.discover-skel-navigator__row { display: flex; gap: 14px; }
+.discover-skel-navigator__tile { width: 226px; height: 300px; border-radius: 14px; background: linear-gradient(110deg, #dedfe0 30%, #ebecee 48%, #dedfe0 66%) 100% 0 / 240% 100%; animation: discover-loading-shimmer 3.2s ease-in-out infinite; }
+.discover-skel-navigator__label { z-index: 1; position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); padding: 12px 22px; border-radius: 999px; background: #ffffffeb; color: #686868; font-size: 13px; white-space: nowrap; }
+@keyframes discover-loading-shimmer { to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { .discover-skel-navigator__tile { animation: none; } }
 .discover-skel-enter { animation: ui-rise 280ms var(--ui-ease-out, cubic-bezier(0.2, 0.8, 0.2, 1)) backwards; }
 .discover-browse__results {
   transition: opacity 200ms var(--ui-ease-out, ease);

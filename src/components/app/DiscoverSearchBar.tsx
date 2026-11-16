@@ -1,9 +1,9 @@
 "use client";
 
 import { VoiceSearchControl } from "./VoiceSearchControl";
-import { Search, X } from "lucide-react";
+import { LoaderCircle, Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 
 import { explicitWorkedWith, pickCreditRewrite } from "@/lib/talent-navigator/credit-intent";
 import type { Talent } from "@/lib/talent-navigator/types";
@@ -57,20 +57,42 @@ export function DiscoverSearchBar({
     setDraft({ key: queryKey, value: next });
   }
   const [open, setOpen] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestionResult, setSuggestionResult] = useState<{ query: string; names: string[] } | null>(null);
+  const suggestions = suggestionResult?.query === value ? suggestionResult.names : [];
+  const [pending, startTransition] = useTransition();
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    const viewport = window.visualViewport;
+    const update = () => {
+      const form = rootRef.current;
+      if (!form || !window.matchMedia("(max-width: 767px)").matches) return;
+      const bottom = (viewport?.height ?? window.innerHeight) + (viewport?.offsetTop ?? 0);
+      form.style.setProperty("--discover-suggestions-height", `${Math.max(60, bottom - form.getBoundingClientRect().bottom - 76)}px`);
+    };
+    update();
+    viewport?.addEventListener("resize", update);
+    viewport?.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+    return () => {
+      viewport?.removeEventListener("resize", update);
+      viewport?.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [open]);
 
   useEffect(() => () => { requestVersion.current += 1; }, [queryKey]);
 
   useEffect(() => {
     const fragment = explicitWorkedWith(value) ?? value;
-    if (fragment.trim().length < 2) return;
+    if (!open || fragment.trim().length < 2) return;
     let cancelled = false;
     const handle = window.setTimeout(() => {
-      void suggestCreditCollaborators(fragment).then((names) => { if (!cancelled) setSuggestions(names); }).catch(() => { if (!cancelled) setSuggestions([]); });
+      void suggestCreditCollaborators(fragment).then((names) => { if (!cancelled) setSuggestionResult({ query: value, names }); }).catch(() => { if (!cancelled) setSuggestionResult({ query: value, names: [] }); });
     }, 180);
     return () => { cancelled = true; window.clearTimeout(handle); };
-  }, [value]);
+  }, [value, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -87,6 +109,7 @@ export function DiscoverSearchBar({
 
   function goToCredit(name: string) {
     remember(name);
+    inputRef.current?.blur();
     setOpen(false);
     requestVersion.current += 1;
     router.push(`${basePath}?view=explore&credit=${encodeURIComponent(name)}`);
@@ -95,6 +118,7 @@ export function DiscoverSearchBar({
   async function submit(raw: string) {
     const id = ++requestVersion.current;
     const trimmed = raw.trim();
+    inputRef.current?.blur();
     setOpen(false);
     if (!trimmed) {
       router.push(`${basePath}?view=explore`);
@@ -113,20 +137,26 @@ export function DiscoverSearchBar({
   }
 
   const showSuggestions = suggestions.length > 0 && value.trim().length >= 2;
-  const showMenu = open && (showSuggestions || recentSearches.length > 0 || recentlyViewed.length > 0);
+  const showMenu = open;
+  const loadingSuggestions = open && value.trim().length >= 2 && suggestionResult?.query !== value;
 
   return (
     <form
       ref={rootRef}
       className="talent-discovery-search"
       role="search"
+      onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false); }}
+      onKeyDown={(event) => { if (event.key === "Escape") { inputRef.current?.blur(); setOpen(false); } }}
       onSubmit={(event) => {
         event.preventDefault();
-        void submit(value);
+        startTransition(() => submit(value));
       }}
     >
       {showMenu ? (
-        <div className="talent-discovery-suggest" id={listId} role="listbox" aria-label="Search suggestions">
+        <div className="talent-discovery-suggest" id={listId} role="region" aria-label="Search suggestions">
+          <div className="talent-discovery-suggest__body" data-lenis-prevent>
+          {loadingSuggestions ? <div className="talent-discovery-suggest__hint" role="status"><LoaderCircle size={14} className="animate-spin" aria-hidden /> Finding credit suggestions…</div> : null}
+          {!showSuggestions && !loadingSuggestions ? <div className="talent-discovery-suggest__hint">{value.trim() ? "Search by name, style, or skill. Try “worked with Beyoncé” for credits." : "Find talent by name, dance style, skill, or past collaborators."}</div> : null}
           {showSuggestions ? (
             <section>
               <p>Worked with</p>
@@ -154,7 +184,7 @@ export function DiscoverSearchBar({
                 </button>
               </p>
               {recentSearches.map((query) => (
-                <button key={query} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => void submit(query)}>
+                <button key={query} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => startTransition(() => submit(query))}>
                   <span>{query}</span>
                 </button>
               ))}
@@ -194,6 +224,8 @@ export function DiscoverSearchBar({
               </div>
             </section>
           ) : null}
+          </div>
+          <div className="talent-discovery-suggest__footer"><span>Enter to search · Esc to close</span><button type="button" onClick={() => { inputRef.current?.blur(); setOpen(false); }}>Done</button></div>
         </div>
       ) : null}
       <Search size={18} aria-hidden />
@@ -205,18 +237,18 @@ export function DiscoverSearchBar({
         onChange={(event) => {
           const next = event.target.value;
           updateValue(next);
+          setOpen(true);
           const fragment = explicitWorkedWith(next) ?? next;
-          if (fragment.trim().length < 2) setSuggestions([]);
+          if (fragment.trim().length < 2) setSuggestionResult({ query: value, names: [] });
         }}
         onFocus={() => {
           setOpen(true);
           setRecentSearches(readRecentSearches(currentUserId));
         }}
-        placeholder="Find dancers, styles, or who they've worked with"
+        placeholder="Search talent or credits"
+        enterKeyHint="search"
+        type="search"
         aria-label="Search talent"
-        role="combobox"
-        aria-autocomplete="list"
-        aria-expanded={showMenu}
         aria-controls={showMenu ? listId : undefined}
         autoComplete="off"
       />
@@ -233,8 +265,8 @@ export function DiscoverSearchBar({
           <X size={16} aria-hidden />
         </button>
       ) : null}
-      <VoiceSearchControl onTranscript={(text) => { updateValue(text); inputRef.current?.focus(); }} />
-      <button type="submit">Search</button>
+      <span className="discover-search-voice"><VoiceSearchControl onTranscript={(text) => { updateValue(text); inputRef.current?.focus(); }} /></span>
+      <button type="submit" aria-label="Search talent" disabled={pending}>{pending ? <LoaderCircle size={16} className="animate-spin" aria-label="Searching" /> : <><span className="discover-search-submit-label">Search</span><Search className="discover-search-submit-icon" size={18} aria-hidden /></>}</button>
     </form>
   );
 }

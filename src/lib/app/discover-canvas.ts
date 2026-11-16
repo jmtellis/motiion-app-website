@@ -66,7 +66,7 @@ export async function loadDiscoverCanvas(
 
   let result: SearchResult;
   let initialData: TalentNavigatorInitialData;
-  const recentPromise = fetchRecentlyViewedTalent();
+  const recentPromise = fetchRecentlyViewedTalent().catch(() => ({ talent: [] }));
   if (credit && !collection) {
     const creditSearch = await searchTalentByCredit(credit);
     const matches = filterCreditProfiles(creditSearch.result.items, filters);
@@ -82,8 +82,13 @@ export async function loadDiscoverCanvas(
     const view = single(params, "view");
     const listLayout = view === "browse" || single(params, "layout") === "list";
     const exploreGrid = !["featured", "saved"].includes(view) && !listLayout;
-    const browse = await searchBrowseTalent({ ...filters, navigator: false });
-    const navigator = exploreGrid ? await searchTalentProfiles(filters) : browse;
+    // Independent reads share request-scoped auth caching; do not serialize them.
+    // List mode still issues only the counted browse query.
+    const [browse, navigatorResult] = await Promise.all([
+      searchBrowseTalent({ ...filters, navigator: false }),
+      exploreGrid ? searchTalentProfiles(filters) : Promise.resolve(null),
+    ]);
+    const navigator = navigatorResult ?? browse;
     const lastPage = Math.max(1, Math.ceil(browse.total / browse.pageSize));
     if (browse.page > lastPage) {
       const next = new URLSearchParams();

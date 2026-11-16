@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, ExternalLink, Play, X } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { getProfileInitials } from "@/lib/auth/avatar";
 import type { CreditChipItem } from "@/lib/profile/profile-credits";
@@ -26,9 +26,11 @@ export function HeroPager({
   shots,
   onOpen,
   onClose,
+  loading = false,
   overlayIdentity = true,
   overlayCaption = null,
 }: {
+  loading?: boolean;
   name: string;
   meta: string;
   shots: string[];
@@ -40,6 +42,7 @@ export function HeroPager({
   overlayCaption?: string | null;
 }) {
   const [index, setIndex] = useState(0);
+  const gesture = useRef<{ x: number; y: number; dragged: boolean } | null>(null);
   const count = shots.length;
   const current = shots[index];
   const caption = overlayCaption?.trim() || null;
@@ -48,8 +51,19 @@ export function HeroPager({
   return (
     <div className={`talent-profile__hero${showIdentity ? "" : " talent-profile__hero--bare"}${caption && !overlayIdentity ? " talent-profile__hero--caption" : ""}`}>
       {current ? (
-        <button type="button" className="talent-profile__hero-card" aria-label={`Open ${name}'s headshots`} onClick={() => onOpen(index)}>
-          <Image key={current} src={current} alt="" fill sizes="480px" unoptimized />
+        <button type="button" className="talent-profile__hero-card" disabled={loading} aria-label={loading ? `${name} portrait` : `Open ${name}'s headshots`} style={{ touchAction: "pan-y pinch-zoom" }}
+          onPointerDown={event => { if (event.pointerType === "touch") gesture.current = { x: event.clientX, y: event.clientY, dragged: false }; }}
+          onPointerMove={event => { const start = gesture.current; if (start && event.pointerType === "touch" && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 12) start.dragged = true; }}
+          onPointerCancel={() => { gesture.current = null; }}
+          onPointerUp={event => {
+            const start = gesture.current;
+            if (!start || count < 2) return;
+            const x = event.clientX - start.x;
+            const y = event.clientY - start.y;
+            if (Math.abs(x) > 36 && Math.abs(x) > Math.abs(y)) setIndex(current => (current + (x < 0 ? 1 : -1) + count) % count);
+          }}
+          onClick={() => { if (gesture.current?.dragged) { gesture.current = null; return; } onOpen(index); }}>
+          <HeroImage key={current} src={current} name={name} />
         </button>
       ) : (
         <span className="talent-profile__hero-initials" aria-hidden>{getProfileInitials(name) || "?"}</span>
@@ -84,6 +98,18 @@ export function HeroPager({
       ) : null}
     </div>
   );
+}
+
+function HeroImage({ src, name }: { src: string; name: string }) {
+  const image = useRef<HTMLImageElement>(null);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  useEffect(() => {
+    if (image.current?.complete) setStatus(image.current.naturalWidth ? "ready" : "error");
+  }, []);
+  return <>
+    <span className="talent-profile__hero-placeholder" data-loading={status === "loading"} aria-hidden>{status === "error" ? getProfileInitials(name) : ""}</span>
+    <Image ref={image} src={src} alt="" fill sizes="480px" unoptimized data-ready={status === "ready"} onLoad={() => setStatus("ready")} onError={() => setStatus("error")} />
+  </>;
 }
 
 export function CreditAvatar({

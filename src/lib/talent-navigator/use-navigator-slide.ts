@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { TalentRow } from "@/lib/talent-navigator/types";
 
@@ -13,6 +13,9 @@ export function useNavigatorSlide(rows: TalentRow[], stepX: number, stepY: numbe
   const [activeRowOffsetX, setActiveRowOffsetX] = useState(0);
   const [slideInstant, setSlideInstant] = useState(false);
   const isSlidingRef = useRef(false);
+  const unlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (unlockTimer.current) clearTimeout(unlockTimer.current); }, []);
+
 
   const clampedRowIndex = rows.length ? Math.min(activeRowIndex, rows.length - 1) : 0;
   const currentRow = rows[clampedRowIndex];
@@ -66,6 +69,9 @@ export function useNavigatorSlide(rows: TalentRow[], stepX: number, stepY: numbe
     (direction: NavigatorDirection) => {
       if (isSlidingRef.current) return;
       isSlidingRef.current = true;
+      if (unlockTimer.current) clearTimeout(unlockTimer.current);
+      // Transition events can be omitted for interrupted/reduced-motion layouts.
+      unlockTimer.current = setTimeout(() => { isSlidingRef.current = false; }, 420);
 
       if (direction === "col-right") {
         moveCol(1);
@@ -104,13 +110,17 @@ export function useNavigatorSlide(rows: TalentRow[], stepX: number, stepY: numbe
 
   const handleSlideComplete = useCallback(() => {
     isSlidingRef.current = false;
+    if (unlockTimer.current) clearTimeout(unlockTimer.current);
   }, []);
 
   const focusCell = useCallback(
     (rowIndex: number, colIndex: number) => {
-      if (isSlidingRef.current) return;
       const row = rows[rowIndex];
       if (!row) return;
+      isSlidingRef.current = false;
+      if (unlockTimer.current) clearTimeout(unlockTimer.current);
+      setTrackOffsetY(0);
+      setActiveRowOffsetX(0);
       setActiveRowIndex(rowIndex);
       setActiveColByRowId((current) => ({ ...current, [row.id]: colIndex }));
     },

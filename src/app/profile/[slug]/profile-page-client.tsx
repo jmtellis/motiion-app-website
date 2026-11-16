@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Apple, ChevronDown, Download, Share } from "lucide-react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { PublicPageAnalytics } from "@/components/analytics/PublicPageAnalytics";
@@ -15,7 +15,6 @@ import {
 } from "@/components/app/talent-profile/ProfileOverlays";
 import {
   ListsSheet,
-  MessageSheet,
   ProfileActions,
 } from "@/components/app/talent-profile/TalentProfileSheet";
 import {
@@ -60,7 +59,6 @@ type Overlay =
   | { kind: "credit"; chip: CreditChipItem }
   | { kind: "credits" }
   | { kind: "experience"; index: number }
-  | { kind: "message" }
   | { kind: "lists" };
 
 type RightTab = "resume" | "visuals";
@@ -79,11 +77,10 @@ export default function ProfilePageClient({
   backHref?: string | null;
 }) {
   const router = useRouter();
-  const shellRef = useRef<HTMLDivElement | null>(null);
-  const scrollRef = useRef<HTMLDivElement | null>(null);
   const [overlay, setOverlay] = useState<Overlay | null>(null);
   const [viewer, setViewer] = useState<number | null>(null);
   const [videoIndex, setVideoIndex] = useState<number | null>(null);
+  const [saveRevision, setSaveRevision] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const tabId = useId();
 
@@ -141,24 +138,6 @@ export default function ProfilePageClient({
     const handle = window.setTimeout(() => setNotice(null), 2600);
     return () => window.clearTimeout(handle);
   }, [notice]);
-
-  // Only the right column scrolls — gutters, header, and left column must not move the page.
-  useEffect(() => {
-    const shell = shellRef.current;
-    const scroll = scrollRef.current;
-    if (!shell) return;
-    const onWheel = (event: WheelEvent) => {
-      const target = event.target;
-      if (!(target instanceof Node)) {
-        event.preventDefault();
-        return;
-      }
-      if (scroll?.contains(target)) return;
-      event.preventDefault();
-    };
-    shell.addEventListener("wheel", onWheel, { passive: false });
-    return () => shell.removeEventListener("wheel", onWheel);
-  }, []);
 
   const openExperience = useCallback((index: number) => {
     setOverlay({ kind: "experience", index });
@@ -237,7 +216,7 @@ export default function ProfilePageClient({
     <DiscoverBackHeader
       href={backHref}
       title={name}
-      beside={workBadges}
+      inlineBack
       trailing={sectionTabs}
     />
   ) : null;
@@ -265,13 +244,16 @@ export default function ProfilePageClient({
         overlayIdentity={false}
         overlayCaption={meta || null}
       />
+      {embedded ? <div className="public-talent__work-summary">{workBadges}</div> : null}
       {embedded ? (
         <ProfileActions
+          compact
+          quickSave
+          saveRevision={saveRevision}
           profile={profile}
           onNotice={setNotice}
           onLists={() => setOverlay({ kind: "lists" })}
-          onMessage={() => setOverlay({ kind: "message" })}
-          onBlocked={() => router.back()}
+          onBlocked={() => backHref ? router.replace(backHref) : router.back()}
         />
       ) : (
         publicActions
@@ -378,8 +360,8 @@ export default function ProfilePageClient({
                                 )}
                               </span>
                             </span>
-                            <span className="public-resume__role">{rolesOf(experience) || "—"}</span>
-                            <span className="public-resume__credit">{creditOf(experience) || "—"}</span>
+                            <span className="public-resume__role"><span className="public-resume__mobile-label">Role</span>{rolesOf(experience) || "—"}</span>
+                            <span className="public-resume__credit"><span className="public-resume__mobile-label">Credit</span>{creditOf(experience) || "—"}</span>
                           </button>
                         </li>
                       ))}
@@ -444,7 +426,7 @@ export default function ProfilePageClient({
   );
 
   const rightColumn = (
-    <div ref={scrollRef} className="public-talent__scroll">
+    <div className="public-talent__scroll">
       <div role="tabpanel" id={`${tabId}-panel`} aria-labelledby={`${tabId}-${hasVisuals ? tab : "resume"}`}>
         {tab === "visuals" && hasVisuals ? visualsTab : resumeTab}
       </div>
@@ -533,7 +515,7 @@ export default function ProfilePageClient({
   ) : null;
 
   const body = (
-    <div ref={shellRef} className={`public-talent${embedded ? " public-talent--embedded" : ""}`}>
+    <div className={`public-talent${embedded ? " public-talent--embedded" : ""}`}>
       {profileHeader}
       <div className="public-talent__layout">
         {leftColumn}
@@ -549,12 +531,9 @@ export default function ProfilePageClient({
 
       {detailPanel}
 
-      {overlay?.kind === "message" ? (
-        <MessageSheet profile={profile} onClose={() => setOverlay(null)} onNotice={setNotice} />
-      ) : null}
 
       {overlay?.kind === "lists" ? (
-        <ListsSheet profile={profile} onClose={() => setOverlay(null)} onNotice={setNotice} />
+        <ListsSheet profile={profile} onClose={() => { setOverlay(null); setSaveRevision(value => value + 1); }} onNotice={setNotice} />
       ) : null}
 
       {viewer !== null && shots.length ? (

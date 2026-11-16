@@ -30,11 +30,10 @@ export function ProfileWorkBadges({
       {union ? (
         <span
           className="ui-chip public-talent__work-chip public-talent__work-chip--union"
-          data-muted={/non/i.test(union)}
           aria-disabled="true"
           title={union}
         >
-          <span className="public-talent__work-chip-label">{union}</span>
+          <span className="public-talent__work-chip-label">{/^non[ -]?union$/i.test(union) ? "Non-union" : union}</span>
         </span>
       ) : null}
       {socials.map((link) => {

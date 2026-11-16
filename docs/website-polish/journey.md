@@ -370,3 +370,35 @@ Verified /dashboard reaches Discover and the Explore grid renders first in Dia. 
 Release includes the accumulated signup, verification, application, approval, checkout and Discover polish. Validation: 506 website tests, 26 email tests, changed-file lint, TypeScript and an isolated optimized build passed. Production project-context migration applied and verified (three fields; anonymous RPC execution denied). Published and read back the production verification email template; other Auth settings preserved. Stripe checkout copy is verified against the approved live account and existing prices by the production build step; no prices or billing entitlements change.
 
 Local work continues on codex/website-journey-polish with its existing staging .env.local and localhost:3001 server. Credentials and .staging files are excluded from the release. Production uses Vercel production configuration, not the local build artifacts.
+
+### Discover walkthrough — 2026-11-15
+
+Continued local staging polish after workspace entry: circular view toggle, clear preview/full-profile card actions, removal of the inactive heart affordance, and a light search overlay with a persistent footer. Implementation, verification and loading follow-ups are recorded in improvements.md under “Discover — card actions and search overlay”. Changes remain on codex/website-journey-polish, unpublished.
+
+Discover follow-up: added moving charcoal route placeholders, progressive portrait reveal, a lighter vignette and pausable idle browsing. Independent initial reads now run concurrently. See the corresponding improvements.md entry for behavior and verification.
+
+Discover visual refinement: replaced labeled motion control and card actions with discreet icons; added single-preview/double-full-profile/Enter gestures and changed moving dark placeholders to stationary light shimmer. See improvements.md for validation.
+
+Discover preview refinement: persistent close/full-profile header, known identity during loading, light shimmer and portrait fades, compact actions and scoped request reuse. See improvements.md for checks and the screenshot verification limitation.
+
+Discover full-profile continuity: added route-specific light loading, compact shared actions, persistent preview during navigation and subtle content fade; removed wheel cancellation. Validation and UI-inspection limitations recorded in improvements.md.
+
+Discover design refinement: image-layer edge fade and cleaner card corners, two-axis trackpad gestures, quick-action portrait/resume preview, and revised full-profile heading/badges/resume labels. Checks and browser verification limits recorded in improvements.md.
+
+Mobile workspace navigation: unified industry/talent with marketing header styling and right-hand dropdown; removed mobile desktop drawer/frame treatment. See improvements.md for validation and visual coverage limitation.
+
+Discover phone layout: separate search row, swipeable portrait grid, paused idle motion and bottom-sheet preview. See improvements.md for checks and remaining device verification.
+
+Mobile full-profile refinement and continuous grid navigation: sticky header, swipeable portraits, stacked resume, return focus and gesture-lock recovery. See improvements.md for regression coverage and device-check limitations.
+
+Discover gesture correction: one move per touch/wheel gesture, with momentum suppression and automatic rearming; retains the missing-transition recovery fix.
+
+Discover trackpad follow-up: stable wheel capture plus fresh-gesture detection during inertia, retaining one step per recognized swipe. Regression checks recorded in improvements.md.
+
+Discover preview purpose revised: prominent roster saving, existing membership, grounded open-role style/skill overlap and full-profile handoff. Shared-network context remains a separate data integration; details in improvements.md.
+
+Profile action refinement: removed non-project Message/Contact entry points, unified save/favorite/share/more row and made relevant roles compact conditional links. Scope and validation in improvements.md.
+
+Discover preview navigation: pauses idle motion, follows manual center changes without remounting its outer panel, and replaces the card arrow with a selected checkmark. Verification in improvements.md.
+
+Discover preview header simplified to a close-only row without a divider; full-profile navigation remains in the body.

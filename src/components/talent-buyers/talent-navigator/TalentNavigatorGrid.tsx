@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 import type { Talent, TalentRow } from "@/lib/talent-navigator/types";
+
+import { createWheelNavigation, consumeSwipe, type SwipeGesture } from "@/lib/talent-navigator/wheel-navigation";
 
 import { TalentCard } from "./TalentCard";
 
@@ -26,6 +28,8 @@ const DEFAULT_METRICS: GridMetrics = {
   colRadius: 4,
   rowRadius: 3,
 };
+
+export const MOBILE_GRID_METRICS = { cellW: 200, cellH: 266, gap: 12, stepX: 212, stepY: 278, colRadius: 2, rowRadius: 2 };
 
 const COMPACT_METRICS: GridMetrics = {
   cellW: 84,
@@ -63,7 +67,9 @@ export function getNavigatorGridMetrics(
   compact = false,
   preview = false,
   viewport?: { width: number; height: number },
+  mobile = false,
 ): GridMetrics {
+  if (mobile) return MOBILE_GRID_METRICS;
   if (preview && viewport?.width && viewport?.height) {
     return getPreviewGridMetrics(viewport.width, viewport.height);
   }
@@ -90,6 +96,7 @@ type TalentNavigatorGridProps = {
   trackOffsetY: number;
   activeRowOffsetX: number;
   slideInstant?: boolean;
+  mobile?: boolean;
   compact?: boolean;
   preview?: boolean;
   previewViewport?: { width: number; height: number };
@@ -98,6 +105,7 @@ type TalentNavigatorGridProps = {
   onSlideComplete?: () => void;
   onFocusCell: (rowIndex: number, colIndex: number) => void;
   onOpenProfile: (talent: Talent) => void;
+  profileHref?: (talent: Talent) => string;
   onSaveTalent?: (talent: Talent) => void | Promise<void>;
   onNavigate?: (direction: "row-up" | "row-down" | "col-left" | "col-right") => void;
   /** Talent currently open in the preview panel. */
@@ -158,6 +166,7 @@ export function TalentNavigatorGrid({
   activeRowOffsetX,
   slideInstant = false,
   compact = false,
+  mobile = false,
   preview = false,
   previewViewport,
   showControls = true,
@@ -166,12 +175,36 @@ export function TalentNavigatorGrid({
   onFocusCell,
   onOpenProfile,
   onSaveTalent,
+  profileHref,
   onNavigate,
   selectedTalentId = null,
 }: TalentNavigatorGridProps) {
+  const swipe = useRef<SwipeGesture | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const wheelNavigation = useRef(createWheelNavigation());
+  const navigateRef = useRef(onNavigate);
+  useEffect(() => { navigateRef.current = onNavigate; }, [onNavigate]);
+  const wheelEnabled = Boolean(onNavigate && profileHref);
+  useEffect(() => {
+    const grid = gridRef.current;
+    if (!grid || !wheelEnabled) return;
+    wheelNavigation.current = createWheelNavigation();
+    const onWheel = (event: WheelEvent) => {
+      if (event.ctrlKey || event.metaKey || document.querySelector('dialog[open], [role="dialog"]')) return;
+      // Keep the receiver stable while cards move/unmount under a stationary cursor.
+      const hit = document.elementFromPoint(event.clientX, event.clientY);
+      if (!hit || !grid.contains(hit)) return;
+      event.preventDefault();
+      const direction = wheelNavigation.current(event.deltaX, event.deltaY, event.deltaMode, performance.now());
+      if (direction) navigateRef.current?.(direction);
+    };
+    window.addEventListener("wheel", onWheel, { passive: false, capture: true });
+    return () => window.removeEventListener("wheel", onWheel, { capture: true });
+  }, [wheelEnabled]);
+
   const metrics = useMemo(
-    () => getNavigatorGridMetrics(compact, preview, previewViewport),
-    [compact, preview, previewViewport],
+    () => getNavigatorGridMetrics(compact, preview, previewViewport, mobile),
+    [compact, preview, previewViewport, mobile],
   );
   const cells = useMemo(
     () => buildVisibleCells(rows, activeRowIndex, activeColByRowId, metrics),
@@ -197,6 +230,28 @@ export function TalentNavigatorGrid({
           "--tn-step-y": `${metrics.stepY}px`,
         } as React.CSSProperties
       }
+      ref={gridRef}
+      onPointerDown={(event) => {
+        if (event.pointerType !== "touch") swipe.current = null;
+        if (!profileHref || event.pointerType !== "touch" || !event.isPrimary) return;
+        swipe.current = { x: event.clientX, y: event.clientY, moved: false, consumed: false };
+      }}
+      onPointerMove={(event) => {
+        const start = swipe.current;
+        if (event.pointerType !== "touch" || !start) return;
+        const direction = consumeSwipe(start, event.clientX, event.clientY);
+        if (direction) onNavigate?.(direction);
+      }}
+      onPointerCancel={() => { swipe.current = null; }}
+      onPointerUp={(event) => {
+        const start = swipe.current;
+        if (event.pointerType !== "touch" || !start || !onNavigate) return;
+        const direction = consumeSwipe(start, event.clientX, event.clientY);
+        if (direction) onNavigate(direction);
+      }}
+      onClickCapture={(event) => {
+        if (swipe.current?.moved) { event.preventDefault(); event.stopPropagation(); swipe.current = null; }
+      }}
       role="grid"
       aria-rowcount={rows.length}
       aria-colcount={rows[activeRowIndex]?.talent.length ?? 0}
@@ -234,6 +289,7 @@ export function TalentNavigatorGrid({
           </>
         ) : null}
 
+        <div className="talent-navigator__image-layer">
         <div
           className={`talent-navigator__grid-track${slideInstant ? " talent-navigator__grid-track--instant" : ""}`}
           style={{ transform: `translate(0px, ${trackOffsetY}px)` }}
@@ -250,7 +306,7 @@ export function TalentNavigatorGrid({
 
             return (
               <div
-                key={`${cell.rowIndex}-${cell.colIndex}-${cell.rowOffset}-${cell.colOffset}`}
+                key={`${rows[cell.rowIndex].id}-${cell.talent.id}-${cell.colIndex}`}
                 className={`talent-navigator__card-slot${isActive ? " talent-navigator__card-slot--active" : ""}${isActiveRow ? " talent-navigator__card-slot--active-row" : ""}${slideInstant ? " talent-navigator__card-slot--instant" : ""}`}
                 style={{
                   width: metrics.cellW,
@@ -265,14 +321,17 @@ export function TalentNavigatorGrid({
                   distance={cell.distance}
                   panelOpen={selectedTalentId === cell.talent.id}
                   tabIndex={isActive ? 0 : -1}
-                  onClick={() => (isActive ? onOpenProfile(cell.talent) : onFocusCell(cell.rowIndex, cell.colIndex))}
+                  onClick={() => (profileHref || isActive ? onOpenProfile(cell.talent) : onFocusCell(cell.rowIndex, cell.colIndex))}
                   onDoubleClick={() => onOpenProfile(cell.talent)}
                   onSave={onSaveTalent}
+                  profileHref={profileHref?.(cell.talent)}
                   ariaLabel={`${cell.talent.name}, row ${cell.rowIndex + 1}, column ${cell.colIndex + 1}${isActive ? ", active" : ""}`}
                 />
               </div>
             );
           })}
+        </div>
+
         </div>
 
         {categoryLabel ? (

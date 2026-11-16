@@ -663,7 +663,6 @@ function ProfileActions({
   saveOpen,
   setSaveOpen,
   onInvite,
-  onContact,
   onAddToProject,
 }: {
   talent: Talent;
@@ -718,14 +717,7 @@ function ProfileActions({
           Just Invite
         </button>
       ) : null}
-      <button
-        type="button"
-        className="talent-navigator__action-btn talent-navigator__action-btn--block"
-        onClick={onContact}
-      >
-        <Mail className="size-3.5" aria-hidden />
-        Contact
-      </button>
+
     </div>
   );
 }
@@ -748,7 +740,6 @@ function ActiveTalentPanelContent({
   saveOpen: saveOpenControlled,
   onSaveOpenChange,
   onInvite,
-  onContact,
   onAddToProject,
   onClose,
   compact = false,
@@ -926,7 +917,6 @@ function ActiveTalentPanelContent({
             saveOpen={saveOpen}
             setSaveOpen={setSaveOpen}
             onInvite={onInvite}
-            onContact={onContact}
             onAddToProject={onAddToProject}
           />
         </div>

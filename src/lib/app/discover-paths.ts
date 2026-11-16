@@ -23,3 +23,10 @@ export function discoverDetailHref(
   const params = new URLSearchParams({ from });
   return `${path}?${params}`;
 }
+
+/** Carry only the selected ID with the existing filters when returning to Discover. */
+export function discoverReturnHref(path: string, query: string, talentId: string) {
+  const params = new URLSearchParams(query);
+  params.set("focus", talentId);
+  return `${path}?${params}`;
+}

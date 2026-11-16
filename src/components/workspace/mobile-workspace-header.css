@@ -1,0 +1,49 @@
+/* Workspace navigation uses the marketing header's centered brand, right toggle,
+   dark surface and full-width dropdown. Desktop keeps its existing sidebar. */
+@media (max-width: 1023px) {
+  .workspace-shell.workspace-shell { --talent-mobile-bar-height: calc(64px + env(safe-area-inset-top, 0px)); }
+  .workspace-shell .talent-mobile-header.marketing-site-header {
+    display: flex; position: fixed; inset: 0 0 auto; z-index: 60;
+    background: rgb(17 17 17 / .96); color: #f4f2ed;
+    border-bottom: 1px solid #ffffff14; border-radius: 0;
+  }
+  .workspace-shell .talent-mobile-header .talent-mobile-header__bar {
+    position: relative; display: flex; justify-content: center; width: 100%;
+    min-height: var(--talent-mobile-bar-height); padding: max(12px, env(safe-area-inset-top, 0px)) 20px 12px;
+  }
+  .workspace-shell .talent-mobile-header__brand { margin-inline: auto; padding-block: 14px; }
+  .workspace-shell .talent-mobile-header__brand img { filter: none; }
+  .workspace-shell .talent-mobile-header__balance { display: none; }
+  .workspace-shell .talent-mobile-header__toggle {
+    position: absolute; right: 12px; display: grid; place-items: center;
+    width: 44px; height: 44px; color: inherit; background: transparent;
+  }
+  .workspace-shell .talent-mobile-header__toggle svg { width: 22px; height: 22px; }
+  .workspace-shell .talent-mobile-header__panel {
+    position: absolute; inset: 100% 0 auto; display: flex; flex-direction: column;
+    align-items: stretch; gap: 8px; max-height: calc(100dvh - var(--talent-mobile-bar-height));
+    padding: 16px 20px max(24px, env(safe-area-inset-bottom, 0px));
+    overflow-y: auto; overscroll-behavior: contain; background: #111; color: #d5d7d8;
+    border: 0; border-bottom: 1px solid #ffffff1a; box-shadow: none; border-radius: 0;
+  }
+  .workspace-shell .talent-mobile-header__panel[hidden] { display: none; }
+  .workspace-shell .talent-mobile-header :is(.workspace-nav-link, .buyer-sidebar__link) {
+    display: flex; justify-content: center; min-height: 48px; padding: 8px 10px;
+    color: #d5d7d8; font-size: 16px; border-radius: 8px;
+  }
+  .workspace-shell .talent-mobile-header :is(.workspace-nav-link, .buyer-sidebar__link)[aria-current="page"] { color: #fff; background: #ffffff0a; }
+  .workspace-shell .talent-mobile-header :is(.workspace-nav-label, .workspace-account-copy) { position: static; width: auto; height: auto; clip-path: none; }
+  .workspace-shell .talent-mobile-header .buyer-sidebar__body { padding: 0; gap: 16px; width: 100%; overflow: visible; flex: none; }
+  .workspace-shell .talent-mobile-header .buyer-sidebar__scroll { margin: 0; overflow: visible; }
+  .workspace-shell .talent-mobile-header .buyer-sidebar__footer { margin-top: 16px; padding: 16px 0 0; border-top: 1px solid #ffffff1a; }
+  .workspace-shell .talent-mobile-header :is(.workspace-test-banner) { display: none; }
+  .workspace-shell .talent-mobile-header .workspace-account-menu > button { background: #ffffff08; color: #f4f2ed; }
+  .workspace-shell .talent-mobile-header .workspace-account-copy small { color: #a1a1a1; }
+  .workspace-shell--industry .workspace-frame { padding-top: var(--talent-mobile-bar-height); }
+  .workspace-shell .workspace-frame { border-radius: 0; border: 0; box-shadow: none; }
+  .workspace-shell--industry > .buyer-sidebar { display: none; }
+  .workspace-shell .talent-mobile-header :is(.buyer-sidebar__link-label, .workspace-nav-label) { flex: none; }
+  .workspace-shell .talent-mobile-header :is(.buyer-sidebar__link-icon, .workspace-nav-link > svg) { display: none; }
+  .workspace-shell .workspace-frame .industry-studio-canvas { border-radius: 0; }
+
+}

@@ -7,6 +7,7 @@ export function authEmail(payload: Payload, env: Env) {
   if (!isStagingEmailProject(env)) throw new Error("This hook runs only in staging");
   const {user,email_data:data} = payload;
   if (!user?.email || !data || !subjects[data.email_action_type]) throw new Error("Unsupported auth email");
+  if (data.email_action_type === "signup" && !/^\d{6,10}$/.test(data.token ?? "")) throw new Error("Missing signup code");
   const origin = stagingAppOrigin(env);
   let redirect = new URL("/auth/callback", origin);
   if (data.redirect_to) {
@@ -29,7 +30,7 @@ export function authEmail(payload: Payload, env: Env) {
     }
   }
   if (!sections.length) throw new Error("Missing auth verification data");
-  return routeEmail({from:"Motiion <notifications@motiion.io>",to:[user.email],subject:subjects[data.email_action_type],...(data.email_action_type === "signup" ? {html: confirmationTemplate.replaceAll("{{ .Token }}",data.token).replaceAll("{{ .ConfirmationURL }}",confirmationURL.replaceAll("&","&amp;").replaceAll('"',"&quot;"))} : {}),text:`${sections.join("\n\n")}\n\nCodes and links can only be used once. If expired, request a new one.`},env);
+  return routeEmail({from:"Motiion <notifications@motiion.io>",to:[user.email],subject:subjects[data.email_action_type],...(data.email_action_type === "signup" ? {html: confirmationTemplate.replaceAll("{{ .Token }}",data.token).replaceAll("{{ .ConfirmationURL }}",confirmationURL.replaceAll("&","&amp;").replaceAll('"',"&quot;"))} : {}),text:data.email_action_type === "signup" ? `Verify your email\n\nEnter this code to continue creating your account.\n\n${data.token}\n\nThis code can only be used once. If it expires, request a new code from your verification screen.\n\nIf you didn’t request this, you can ignore this email.` : `${sections.join("\n\n")}\n\nCodes and links can only be used once. If expired, request a new one.`},env);
 }
 export function createAuthEmailHandler(env: Env, verify: (body: string, headers: Record<string,string>) => unknown, send: typeof fetch) {
   return async (req: Request) => {

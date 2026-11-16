@@ -1,3 +1,4 @@
+import { normalizeVerificationCode } from "@/lib/auth/verification-code";
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ensureOAuthProfile, resolveOAuthRedirectPath } from "@/lib/auth/oauth-server";
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
   let body;
   try { body = await request.json(); } catch { return json({ error: "Enter your email and verification code." }, 400); }
   const email = typeof body?.email === "string" ? body.email.trim() : "";
-  const token = typeof body?.code === "string" ? body.code.trim() : "";
+  const token = typeof body?.code === "string" ? normalizeVerificationCode(body.code) : "";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^\d{6,10}$/.test(token)) return json({ error: "Enter the code from your email." }, 400);
   const supabase = await createServerSupabaseClient();
   if (!supabase) return json({ error: "Verification is temporarily unavailable. Try again shortly." }, 503);

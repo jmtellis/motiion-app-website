@@ -40,3 +40,29 @@ These are checks, not assumed defects: mobile menu and centered branding; signup
 - [Supabase Send Email Hook](https://supabase.com/docs/guides/auth/auth-hooks/send-email-hook): signed Auth delivery customization.
 - [Resend sent email list](https://resend.com/docs/api-reference/emails/list-emails): provider delivery status verification.
 - Next.js 16.4.4 installed documentation: `node_modules/next/dist/docs/01-app/01-getting-started/06-fetching-data.md` and `10-error-handling.md`. Recheck the installed version when changing data loading or error boundaries.
+
+### Application qualification questions — implemented in staging
+
+Added three structured fields with Not sure choices (now required for website continuation and submission): projects running at once (1 / 2–3 / 4–5 / 6+), frequency (one-off / occasional / ongoing), and project management team size including self, excluding cast (1 / 2–3 / 4–10 / 11+). Includes draft hydration, server validation, staging persistence, admin review, account context and application preview. Blank and Not sure remain distinct. Future work: an editable plan suggestion after approval, with duration and seat add-ons considered at checkout; no automatic plan assignment is implemented. Keep collaborator disciplines for project invites unless a concrete onboarding use requires them.
+
+### Application preview density — resolved locally
+
+Reserved separate grid rows for the heading, content and footer, and tightened section/header spacing while retaining the same type size, fixed Letter dimensions and existing value truncation. Verified all four populated sections, including multiline notes, clear the footer in Dia.
+
+### Submission confirmation polish — implemented locally
+
+Constrained confirmation content and action widths, consolidated status copy with email next steps, and unified immediate receipt/persisted pending messaging. Refresh retains a spinner and text label. Jay confirmed receipt arrival in the staging inbox. Receipt remains plain text with a status link; consider branded HTML after copy/layout feedback.
+
+### J07 — direct plan checkout and purchase summary
+
+Plan continuation on approval now opens Stripe directly, retaining the button spinner through setup, session creation and navigation. Other /checkout links auto-start with a status spinner and retry on failure; removed the redundant confirmation page. Cancel returns to approval plan choices or pricing rather than restarting checkout. Existing saved auth-return destinations still take precedence. Versioned checkout presentation prevents reuse of old cancel URLs; server approval, price validation, duplicate subscription checks and verified fulfillment remain in place.
+
+Hosted Checkout uses Motiion branding, a dark summary column, and plan-specific duration/renewal text near payment. Updated only the three Stripe test product names/descriptions to show project/team capacity, casting and coordination. Reproducible test-only copy script: scripts/staging-checkout-copy.ts (dry-run default, --apply to update). Production catalog copy still needs a deliberate release step. Hosted Checkout owns the column layout; a fully custom feature list would require an embedded/custom checkout.
+
+TypeScript, targeted ESLint and 13 existing billing/recommendation tests passed. Verified approval-to-Stripe navigation in Dia without the intermediate confirmation, and the Project Pass price/summary in Stripe sandbox. No payment submitted.
+
+### J06 — workspace entry defaults to Discover / Explore
+
+Changed exploration progress copy to “Opening workspace…”. Industry default auth/workspace destination and /dashboard now resolve to /talent (Discover). Explicit project/invitation destinations remain intact. Explore precedes Featured in shared Discover tabs, and both industry and talent Discover routes default to Explore; explicit Featured/Saved/list URLs remain supported. Updated default navigator data loading and route skeletons to match Explore.
+
+Verified /dashboard reaches Discover and the Explore grid renders first in Dia. A development hot-reload streaming failure left the initial verification on a skeleton; restarting the local development server restored rendering. TypeScript, targeted ESLint, six existing account-navigation/recommendation tests and diff checks passed. Local/staging only.

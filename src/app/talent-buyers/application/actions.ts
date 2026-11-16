@@ -10,7 +10,8 @@ export async function submitIndustryApplication(details: IndustryApplicationDraf
   if (!db) return { ok: false, error: "Applications are unavailable. Please try again." };
   const { data: { user } } = await db.auth.getUser();
   if (!user) return { ok: false, error: "Sign in again to submit your application. Your draft is saved on this device." };
-  const { error } = await db.rpc("submit_industry_application_with_identity", {
+  const { error } = await db.rpc("submit_industry_application_with_context", {
+    p_concurrent_projects: details.concurrent_projects || null, p_project_frequency: details.project_frequency || null, p_management_team_size: details.management_team_size || null,
     p_full_name: details.full_name.trim(), p_professional_role: details.professional_role.trim(),
     p_organization: details.organization.trim(), p_contact_email: details.contact_email.trim(),
     p_work_url: normalizeIndustryWorkUrl(details.work_url), p_hiring_projects: details.hiring_projects.trim(), p_expected_version: version,

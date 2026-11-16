@@ -1,7 +1,8 @@
+import { projectContextQuestions, validateProjectContext, type ProjectContext } from "./project-context";
 import { getBirthDateAge } from "@/lib/onboarding/birth-date";
 
 export type IndustryApplicationStatus = "pending" | "needs_information" | "rejected" | "approved";
-export type IndustryApplication = {
+export type IndustryApplication = ProjectContext & {
   user_id: string;
   full_name: string;
   professional_role: string;
@@ -30,7 +31,7 @@ export function validateIndustryApplication(input: IndustryApplicationDetails): 
   return null;
 }
 export const industryApplicationCopy: Record<IndustryApplicationStatus, { title: string; body: string }> = {
-  pending: { title: "Application under review", body: "Motiion staff will review your professional work and company affiliation. You can correct your details while you wait." },
+  pending: { title: "Application under review", body: "Your application is with the Motiion team. We’ll email you when you’re approved or if we need more information." },
   needs_information: { title: "A little more information", body: "Update your application using the feedback below, then submit it for another review." },
   rejected: { title: "Application not approved", body: "Read the feedback below. You can update your details and resubmit the same application." },
   approved: { title: "Industry access approved", body: "You can now continue to your industry workspace." },
@@ -47,12 +48,13 @@ export type IndustryApplicationIdentity = {
   acquisition_source: string;
   acquisition_source_detail: string;
 };
-export type IndustryApplicationDraft = IndustryApplicationDetails & IndustryApplicationIdentity;
+export type IndustryApplicationDraft = IndustryApplicationDetails & IndustryApplicationIdentity & ProjectContext;
 export const industryApplicationSteps = ["identity", "work", "projects", "acquisition", "review"] as const;
 export type IndustryApplicationStep = typeof industryApplicationSteps[number];
 export const industryProjectOptions = ["Live performances", "Tours", "Television & film", "Music videos", "Commercials & video ads", "Print campaigns", "Corporate events", "Brand events", "Theater & stage", "Award shows", "Cruise entertainment", "Theme parks", "Classes & workshops", "Social & digital content"];
 const sources = ["instagram", "friend_or_referral", "motiion_founder", "event", "other"];
 export function validateIndustryApplicationStep(step: IndustryApplicationStep, input: IndustryApplicationDraft, today = new Date()): string | null {
+  if (step === "projects" || step === "review") { const error = validateProjectContext(input, true); if (error) return error; }
   if (step === "identity" || step === "review") {
     if (!input.full_name.trim() || input.full_name.length > 200) return "Add your name (up to 200 characters).";
     if (!/^[a-z0-9_]{3,30}$/.test(input.username)) return "Choose a username with 3–30 lowercase letters, numbers or underscores.";
@@ -75,12 +77,14 @@ export function parseIndustryApplicationDraft(raw: string | null, userId: string
     if (value.userId !== userId || value.applicationVersion !== applicationVersion || !industryApplicationSteps.includes(value.step)) return null;
     const keys = ["full_name", "professional_role", "organization", "contact_email", "work_url", "hiring_projects", "username", "date_of_birth", "avatar_url", "acquisition_source", "acquisition_source_detail"];
     if (!value.details || keys.some(key => typeof value.details[key] !== "string")) return null;
-    return { details: Object.fromEntries(keys.map(key => [key, value.details[key]])) as IndustryApplicationDraft, step: value.step };
+    const context = Object.fromEntries(projectContextQuestions.map(question => [question.key, value.details[question.key] ?? ""]));
+    if (validateProjectContext(context)) return null;
+    return { details: { ...Object.fromEntries(keys.map(key => [key, value.details[key]])), ...context } as IndustryApplicationDraft, step: value.step };
   } catch { return null; }
 }
 
 // Keep these choices aligned with iOS ProfileTitle and IndustryProjectSelection.
-export const industryRoleOptions = ["Choreographer", "Casting Director", "Creative Director", "Agent / Manager", "Marketing", "Producer", "Studio Owner", "Other"];
+export const industryRoleOptions = ["Choreographer", "Casting Director", "Creative Director", "Agent / Manager", "Marketing", "Producer", "Studio Owner", "Director", "Production Manager", "Production Coordinator", "Stylist / Wardrobe", "Hair / Makeup", "Photographer", "Videographer", "Other"];
 export type IndustryProjectSelection = { selected: string[]; includesOther: boolean; other: string };
 export function parseIndustryProjects(text: string): IndustryProjectSelection {
   const legacy: Record<string, string> = { "Live Performance": "Live performances", "Tour": "Tours", "TV / Film": "Television & film", "Music Video": "Music videos", "Brand Event": "Brand events", "Theater / Stage": "Theater & stage", "Award Show": "Award shows", "Class / Workshop Opportunity": "Classes & workshops" };

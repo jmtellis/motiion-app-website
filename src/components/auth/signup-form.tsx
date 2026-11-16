@@ -4,7 +4,8 @@ import { ButtonProgress } from "./ButtonProgress";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { useFormStatus } from "react-dom";
 
 import { SignupSplitDivider, SignupSplitOAuth } from "@/components/auth/SignupSplitOAuth";
 import { trackClientEvent } from "@/lib/analytics/track-client";
@@ -16,7 +17,18 @@ function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-export function SignupForm() {
+function SignupSubmitButton({ busy, disabled, passwordStep }: { busy: boolean; disabled: boolean; passwordStep: boolean }) {
+  const { pending } = useFormStatus();
+  const submitting = pending || busy;
+  const label = passwordStep ? "Sign Up" : "Continue with Email";
+  return (
+    <button type="submit" className="signup-split-submit" aria-busy={submitting} aria-label={label} disabled={submitting || disabled}>
+      <ButtonProgress loading={submitting}>{label}</ButtonProgress>
+    </button>
+  );
+}
+
+export function SignupForm({ intro }: { intro: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedType = parseAccountTypeParam(searchParams.get("account_type"));
@@ -29,6 +41,8 @@ export function SignupForm() {
   const passwordStep = searchParams.get("step") === "password" && isValidEmail(email.trim());
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [navigating, startNavigation] = useTransition();
+  const busy = loading || navigating;
   const [showPassword, setShowPassword] = useState(false);
   const canSubmit = isValidEmail(email.trim()) && password.length >= 8 && password === confirmPassword;
 
@@ -49,7 +63,7 @@ export function SignupForm() {
     const params = new URLSearchParams(searchParams.toString());
     if (step === "password") params.set("step", "password");
     else params.delete("step");
-    router.push(`/signup${params.size ? `?${params}` : ""}`, { scroll: false });
+    startNavigation(() => router.push(`/signup${params.size ? `?${params}` : ""}`, { scroll: false }));
   }
 
   async function handleSubmit(formData: FormData) {
@@ -107,7 +121,7 @@ export function SignupForm() {
 
     if (!data.session) {
       try { window.localStorage.setItem(`motiion:confirmation-sent:${nextEmail.toLowerCase()}`, String(Date.now())); } catch { /* optional cooldown persistence */ }
-      router.push(`${accountType === "lookingForTalent" ? "/talent-buyers" : ""}/signup/check-email?email=${encodeURIComponent(nextEmail)}${searchParams.get("next") ? `&next=${encodeURIComponent(searchParams.get("next")!)}` : ""}`);
+      startNavigation(() => router.push(`${accountType === "lookingForTalent" ? "/talent-buyers" : ""}/signup/check-email?email=${encodeURIComponent(nextEmail)}${searchParams.get("next") ? `&next=${encodeURIComponent(searchParams.get("next")!)}` : ""}`));
       return;
     }
 
@@ -135,13 +149,19 @@ export function SignupForm() {
 
     const requestedDestination = searchParams.get("next");
     if (requestedDestination) await rememberLoginReturnPath(requestedDestination);
-    router.push(accountType === "lookingForTalent" ? "/talent-buyers/application" : "/onboarding");
-    router.refresh();
+    startNavigation(() => {
+      router.push(accountType === "lookingForTalent" ? "/talent-buyers/application" : "/onboarding");
+      router.refresh();
+    });
     } catch { setError("Couldn’t finish creating your account. Check your connection, then try again or log in if your confirmation email arrived."); }
     finally { setLoading(false); }
   }
 
   return (
+    <>
+    <p className="centered-auth__intro-note signup-password-context" aria-live="polite">
+      {passwordStep ? `Create your password for ${email.trim()}` : intro}
+    </p>
     <div className="signup-split-form__body">
       <form action={handleSubmit} className="flex flex-col gap-4">
         {!passwordStep ? (
@@ -160,7 +180,6 @@ export function SignupForm() {
         </label>
 
         ) : <>
-          <p className="signup-split-form__subtitle" aria-live="polite">Create your password for {email.trim()}</p>
         <label className="signup-split-field">
           <span className="sr-only">Password</span>
           <div className="signup-split-password-wrap">
@@ -179,6 +198,7 @@ export function SignupForm() {
             <button
               type="button"
               className="signup-split-password-toggle"
+              tabIndex={-1}
               onClick={() => setShowPassword((value) => !value)}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
@@ -207,6 +227,7 @@ export function SignupForm() {
             <button
               type="button"
               className="signup-split-password-toggle"
+              tabIndex={-1}
               onClick={() => setShowPassword((value) => !value)}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
@@ -223,16 +244,14 @@ export function SignupForm() {
         {callbackError && <div className="signup-split-error" role="alert">{callbackError}</div>}
         {error ? <div className="signup-split-error" role="alert">{error}</div> : null}
 
-        <button type="submit" className="signup-split-submit" disabled={loading || (passwordStep ? !canSubmit : !isValidEmail(email.trim()))}>
-          <ButtonProgress loading={loading}>{passwordStep ? "Sign Up" : "Continue with Email"}</ButtonProgress>
-        </button>
+        <SignupSubmitButton busy={busy} passwordStep={passwordStep} disabled={passwordStep ? !canSubmit : !isValidEmail(email.trim())} />
       </form>
 
       {passwordStep ? (
-        <button type="button" className="signup-split-text-btn w-full" disabled={loading} onClick={() => changeStep("email")}>Back to email</button>
+        <button type="button" className="signup-split-text-btn w-full" disabled={busy} onClick={() => changeStep("email")}>Back to email</button>
       ) : <>
         <SignupSplitDivider />
-        <SignupSplitOAuth flow="signup" signupPath={accountType === "lookingForTalent" ? "hiring" : "talent"} disabled={loading} />
+        <SignupSplitOAuth flow="signup" signupPath={accountType === "lookingForTalent" ? "hiring" : "talent"} disabled={busy} />
       </>}
 
 
@@ -251,5 +270,6 @@ export function SignupForm() {
         </p>
 
     </div>
+    </>
   );
 }

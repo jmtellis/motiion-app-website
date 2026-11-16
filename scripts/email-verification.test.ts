@@ -1,3 +1,4 @@
+import { normalizeVerificationCode } from "../src/lib/auth/verification-code";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -17,6 +18,7 @@ async function request(options: { body?: unknown; origin?: string; invalid?: boo
   } };
   const modules: Record<string, unknown> = {
     "next/server": { NextResponse },
+    "@/lib/auth/verification-code": { normalizeVerificationCode },
     "@/lib/supabase/server": { createServerSupabaseClient: async () => db },
     "@/lib/auth/oauth-server": { ensureOAuthProfile: async (_db: unknown, verified: unknown, intent: { accountType: string }) => { setupCalls++; assert.equal(verified, user); assert.equal(intent.accountType, "lookingForTalent"); if (options.setupFails) throw new Error("temporary"); return { created: true }; }, resolveOAuthRedirectPath: async () => options.destination ?? "/talent-buyers/onboarding" },
     "@/lib/analytics/track-server": { trackServerEvent: async () => {} },
@@ -70,4 +72,16 @@ test("a different signed-in account cannot bypass the code", async () => {
   assert.equal(result.attempts, 1);
   assert.equal(result.response.status, 400);
   assert.equal(result.setupCalls, 0);
+});
+
+test("formatted codes preserve leading zeroes and reject letters", async () => {
+  assert.equal(normalizeVerificationCode(" 0012–3456 "), "00123456");
+  for (const code of ["123 456", "123-456", "123\u2011456", "123\n456"]) {
+    assert.equal((await request({body:{email:user.email,code}})).response.status, 200);
+  }
+  for (const code of ["123x456", "12345678901"]) {
+    const result = await request({body:{email:user.email,code}});
+    assert.equal(result.response.status, 400);
+    assert.equal(result.attempts, 0);
+  }
 });

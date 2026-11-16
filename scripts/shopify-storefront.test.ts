@@ -20,10 +20,10 @@ const ready = {
   SHOPIFY_STOREFRONT_ACCESS_TOKEN: "a".repeat(32),
 };
 
-test("shop nav sits with Services and Pricing, including the footer", () => {
+test("shop nav sits with For Talent and Pricing, including the footer", () => {
   assert.deepEqual(
     marketingPageLinks.map((link) => link.label),
-    ["Services", "Pricing", "Shop"],
+    ["For Talent", "Shop", "Pricing"],
   );
   assert.equal(marketingPageLinks.find((link) => link.label === "Shop")?.href, "/shop");
   assert.equal(marketingPageLinkCurrent("/shop/motiion-wordmark-tee", "/shop"), "page");

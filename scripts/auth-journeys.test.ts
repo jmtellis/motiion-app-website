@@ -5,7 +5,7 @@ import { normalizeIndustryWorkUrl, parseIndustryApplicationDraft, validateIndust
 import { emailChangeStatus, emailChangeFailurePath } from "../src/lib/auth/email-change";
 import { ensureOAuthProfile } from "../src/lib/auth/oauth-server";
 
-const application: IndustryApplicationDraft = { full_name: "Avery Quinn", professional_role: "Producer", organization: "Independent", contact_email: "test@example.invalid", work_url: "example.com/work", hiring_projects: "Music videos and live performances", username: "avery_quinn", date_of_birth: "1990-10-02", avatar_url: "https://example.supabase.co/storage/v1/object/public/avatars/user/photo.jpg", acquisition_source: "event", acquisition_source_detail: "Dance event" };
+const application: IndustryApplicationDraft = { concurrent_projects: "1", project_frequency: "ongoing", management_team_size: "1", full_name: "Avery Quinn", professional_role: "Producer", organization: "Independent", contact_email: "test@example.invalid", work_url: "example.com/work", hiring_projects: "Music videos and live performances", username: "avery_quinn", date_of_birth: "1990-10-02", avatar_url: "https://example.supabase.co/storage/v1/object/public/avatars/user/photo.jpg", acquisition_source: "event", acquisition_source_detail: "Dance event" };
 test("auth destinations preserve local deep links and reject off-site URLs and auth loops", () => {
   for (const unsafe of ["https://evil.example", "//evil.example", "/\\evil.example", "/%2fhost/path", "/%5cevil.example", "/path\nInjected", "/%0d%0aHost", "/login", "/auth/callback?code=x", "/signup/check-email"]) assert.equal(safeAuthReturnPath(unsafe), null, unsafe);
   assert.equal(safeAuthReturnPath("/casting/casting-1?role=role-1&apply=1"), "/casting/casting-1?role=role-1&apply=1");
@@ -88,4 +88,38 @@ test('OAuth errors recover through sign-in rather than email confirmation',()=>{
  assert.equal(authCallbackFailurePath('unexpected_failure'),'/login?error=unexpected_failure');
  assert.equal(authCallbackFailurePath('bad_code_verifier','oauth'),'/login?error=bad_code_verifier');
  assert.equal(authCallbackFailurePath('unexpected_failure','recovery'),'/forgot-password?error=unexpected_failure');
+});
+
+
+test("project context is required on continuation and submission while incomplete drafts survive", () => {
+  const context = { concurrent_projects: "2_3", project_frequency: "ongoing", management_team_size: "4_10" };
+  const details = { ...application, ...context };
+  assert.equal(validateIndustryApplicationStep("review", details), null);
+  const raw = JSON.stringify({ userId: "one", applicationVersion: 2, step: "projects", details });
+  assert.deepEqual(parseIndustryApplicationDraft(raw, "one", 2)?.details, details);
+  for (const key of Object.keys(context)) {
+    assert.ok(validateIndustryApplicationStep("projects", { ...details, [key]: "invalid" }));
+    assert.equal(validateIndustryApplicationStep("projects", { ...details, [key]: "not_sure" }), null);
+    for (const missing of ["", null, undefined]) {
+      const incomplete = { ...details, [key]: missing };
+      assert.ok(validateIndustryApplicationStep("projects", incomplete));
+      assert.ok(validateIndustryApplicationStep("review", incomplete));
+      assert.ok(parseIndustryApplicationDraft(JSON.stringify({ userId: "one", applicationVersion: 2, step: "projects", details: incomplete }), "one", 2));
+    }
+  }
+});
+
+
+test("step readiness rejects missing required fields without blocking on later steps", () => {
+  const groups = {
+    identity: ["avatar_url", "full_name", "username", "date_of_birth"],
+    work: ["professional_role", "organization", "contact_email"],
+    projects: ["hiring_projects", "concurrent_projects", "project_frequency", "management_team_size"],
+    acquisition: ["acquisition_source"],
+  } as const;
+  for (const [step, keys] of Object.entries(groups)) {
+    for (const key of keys) assert.ok(validateIndustryApplicationStep(step as keyof typeof groups, { ...application, [key]: "" }), `${step}: ${key}`);
+  }
+  assert.equal(validateIndustryApplicationStep("work", { ...application, work_url: "", hiring_projects: "", acquisition_source: "" }), null);
+  assert.equal(validateIndustryApplicationStep("acquisition", { ...application, acquisition_source_detail: "" }), null);
 });

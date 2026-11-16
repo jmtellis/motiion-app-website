@@ -20,9 +20,7 @@ export default async function BuyerTalentPage({
   const searching = Object.keys(params).some((key) => key !== "view" && key !== "layout");
   const listLayout = view === "browse" || layout === "list";
   const initialMode =
-    view === "discover" || view === "explore" || view === "browse" || searching
-      ? "discover"
-      : "featured";
+    view === "featured" && !searching ? "featured" : "discover";
   const initialLayout = listLayout ? "list" : "navigator";
 
   return (

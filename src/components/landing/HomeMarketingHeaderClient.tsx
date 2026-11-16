@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 
 import { MotiionScrolledWordmark } from "@/components/brand/MotiionScrolledWordmark";
 import { marketingPageLinkCurrent, marketingPageLinks } from "@/lib/marketing/site-nav";
+import { MarketingAccountAction } from "./MarketingAccountAction";
 import { IosDownloadHeroButton } from "./IosDownloadHeroButton";
 import "./marketing-header.css";
 
 /** Shared navigation for marketing, storefront and authentication pages. */
-export function HomeMarketingHeaderClient({ overlay = false }: { overlay?: boolean }) {
+export function HomeMarketingHeaderClient({ overlay = false, accountMenu }: { overlay?: boolean; accountMenu?: ReactNode }) {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [openPath, setOpenPath] = useState<string | null>(null);
@@ -32,13 +33,14 @@ export function HomeMarketingHeaderClient({ overlay = false }: { overlay?: boole
           <MotiionScrolledWordmark priority />
         </Link>
         <button ref={menuButton} type="button" className="marketing-site-header__toggle" aria-label={menuOpen ? "Close navigation" : "Open navigation"} aria-expanded={menuOpen} aria-controls="marketing-navigation" onClick={() => setOpenPath(menuOpen ? null : pathname)}>{menuOpen ? <X aria-hidden size={22} /> : <Menu aria-hidden size={22} />}</button>
-        <nav id="marketing-navigation" aria-label="Main navigation" className={`marketing-site-header__nav${menuOpen ? " is-open" : ""}`} onClick={() => setOpenPath(null)}>
+        <nav id="marketing-navigation" aria-label="Main navigation" className={`marketing-site-header__nav${menuOpen ? " is-open" : ""}`} onClick={event => { if (event.target instanceof Element && event.target.closest("a")) setOpenPath(null); }}>
           {marketingPageLinks.map((link) => (
             <Link key={link.href} href={link.href} aria-current={marketingPageLinkCurrent(pathname, link.href)}>
               {link.label}
             </Link>
           ))}
           <IosDownloadHeroButton iconOnly className="marketing-site-header__download" />
+          <div className="marketing-site-header__account">{accountMenu ?? <MarketingAccountAction />}</div>
         </nav>
       </div>
     </header>

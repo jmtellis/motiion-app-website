@@ -1,0 +1,77 @@
+.centered-auth--wide:has(.industry-approved) > .centered-auth__main > .signup-split-form { max-width: 1080px; width: 100%; }
+.centered-auth:has(.industry-approved) .centered-auth__main { padding: 38px 24px 48px; }
+.industry-approved { width: 100%; }
+.industry-approved__intro { text-align: center; margin-bottom: 36px; animation: approval-reveal .5s ease both; }
+.industry-approved__intro h1 { margin: 0; font-size: clamp(30px, 3.5vw, 40px); line-height: 1.15; font-weight: 550; letter-spacing: -.05em; }
+.industry-approved__intro p { margin: 14px 0 0; font-size: 15px; line-height: 1.6; color: #aaa; }
+.approval-plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; border: 0; padding: 0; margin: 0; min-width: 0; animation: approval-reveal .6s .08s ease both; }
+.approval-plan { display: flex; flex-direction: column; position: relative; padding: 24px; border: 1px solid #ffffff1c; border-radius: 20px; background: #191919; cursor: pointer; transition: background .2s, border-color .2s; min-width: 0; }
+.approval-plan:hover { background: #202020; border-color: #ffffff45; }
+.approval-plan--selected, .approval-plan--selected:hover { background: #172124; border-color: #58c7d9; }
+.approval-plan input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.approval-plan:has(input:focus-visible) { outline: 2px solid #b5eef7; outline-offset: 4px; }
+.approval-plan:has(input:disabled) { cursor: wait; }
+.approval-plan__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 22px; margin-bottom: 24px; }
+.approval-plan__badge { color: #87d9e6; font-size: 11px; font-weight: 500; }
+.approval-plan__radio { display: grid; place-items: center; width: 21px; height: 21px; flex-shrink: 0; border-radius: 50%; border: 1px solid #ffffff40; }
+.approval-plan--selected .approval-plan__radio { background: #f5f5f3; border-color: #f5f5f3; color: #111; }
+.approval-plan__name { font-size: 23px; font-weight: 500; letter-spacing: -.035em; }
+.approval-plan__price { display: flex; align-items: baseline; flex-wrap: wrap; gap: 7px; font-size: 38px; font-weight: 500; letter-spacing: -.04em; margin: 26px 0; }
+.approval-plan__price > span { color: #aaa; font-size: 12px; font-weight: 400; letter-spacing: 0; }
+.approval-plan__features { display: grid; gap: 13px; border-top: 1px solid #ffffff12; padding-top: 22px; }
+.approval-plan__features > span { display: flex; gap: 9px; color: #ccc; font-size: 12px; line-height: 1.5; }
+.approval-plan__features svg { color: #999; flex-shrink: 0; margin-top: 2px; }
+.approval-plan__reason { margin-top: auto; padding-top: 24px; font-size: 11px; line-height: 1.6; color: #9dc4cb; min-height: 60px; }
+.industry-approved__next { max-width: 580px; margin: 28px auto 0; text-align: center; animation: approval-reveal .6s .16s ease both; }
+.industry-approved__next .signup-split-field { margin: 24px auto; max-width: 360px; text-align: left; }
+.industry-approved__next > .signup-split-error { color: #f87171; margin-bottom: 16px; }
+@keyframes approval-reveal { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@media(max-width: 760px) {
+  .centered-auth:has(.industry-approved) .centered-auth__main { padding: 28px 20px 40px; }
+  .approval-plans { grid-template-columns: 1fr; max-width: 460px; margin-inline: auto; }
+  .approval-plan { padding: 20px; }
+  .approval-plan__top { margin-bottom: 12px; }
+  .approval-plan__price { margin: 16px 0; }
+  .approval-plan__features { gap: 8px; padding-top: 16px; }
+  .approval-plan__reason { min-height: 0; padding-top: 16px; }
+  .approval-plan__reason:empty { display: none; }
+  .industry-approved__intro { margin-bottom: 28px; }
+  .industry-approved__intro p { font-size: 14px; }
+}
+@media(prefers-reduced-motion: reduce) { .industry-approved__intro, .approval-plans, .industry-approved__next { animation: none; } .approval-plan { transition: none; } }
+
+/* Compact plan comparison with two equally reachable next steps. */
+.centered-auth:has(.industry-approved) .centered-auth__main { padding-top: clamp(24px, 4svh, 40px); padding-bottom: 24px; }
+.industry-approved__intro { margin-bottom: 24px; }
+.industry-approved__intro h1 { font-size: clamp(28px, 3vw, 34px); }
+.industry-approved__intro p { margin-top: 12px; }
+.approval-plan { padding: 20px; }
+.approval-plan__top { margin-bottom: 14px; }
+.approval-plan__name { font-size: 22px; }
+.approval-plan__price { font-size: 34px; margin: 16px 0; }
+.approval-plan__features { gap: 10px; padding-top: 16px; }
+.approval-plan__reason { min-height: 0; padding-top: 16px; }
+.industry-approved__next { margin-top: 0; }
+body:has(.industry-approved) .staging-environment-badge {
+  top: auto; bottom: max(12px, env(safe-area-inset-bottom)); left: 12px;
+  width: 16px; height: 16px; padding: 0; overflow: hidden;
+  font-size: 0; border-radius: 50%; background: #fbbf24; pointer-events: auto;
+}
+
+.approval-plan { cursor: default; }
+.approval-plan__selection { display: flex; flex-direction: column; flex: 1; cursor: pointer; }
+.approval-plan__action { min-height: 106px; padding-top: 20px; text-align: center; }
+.approval-plan__action .signup-split-submit { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 44px; padding: 10px 12px; margin: 0; font-size: 12px; }
+.approval-plan__action svg { flex-shrink: 0; }
+.approval-plan__action p { margin: 9px 0 0; color: #aaa; font-size: 10px; line-height: 1.5; }
+.industry-approved__next { margin-top: 24px; }
+.industry-approved__next .signup-split-submit { display: flex; align-items: center; justify-content: center; gap: 10px; width: min(100%, 360px); min-height: 48px; margin: 0 auto; }
+@media(max-width:760px) {
+ .approval-plan__action { min-height: 0; padding-top: 20px; }
+ .approval-plan--selected .approval-plan__action { padding-top: 20px; }
+}
+
+.industry-approved__next .signup-split-submit { border: 0; background: transparent; color: #ccc; box-shadow: none; }
+.industry-approved__next .signup-split-submit:hover:not(:disabled) { background: transparent; color: #fff; text-decoration: underline; text-underline-offset: 4px; }
+.approval-plan:not(.approval-plan--selected) .signup-split-submit:disabled { background: #ffffff0b; color: #777; border: 1px solid #ffffff10; opacity: 1; cursor: not-allowed; }
+.approval-plan:not(.approval-plan--selected) .approval-plan__action p { color: #777; }

@@ -1,13 +1,15 @@
 "use client";
+import { normalizeVerificationCode } from "@/lib/auth/verification-code";
 import { useEffect, useState } from "react";
+import { ButtonProgress } from "@/components/auth/ButtonProgress";
 import { AuthSplitLink } from "@/components/auth/AuthSplitTransition";
 import { buildEmailConfirmationRedirectUrl } from "@/lib/auth/oauth-shared";
 import { resendSecondsRemaining, safeAuthReturnPath } from "@/lib/auth/redirects";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { signOutLocally } from "@/lib/auth/sign-out";
 
-type CheckEmailFormProps = { email: string; accountType?: "talent" | "lookingForTalent"; signedInEmail?: string; returnTo?: string };
-export function CheckEmailForm({ email, accountType, signedInEmail, returnTo }: CheckEmailFormProps) {
+type CheckEmailFormProps = { showIntro?: boolean; email: string; accountType?: "talent" | "lookingForTalent"; signedInEmail?: string; returnTo?: string };
+export function CheckEmailForm({ email, accountType, signedInEmail, returnTo, showIntro = true }: CheckEmailFormProps) {
   const [loading, setLoading] = useState(false);
   const [switching, setSwitching] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -53,6 +55,7 @@ export function CheckEmailForm({ email, accountType, signedInEmail, returnTo }: 
     event.preventDefault();
     if (verifying || loading || switching) return;
     setVerifying(true); setError(null); setMessage(null);
+    let navigating = false;
     try {
       const response = await fetch("/auth/verify-code", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, code, next }) });
       const result = await response.json();
@@ -61,8 +64,9 @@ export function CheckEmailForm({ email, accountType, signedInEmail, returnTo }: 
       if (!destination) throw new Error("Missing destination");
       // A full navigation reads the session cookies set by the verification response.
       window.location.replace(destination);
+      navigating = true;
     } catch { setError("Couldn’t verify your code. Check your connection and try again."); }
-    finally { setVerifying(false); }
+    finally { if (!navigating) setVerifying(false); }
   }
   async function switchAccount() {
     setSwitching(true); setError(null);
@@ -74,18 +78,17 @@ export function CheckEmailForm({ email, accountType, signedInEmail, returnTo }: 
     finally { setSwitching(false); }
   }
   return <div className="signup-split-form__body">
-    <p className="signup-split-form__subtitle" style={{ marginTop: 0, textAlign: "center" }}>Enter the code sent to <strong style={{ overflowWrap: "anywhere" }}>{email}</strong> to continue where you left off.</p>
-    <p className="signup-split-hint" style={{ textAlign: "center" }}>You can read the email on any device. Enter its code here.</p>
+    {showIntro && <p className="signup-split-form__subtitle" style={{ marginTop: 0, textAlign: "center" }}>Enter the code to continue creating your account.</p>}
     {differentAccount && <p className="signup-split-hint" role="status">You’re currently signed in as {signedInEmail}. <button type="button" className="signup-split-text-btn signup-split-text-btn--accent" disabled={switching || loading || verifying} onClick={() => void switchAccount()}>{switching ? "Switching accounts…" : `Switch to ${email}`}</button></p>}
     {error && <div id="verification-error" className="signup-split-error" role="alert">{error}</div>}
     {message && <p className="signup-split-hint" role="status" style={{ textAlign: "center" }}>{message}</p>}
     <form onSubmit={verifyCode} className="flex flex-col gap-4">
       <label className="signup-split-field" htmlFor="verification-code"><span>Verification code</span>
-      <input id="verification-code" name="code" value={code} onChange={event => setCode(event.target.value.replace(/\s/g, ""))} inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6,10}" maxLength={10} required aria-describedby={error ? "verification-error" : undefined} disabled={verifying} /></label>
-      <button type="submit" className="signup-split-submit" disabled={loading || switching || verifying}>{verifying ? "Verifying…" : "Verify and Continue"}</button>
+      <input id="verification-code" name="code" className="verification-code-input" placeholder="Enter code" spellCheck={false} autoCapitalize="none" value={code} onChange={event => setCode(normalizeVerificationCode(event.target.value))} inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6,10}" maxLength={19} required aria-describedby={error ? "verification-error" : undefined} disabled={verifying} /></label>
+      <button type="submit" className="signup-split-submit" aria-label="Verify and Continue" aria-busy={verifying} disabled={loading || switching || verifying}><ButtonProgress loading={verifying}>Verify and Continue</ButtonProgress></button>
     </form>
     <button type="button" className="signup-split-text-btn w-full" disabled={loading || switching || verifying || remaining > 0} onClick={() => void handleResend()}>{loading ? "Sending…" : remaining > 0 ? `Resend in ${remaining}s` : "Resend code"}</button>
-    <div className="signup-split-alt-auth">
+    <div className={showIntro ? "signup-split-alt-auth" : "centered-auth__account-links"}>
       <p className="signup-split-alt-auth__secondary">Wrong email? <AuthSplitLink href={signupHref} className="signup-split-text-btn signup-split-text-btn--accent">Change email</AuthSplitLink></p>
       <p className="signup-split-alt-auth__secondary">Already confirmed? <AuthSplitLink href={loginHref} className="signup-split-text-btn signup-split-text-btn--accent">Log in</AuthSplitLink></p>
     </div>

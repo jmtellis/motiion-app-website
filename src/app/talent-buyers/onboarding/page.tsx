@@ -9,20 +9,20 @@ import { getProfileDestination, requireAuth } from "@/lib/auth/session";
 export default async function TalentBuyerOnboardingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ addShell?: string }>;
+  searchParams: Promise<{ addShell?: string; welcome?: string }>;
 }) {
   const params = await searchParams;
   const profile = await requireAuth();
   const db = await createServerSupabaseClient();
   const approval = db ? await db.rpc("has_industry_approval") : null;
   if (!approval || approval.error || approval.data !== true) redirect("/talent-buyers/application");
-  const { data: application } = await db!.from("industry_applications").select("full_name,professional_role,organization,contact_email,work_url,status,intro_completed_at").eq("user_id", profile.id).maybeSingle();
+  const { data: application } = await db!.from("industry_applications").select("full_name,professional_role,organization,contact_email,work_url,status,intro_completed_at,concurrent_projects,project_frequency").eq("user_id", profile.id).maybeSingle();
   const applicationProfile = application ? { ...profile, fullName: application.full_name, customRole: application.professional_role, buyerRole: "other" as const, organizationName: application.organization, organizationWebsite: application.work_url } : profile;
   // Approved applicants use the same atomic completion as iOS. Staff/legacy access
   // grants without an application retain their existing professional setup.
   if (application?.status === "approved") {
-    if (application.intro_completed_at && profile.buyerOnboardingCompleted) redirect("/dashboard");
-    return <IndustryApprovedSetup name={application.full_name} username={profile.username ?? null} />;
+    if (application.intro_completed_at && profile.buyerOnboardingCompleted && params.welcome !== "1") redirect("/dashboard");
+    return <IndustryApprovedSetup username={profile.username ?? null} concurrentProjects={application.concurrent_projects} projectFrequency={application.project_frequency} />;
   }
   const addingIndustry = params.addShell === "industry";
 

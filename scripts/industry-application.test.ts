@@ -4,6 +4,9 @@ import { validateIndustryApplication, industryApplicationCopy, type IndustryAppl
 const valid: IndustryApplicationDetails = { full_name: "Alex", professional_role: "Producer", organization: "Independent", contact_email: "alex@gmail.com", work_url: "https://example.com/credits", hiring_projects: "Music videos and live performances" };
 describe("industry applications", () => {
   it("accepts an independent professional with personal email", () => assert.equal(validateIndustryApplication(valid), null));
+  it("accepts multiple roles and custom roles in the existing text field", () => {
+    assert.equal(validateIndustryApplication({ ...valid, professional_role: "Producer; Creative Director; Movement consultant" }), null);
+  });
   it("requires identity and project context", () => {
     for (const field of Object.keys(valid).filter(key => key !== "work_url") as (keyof IndustryApplicationDetails)[]) assert.ok(validateIndustryApplication({ ...valid, [field]: "" }), field);
   });
@@ -18,7 +21,7 @@ describe("industry applications", () => {
     assert.ok(validateIndustryApplication({ ...valid, professional_role: "x".repeat(201) }));
   });
   it("distinguishes review from approval, with correction and resubmission", () => {
-    assert.match(industryApplicationCopy.pending.body, /correct/);
+    assert.match(industryApplicationCopy.pending.body, /email you/);
     assert.match(industryApplicationCopy.needs_information.body, /another review/);
     assert.match(industryApplicationCopy.rejected.body, /same application/);
     assert.match(industryApplicationCopy.approved.title, /approved/);

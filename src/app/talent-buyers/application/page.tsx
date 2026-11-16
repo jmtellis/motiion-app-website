@@ -22,13 +22,14 @@ export default async function IndustryApplicationPage() {
     const adding = hasEnabledShell(profile, "talent") && !hasEnabledShell(profile, "lookingForTalent");
     redirect(adding ? "/talent-buyers/onboarding?addShell=industry" : profile.buyerOnboardingCompleted ? "/dashboard" : "/talent-buyers/onboarding");
   }
-  return <IndustryApplicationForm key={`${profile.id}:${application?.version ?? 0}:${application?.status ?? "new"}`} userId={profile.id} application={application} returnHref={hasEnabledShell(profile, "talent") ? "/home" : "/onboarding"} initial={{
+  return <IndustryApplicationForm key={`${profile.id}:${application?.version ?? 0}:${application?.status ?? "new"}`} userId={profile.id} application={application} initial={{
     full_name: application?.full_name ?? (profile.fullName === "Motiion User" ? "" : profile.fullName ?? ""),
     professional_role: application?.professional_role ?? profile.customRole ?? profile.buyerRole ?? "",
     organization: application?.organization ?? profile.organizationName ?? "",
     contact_email: application?.contact_email ?? profile.email ?? "",
     work_url: application?.work_url ?? profile.organizationWebsite ?? "",
     hiring_projects: application?.hiring_projects ?? "",
+    concurrent_projects: application?.concurrent_projects ?? "", project_frequency: application?.project_frequency ?? "", management_team_size: application?.management_team_size ?? "",
     username: identity.data.username ?? "", date_of_birth: identity.data.date_of_birth?.slice(0, 10) ?? "",
     avatar_url: identity.data.industry_avatar_url ?? "", acquisition_source: identity.data.acquisition_source ?? "",
     acquisition_source_detail: identity.data.acquisition_source_detail ?? "",

@@ -60,3 +60,37 @@
 @media (prefers-reduced-motion: reduce) {
   .marketing-site-header { transition: none; }
 }
+
+.marketing-site-header__account { border-left: 1px solid #ffffff1a; padding-left: 22px; margin-left: 10px; }
+.marketing-site-header__account .industry-application__account { position: relative; margin: 0; font-size: 12px; color: #d5d7d8; }
+.marketing-site-header__account summary { min-height: 44px; display: flex; align-items: center; list-style: none; white-space: nowrap; cursor: pointer; }
+.marketing-site-header__account summary::-webkit-details-marker { display: none; }
+.marketing-site-header__account summary:hover { color: #fff; }
+.marketing-site-header__account summary:focus-visible { outline: 1px solid #ffffff80; outline-offset: 4px; border-radius: 4px; }
+.industry-application__account-menu { position: absolute; top: calc(100% + 8px); right: 0; width: 240px; padding: 16px; border: 1px solid #ffffff1a; border-radius: 16px; background: #222; box-shadow: 0 16px 40px #0006; }
+.industry-application__account-menu p { margin: 0 0 8px; line-height: 1.5; }
+.industry-application__account-menu button { min-height: 44px; color: #f87171; }
+@media (max-width: 767px) {
+ .marketing-site-header__account { border-left: 0; border-top: 1px solid #ffffff1a; margin: 8px 0 0; padding: 8px 0 0; }
+ .marketing-site-header__account summary { justify-content: center; width: 100%; font-size: 16px; }
+ .industry-application__account-menu { position: static; width: 100%; box-shadow: none; text-align: center; margin-top: 8px; }
+}
+
+.industry-application__account-profile { display: flex; align-items: center; gap: 12px; text-align: left; }
+.industry-application__account-avatar { display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; overflow: hidden; background: #ffffff0d; color: #eee; font-size: 13px; font-weight: 500; }
+.industry-application__account-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.industry-application__account-name { font-size: 14px; font-weight: 500; color: #f5f5f3; overflow-wrap: anywhere; min-width: 0; }
+.industry-application__account-divider { height: 1px; border: 0; background: #ffffff0c; margin: 16px 0; }
+
+.marketing-account-link, .marketing-account-loading { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; min-width: 68px; color: #d5d7d8; font-size: 12px; white-space: nowrap; }
+.marketing-account-link { cursor: pointer; }
+.marketing-account-link:hover { color: #fff; }
+.marketing-account-link:disabled { cursor: wait; opacity: .6; }
+.marketing-account-link:focus-visible { outline: 2px solid var(--accent, #00aacc); outline-offset: 3px; border-radius: 4px; }
+.marketing-account-entry { position: relative; }
+.marketing-account-error { position: absolute; right: 0; top: 100%; width: 260px; padding: 14px; border: 1px solid #ffffff20; border-radius: 12px; background: #222; color: #fca5a5; font-size: 12px; line-height: 1.6; }
+.marketing-account-error a { display: block; color: #fff; text-decoration: underline; }
+@media(max-width:767px) {
+ .marketing-account-link, .marketing-account-loading { width: 100%; font-size: 16px; min-height: 48px; }
+ .marketing-account-error { position: static; width: 100%; text-align: center; }
+}

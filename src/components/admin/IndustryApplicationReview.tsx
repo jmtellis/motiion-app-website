@@ -1,4 +1,6 @@
 "use client";
+import { projectContextQuestions, projectContextLabel } from "@/lib/talent-buyers/project-context";
+
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { reviewIndustryApplication } from "@/app/admin/industry-applications/actions";
@@ -38,6 +40,7 @@ export function IndustryApplicationReview({ application: a, profile, disabled = 
         <div><dt>Contact email</dt><dd>{a.contact_email?.trim() || "Not provided"}</dd></div>
         <div className="industry-review-wide"><dt>Portfolio / Website</dt><dd>{website ? <a className="launch-link" href={website} target="_blank" rel="noopener noreferrer">{website} ↗</a> : a.work_url?.trim() ? "Provided link is not a valid HTTP(S) website." : "Not provided"}</dd></div>
         <div className="industry-review-wide"><dt>Project types / Hiring projects</dt><dd>{a.hiring_projects?.trim() || "Not provided"}</dd></div>
+        {projectContextQuestions.map(question => <div key={question.key}><dt>{question.label}</dt><dd>{projectContextLabel(question.key, a[question.key])}</dd></div>)}
       </dl>
     </section>
     <section className="industry-review-acquisition" aria-label="How they heard about Motiion">

@@ -64,7 +64,7 @@ export function TalentDiscovery({
   initialLayout?: ExploreLayout;
   /** Replaces the talent Saved tab; `null` hides it (industry keeps favorites in Roster). */
   saved?: ReactNode | null;
-  /** Adds a leading Featured tab. */
+  /** Adds a Featured tab after Explore. */
   featured?: ReactNode;
 }) {
   const router = useRouter();
@@ -190,8 +190,8 @@ export function TalentDiscovery({
           {collectionTitle ? <p className="talent-collection-title">{collectionTitle}</p> : null}
           <SegmentedControl
             options={[
-              ...(featured ? [{ value: "featured" as const, label: "Featured" }] : []),
               { value: "discover" as const, label: "Explore" },
+              ...(featured ? [{ value: "featured" as const, label: "Featured" }] : []),
               ...(saved === null ? [] : [{ value: "saved" as const, label: "Saved" }]),
             ]}
             value={mode}

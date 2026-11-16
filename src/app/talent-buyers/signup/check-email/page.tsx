@@ -29,8 +29,8 @@ export default async function TalentBuyerSignupCheckEmailPage({ searchParams }: 
   }
 
   return (
-    <CenteredAuthShell mode="signup" title="Verify your email" subtitle="One more step to your industry application." showAlternateAuth={false}>
-      <CheckEmailForm email={email} returnTo={params.next} signedInEmail={profile?.email ?? undefined} accountType="lookingForTalent" />
+    <CenteredAuthShell mode="signup" showLogo accountCreation title="Verify your email" subtitle="" introNote="Enter the code to continue creating your account." showAlternateAuth={false}>
+      <CheckEmailForm showIntro={false} email={email} returnTo={params.next} signedInEmail={profile?.email ?? undefined} accountType="lookingForTalent" />
     </CenteredAuthShell>
   );
 }

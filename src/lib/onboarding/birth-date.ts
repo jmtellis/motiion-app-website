@@ -12,3 +12,9 @@ export function birthDateError(value: string): string | null {
   if (getBirthDateAge(value) < 0) return "Enter a valid date of birth.";
   return getBirthDateAge(value) < 18 ? "You must be at least 18 to join Motiion." : null;
 }
+
+/** Normalize complete segmented input without making incomplete dates valid. */
+export function normalizeBirthDateInput(value: string): string {
+  const match = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(value);
+  return match ? `${match[1]}-${match[2].padStart(2, "0")}-${match[3].padStart(2, "0")}` : value;
+}

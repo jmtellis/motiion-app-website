@@ -27,19 +27,23 @@ export default async function SignupPage({ searchParams }: {
   }
   alternateParams.set("account_type", talentSignup ? "lookingForTalent" : "talent");
 
+  const teamInvite = typeof params.next === "string" && params.next.startsWith("/team-invite/");
+
   return (
-    <CenteredAuthShell showLogo
+    <CenteredAuthShell showLogo accountCreation
       mode="signup"
+      title={teamInvite ? "Join your project team" : talentSignup ? "Create your talent account" : "Create your industry account"}
       alternateAccount={params.featured !== undefined ? undefined : {
         href: `/signup?${alternateParams}`,
         label: talentSignup ? "Sign up as industry" : "Sign up as talent",
       }}
-      subtitle={typeof params.next === "string" && params.next.startsWith("/team-invite/") ? "Create your account to join your project team. Your owner covers access." : talentSignup
-        ? "Create your talent profile and find opportunities."
-        : "Find talent for your project. Access requires an application."}
+      subtitle=""
     >
       <Suspense fallback={null}>
-        <SignupForm />
+        <SignupForm intro={teamInvite
+          ? "Create your account to join your project team. Your owner covers access."
+          : talentSignup ? "Create your talent profile and find opportunities."
+          : "Apply for free, then choose a plan when you’re ready to create a project."} />
       </Suspense>
     </CenteredAuthShell>
   );

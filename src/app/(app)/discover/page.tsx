@@ -23,9 +23,9 @@ export default async function DiscoverPage({
   const initialMode =
     view === "saved"
       ? "saved"
-      : view === "explore" || view === "discover" || view === "browse" || searching || !featured
-        ? "discover"
-        : "featured";
+      : view === "featured" && featured && !searching
+        ? "featured"
+        : "discover";
   const initialLayout = listLayout ? "list" : "navigator";
 
   return (

@@ -1,3 +1,4 @@
+import { normalizeBirthDateInput } from "../src/lib/onboarding/birth-date";
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { getBirthDateAge } from '../src/lib/onboarding/birth-date.ts';
@@ -18,4 +19,11 @@ test('invalid, incomplete, impossible and future birthdays cannot pass the gate'
 test('leap-day birthday reaches eighteen on March 1 in non-leap years', () => {
   assert.equal(getBirthDateAge('2008-02-29', new Date(2026, 1, 28)), 17);
   assert.equal(getBirthDateAge('2008-02-29', new Date(2026, 2, 1)), 18);
+});
+
+test("segmented birthdays normalize single digits without accepting impossible or incomplete dates", () => {
+  assert.equal(normalizeBirthDateInput("1990-2-3"), "1990-02-03");
+  assert.equal(normalizeBirthDateInput("1990-02-03"), "1990-02-03");
+  assert.equal(getBirthDateAge(normalizeBirthDateInput("1990-2-31")), -1);
+  assert.equal(getBirthDateAge(normalizeBirthDateInput("1990--3")), -1);
 });

@@ -1,5 +1,6 @@
 "use server";
 
+import { approvedSetupDestination } from "@/lib/talent-buyers/approved-start";
 import { reviewedIndustryIdentity } from "@/lib/talent-buyers/profile-edit";
 import { consumeAuthReturn } from "@/lib/auth/pending-return";
 import { revalidatePath } from "next/cache";
@@ -469,7 +470,9 @@ export async function completeTalentBuyerOnboarding(
 }
 
 /** Current applicant flow: reviewed details are reused atomically, without repeating a questionnaire. */
-export async function completeApprovedIndustrySetup(username?: string): Promise<{ ok: true; redirectTo: string } | { ok: false; error: string }> {
+export async function completeApprovedIndustrySetup(username?: string, intent?: string): Promise<{ ok: true; redirectTo: string } | { ok: false; error: string }> {
+  const destination = approvedSetupDestination(intent);
+  if (!destination) return { ok: false, error: "Choose a project plan or explore talent." };
   const db = await createServerSupabaseClient();
   if (!db) return { ok: false, error: "Your workspace is temporarily unavailable. Please try again." };
   const { data: { user } } = await db.auth.getUser();
@@ -488,5 +491,5 @@ export async function completeApprovedIndustrySetup(username?: string): Promise<
   const { error } = await db.rpc("complete_industry_approved_setup", { p_username: username?.trim().toLowerCase() || null });
   if (error) return { ok: false, error: error.message };
   revalidatePath("/", "layout");
-  return { ok: true, redirectTo: await consumeAuthReturn(user.id, "/dashboard") };
+  return { ok: true, redirectTo: await consumeAuthReturn(user.id, destination) };
 }

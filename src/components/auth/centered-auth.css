@@ -46,3 +46,41 @@
 .centered-auth__footer .industry-application__footer { margin-top: 0; flex-wrap: wrap; align-items: center; }
 .centered-auth__footer .industry-application__footer > p { flex-basis: 100%; }
 .centered-auth__footer :is(a, button) { min-height: 44px; display: inline-flex; align-items: center; }
+
+/* Account creation: introduction, primary task, then secondary account routes. */
+.centered-auth--account-creation .centered-auth__logo { margin-bottom: 20px; }
+.centered-auth--account-creation .signup-split-form__header { display: flex; flex-direction: column; gap: 0; }
+.centered-auth--account-creation .signup-split-form__subtitle { margin-top: 10px; }
+.centered-auth__intro-note { max-width: 100%; margin: 12px auto 0; font-size: 13px; line-height: 1.6; color: #aaa; text-align: center; }
+.centered-auth--account-creation .signup-split-form__body { margin-top: 32px; }
+.centered-auth--account-creation .signup-split-divider { margin-block: 12px; }
+.centered-auth--account-creation .signup-split-legal { margin-top: 24px; font-size: 12px; line-height: 1.6; }
+.centered-auth__account-links { margin-top: 28px; padding-top: 20px; border-top: 1px solid #ffffff14; text-align: center; font-size: 14px; color: #aaa; }
+.centered-auth__account-links p { margin: 0; }
+.centered-auth__account-links p + p { margin-top: 8px; }
+.centered-auth__account-links a { display: inline-block; padding-block: 4px; }
+@media (max-width: 639px) {
+  .centered-auth--account-creation .signup-split-form__title { font-size: 28px; line-height: 1.15; }
+  .centered-auth--account-creation .signup-split-form__body { margin-top: 24px; }
+  .centered-auth--account-creation .signup-split-legal__links { white-space: normal; }
+}
+
+.centered-auth--account-creation .signup-password-context { text-align: center; overflow-wrap: anywhere; }
+
+.centered-auth .signup-split-field .verification-code-input {
+  min-height: 64px;
+  text-align: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 26px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .22em;
+}
+.centered-auth .verification-code-input::placeholder {
+  font-family: inherit;
+  font-size: 16px;
+  letter-spacing: normal;
+}
+.centered-auth .verification-code-input:focus-visible {
+  outline: 2px solid #35bfd5;
+  outline-offset: 3px;
+}

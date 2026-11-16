@@ -6,8 +6,10 @@ import { PROJECT_CATALOG, isProjectPlan, receiptIsActive, type ProjectAccess } f
 import { requireIndustryApproval } from "@/lib/talent-buyers/require-industry-approval";
 import { getAppEnvironment, allowsLocalProductionSupabase } from "@/lib/environment";
 
-export async function startProjectCheckout(plan: string): Promise<{url?: string; error?: string}> {
+export async function startProjectCheckout(plan: string, source: "approval" | "pricing" = "pricing"): Promise<{url?: string; error?: string}> {
   if (!isProjectPlan(plan)) return {error: "Choose a valid plan."};
+  const returnPath = source === "approval" ? "/talent-buyers/onboarding?welcome=1" : "/pricing";
+  const presentation = `summary-v1-${source === "approval" ? "approval" : "pricing"}`;
   const db = await createServerSupabaseClient();
   const user = db ? (await db.auth.getUser()).data.user : null;
   if (!user) return {url: `/login?next=${encodeURIComponent(`/checkout?plan=${plan}`)}`};
@@ -43,19 +45,21 @@ export async function startProjectCheckout(plan: string): Promise<{url?: string;
     }
     const history = await stripe.checkout.sessions.list({customer,limit:100});
     const open = history.data.filter(s => s.status === "open");
-    const same = open.find(s => s.metadata?.project_plan === plan && s.metadata?.price_id === priceId);
+    const same = open.find(s => s.metadata?.project_plan === plan && s.metadata?.price_id === priceId && s.metadata?.presentation === presentation);
     if (same?.url) return {url:same.url};
     // Expire competing subscription checkouts so a different plan cannot also complete.
-    if (offer.mode === "subscription") for (const pending of open.filter(s => s.mode === "subscription")) await stripe.checkout.sessions.expire(pending.id);
+    for (const pending of open.filter(s => (offer.mode === "subscription" && s.mode === "subscription") || s.metadata?.project_plan === plan)) await stripe.checkout.sessions.expire(pending.id);
     const previous = history.data.find(s => s.metadata?.project_plan === plan)?.id ?? "initial";
-    const metadata = {user_id:user.id,project_plan:plan,price_id:priceId};
+    const metadata = {user_id:user.id,project_plan:plan,price_id:priceId,presentation};
     const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001").replace(/\/$/, "");
     const session = await stripe.checkout.sessions.create({
       mode:offer.mode, customer, client_reference_id:user.id, line_items:[{price:priceId,quantity:1}],
       integration_identifier:"motiion_projects_kxqpzvnt", metadata,
+      branding_settings:{display_name:"Motiion",background_color:"#111111",button_color:"#245fff",border_style:"rounded",font_family:"inter"},
+      custom_text:{submit:{message:offer.mode === "payment" ? "Your 90 days begin when you activate the pass on a project. No subscription or automatic renewal." : "Renews monthly until canceled. Manage your plan in billing settings."}},
       ...(offer.mode === "subscription" ? {subscription_data:{metadata}} : {payment_intent_data:{metadata}}),
-      success_url:`${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,cancel_url:`${origin}/checkout?plan=${plan}`,
-    },{idempotencyKey:`projects-${user.id}-${plan}-${priceId}-${previous}`});
+      success_url:`${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,cancel_url:`${origin}${returnPath}`,
+    },{idempotencyKey:`projects-${user.id}-${plan}-${priceId}-${presentation}-${previous}`});
     return session.url ? {url:session.url} : {error:"Checkout could not be opened."};
   } catch (error) { return {error:error instanceof Error ? error.message : "Checkout failed. Please retry."}; }
 }

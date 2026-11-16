@@ -73,6 +73,7 @@ export function previewDashboard(range?: string): DashboardData {
         "Motion Collective",
       ][i % 4],
       professional_role: "Casting director",
+      concurrent_projects: "2_3", project_frequency: "ongoing", management_team_size: "4_10",
       contact_email: `industry${i}@example.invalid`,
       work_url: "",
       hiring_projects: "Casting dancers for music videos and live productions.",
